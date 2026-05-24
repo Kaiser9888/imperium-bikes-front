@@ -1,12 +1,24 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { Eye, EyeOff, Mail, Lock } from 'lucide-react'
 import { authService } from '@/services/authService'
 import Link from 'next/link'
 
 export function LoginForm() {
+    return (
+        <Suspense fallback={
+            <div style={{ minHeight: '100vh', backgroundColor: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <p style={{ color: '#fff' }}>Carregando...</p>
+            </div>
+        }>
+            <LoginFormContent />
+        </Suspense>
+    )
+}
+
+function LoginFormContent() {
     const searchParams = useSearchParams()
     const redirect = searchParams.get('redirect')
 
@@ -78,14 +90,13 @@ export function LoginForm() {
             }}>
                 <div style={{ width: '100%', maxWidth: '400px', margin: '0 auto' }}>
                     <div style={{ textAlign: 'center', marginBottom: '40px' }}>
-            <span style={{ fontSize: '28px', fontWeight: 'bold', color: '#DC2626', letterSpacing: '4px' }}>
-              IMPERIUM
-            </span>
+                        <span style={{ fontSize: '28px', fontWeight: 'bold', color: '#DC2626', letterSpacing: '4px' }}>
+                            IMPERIUM
+                        </span>
                         <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.6)', marginTop: '8px' }}>
                             Bem-vindo ao Mundo da Bike!
                         </p>
                     </div>
-
 
                     {erro && (
                         <div style={{

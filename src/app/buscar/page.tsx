@@ -7,6 +7,7 @@ import { BottomNav } from '@/components/layout/BottomNav'
 import { Search, SlidersHorizontal, X, MapPin, Star, Heart, ChevronLeft, ChevronRight } from 'lucide-react'
 import { productService } from '@/services/productService'
 import { Product } from '@/types'
+import { Suspense } from 'react'
 
 const categorias = [
     'Todas', 'Bikes', 'Quadros', 'Suspensoes', 'Transmissao', 'Freios',
@@ -42,9 +43,18 @@ const faixasPreco = [
 const anos = ['Todos', '2025', '2024', '2023', '2022', '2021', '2020', '2019 ou antes']
 
 export default function BuscarPage() {
+    return (
+        <Suspense fallback={<div style={{ minHeight: '100vh', backgroundColor: '#f5f5f5', paddingBottom: '70px' }}><Header /><div style={{ padding: '100px', textAlign: 'center', color: '#888' }}>Carregando...</div><BottomNav /></div>}>
+            <BuscarContent />
+        </Suspense>
+    )
+}
+
+function BuscarContent() {
     const searchParams = useSearchParams()
     const query = searchParams.get('q') || ''
     const categoriaParam = searchParams.get('categoria') || ''
+
 
     const [produtos, setProdutos] = useState<Product[]>([])
     const [loading, setLoading] = useState(true)
