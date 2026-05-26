@@ -54,16 +54,26 @@ export function Header() {
                     <div style={menuPanel}>
                         <h3 style={menuTitle}>Menu</h3>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                            <button style={menuItem}>🌙 Modo Escuro</button>
-                            <button style={menuItem}>⭐ Favoritos</button>
-                            <button style={menuItem}>🎥 Videos</button>
-                            <button style={menuItem}>💬 Forum</button>
-                            <button style={menuItem}>🏆 Torneios</button>
-                            <button style={menuItem}>⚙️ Configuracoes</button>
-                            <button style={menuItem}>❓ Ajuda</button>
+                            <button style={menuItem} onClick={() => { setMenuOpen(false); window.location.href = '/videos'; }}>
+                                🎥 Videos
+                            </button>
+                            <button style={menuItem} onClick={() => { setMenuOpen(false); window.location.href = '/forum'; }}>
+                                💬 Forum
+                            </button>
+                            <button style={menuItem} onClick={() => { setMenuOpen(false); window.location.href = '/torneios'; }}>
+                                🏆 Torneios
+                            </button>
+                            <button style={menuItem} onClick={() => { setMenuOpen(false); window.location.href = '/favoritos'; }}>
+                                ⭐ Favoritos
+                            </button>
+                            <button style={menuItem} onClick={() => { setMenuOpen(false); window.location.href = '/notificacoes'; }}>
+                                🔔 Notificacoes
+                            </button>
                         </div>
                         <div style={menuFooter}>
-                            <button style={loginBtn}>Entrar / Cadastrar</button>
+                            <button style={loginBtn} onClick={() => { setMenuOpen(false); window.location.href = '/login'; }}>
+                                Entrar / Cadastrar
+                            </button>
                         </div>
                     </div>
                 </div>
