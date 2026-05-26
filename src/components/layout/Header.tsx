@@ -24,8 +24,8 @@ export function Header() {
                 <Image
                     src="/logo.png"
                     alt="Imperium"
-                    width={500}
-                    height={100}
+                    width={300}
+                    height={80}
                     style={{
                         objectFit: 'contain',
                         flexShrink: 0,
