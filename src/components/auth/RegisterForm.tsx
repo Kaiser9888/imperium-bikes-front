@@ -1,12 +1,12 @@
 'use client'
 
 import { useState } from 'react'
-import { Eye, EyeOff, Mail, Lock, User, Phone, FileText } from 'lucide-react'
+import { Eye, EyeOff, Mail, Lock, User, Phone } from 'lucide-react'
 import { authService } from '@/services/authService'
 import Link from 'next/link'
 
 export function RegisterForm() {
-    const [form, setForm] = useState({ name: '', email: '', phone: '', cpf: '', password: '', confirmPassword: '' })
+    const [form, setForm] = useState({ fullName: '', email: '', phone: '', password: '', confirmPassword: '' })
     const [mostrarSenha, setMostrarSenha] = useState(false)
     const [loading, setLoading] = useState(false)
     const [erro, setErro] = useState('')
@@ -20,30 +20,19 @@ export function RegisterForm() {
         return numero
     }
 
-    const formatarCPF = (valor: string) => {
-        let numero = valor.replace(/\D/g, '')
-        if (numero.length > 11) numero = numero.slice(0, 11)
-        if (numero.length > 9) numero = `${numero.slice(0, 3)}.${numero.slice(3, 6)}.${numero.slice(6, 9)}-${numero.slice(9)}`
-        else if (numero.length > 6) numero = `${numero.slice(0, 3)}.${numero.slice(3, 6)}.${numero.slice(6)}`
-        else if (numero.length > 3) numero = `${numero.slice(0, 3)}.${numero.slice(3)}`
-        return numero
-    }
-
     const handleChange = (field: string, value: string) => {
         if (field === 'phone') setForm(prev => ({ ...prev, phone: formatarTelefone(value) }))
-        else if (field === 'cpf') setForm(prev => ({ ...prev, cpf: formatarCPF(value) }))
         else setForm(prev => ({ ...prev, [field]: value }))
     }
 
     const validar = () => {
-        if (!form.name || !form.email || !form.phone || !form.cpf || !form.password) {
+        if (!form.fullName || !form.email || !form.phone || !form.password) {
             setErro('Preencha todos os campos obrigatorios'); return false
         }
-        if (form.password.length < 6) { setErro('A senha deve ter no minimo 6 caracteres'); return false }
+        if (form.password.length < 8) { setErro('A senha deve ter no minimo 8 caracteres'); return false }
         if (form.password !== form.confirmPassword) { setErro('As senhas nao conferem'); return false }
         if (!form.email.includes('@')) { setErro('Email invalido'); return false }
         if (form.phone.replace(/\D/g, '').length < 10) { setErro('Telefone incompleto'); return false }
-        if (form.cpf.replace(/\D/g, '').length < 11) { setErro('CPF incompleto'); return false }
         return true
     }
 
@@ -55,8 +44,9 @@ export function RegisterForm() {
 
         try {
             await authService.register({
-                name: form.name, email: form.email,
-                phone: form.phone.replace(/\D/g, ''), cpf: form.cpf.replace(/\D/g, ''),
+                fullName: form.fullName,
+                email: form.email,
+                phone: '+55' + form.phone.replace(/\D/g, ''),
                 password: form.password,
             })
 
@@ -112,16 +102,15 @@ export function RegisterForm() {
                     )}
 
                     <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                        <InputField icon={<User size={18} color="#999" />} label="Nome completo" placeholder="Seu nome" value={form.name} onChange={(v) => handleChange('name', v)} />
+                        <InputField icon={<User size={18} color="#999" />} label="Nome completo" placeholder="Seu nome" value={form.fullName} onChange={(v) => handleChange('fullName', v)} />
                         <InputField icon={<Mail size={18} color="#999" />} label="Email" placeholder="seu@email.com" type="email" value={form.email} onChange={(v) => handleChange('email', v)} />
                         <InputField icon={<Phone size={18} color="#999" />} label="Telefone" placeholder="(11) 99999-9999" type="tel" value={form.phone} onChange={(v) => handleChange('phone', v)} />
-                        <InputField icon={<FileText size={18} color="#999" />} label="CPF" placeholder="000.000.000-00" value={form.cpf} onChange={(v) => handleChange('cpf', v)} />
 
                         <div>
-                            <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: 'rgba(255,255,255,0.8)', marginBottom: '6px' }}>Senha</label>
+                            <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: 'rgba(255,255,255,0.8)', marginBottom: '6px' }}>Senha (minimo 8 caracteres)</label>
                             <div style={{ position: 'relative' }}>
                                 <Lock size={18} color="#999" style={{ position: 'absolute', left: '14px', top: '14px' }} />
-                                <input type={mostrarSenha ? 'text' : 'password'} value={form.password} onChange={(e) => handleChange('password', e.target.value)} placeholder="Minimo 6 caracteres"
+                                <input type={mostrarSenha ? 'text' : 'password'} value={form.password} onChange={(e) => handleChange('password', e.target.value)} placeholder="Minimo 8 caracteres"
                                        style={{ width: '100%', padding: '14px 14px 14px 42px', backgroundColor: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '12px', fontSize: '15px', color: '#fff', outline: 'none' }} />
                                 <button type="button" onClick={() => setMostrarSenha(!mostrarSenha)} style={{ position: 'absolute', right: '14px', top: '14px', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
                                     {mostrarSenha ? <EyeOff size={18} color="#999" /> : <Eye size={18} color="#999" />}

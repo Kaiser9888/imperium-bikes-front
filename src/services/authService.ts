@@ -21,7 +21,7 @@ export const authService = {
         return response.data
     },
 
-    async register(data: { name: string; email: string; phone: string; cpf: string; password: string }) {
+    async register(data: { fullName: string; email: string; phone: string; password: string }) {
         const response = await api.post(ENDPOINTS.REGISTER, data)
         if (response.data.token) {
             localStorage.setItem('@imperium:token', response.data.token)
