@@ -1,6 +1,5 @@
 import api from '@/lib/api'
 
-// Endpoints baseados no Swagger: tag "Auth"
 const ENDPOINTS = {
     LOGIN: '/api/auth/login',
     REGISTER: '/api/auth/register',
@@ -12,22 +11,40 @@ const ENDPOINTS = {
 export const authService = {
     async login(data: { email: string; password: string }) {
         const response = await api.post(ENDPOINTS.LOGIN, data)
-        if (response.data.token) {
-            localStorage.setItem('@imperium:token', response.data.token)
-            if (response.data.user) {
-                localStorage.setItem('@imperium:user', JSON.stringify(response.data.user))
+
+        // ✅ CORRIGIDO: backend retorna "accessToken", não "token"
+        const token = response.data.accessToken || response.data.token
+
+        if (token) {
+            localStorage.setItem('@imperium:token', token)
+
+            // ✅ CORRIGIDO: mapeia resposta do backend
+            const userData = {
+                id: response.data.userId || response.data.user?.id,
+                email: response.data.email || response.data.user?.email,
+                fullName: response.data.fullName || response.data.user?.fullName,
+                avatarUrl: response.data.avatarUrl || response.data.user?.avatarUrl
             }
+            localStorage.setItem('@imperium:user', JSON.stringify(userData))
         }
         return response.data
     },
 
     async register(data: { fullName: string; email: string; phone: string; password: string }) {
         const response = await api.post(ENDPOINTS.REGISTER, data)
-        if (response.data.token) {
-            localStorage.setItem('@imperium:token', response.data.token)
-            if (response.data.user) {
-                localStorage.setItem('@imperium:user', JSON.stringify(response.data.user))
+
+        // ✅ CORRIGIDO: backend retorna "accessToken"
+        const token = response.data.accessToken || response.data.token
+
+        if (token) {
+            localStorage.setItem('@imperium:token', token)
+
+            const userData = {
+                id: response.data.userId,
+                email: response.data.email,
+                fullName: response.data.fullName
             }
+            localStorage.setItem('@imperium:user', JSON.stringify(userData))
         }
         return response.data
     },
