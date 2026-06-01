@@ -6,7 +6,6 @@ const ENDPOINTS = {
     CREATE: '/api/products',
     UPDATE: (id: number) => `/api/products/${id}`,
     DELETE: (id: number) => `/api/products/${id}`,
-    DESTAQUES: '/api/products/destaques',
 }
 
 export const productService = {
@@ -29,25 +28,17 @@ export const productService = {
         return response.data
     },
 
+    // ✅ CORRIGIDO: usa listar() com sort em vez de endpoint inexistente
     async destaques() {
-        // ✅ CORRIGIDO: Se o endpoint não existe, usa listar com ordenação
-        try {
-            const response = await api.get(ENDPOINTS.DESTAQUES)
-            return response.data
-        } catch (error) {
-            // Fallback: usa o endpoint normal com ordenação
-            const response = await api.get(ENDPOINTS.LIST, {
-                params: {
-                    page: 0,
-                    size: 10,
-                    sort: 'createdAt,desc'
-                }
-            })
-            return {
-                content: response.data.content || [],
-                totalElements: response.data.totalElements || 0
+        const response = await api.get(ENDPOINTS.LIST, {
+            params: {
+                page: 0,
+                size: 10,
+                sort: 'createdAt,desc'
             }
-        }
+        })
+        // Retorna só o array de produtos
+        return response.data.content || response.data || []
     },
 
     async criar(data: FormData) {
