@@ -1,6 +1,5 @@
 import api from '@/lib/api'
 
-// Endpoints baseados no Swagger: tag "Products"
 const ENDPOINTS = {
     LIST: '/api/products',
     DETAIL: (id: number) => `/api/products/${id}`,
@@ -19,6 +18,7 @@ export const productService = {
         minPreco?: number
         maxPreco?: number
         condicao?: string
+        sort?: string
     }) {
         const response = await api.get(ENDPOINTS.LIST, { params })
         return response.data
@@ -30,8 +30,24 @@ export const productService = {
     },
 
     async destaques() {
-        const response = await api.get(ENDPOINTS.DESTAQUES)
-        return response.data
+        // ✅ CORRIGIDO: Se o endpoint não existe, usa listar com ordenação
+        try {
+            const response = await api.get(ENDPOINTS.DESTAQUES)
+            return response.data
+        } catch (error) {
+            // Fallback: usa o endpoint normal com ordenação
+            const response = await api.get(ENDPOINTS.LIST, {
+                params: {
+                    page: 0,
+                    size: 10,
+                    sort: 'createdAt,desc'
+                }
+            })
+            return {
+                content: response.data.content || [],
+                totalElements: response.data.totalElements || 0
+            }
+        }
     },
 
     async criar(data: FormData) {
