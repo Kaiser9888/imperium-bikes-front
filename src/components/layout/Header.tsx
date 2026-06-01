@@ -1,47 +1,66 @@
 'use client'
 
-import { useState } from 'react'
-import { Bell, ShoppingCart, Menu, X } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Bell, ShoppingCart, Menu, X, User, LogOut, Settings, Heart, MessageCircle } from 'lucide-react'
 import Image from 'next/image'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { authService } from '@/services/authService'
 
 export function Header() {
+    const router = useRouter()
     const [menuOpen, setMenuOpen] = useState(false)
+    const [isAuthenticated, setIsAuthenticated] = useState(false)
+    const [usuario, setUsuario] = useState<any>(null)
+
+    useEffect(() => {
+        const token = authService.getToken()
+        const user = authService.getUsuario()
+        setIsAuthenticated(!!token)
+        setUsuario(user)
+    }, [menuOpen]) // Atualiza quando menu abre/fecha
+
+    const handleLogout = () => {
+        authService.logout()
+        setMenuOpen(false)
+        setIsAuthenticated(false)
+        setUsuario(null)
+        router.push('/')
+    }
+
+    const nomeInicial = usuario?.fullName?.charAt(0)?.toUpperCase() || '?'
 
     return (
         <>
-            <header style={{
-                position: 'sticky',
-                top: 0,
-                zIndex: 50,
-                backgroundColor: '#000000',
-                borderBottom: '1px solid rgba(255,255,255,0.04)',
-                padding: '6px 12px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between'
-            }}>
+            <header style={headerStyle}>
                 {/* Logo */}
-                <Image
-                    src="/logo.png"
-                    alt="Imperium"
-                    width={300}
-                    height={80}
-                    style={{
-                        objectFit: 'contain',
-                        flexShrink: 0,
-                        marginLeft: '-8px'
-                    }}
-                />
+                <Link href="/" style={{ display: 'flex', alignItems: 'center' }}>
+                    <Image
+                        src="/logo.png"
+                        alt="Imperium"
+                        width={160}
+                        height={40}
+                        priority
+                        style={{
+                            objectFit: 'contain',
+                            flexShrink: 0
+                        }}
+                    />
+                </Link>
 
                 {/* Ícones */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
-                    <button style={iconBtn}>
-                        <Bell size={19} color="#fff" />
-                    </button>
-                    <button style={iconBtn}>
-                        <ShoppingCart size={19} color="#fff" />
-                    </button>
-                    <button style={iconBtn} onClick={() => setMenuOpen(!menuOpen)}>
+                <div style={iconsContainer}>
+                    {isAuthenticated && (
+                        <>
+                            <button style={iconBtn} onClick={() => router.push('/notificacoes')} aria-label="Notificações">
+                                <Bell size={19} color="#fff" />
+                            </button>
+                            <button style={iconBtn} onClick={() => router.push('/chat')} aria-label="Mensagens">
+                                <MessageCircle size={19} color="#fff" />
+                            </button>
+                        </>
+                    )}
+                    <button style={iconBtn} onClick={() => setMenuOpen(!menuOpen)} aria-label="Menu">
                         {menuOpen ? <X size={19} color="#fff" /> : <Menu size={19} color="#fff" />}
                     </button>
                 </div>
@@ -52,28 +71,55 @@ export function Header() {
                 <div style={overlay}>
                     <div style={overlayBg} onClick={() => setMenuOpen(false)} />
                     <div style={menuPanel}>
-                        <h3 style={menuTitle}>Menu</h3>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                            <button style={menuItem} onClick={() => { setMenuOpen(false); window.location.href = '/videos'; }}>
-                                🎥 Videos
-                            </button>
-                            <button style={menuItem} onClick={() => { setMenuOpen(false); window.location.href = '/forum'; }}>
-                                💬 Forum
-                            </button>
-                            <button style={menuItem} onClick={() => { setMenuOpen(false); window.location.href = '/torneios'; }}>
-                                🏆 Torneios
-                            </button>
-                            <button style={menuItem} onClick={() => { setMenuOpen(false); window.location.href = '/favoritos'; }}>
-                                ⭐ Favoritos
-                            </button>
-                            <button style={menuItem} onClick={() => { setMenuOpen(false); window.location.href = '/notificacoes'; }}>
-                                🔔 Notificacoes
-                            </button>
+                        {/* Usuário logado */}
+                        {isAuthenticated && usuario && (
+                            <div style={userSection}>
+                                <div style={avatarStyle}>
+                                    {usuario.avatarUrl ? (
+                                        <img src={usuario.avatarUrl} alt="" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+                                    ) : (
+                                        nomeInicial
+                                    )}
+                                </div>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                    <p style={userName}>{usuario.fullName}</p>
+                                    <p style={userEmail}>{usuario.email}</p>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Itens do menu */}
+                        <div style={menuItems}>
+                            <MenuItem icon="🎥" label="Vídeos" href="/videos" onClick={() => setMenuOpen(false)} />
+                            <MenuItem icon="💬" label="Fórum" href="/forum" onClick={() => setMenuOpen(false)} />
+                            <MenuItem icon="🏆" label="Torneios" href="/torneios" onClick={() => setMenuOpen(false)} />
+                            <MenuItem icon="⭐" label="Favoritos" href="/favoritos" onClick={() => setMenuOpen(false)} />
+                            <MenuItem icon="🏷️" label="Meus Anúncios" href="/meus-anuncios" onClick={() => setMenuOpen(false)} />
                         </div>
+
                         <div style={menuFooter}>
-                            <button style={loginBtn} onClick={() => { setMenuOpen(false); window.location.href = '/login'; }}>
-                                Entrar / Cadastrar
-                            </button>
+                            {isAuthenticated ? (
+                                <>
+                                    <button style={menuFooterBtn} onClick={() => { setMenuOpen(false); router.push('/perfil'); }}>
+                                        <User size={16} /> Meu Perfil
+                                    </button>
+                                    <button style={menuFooterBtn} onClick={() => { setMenuOpen(false); router.push('/perfil'); }}>
+                                        <Settings size={16} /> Configurações
+                                    </button>
+                                    <button style={{ ...menuFooterBtn, color: '#EF4444' }} onClick={handleLogout}>
+                                        <LogOut size={16} /> Sair
+                                    </button>
+                                </>
+                            ) : (
+                                <>
+                                    <button style={loginBtn} onClick={() => { setMenuOpen(false); router.push('/login'); }}>
+                                        Entrar
+                                    </button>
+                                    <button style={registerBtn} onClick={() => { setMenuOpen(false); router.push('/cadastro'); }}>
+                                        Cadastrar
+                                    </button>
+                                </>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -82,13 +128,52 @@ export function Header() {
     )
 }
 
+// Componente MenuItem reutilizável
+function MenuItem({ icon, label, href, onClick }: { icon: string; label: string; href: string; onClick: () => void }) {
+    return (
+        <button
+            style={menuItemStyle}
+            onClick={() => {
+                onClick()
+                window.location.href = href
+            }}
+        >
+            <span>{icon}</span>
+            <span>{label}</span>
+        </button>
+    )
+}
+
+// ============ ESTILOS ============
+
+const headerStyle: React.CSSProperties = {
+    position: 'sticky',
+    top: 0,
+    zIndex: 50,
+    backgroundColor: '#000000',
+    borderBottom: '1px solid rgba(255,255,255,0.04)',
+    padding: '6px 12px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between'
+}
+
+const iconsContainer: React.CSSProperties = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    flexShrink: 0
+}
+
 const iconBtn: React.CSSProperties = {
     background: 'none',
     border: 'none',
     cursor: 'pointer',
-    padding: '4px',
+    padding: '6px',
     opacity: 0.85,
-    display: 'flex'
+    display: 'flex',
+    borderRadius: '50%',
+    transition: 'opacity 0.2s'
 }
 
 const overlay: React.CSSProperties = {
@@ -106,39 +191,104 @@ const overlayBg: React.CSSProperties = {
 const menuPanel: React.CSSProperties = {
     position: 'absolute',
     top: 0, right: 0,
-    width: '280px',
+    width: '300px',
     height: '100%',
-    backgroundColor: 'var(--bg-header)',
+    backgroundColor: '#0a0a0a',
     padding: '20px',
-    borderLeft: '1px solid #222'
+    borderLeft: '1px solid #222',
+    overflowY: 'auto',
+    display: 'flex',
+    flexDirection: 'column'
 }
 
-const menuTitle: React.CSSProperties = {
-    fontSize: '18px',
+const userSection: React.CSSProperties = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    padding: '8px 0 20px',
+    borderBottom: '1px solid #222',
+    marginBottom: '20px'
+}
+
+const avatarStyle: React.CSSProperties = {
+    width: '44px',
+    height: '44px',
+    borderRadius: '50%',
+    background: 'linear-gradient(135deg, #DC2626, #991b1b)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '20px',
     fontWeight: 'bold',
     color: '#fff',
-    marginBottom: '24px'
+    flexShrink: 0,
+    overflow: 'hidden'
 }
 
-const menuItem: React.CSSProperties = {
+const userName: React.CSSProperties = {
+    fontSize: '15px',
+    fontWeight: '600',
+    color: '#fff',
+    margin: 0,
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis'
+}
+
+const userEmail: React.CSSProperties = {
+    fontSize: '12px',
+    color: '#888',
+    margin: '2px 0 0',
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis'
+}
+
+const menuItems: React.CSSProperties = {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '2px',
+    flex: 1
+}
+
+const menuItemStyle: React.CSSProperties = {
     width: '100%',
-    padding: '12px 16px',
+    padding: '13px 16px',
     backgroundColor: 'transparent',
     border: 'none',
     borderRadius: '8px',
-    fontSize: '16px',
+    fontSize: '15px',
     display: 'flex',
     alignItems: 'center',
     gap: '12px',
     cursor: 'pointer',
     color: '#ccc',
-    textAlign: 'left'
+    textAlign: 'left' as const,
+    transition: 'background-color 0.15s'
 }
 
 const menuFooter: React.CSSProperties = {
-    marginTop: '24px',
-    paddingTop: '24px',
-    borderTop: '1px solid #222'
+    marginTop: '20px',
+    paddingTop: '20px',
+    borderTop: '1px solid #222',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '8px'
+}
+
+const menuFooterBtn: React.CSSProperties = {
+    width: '100%',
+    padding: '12px 16px',
+    backgroundColor: 'transparent',
+    border: 'none',
+    borderRadius: '8px',
+    fontSize: '14px',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+    cursor: 'pointer',
+    color: '#ccc',
+    textAlign: 'left' as const
 }
 
 const loginBtn: React.CSSProperties = {
@@ -148,7 +298,19 @@ const loginBtn: React.CSSProperties = {
     color: '#fff',
     border: 'none',
     borderRadius: '8px',
-    fontSize: '16px',
+    fontSize: '15px',
     fontWeight: 'bold',
+    cursor: 'pointer'
+}
+
+const registerBtn: React.CSSProperties = {
+    width: '100%',
+    padding: '14px',
+    backgroundColor: 'transparent',
+    color: '#fff',
+    border: '1px solid rgba(255,255,255,0.2)',
+    borderRadius: '8px',
+    fontSize: '15px',
+    fontWeight: '600',
     cursor: 'pointer'
 }
