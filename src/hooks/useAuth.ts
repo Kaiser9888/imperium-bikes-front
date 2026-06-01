@@ -1,14 +1,15 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { authService } from '@/services/authService'
+import api from '@/lib/api'
 
 interface UserData {
-    id: number
-    name: string
+    id: string
+    fullName: string
     email: string
-    avatar: string
+    avatarUrl: string | null
     role: string
     city: string
     state: string
@@ -20,30 +21,78 @@ export function useAuth(required: boolean = false) {
     const [carregando, setCarregando] = useState(true)
     const router = useRouter()
 
-    useEffect(() => {
-        const user = authService.getUsuario()
+    const buscarDadosUsuario = useCallback(async () => {
+        try {
+            const token = authService.getToken()
+            if (!token) {
+                if (required) {
+                    router.push('/login')
+                }
+                setCarregando(false)
+                return
+            }
 
-        if (!user && required) {
-            router.push('/login')
-            return
+            // Busca dados atualizados do backend
+            const response = await api.get('/users/me')
+            const userData = response.data
+
+            const userMapeado: UserData = {
+                id: userData.id,
+                fullName: userData.fullName,
+                email: userData.email,
+                avatarUrl: userData.avatarUrl || null,
+                role: userData.roles?.includes('ROLE_ADMIN') ? 'ADMIN' : 'USER',
+                city: userData.city || '',
+                state: userData.state || '',
+                reputation: userData.reputationScore || 0
+            }
+
+            setUsuario(userMapeado)
+
+            // Atualiza localStorage
+            localStorage.setItem('@imperium:user', JSON.stringify(userMapeado))
+
+        } catch (error: any) {
+            console.error('Erro ao buscar dados do usuário:', error)
+            if (error?.response?.status === 401) {
+                authService.logout()
+                if (required) {
+                    router.push('/login')
+                }
+            }
+        } finally {
+            setCarregando(false)
         }
-
-        setUsuario(user)
-        setCarregando(false)
     }, [required, router])
 
-    const isAuthenticated = !!usuario
+    useEffect(() => {
+        // Primeiro tenta pegar do localStorage (rápido)
+        const cachedUser = authService.getUsuario()
+        if (cachedUser) {
+            setUsuario(cachedUser)
+            setCarregando(false)
+        }
+
+        // Depois busca dados atualizados da API
+        buscarDadosUsuario()
+    }, [buscarDadosUsuario])
+
+    const isAuthenticated = !!usuario && !!authService.getToken()
     const isAdmin = usuario?.role === 'ADMIN'
+
+    const logout = useCallback(() => {
+        authService.logout()
+        document.cookie = '@imperium:token=; path=/; max-age=0'
+        setUsuario(null)
+        router.push('/login')
+    }, [router])
 
     return {
         usuario,
         isAuthenticated,
         isAdmin,
         carregando,
-        logout: () => {
-            authService.logout()
-            document.cookie = '@imperium:token=; path=/; max-age=0'
-            router.push('/login')
-        },
+        logout,
+        recarregar: buscarDadosUsuario
     }
 }

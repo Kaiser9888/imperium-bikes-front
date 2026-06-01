@@ -5,6 +5,9 @@ import { Header } from '@/components/layout/Header'
 import { BottomNav } from '@/components/layout/BottomNav'
 import { ArrowLeft, Heart, Star, MapPin, Trash2 } from 'lucide-react'
 import Link from 'next/link'
+import api from '@/lib/api'
+import { authService } from '@/services/authService'
+import { useRouter } from 'next/navigation'
 
 interface Favorito {
     id: number
@@ -22,32 +25,63 @@ interface Favorito {
 }
 
 export default function FavoritosPage() {
+    const router = useRouter()
     const [favoritos, setFavoritos] = useState<Favorito[]>([])
     const [loading, setLoading] = useState(true)
+    const [erro, setErro] = useState('')
 
     useEffect(() => {
-        async function carregar() {
-            setLoading(true)
-            try {
-                // await api.get('/api/favorites')
-                // Dados mockados para visualizacao
-                setFavoritos([
-                    { id: 1, productId: 1, title: 'Trek Marlin 7 2024', price: 4500, brand: 'Trek', year: 2024, condition: 'Nova', location: 'Sao Paulo - SP', rating: 4.8, reviews: 12, image: '/header/mtb.jpg', status: 'ATIVO' },
-                    { id: 2, productId: 2, title: 'Specialized S-Works', price: 8900, brand: 'Specialized', year: 2024, condition: 'Seminova', location: 'Campinas - SP', rating: 5.0, reviews: 8, image: '/header/speed.jpg', status: 'ATIVO' },
-                    { id: 3, productId: 3, title: 'Scott Spark RC', price: 12500, brand: 'Scott', year: 2024, condition: 'Nova', location: 'Rio de Janeiro - RJ', rating: 4.9, reviews: 15, image: '/header/bmx.jpg', status: 'ATIVO' },
-                    { id: 4, productId: 4, title: 'Caloi 10 Vintage', price: 1200, brand: 'Caloi', year: 1980, condition: 'Usada', location: 'Curitiba - PR', rating: 4.5, reviews: 23, image: '/header/downhill1.jpg', status: 'VENDIDO' },
-                ])
-            } catch (error) {
-                console.error('Erro ao carregar favoritos:', error)
-            } finally {
-                setLoading(false)
-            }
+        const token = authService.getToken()
+        if (!token) {
+            router.push('/login?redirect=/favoritos')
+            return
         }
-        carregar()
+        carregarFavoritos()
     }, [])
 
-    const removerFavorito = (id: number) => {
-        setFavoritos(prev => prev.filter(f => f.id !== id))
+    const carregarFavoritos = async () => {
+        setLoading(true)
+        setErro('')
+        try {
+            const response = await api.get('/favorites')
+            const data = response.data
+
+            // Mapeia os dados da API para o formato do componente
+            const favoritosMapeados = (data.content || data || []).map((fav: any) => ({
+                id: fav.id,
+                productId: fav.product?.id || fav.productId,
+                title: fav.product?.title || fav.title || 'Produto',
+                price: fav.product?.price || fav.price || 0,
+                brand: fav.product?.brand || fav.brand || '',
+                year: fav.product?.year || fav.year || 2025,
+                condition: fav.product?.condition || fav.condition || 'USADA',
+                location: fav.product?.location || fav.product?.seller?.city || fav.location || '',
+                rating: fav.product?.averageRating || fav.rating || 0,
+                reviews: fav.product?.reviewCount || fav.reviews || 0,
+                image: fav.product?.images?.[0]?.url || fav.image || null,
+                status: fav.product?.status || fav.status || 'ATIVO'
+            }))
+
+            setFavoritos(favoritosMapeados)
+        } catch (error: any) {
+            console.error('Erro ao carregar favoritos:', error)
+            if (error?.response?.status === 401) {
+                router.push('/login?redirect=/favoritos')
+            } else {
+                setErro('Erro ao carregar favoritos')
+            }
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const removerFavorito = async (id: number) => {
+        try {
+            await api.delete(`/favorites/${id}`)
+            setFavoritos(prev => prev.filter(f => f.id !== id))
+        } catch (error) {
+            console.error('Erro ao remover favorito:', error)
+        }
     }
 
     const formatarPreco = (valor: number) => {
@@ -75,9 +109,9 @@ export default function FavoritosPage() {
             {/* Header */}
             <div style={{ backgroundColor: '#fff', borderBottom: '1px solid #e5e5e5', padding: '10px 16px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <Link href="/" style={{ display: 'flex', padding: '4px' }}>
+                    <button onClick={() => router.back()} style={{ display: 'flex', padding: '4px', background: 'none', border: 'none', cursor: 'pointer' }}>
                         <ArrowLeft size={20} color="#1a1a1a" />
-                    </Link>
+                    </button>
                     <h1 style={{ fontSize: '17px', fontWeight: '700', color: '#1a1a1a' }}>Favoritos</h1>
                     <span style={{ fontSize: '13px', color: '#888' }}>({favoritos.length})</span>
                 </div>
@@ -85,6 +119,12 @@ export default function FavoritosPage() {
 
             {/* Lista */}
             <div style={{ padding: '12px 16px' }}>
+                {erro && (
+                    <div style={{ backgroundColor: '#FEE2E2', padding: '12px', borderRadius: '8px', marginBottom: '12px', color: '#DC2626', fontSize: '13px', textAlign: 'center' }}>
+                        {erro}
+                    </div>
+                )}
+
                 {favoritos.length === 0 ? (
                     <div style={{ textAlign: 'center', padding: '60px 20px' }}>
                         <Heart size={40} color="#ccc" />
@@ -92,7 +132,7 @@ export default function FavoritosPage() {
                             Nenhum favorito salvo
                         </p>
                         <p style={{ fontSize: '13px', color: '#888', marginTop: '4px', marginBottom: '16px' }}>
-                            As bikes que voce favoritar aparecem aqui
+                            As bikes que você favoritar aparecem aqui
                         </p>
                         <Link href="/buscar" style={{
                             display: 'inline-block', padding: '10px 24px',
@@ -112,7 +152,7 @@ export default function FavoritosPage() {
                                     border: '1px solid #e5e5e5', display: 'flex', gap: '12px',
                                     opacity: vendido ? 0.5 : 1, position: 'relative'
                                 }}>
-                                    {/* Imagem clicavel */}
+                                    {/* Imagem clicável */}
                                     <Link href={`/produto/${fav.productId}`} style={{
                                         width: '90px', height: '90px', borderRadius: '8px',
                                         backgroundColor: fav.image ? undefined : '#e5e5e5',
@@ -144,14 +184,16 @@ export default function FavoritosPage() {
                                         <p style={{ fontSize: '16px', fontWeight: '700', color: vendido ? '#999' : '#DC2626', marginBottom: '4px' }}>
                                             {formatarPreco(fav.price)}
                                         </p>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '4px' }}>
-                                            <Star size={12} color="#FFB800" fill="#FFB800" />
-                                            <span style={{ fontSize: '12px', fontWeight: '600', color: '#1a1a1a' }}>{fav.rating}</span>
-                                            <span style={{ fontSize: '11px', color: '#888' }}>({fav.reviews})</span>
-                                        </div>
+                                        {fav.rating > 0 && (
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '4px' }}>
+                                                <Star size={12} color="#FFB800" fill="#FFB800" />
+                                                <span style={{ fontSize: '12px', fontWeight: '600', color: '#1a1a1a' }}>{fav.rating.toFixed(1)}</span>
+                                                <span style={{ fontSize: '11px', color: '#888' }}>({fav.reviews})</span>
+                                            </div>
+                                        )}
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '2px', fontSize: '11px', color: '#888' }}>
                                             <MapPin size={11} />
-                                            <span>{fav.location.split(' - ')[0]}</span>
+                                            <span>{fav.location?.split(' - ')[0] || fav.location}</span>
                                         </div>
                                     </Link>
 
