@@ -1,17 +1,34 @@
 'use client'
 
 import { useState } from 'react'
-import { Eye, EyeOff, Mail, Lock, User, Phone } from 'lucide-react'
+import { Eye, EyeOff, Mail, Lock, User, Phone, ArrowRight, Check } from 'lucide-react'
 import { authService } from '@/services/authService'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+
+// Constantes
+const STEPS = {
+    FORM: 1,
+    VERIFY_EMAIL: 2,
+    SUCCESS: 3
+}
 
 export function RegisterForm() {
-    const [form, setForm] = useState({ fullName: '', email: '', phone: '', password: '', confirmPassword: '' })
+    const router = useRouter()
+    const [step, setStep] = useState(STEPS.FORM)
+    const [form, setForm] = useState({
+        fullName: '',
+        email: '',
+        phone: '',
+        password: '',
+        confirmPassword: ''
+    })
     const [mostrarSenha, setMostrarSenha] = useState(false)
     const [loading, setLoading] = useState(false)
     const [erro, setErro] = useState('')
-    const [sucesso, setSucesso] = useState(false)
+    const [userEmail, setUserEmail] = useState('')
 
+    // Máscara de telefone
     const formatarTelefone = (valor: string) => {
         let numero = valor.replace(/\D/g, '')
         if (numero.length > 11) numero = numero.slice(0, 11)
@@ -21,139 +38,501 @@ export function RegisterForm() {
     }
 
     const handleChange = (field: string, value: string) => {
-        if (field === 'phone') setForm(prev => ({ ...prev, phone: formatarTelefone(value) }))
-        else setForm(prev => ({ ...prev, [field]: value }))
-    }
-
-    const validar = () => {
-        if (!form.fullName || !form.email || !form.phone || !form.password) {
-            setErro('Preencha todos os campos obrigatorios'); return false
+        if (field === 'phone') {
+            setForm(prev => ({ ...prev, phone: formatarTelefone(value) }))
+        } else {
+            setForm(prev => ({ ...prev, [field]: value }))
         }
-        if (form.password.length < 8) { setErro('A senha deve ter no minimo 8 caracteres'); return false }
-        if (form.password !== form.confirmPassword) { setErro('As senhas nao conferem'); return false }
-        if (!form.email.includes('@')) { setErro('Email invalido'); return false }
-        if (form.phone.replace(/\D/g, '').length < 10) { setErro('Telefone incompleto'); return false }
-        return true
+        setErro('')
     }
 
+    // Validação profissional
+    const validar = (): string | null => {
+        const { fullName, email, phone, password, confirmPassword } = form
+
+        if (!fullName.trim() || fullName.trim().length < 3) {
+            return 'Nome completo deve ter pelo menos 3 caracteres'
+        }
+        if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            return 'Email inválido'
+        }
+        if (!phone || phone.replace(/\D/g, '').length < 10) {
+            return 'Telefone incompleto'
+        }
+        if (password.length < 8) {
+            return 'A senha deve ter no mínimo 8 caracteres'
+        }
+        if (password !== confirmPassword) {
+            return 'As senhas não conferem'
+        }
+        return null
+    }
+
+    // Submit do formulário
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         setErro('')
-        if (!validar()) return
+
+        const erroValidacao = validar()
+        if (erroValidacao) {
+            setErro(erroValidacao)
+            return
+        }
+
         setLoading(true)
 
         try {
-            await authService.register({
-                fullName: form.fullName,
-                email: form.email,
+            const payload = {
+                fullName: form.fullName.trim(),
+                email: form.email.trim().toLowerCase(),
                 phone: '+55' + form.phone.replace(/\D/g, ''),
                 password: form.password,
-            })
+            }
 
+            const response = await authService.register(payload)
+
+            // Salva o email para mostrar na tela de verificação
+            setUserEmail(form.email)
+
+            // Salva token e redireciona
             const token = authService.getToken()
             if (token) {
                 document.cookie = `@imperium:token=${token}; path=/; max-age=86400; SameSite=Lax`
             }
 
-            setSucesso(true)
-            setTimeout(() => { window.location.href = '/' }, 2000)
-        } catch (error: unknown) {
-            if (error && typeof error === 'object' && 'response' in error) {
-                const err = error as { response?: { status?: number } }
-                if (err.response?.status === 409) setErro('Email ja cadastrado')
-                else setErro('Erro ao cadastrar. Tente novamente')
+            // Mostra tela de sucesso com instruções
+            setStep(STEPS.VERIFY_EMAIL)
+
+        } catch (error: any) {
+            console.error('Erro no cadastro:', error)
+
+            if (error?.response?.status === 409) {
+                setErro('Este email já está cadastrado')
+            } else if (error?.response?.status === 400) {
+                const mensagem = error?.response?.data?.message || 'Dados inválidos'
+                setErro(mensagem)
+            } else if (error?.message?.includes('Network Error')) {
+                setErro('Erro de conexão. Verifique sua internet.')
             } else {
-                setErro('Erro ao conectar. Tente novamente')
+                setErro('Erro ao criar conta. Tente novamente.')
             }
         } finally {
             setLoading(false)
         }
     }
 
-    if (sucesso) {
+    // ============ RENDERIZAÇÃO ============
+
+    // STEP 2: Tela de verificação de email
+    if (step === STEPS.VERIFY_EMAIL) {
         return (
-            <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#000', position: 'relative' }}>
-                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundImage: 'url(/header/cadastrodownhill.jpg)', backgroundSize: 'cover', backgroundPosition: 'center', filter: 'brightness(0.3)' }} />
-                <div style={{ position: 'relative', zIndex: 1, textAlign: 'center', padding: '24px' }}>
-                    <div style={{ width: '80px', height: '80px', borderRadius: '50%', backgroundColor: '#16A34A', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
-                        <span style={{ fontSize: '40px', color: '#fff' }}>OK</span>
+            <div className="verification-screen">
+                <div className="verification-bg" />
+                <div className="verification-content">
+                    <div className="verification-icon">
+                        <Mail size={48} color="#DC2626" />
                     </div>
-                    <h2 style={{ color: '#fff', fontSize: '22px', marginBottom: '8px' }}>Conta criada!</h2>
-                    <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '14px' }}>Redirecionando...</p>
+                    <h2 className="verification-title">Verifique seu email</h2>
+                    <p className="verification-text">
+                        Enviamos um link de confirmação para <strong>{userEmail}</strong>
+                    </p>
+                    <p className="verification-subtext">
+                        Clique no link recebido para ativar sua conta.
+                        Verifique também a pasta de spam.
+                    </p>
+                    <button
+                        onClick={() => router.push('/')}
+                        className="verification-btn"
+                    >
+                        Ir para Home <ArrowRight size={18} />
+                    </button>
+                    <p className="verification-skip" onClick={() => router.push('/login')}>
+                        Já verificou? Fazer login
+                    </p>
                 </div>
+
+                <style jsx>{`
+                    .verification-screen {
+                        min-height: 100vh;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        background: #000;
+                        position: relative;
+                    }
+                    .verification-bg {
+                        position: absolute;
+                        inset: 0;
+                        background-image: url('/header/cadastrodownhill.jpg');
+                        background-size: cover;
+                        background-position: center;
+                        filter: brightness(0.25);
+                    }
+                    .verification-content {
+                        position: relative;
+                        z-index: 1;
+                        text-align: center;
+                        padding: 40px 24px;
+                        max-width: 420px;
+                    }
+                    .verification-icon {
+                        width: 80px;
+                        height: 80px;
+                        border-radius: 50%;
+                        background: rgba(220, 38, 38, 0.15);
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        margin: 0 auto 24px;
+                    }
+                    .verification-title {
+                        color: #fff;
+                        font-size: 24px;
+                        font-weight: bold;
+                        margin-bottom: 12px;
+                    }
+                    .verification-text {
+                        color: rgba(255,255,255,0.8);
+                        font-size: 15px;
+                        margin-bottom: 8px;
+                    }
+                    .verification-subtext {
+                        color: rgba(255,255,255,0.5);
+                        font-size: 13px;
+                        margin-bottom: 32px;
+                    }
+                    .verification-btn {
+                        width: 100%;
+                        padding: 14px;
+                        background: #DC2626;
+                        color: #fff;
+                        border: none;
+                        border-radius: 12px;
+                        font-size: 16px;
+                        font-weight: 600;
+                        cursor: pointer;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        gap: 8px;
+                    }
+                    .verification-btn:hover {
+                        background: #b91c1c;
+                    }
+                    .verification-skip {
+                        color: rgba(255,255,255,0.5);
+                        font-size: 13px;
+                        margin-top: 20px;
+                        cursor: pointer;
+                    }
+                    .verification-skip:hover {
+                        color: #DC2626;
+                    }
+                `}</style>
             </div>
         )
     }
 
+    // STEP 1: Formulário de cadastro
     return (
-        <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', position: 'relative', backgroundColor: '#000' }}>
-            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundImage: 'url(/header/cadastrodownhill.jpg)', backgroundSize: 'cover', backgroundPosition: 'center', filter: 'brightness(0.3)' }} />
-            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0.7), rgba(0,0,0,0.9))' }} />
+        <div className="register-screen">
+            <div className="register-bg" />
+            <div className="register-overlay" />
 
-            <div style={{ position: 'relative', zIndex: 1, flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '24px' }}>
-                <div style={{ width: '100%', maxWidth: '400px', margin: '0 auto' }}>
-                    <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-                        <span style={{ fontSize: '28px', fontWeight: 'bold', color: '#DC2626', letterSpacing: '4px' }}>IMPERIUM</span>
-                        <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.6)', marginTop: '8px' }}>Crie sua conta</p>
+            <div className="register-container">
+                <div className="register-card">
+                    {/* Header */}
+                    <div className="register-header">
+                        <span className="register-logo">IMPERIUM</span>
+                        <p className="register-subtitle">Crie sua conta</p>
                     </div>
 
+                    {/* Erro */}
                     {erro && (
-                        <div style={{ backgroundColor: 'rgba(220,38,38,0.15)', border: '1px solid rgba(220,38,38,0.3)', borderRadius: '10px', padding: '12px 16px', marginBottom: '16px', color: '#EF4444', fontSize: '14px', textAlign: 'center' }}>{erro}</div>
+                        <div className="register-error">
+                            {erro}
+                        </div>
                     )}
 
-                    <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                        <InputField icon={<User size={18} color="#999" />} label="Nome completo" placeholder="Seu nome" value={form.fullName} onChange={(v) => handleChange('fullName', v)} />
-                        <InputField icon={<Mail size={18} color="#999" />} label="Email" placeholder="seu@email.com" type="email" value={form.email} onChange={(v) => handleChange('email', v)} />
-                        <InputField icon={<Phone size={18} color="#999" />} label="Telefone" placeholder="(11) 99999-9999" type="tel" value={form.phone} onChange={(v) => handleChange('phone', v)} />
+                    {/* Formulário */}
+                    <form onSubmit={handleSubmit} className="register-form">
+                        <InputField
+                            icon={<User size={18} color="#999" />}
+                            label="Nome completo"
+                            placeholder="Seu nome completo"
+                            value={form.fullName}
+                            onChange={(v) => handleChange('fullName', v)}
+                            autoComplete="name"
+                        />
 
-                        <div>
-                            <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: 'rgba(255,255,255,0.8)', marginBottom: '6px' }}>Senha (minimo 8 caracteres)</label>
-                            <div style={{ position: 'relative' }}>
-                                <Lock size={18} color="#999" style={{ position: 'absolute', left: '14px', top: '14px' }} />
-                                <input type={mostrarSenha ? 'text' : 'password'} value={form.password} onChange={(e) => handleChange('password', e.target.value)} placeholder="Minimo 8 caracteres"
-                                       style={{ width: '100%', padding: '14px 14px 14px 42px', backgroundColor: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '12px', fontSize: '15px', color: '#fff', outline: 'none' }} />
-                                <button type="button" onClick={() => setMostrarSenha(!mostrarSenha)} style={{ position: 'absolute', right: '14px', top: '14px', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+                        <InputField
+                            icon={<Mail size={18} color="#999" />}
+                            label="Email"
+                            placeholder="seu@email.com"
+                            type="email"
+                            value={form.email}
+                            onChange={(v) => handleChange('email', v)}
+                            autoComplete="email"
+                        />
+
+                        <InputField
+                            icon={<Phone size={18} color="#999" />}
+                            label="Telefone"
+                            placeholder="(11) 99999-9999"
+                            type="tel"
+                            value={form.phone}
+                            onChange={(v) => handleChange('phone', v)}
+                            autoComplete="tel"
+                        />
+
+                        {/* Senha */}
+                        <div className="input-group">
+                            <label className="input-label">Senha (mínimo 8 caracteres)</label>
+                            <div className="input-wrapper">
+                                <Lock size={18} color="#999" className="input-icon" />
+                                <input
+                                    type={mostrarSenha ? 'text' : 'password'}
+                                    value={form.password}
+                                    onChange={(e) => handleChange('password', e.target.value)}
+                                    placeholder="Mínimo 8 caracteres"
+                                    className="input-field"
+                                    autoComplete="new-password"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setMostrarSenha(!mostrarSenha)}
+                                    className="input-toggle"
+                                    aria-label={mostrarSenha ? 'Ocultar senha' : 'Mostrar senha'}
+                                >
                                     {mostrarSenha ? <EyeOff size={18} color="#999" /> : <Eye size={18} color="#999" />}
                                 </button>
                             </div>
                         </div>
 
-                        <div>
-                            <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: 'rgba(255,255,255,0.8)', marginBottom: '6px' }}>Confirmar senha</label>
-                            <div style={{ position: 'relative' }}>
-                                <Lock size={18} color="#999" style={{ position: 'absolute', left: '14px', top: '14px' }} />
-                                <input type={mostrarSenha ? 'text' : 'password'} value={form.confirmPassword} onChange={(e) => handleChange('confirmPassword', e.target.value)} placeholder="Repita a senha"
-                                       style={{ width: '100%', padding: '14px 14px 14px 42px', backgroundColor: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '12px', fontSize: '15px', color: '#fff', outline: 'none' }} />
+                        {/* Confirmar Senha */}
+                        <div className="input-group">
+                            <label className="input-label">Confirmar senha</label>
+                            <div className="input-wrapper">
+                                <Lock size={18} color="#999" className="input-icon" />
+                                <input
+                                    type={mostrarSenha ? 'text' : 'password'}
+                                    value={form.confirmPassword}
+                                    onChange={(e) => handleChange('confirmPassword', e.target.value)}
+                                    placeholder="Repita a senha"
+                                    className="input-field"
+                                    autoComplete="new-password"
+                                />
                             </div>
                         </div>
 
-                        <button type="submit" disabled={loading} style={{
-                            width: '100%', padding: '15px', backgroundColor: loading ? '#991b1b' : '#DC2626',
-                            color: '#fff', border: 'none', borderRadius: '12px', fontSize: '16px',
-                            fontWeight: 'bold', cursor: loading ? 'not-allowed' : 'pointer', marginTop: '8px'
-                        }}>{loading ? 'Criando conta...' : 'Criar conta'}</button>
+                        {/* Botão */}
+                        <button
+                            type="submit"
+                            disabled={loading}
+                            className="register-submit"
+                        >
+                            {loading ? (
+                                <>Criando conta...</>
+                            ) : (
+                                <>Criar conta <ArrowRight size={18} /></>
+                            )}
+                        </button>
                     </form>
 
-                    <p style={{ textAlign: 'center', fontSize: '14px', color: 'rgba(255,255,255,0.6)', marginTop: '24px' }}>
-                        Ja tem uma conta?{' '}
-                        <Link href="/login" style={{ color: '#EF4444', fontWeight: '600', textDecoration: 'none' }}>Entrar</Link>
+                    {/* Link para login */}
+                    <p className="register-login-link">
+                        Já tem uma conta?{' '}
+                        <Link href="/login">Entrar</Link>
                     </p>
                 </div>
             </div>
+
+            <style jsx>{`
+                .register-screen {
+                    min-height: 100vh;
+                    display: flex;
+                    position: relative;
+                    background: #000;
+                }
+                .register-bg {
+                    position: absolute;
+                    inset: 0;
+                    background-image: url('/header/cadastrodownhill.jpg');
+                    background-size: cover;
+                    background-position: center;
+                    filter: brightness(0.3);
+                }
+                .register-overlay {
+                    position: absolute;
+                    inset: 0;
+                    background: linear-gradient(to bottom, rgba(0,0,0,0.7), rgba(0,0,0,0.9));
+                }
+                .register-container {
+                    position: relative;
+                    z-index: 1;
+                    flex: 1;
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: center;
+                    padding: 24px;
+                }
+                .register-card {
+                    width: 100%;
+                    max-width: 420px;
+                    margin: 0 auto;
+                }
+                .register-header {
+                    text-align: center;
+                    margin-bottom: 32px;
+                }
+                .register-logo {
+                    font-size: 28px;
+                    font-weight: bold;
+                    color: #DC2626;
+                    letter-spacing: 4px;
+                }
+                .register-subtitle {
+                    font-size: 14px;
+                    color: rgba(255,255,255,0.6);
+                    margin-top: 8px;
+                }
+                .register-error {
+                    background: rgba(220,38,38,0.15);
+                    border: 1px solid rgba(220,38,38,0.3);
+                    border-radius: 10px;
+                    padding: 12px 16px;
+                    margin-bottom: 16px;
+                    color: #EF4444;
+                    font-size: 14px;
+                    text-align: center;
+                }
+                .register-form {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 14px;
+                }
+                .register-submit {
+                    width: 100%;
+                    padding: 15px;
+                    background: #DC2626;
+                    color: #fff;
+                    border: none;
+                    border-radius: 12px;
+                    font-size: 16px;
+                    font-weight: bold;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 8px;
+                    margin-top: 8px;
+                    transition: background 0.2s;
+                }
+                .register-submit:hover:not(:disabled) {
+                    background: #b91c1c;
+                }
+                .register-submit:disabled {
+                    background: #991b1b;
+                    cursor: not-allowed;
+                    opacity: 0.7;
+                }
+                .register-login-link {
+                    text-align: center;
+                    font-size: 14px;
+                    color: rgba(255,255,255,0.6);
+                    margin-top: 24px;
+                }
+                .register-login-link a {
+                    color: #EF4444;
+                    font-weight: 600;
+                    text-decoration: none;
+                }
+                .register-login-link a:hover {
+                    text-decoration: underline;
+                }
+
+                /* Input styles */
+                .input-group {
+                    display: flex;
+                    flex-direction: column;
+                }
+                .input-label {
+                    font-size: 13px;
+                    font-weight: 600;
+                    color: rgba(255,255,255,0.8);
+                    margin-bottom: 6px;
+                }
+                .input-wrapper {
+                    position: relative;
+                }
+                .input-icon {
+                    position: absolute;
+                    left: 14px;
+                    top: 14px;
+                    pointer-events: none;
+                }
+                .input-field {
+                    width: 100%;
+                    padding: 14px 14px 14px 42px;
+                    background: rgba(255,255,255,0.08);
+                    border: 1px solid rgba(255,255,255,0.15);
+                    border-radius: 12px;
+                    font-size: 15px;
+                    color: #fff;
+                    outline: none;
+                    transition: border-color 0.2s;
+                }
+                .input-field:focus {
+                    border-color: #DC2626;
+                }
+                .input-field::placeholder {
+                    color: rgba(255,255,255,0.3);
+                }
+                .input-toggle {
+                    position: absolute;
+                    right: 14px;
+                    top: 14px;
+                    background: none;
+                    border: none;
+                    cursor: pointer;
+                    padding: 0;
+                }
+            `}</style>
         </div>
     )
 }
 
-function InputField({ icon, label, placeholder, type = 'text', value, onChange }: {
-    icon: React.ReactNode; label: string; placeholder: string; type?: string; value: string; onChange: (value: string) => void
+// Componente Input reutilizável
+function InputField({
+                        icon,
+                        label,
+                        placeholder,
+                        type = 'text',
+                        value,
+                        onChange,
+                        autoComplete
+                    }: {
+    icon: React.ReactNode
+    label: string
+    placeholder: string
+    type?: string
+    value: string
+    onChange: (value: string) => void
+    autoComplete?: string
 }) {
     return (
-        <div>
-            <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: 'rgba(255,255,255,0.8)', marginBottom: '6px' }}>{label}</label>
-            <div style={{ position: 'relative' }}>
-                <div style={{ position: 'absolute', left: '14px', top: '14px' }}>{icon}</div>
-                <input type={type} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder}
-                       style={{ width: '100%', padding: '14px 14px 14px 42px', backgroundColor: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '12px', fontSize: '15px', color: '#fff', outline: 'none' }} />
+        <div className="input-group">
+            <label className="input-label">{label}</label>
+            <div className="input-wrapper">
+                <span className="input-icon">{icon}</span>
+                <input
+                    type={type}
+                    value={value}
+                    onChange={(e) => onChange(e.target.value)}
+                    placeholder={placeholder}
+                    className="input-field"
+                    autoComplete={autoComplete}
+                />
             </div>
         </div>
     )
