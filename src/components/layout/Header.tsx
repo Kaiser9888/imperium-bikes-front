@@ -1,39 +1,61 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Bell, ShoppingCart, Menu, X, User, LogOut, Settings, Heart, MessageCircle } from 'lucide-react'
+import { useState } from 'react'
+import { Bell, Menu, X, User, LogOut, Settings, MessageCircle } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { authService } from '@/services/authService'
 
+interface UserInfo {
+    fullName: string
+    email: string
+    avatarUrl?: string | null
+}
+
+function getAuthState() {
+    if (typeof window === 'undefined') {
+        return { isAuthenticated: false, usuario: null }
+    }
+    const token = authService.getToken()
+    const user = authService.getUsuario()
+    return {
+        isAuthenticated: !!token,
+        usuario: user ? {
+            fullName: user.fullName || '',
+            email: user.email || '',
+            avatarUrl: user.avatarUrl || null
+        } : null
+    }
+}
+
 export function Header() {
     const router = useRouter()
     const [menuOpen, setMenuOpen] = useState(false)
-    const [isAuthenticated, setIsAuthenticated] = useState(false)
-    const [usuario, setUsuario] = useState<any>(null)
+    const [authState, setAuthState] = useState(getAuthState)
 
-    useEffect(() => {
-        const token = authService.getToken()
-        const user = authService.getUsuario()
-        setIsAuthenticated(!!token)
-        setUsuario(user)
-    }, [menuOpen]) // Atualiza quando menu abre/fecha
+    const refreshAuth = () => {
+        setAuthState(getAuthState())
+    }
+
+    const handleMenuToggle = () => {
+        if (!menuOpen) refreshAuth()
+        setMenuOpen(prev => !prev)
+    }
 
     const handleLogout = () => {
         authService.logout()
         setMenuOpen(false)
-        setIsAuthenticated(false)
-        setUsuario(null)
+        setAuthState({ isAuthenticated: false, usuario: null })
         router.push('/')
     }
 
+    const { isAuthenticated, usuario } = authState
     const nomeInicial = usuario?.fullName?.charAt(0)?.toUpperCase() || '?'
 
     return (
         <>
             <header style={headerStyle}>
-                {/* Logo */}
                 <Link href="/" style={{ display: 'flex', alignItems: 'center' }}>
                     <Image
                         src="/logo.png"
@@ -41,14 +63,10 @@ export function Header() {
                         width={160}
                         height={40}
                         priority
-                        style={{
-                            objectFit: 'contain',
-                            flexShrink: 0
-                        }}
+                        style={{ objectFit: 'contain', flexShrink: 0 }}
                     />
                 </Link>
 
-                {/* Ícones */}
                 <div style={iconsContainer}>
                     {isAuthenticated && (
                         <>
@@ -60,18 +78,16 @@ export function Header() {
                             </button>
                         </>
                     )}
-                    <button style={iconBtn} onClick={() => setMenuOpen(!menuOpen)} aria-label="Menu">
+                    <button style={iconBtn} onClick={handleMenuToggle} aria-label="Menu">
                         {menuOpen ? <X size={19} color="#fff" /> : <Menu size={19} color="#fff" />}
                     </button>
                 </div>
             </header>
 
-            {/* Menu Hamburguer */}
             {menuOpen && (
                 <div style={overlay}>
                     <div style={overlayBg} onClick={() => setMenuOpen(false)} />
                     <div style={menuPanel}>
-                        {/* Usuário logado */}
                         {isAuthenticated && usuario && (
                             <div style={userSection}>
                                 <div style={avatarStyle}>
@@ -88,7 +104,6 @@ export function Header() {
                             </div>
                         )}
 
-                        {/* Itens do menu */}
                         <div style={menuItems}>
                             <MenuItem icon="🎥" label="Vídeos" href="/videos" onClick={() => setMenuOpen(false)} />
                             <MenuItem icon="💬" label="Fórum" href="/forum" onClick={() => setMenuOpen(false)} />
@@ -128,189 +143,96 @@ export function Header() {
     )
 }
 
-// Componente MenuItem reutilizável
 function MenuItem({ icon, label, href, onClick }: { icon: string; label: string; href: string; onClick: () => void }) {
     return (
-        <button
-            style={menuItemStyle}
-            onClick={() => {
-                onClick()
-                window.location.href = href
-            }}
-        >
+        <button style={menuItemStyle} onClick={() => { onClick(); window.location.href = href; }}>
             <span>{icon}</span>
             <span>{label}</span>
         </button>
     )
 }
 
-// ============ ESTILOS ============
-
 const headerStyle: React.CSSProperties = {
-    position: 'sticky',
-    top: 0,
-    zIndex: 50,
-    backgroundColor: '#000000',
-    borderBottom: '1px solid rgba(255,255,255,0.04)',
-    padding: '6px 12px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between'
+    position: 'sticky', top: 0, zIndex: 50, backgroundColor: '#000000',
+    borderBottom: '1px solid rgba(255,255,255,0.04)', padding: '6px 12px',
+    display: 'flex', alignItems: 'center', justifyContent: 'space-between'
 }
 
 const iconsContainer: React.CSSProperties = {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    flexShrink: 0
+    display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0
 }
 
 const iconBtn: React.CSSProperties = {
-    background: 'none',
-    border: 'none',
-    cursor: 'pointer',
-    padding: '6px',
-    opacity: 0.85,
-    display: 'flex',
-    borderRadius: '50%',
-    transition: 'opacity 0.2s'
+    background: 'none', border: 'none', cursor: 'pointer', padding: '6px',
+    opacity: 0.85, display: 'flex', borderRadius: '50%', transition: 'opacity 0.2s'
 }
 
 const overlay: React.CSSProperties = {
-    position: 'fixed',
-    top: 0, left: 0, right: 0, bottom: 0,
-    zIndex: 60
+    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 60
 }
 
 const overlayBg: React.CSSProperties = {
-    position: 'absolute',
-    top: 0, left: 0, right: 0, bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.6)'
+    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)'
 }
 
 const menuPanel: React.CSSProperties = {
-    position: 'absolute',
-    top: 0, right: 0,
-    width: '300px',
-    height: '100%',
-    backgroundColor: '#0a0a0a',
-    padding: '20px',
-    borderLeft: '1px solid #222',
-    overflowY: 'auto',
-    display: 'flex',
-    flexDirection: 'column'
+    position: 'absolute', top: 0, right: 0, width: '300px', height: '100%',
+    backgroundColor: '#0a0a0a', padding: '20px', borderLeft: '1px solid #222',
+    overflowY: 'auto', display: 'flex', flexDirection: 'column'
 }
 
 const userSection: React.CSSProperties = {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-    padding: '8px 0 20px',
-    borderBottom: '1px solid #222',
-    marginBottom: '20px'
+    display: 'flex', alignItems: 'center', gap: '12px', padding: '8px 0 20px',
+    borderBottom: '1px solid #222', marginBottom: '20px'
 }
 
 const avatarStyle: React.CSSProperties = {
-    width: '44px',
-    height: '44px',
-    borderRadius: '50%',
+    width: '44px', height: '44px', borderRadius: '50%',
     background: 'linear-gradient(135deg, #DC2626, #991b1b)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: '20px',
-    fontWeight: 'bold',
-    color: '#fff',
-    flexShrink: 0,
-    overflow: 'hidden'
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    fontSize: '20px', fontWeight: 'bold', color: '#fff', flexShrink: 0, overflow: 'hidden'
 }
 
 const userName: React.CSSProperties = {
-    fontSize: '15px',
-    fontWeight: '600',
-    color: '#fff',
-    margin: 0,
-    whiteSpace: 'nowrap',
-    overflow: 'hidden',
-    textOverflow: 'ellipsis'
+    fontSize: '15px', fontWeight: '600', color: '#fff', margin: 0,
+    whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'
 }
 
 const userEmail: React.CSSProperties = {
-    fontSize: '12px',
-    color: '#888',
-    margin: '2px 0 0',
-    whiteSpace: 'nowrap',
-    overflow: 'hidden',
-    textOverflow: 'ellipsis'
+    fontSize: '12px', color: '#888', margin: '2px 0 0',
+    whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'
 }
 
 const menuItems: React.CSSProperties = {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '2px',
-    flex: 1
+    display: 'flex', flexDirection: 'column', gap: '2px', flex: 1
 }
 
 const menuItemStyle: React.CSSProperties = {
-    width: '100%',
-    padding: '13px 16px',
-    backgroundColor: 'transparent',
-    border: 'none',
-    borderRadius: '8px',
-    fontSize: '15px',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-    cursor: 'pointer',
-    color: '#ccc',
-    textAlign: 'left' as const,
-    transition: 'background-color 0.15s'
+    width: '100%', padding: '13px 16px', backgroundColor: 'transparent',
+    border: 'none', borderRadius: '8px', fontSize: '15px', display: 'flex',
+    alignItems: 'center', gap: '12px', cursor: 'pointer', color: '#ccc',
+    textAlign: 'left' as const, transition: 'background-color 0.15s'
 }
 
 const menuFooter: React.CSSProperties = {
-    marginTop: '20px',
-    paddingTop: '20px',
-    borderTop: '1px solid #222',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '8px'
+    marginTop: '20px', paddingTop: '20px', borderTop: '1px solid #222',
+    display: 'flex', flexDirection: 'column', gap: '8px'
 }
 
 const menuFooterBtn: React.CSSProperties = {
-    width: '100%',
-    padding: '12px 16px',
-    backgroundColor: 'transparent',
-    border: 'none',
-    borderRadius: '8px',
-    fontSize: '14px',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
-    cursor: 'pointer',
-    color: '#ccc',
+    width: '100%', padding: '12px 16px', backgroundColor: 'transparent',
+    border: 'none', borderRadius: '8px', fontSize: '14px', display: 'flex',
+    alignItems: 'center', gap: '10px', cursor: 'pointer', color: '#ccc',
     textAlign: 'left' as const
 }
 
 const loginBtn: React.CSSProperties = {
-    width: '100%',
-    padding: '14px',
-    backgroundColor: '#DC2626',
-    color: '#fff',
-    border: 'none',
-    borderRadius: '8px',
-    fontSize: '15px',
-    fontWeight: 'bold',
-    cursor: 'pointer'
+    width: '100%', padding: '14px', backgroundColor: '#DC2626', color: '#fff',
+    border: 'none', borderRadius: '8px', fontSize: '15px', fontWeight: 'bold', cursor: 'pointer'
 }
 
 const registerBtn: React.CSSProperties = {
-    width: '100%',
-    padding: '14px',
-    backgroundColor: 'transparent',
-    color: '#fff',
-    border: '1px solid rgba(255,255,255,0.2)',
-    borderRadius: '8px',
-    fontSize: '15px',
-    fontWeight: '600',
-    cursor: 'pointer'
+    width: '100%', padding: '14px', backgroundColor: 'transparent', color: '#fff',
+    border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px', fontSize: '15px',
+    fontWeight: '600', cursor: 'pointer'
 }
