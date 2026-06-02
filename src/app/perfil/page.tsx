@@ -1,6 +1,6 @@
-/* eslint-disable react-hooks/set-state-in-effect */
 'use client'
-import { useState, useEffect, useCallback } from 'react'
+
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import {
     ArrowLeft, Settings, MapPin, Star, Calendar,
@@ -10,7 +10,6 @@ import {
 import { authService } from '@/services/authService'
 import api from '@/lib/api'
 
-// Interfaces tipadas
 interface UserData {
     name: string
     username: string
@@ -59,13 +58,6 @@ interface Avaliacao {
 
 type TabKey = 'produtos' | 'posts' | 'torneios' | 'avaliacoes'
 
-const TABS: { key: TabKey; icon: React.ElementType; label: string }[] = [
-    { key: 'produtos', icon: Bike, label: 'Produtos' },
-    { key: 'posts', icon: Grid3X3, label: 'Posts' },
-    { key: 'torneios', icon: Trophy, label: 'Torneios' },
-    { key: 'avaliacoes', icon: Award, label: 'Avaliações' },
-]
-
 export default function PerfilPage() {
     const router = useRouter()
     const [tabAtiva, setTabAtiva] = useState<TabKey>('produtos')
@@ -75,61 +67,67 @@ export default function PerfilPage() {
     const [torneios, setTorneios] = useState<Torneio[]>([])
     const [avaliacoes, setAvaliacoes] = useState<Avaliacao[]>([])
 
-    const carregarDados = useCallback(async () => {
-        setLoading(true)
-        try {
+    useEffect(() => {
+        let cancelled = false
+
+        async function load() {
             const token = authService.getToken()
             if (!token) {
                 router.push('/login')
-                setLoading(false)
                 return
             }
 
-            const userResponse = await api.get('/users/me')
-            const userData = userResponse.data as Record<string, unknown>
+            setLoading(true)
+            try {
+                const userResponse = await api.get('/users/me')
+                if (cancelled) return
+                const userData = userResponse.data as Record<string, unknown>
 
-            setUsuario({
-                name: (userData.fullName as string) || 'Usuário',
-                username: '@' + ((userData.fullName as string) || 'usuario').toLowerCase().replace(/\s/g, '_'),
-                bio: (userData.bio as string) || 'Sem bio',
-                avatar: (userData.avatarUrl as string) || null,
-                city: (userData.city as string) || 'São Paulo',
-                state: (userData.state as string) || 'SP',
-                reputation: (userData.reputationScore as number) || 0,
-                memberSince: userData.createdAt
-                    ? new Date(userData.createdAt as string).getFullYear().toString()
-                    : '2025',
-                produtos: (userData.totalSales as number) || 0,
-                posts: 0,
-                seguidores: 0,
-                seguindo: 0,
-            })
+                if (!cancelled) {
+                    setUsuario({
+                        name: (userData.fullName as string) || 'Usuário',
+                        username: '@' + ((userData.fullName as string) || 'usuario').toLowerCase().replace(/\s/g, '_'),
+                        bio: (userData.bio as string) || 'Sem bio',
+                        avatar: (userData.avatarUrl as string) || null,
+                        city: (userData.city as string) || 'São Paulo',
+                        state: (userData.state as string) || 'SP',
+                        reputation: (userData.reputationScore as number) || 0,
+                        memberSince: userData.createdAt
+                            ? new Date(userData.createdAt as string).getFullYear().toString()
+                            : '2025',
+                        produtos: (userData.totalSales as number) || 0,
+                        posts: 0,
+                        seguidores: 0,
+                        seguindo: 0,
+                    })
+                }
 
-            const [prodRes, tornRes, avalRes] = await Promise.all([
-                api.get('/products/my'),
-                api.get('/tournaments/my'),
-                api.get('/reviews/received'),
-            ])
+                const [prodRes, tornRes, avalRes] = await Promise.all([
+                    api.get('/products/my'),
+                    api.get('/tournaments/my'),
+                    api.get('/reviews/received'),
+                ])
+                if (cancelled) return
 
-            const prodData = prodRes.data as { content?: Produto[] }
-            setProdutos(prodData.content || [])
+                const prodData = prodRes.data as { content?: Produto[] }
+                const tornData = tornRes.data as Torneio[]
+                const avalData = avalRes.data as { content?: Avaliacao[] }
 
-            const tornData = tornRes.data as Torneio[]
-            setTorneios(Array.isArray(tornData) ? tornData : [])
-
-            const avalData = avalRes.data as { content?: Avaliacao[] }
-            setAvaliacoes(avalData.content || [])
-
-        } catch {
-            console.error('Erro ao carregar perfil')
-        } finally {
-            setLoading(false)
+                if (!cancelled) {
+                    setProdutos(prodData.content || [])
+                    setTorneios(Array.isArray(tornData) ? tornData : [])
+                    setAvaliacoes(avalData.content || [])
+                }
+            } catch {
+                // silencioso
+            } finally {
+                if (!cancelled) setLoading(false)
+            }
         }
-    }, [router])
 
-    useEffect(() => {
-        carregarDados()
-    }, [carregarDados])
+        load()
+        return () => { cancelled = true }
+    }, [router])
 
     if (loading) {
         return (
@@ -151,13 +149,11 @@ export default function PerfilPage() {
     }
 
     const nomeInicial = usuario.name.charAt(0).toUpperCase()
-
     const formatarPreco = (valor: number): string =>
         new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor)
 
     return (
         <div style={pageStyle}>
-            {/* Header */}
             <div style={topBarStyle}>
                 <button onClick={() => router.back()} style={headerBtn}><ArrowLeft size={20} color="#1a1a1a" /></button>
                 <span style={topBarTitle}>{usuario.username}</span>
@@ -167,14 +163,13 @@ export default function PerfilPage() {
                 </div>
             </div>
 
-            {/* Perfil Info */}
             <div style={profileSection}>
                 <div style={profileRow}>
                     <div style={{
                         ...avatarStyle,
-                        background: usuario.avatar ? `url(${usuario.avatar})` : 'linear-gradient(135deg, #DC2626, #991b1b)',
-                        backgroundSize: 'cover',
-                        backgroundPosition: 'center',
+                        background: usuario.avatar
+                            ? `url(${usuario.avatar}) center/cover no-repeat`
+                            : 'linear-gradient(135deg, #DC2626, #991b1b)',
                     }}>
                         {!usuario.avatar && nomeInicial}
                         <div style={cameraBadge}><Camera size={13} color="#fff" /></div>
@@ -202,7 +197,6 @@ export default function PerfilPage() {
                 </div>
             </div>
 
-            {/* Tabs */}
             <div style={tabsContainer}>
                 {TABS.map((tab) => {
                     const isActive = tabAtiva === tab.key
@@ -225,7 +219,6 @@ export default function PerfilPage() {
                 })}
             </div>
 
-            {/* Conteúdo */}
             <div style={contentStyle}>
                 {tabAtiva === 'produtos' && (
                     produtos.length === 0 ? (
@@ -273,8 +266,7 @@ export default function PerfilPage() {
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                                                     {t.podium && <Medal size={14} color="#FFB800" />}
                                                     <span style={{
-                                                        fontSize: '13px',
-                                                        fontWeight: '700',
+                                                        fontSize: '13px', fontWeight: '700',
                                                         color: t.podium ? '#1a1a1a' : '#888',
                                                     }}>
                                                         {t.position || t.posicao}
@@ -300,12 +292,8 @@ export default function PerfilPage() {
                                         <span style={reviewName}>{a.reviewerName || a.nome}</span>
                                         <div style={{ display: 'flex', gap: '1px' }}>
                                             {[1, 2, 3, 4, 5].map((n) => (
-                                                <Star
-                                                    key={n}
-                                                    size={11}
-                                                    color="#FFB800"
-                                                    fill={n <= (a.rating || a.nota || 0) ? '#FFB800' : 'none'}
-                                                />
+                                                <Star key={n} size={11} color="#FFB800"
+                                                      fill={n <= (a.rating || a.nota || 0) ? '#FFB800' : 'none'} />
                                             ))}
                                         </div>
                                     </div>
@@ -321,7 +309,6 @@ export default function PerfilPage() {
     )
 }
 
-// Subcomponentes
 function Stat({ valor, label }: { valor: number; label: string }) {
     return (
         <div style={{ textAlign: 'center' }}>
@@ -353,7 +340,13 @@ function Empty({ icon, title, desc }: { icon: React.ReactNode; title: string; de
     )
 }
 
-// Estilos
+const TABS: { key: TabKey; icon: React.ElementType; label: string }[] = [
+    { key: 'produtos', icon: Bike, label: 'Produtos' },
+    { key: 'posts', icon: Grid3X3, label: 'Posts' },
+    { key: 'torneios', icon: Trophy, label: 'Torneios' },
+    { key: 'avaliacoes', icon: Award, label: 'Avaliações' },
+]
+
 const centerStyle: React.CSSProperties = {
     minHeight: '100vh', backgroundColor: '#f5f5f5',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -396,14 +389,10 @@ const cameraBadge: React.CSSProperties = {
     display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
 }
 
-const statsRow: React.CSSProperties = {
-    display: 'flex', gap: '18px', flex: 1, justifyContent: 'center',
-}
-
+const statsRow: React.CSSProperties = { display: 'flex', gap: '18px', flex: 1, justifyContent: 'center' }
 const nameStyle: React.CSSProperties = { fontSize: '16px', fontWeight: '700', color: '#1a1a1a', marginBottom: '2px' }
 const usernameStyle: React.CSSProperties = { fontSize: '13px', color: '#888', marginBottom: '8px' }
 const bioStyle: React.CSSProperties = { fontSize: '13px', color: '#444', lineHeight: '1.5', marginBottom: '10px', whiteSpace: 'pre-line' }
-
 const tagsRow: React.CSSProperties = { display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '14px' }
 const actionRow: React.CSSProperties = { display: 'flex', gap: '8px' }
 
@@ -420,7 +409,6 @@ const tabBtnBase: React.CSSProperties = {
 }
 
 const contentStyle: React.CSSProperties = { padding: '12px 16px' }
-
 const grid2: React.CSSProperties = { display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }
 const cardStyle: React.CSSProperties = {
     backgroundColor: '#fff', borderRadius: '10px', overflow: 'hidden',
@@ -428,7 +416,6 @@ const cardStyle: React.CSSProperties = {
 }
 const cardTitle: React.CSSProperties = { fontSize: '13px', fontWeight: '600', color: '#1a1a1a' }
 const cardPrice: React.CSSProperties = { fontSize: '14px', fontWeight: '700', color: '#DC2626', marginTop: '2px' }
-
 const listGap: React.CSSProperties = { display: 'flex', flexDirection: 'column', gap: '8px' }
 
 const torneioCard: React.CSSProperties = {
