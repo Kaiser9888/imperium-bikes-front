@@ -79,7 +79,7 @@ export default function PerfilPage() {
 
             setLoading(true)
             try {
-                const userResponse = await api.get('/api/users/me')
+                const userResponse = await api.get('/api/users')
                 if (cancelled) return
                 const userData = userResponse.data as Record<string, unknown>
 
