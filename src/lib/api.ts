@@ -12,8 +12,8 @@ const api = axios.create({
 // Interceptor para adicionar token JWT
 api.interceptors.request.use(
     (config) => {
-        // Não adiciona token para rotas de autenticação
-        const publicRoutes = ['/auth/login', '/auth/register', '/auth/refresh'];
+        // ✅ CORRIGIDO: Rotas públicas com /api/
+        const publicRoutes = ['/api/auth/login', '/api/auth/register', '/api/auth/refresh'];
         const isPublicRoute = publicRoutes.some(route => config.url?.includes(route));
 
         if (!isPublicRoute) {
@@ -21,17 +21,13 @@ api.interceptors.request.use(
 
             if (token) {
                 config.headers.Authorization = `Bearer ${token}`;
+                console.log('🔐 Token adicionado para:', config.url);
             } else {
                 console.warn('⚠️ Token não encontrado para rota:', config.url);
             }
+        } else {
+            console.log('🌐 Rota pública (sem token):', config.url);
         }
-
-        console.log('📡 Requisição:', {
-            url: `${config.baseURL}${config.url}`,
-            method: config.method?.toUpperCase(),
-            hasToken: !!config.headers.Authorization,
-            token: config.headers.Authorization ? 'presente' : 'ausente'
-        });
 
         return config;
     },
@@ -41,14 +37,9 @@ api.interceptors.request.use(
     }
 );
 
-// Interceptor de resposta para tratar erros
+// Interceptor de resposta
 api.interceptors.response.use(
     (response) => {
-        console.log('✅ Resposta:', {
-            url: response.config.url,
-            status: response.status,
-            data: response.data
-        });
         return response;
     },
     (error) => {
@@ -56,16 +47,12 @@ api.interceptors.response.use(
             url: error.config?.url,
             status: error.response?.status,
             message: error.message,
-            data: error.response?.data
         });
 
-        // Se o erro for 401 (não autorizado), redireciona para login
+        // Se for 401, redireciona para login
         if (error.response?.status === 401) {
-            console.warn('🔄 Token expirado ou inválido, redirecionando para login...');
-            authService.logout(); // Limpa o token inválido
-            if (typeof window !== 'undefined') {
-                window.location.href = '/login';
-            }
+            console.warn('🔄 Token expirado, redirecionando...');
+            authService.logout();
         }
 
         return Promise.reject(error);
