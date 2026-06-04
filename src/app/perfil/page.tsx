@@ -60,6 +60,7 @@ type TabKey = 'produtos' | 'posts' | 'torneios' | 'avaliacoes'
 
 export default function PerfilPage() {
     const router = useRouter()
+    const [mounted, setMounted] = useState(false)
     const [tabAtiva, setTabAtiva] = useState<TabKey>('produtos')
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
@@ -69,17 +70,22 @@ export default function PerfilPage() {
     const [avaliacoes, setAvaliacoes] = useState<Avaliacao[]>([])
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setMounted(true)
+    }, [])
+
+    useEffect(() => {
+        if (!mounted) return
+
         let cancelled = false
 
         async function load() {
             try {
-                // ✅ Verificar se está no cliente (Next.js SSR)
                 if (typeof window === 'undefined') {
                     console.log('⏳ Aguardando montagem no cliente...')
                     return
                 }
 
-                // ✅ Usar authService.getToken() que já verifica window
                 const token = authService.getToken()
                 console.log('🔑 Token JWT:', token ? `${token.substring(0, 20)}...` : 'NÃO ENCONTRADO')
 
@@ -90,10 +96,9 @@ export default function PerfilPage() {
                     return
                 }
 
-                // ✅ Verificar se o token é válido (não expirado)
                 try {
                     const tokenPayload = JSON.parse(atob(token.split('.')[1]))
-                    const expirationTime = tokenPayload.exp * 1000 // converter para milissegundos
+                    const expirationTime = tokenPayload.exp * 1000
 
                     if (Date.now() >= expirationTime) {
                         console.warn('⚠️ Token expirado, redirecionando para login...')
@@ -111,7 +116,6 @@ export default function PerfilPage() {
                 setLoading(true)
                 setError(null)
 
-                // ✅ CORRIGIDO: URL sem duplicação de /api
                 console.log('👤 Buscando perfil em: GET /api/users/me')
                 const userResponse = await api.get('/api/users/me')
 
@@ -140,7 +144,6 @@ export default function PerfilPage() {
                     console.log('✅ Perfil processado com sucesso')
                 }
 
-                // ✅ Carregar dados adicionais (não bloqueia se falhar)
                 console.log('📦 Carregando dados complementares...')
 
                 try {
@@ -152,7 +155,6 @@ export default function PerfilPage() {
 
                     if (cancelled) return
 
-                    // Processar produtos
                     if (prodRes.status === 'fulfilled') {
                         const prodData = prodRes.value.data
                         const produtosArray = prodData.content || prodData || []
@@ -163,7 +165,6 @@ export default function PerfilPage() {
                         setProdutos([])
                     }
 
-                    // Processar torneios
                     if (tornRes.status === 'fulfilled') {
                         const tornData = tornRes.value.data
                         const torneiosArray = Array.isArray(tornData) ? tornData : tornData?.content || []
@@ -174,7 +175,6 @@ export default function PerfilPage() {
                         setTorneios([])
                     }
 
-                    // Processar avaliações
                     if (avalRes.status === 'fulfilled') {
                         const avalData = avalRes.value.data
                         const avaliacoesArray = avalData.content || avalData || []
@@ -187,37 +187,46 @@ export default function PerfilPage() {
 
                 } catch (additionalError) {
                     console.error('❌ Erro ao carregar dados adicionais:', additionalError)
-                    // Não bloqueia a página, continua com arrays vazios
                     setProdutos([])
                     setTorneios([])
                     setAvaliacoes([])
                 }
 
-            } catch (error: any) {
+            } catch (error: unknown) {
+                const err = error as {
+                    message?: string
+                    response?: {
+                        status?: number
+                        statusText?: string
+                        data?: { message?: string }
+                    }
+                    config?: { url?: string }
+                    code?: string
+                }
+
                 console.error('❌ ERRO CRÍTICO NO PERFIL:', {
-                    message: error.message,
-                    status: error.response?.status,
-                    statusText: error.response?.statusText,
-                    url: error.config?.url,
-                    data: error.response?.data,
+                    message: err.message,
+                    status: err.response?.status,
+                    statusText: err.response?.statusText,
+                    url: err.config?.url,
+                    data: err.response?.data,
                 })
 
                 if (!cancelled) {
-                    // Tratar diferentes tipos de erro
-                    if (error.response?.status === 401) {
+                    if (err.response?.status === 401) {
                         console.warn('🔄 Token inválido ou expirado')
                         setError('Sua sessão expirou. Por favor, faça login novamente.')
                         authService.logout()
-                    } else if (error.response?.status === 403) {
+                    } else if (err.response?.status === 403) {
                         setError('Você não tem permissão para acessar este perfil.')
-                    } else if (error.response?.status === 404) {
+                    } else if (err.response?.status === 404) {
                         setError('Perfil não encontrado. Verifique se a rota da API está correta.')
-                    } else if (error.response?.status === 500) {
+                    } else if (err.response?.status === 500) {
                         setError('Erro no servidor. Tente novamente mais tarde.')
-                    } else if (error.code === 'ERR_NETWORK') {
+                    } else if (err.code === 'ERR_NETWORK') {
                         setError('Erro de conexão. Verifique sua internet.')
                     } else {
-                        setError(error.response?.data?.message || 'Erro ao carregar perfil')
+                        setError(err.response?.data?.message || 'Erro ao carregar perfil')
                     }
                 }
             } finally {
@@ -233,11 +242,16 @@ export default function PerfilPage() {
             cancelled = true
             console.log('🧹 Cleanup: requisições canceladas')
         }
-    }, [router])
+    }, [router, mounted])
 
-    // ===== ESTADOS DE UI =====
+    if (!mounted) {
+        return (
+            <div style={centerStyle}>
+                <p style={{ color: '#888' }}>Carregando...</p>
+            </div>
+        )
+    }
 
-    // Loading
     if (loading) {
         return (
             <div style={centerStyle}>
@@ -260,7 +274,6 @@ export default function PerfilPage() {
         )
     }
 
-    // Error
     if (error) {
         return (
             <div style={{ ...centerStyle, flexDirection: 'column', gap: '16px', padding: '20px' }}>
@@ -308,7 +321,6 @@ export default function PerfilPage() {
         )
     }
 
-    // Not authenticated
     if (!usuario) {
         return (
             <div style={{ ...centerStyle, flexDirection: 'column', gap: '16px' }}>
@@ -333,15 +345,12 @@ export default function PerfilPage() {
         )
     }
 
-    // ===== PERFIL CARREGADO COM SUCESSO =====
-
     const nomeInicial = usuario.name.charAt(0).toUpperCase()
     const formatarPreco = (valor: number): string =>
         new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor)
 
     return (
         <div style={pageStyle}>
-            {/* Header */}
             <div style={topBarStyle}>
                 <button onClick={() => router.back()} style={headerBtn}>
                     <ArrowLeft size={20} color="#1a1a1a" />
@@ -358,7 +367,6 @@ export default function PerfilPage() {
                 </div>
             </div>
 
-            {/* Profile Info */}
             <div style={profileSection}>
                 <div style={profileRow}>
                     <div style={{
@@ -395,7 +403,6 @@ export default function PerfilPage() {
                 </div>
             </div>
 
-            {/* Tabs */}
             <div style={tabsContainer}>
                 {TABS.map((tab) => {
                     const isActive = tabAtiva === tab.key
@@ -418,7 +425,6 @@ export default function PerfilPage() {
                 })}
             </div>
 
-            {/* Content */}
             <div style={contentStyle}>
                 {tabAtiva === 'produtos' && (
                     produtos.length === 0 ? (
@@ -513,8 +519,6 @@ export default function PerfilPage() {
     )
 }
 
-// ===== COMPONENTES AUXILIARES =====
-
 function Stat({ valor, label }: { valor: number; label: string }) {
     return (
         <div style={{ textAlign: 'center' }}>
@@ -546,16 +550,12 @@ function Empty({ icon, title, desc }: { icon: React.ReactNode; title: string; de
     )
 }
 
-// ===== CONSTANTES =====
-
 const TABS: { key: TabKey; icon: React.ElementType; label: string }[] = [
     { key: 'produtos', icon: Bike, label: 'Produtos' },
     { key: 'posts', icon: Grid3X3, label: 'Posts' },
     { key: 'torneios', icon: Trophy, label: 'Torneios' },
     { key: 'avaliacoes', icon: Award, label: 'Avaliações' },
 ]
-
-// ===== ESTILOS =====
 
 const centerStyle: React.CSSProperties = {
     minHeight: '100vh', backgroundColor: '#f5f5f5',
