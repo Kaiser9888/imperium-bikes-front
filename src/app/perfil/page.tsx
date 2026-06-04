@@ -62,6 +62,7 @@ export default function PerfilPage() {
     const router = useRouter()
     const [tabAtiva, setTabAtiva] = useState<TabKey>('produtos')
     const [loading, setLoading] = useState(true)
+    const [error, setError] = useState<string | null>(null)
     const [usuario, setUsuario] = useState<UserData | null>(null)
     const [produtos, setProdutos] = useState<Produto[]>([])
     const [torneios, setTorneios] = useState<Torneio[]>([])
@@ -71,76 +72,260 @@ export default function PerfilPage() {
         let cancelled = false
 
         async function load() {
-            const token = authService.getToken()
-            if (!token) {
-                router.push('/login')
-                return
-            }
-
-            setLoading(true)
             try {
+                // ✅ Verificar se está no cliente (Next.js SSR)
+                if (typeof window === 'undefined') {
+                    console.log('⏳ Aguardando montagem no cliente...')
+                    return
+                }
+
+                // ✅ Usar authService.getToken() que já verifica window
+                const token = authService.getToken()
+                console.log('🔑 Token JWT:', token ? `${token.substring(0, 20)}...` : 'NÃO ENCONTRADO')
+
+                if (!token) {
+                    console.warn('⚠️ Nenhum token encontrado, redirecionando para login...')
+                    setError('Você precisa fazer login para acessar o perfil.')
+                    setLoading(false)
+                    return
+                }
+
+                // ✅ Verificar se o token é válido (não expirado)
+                try {
+                    const tokenPayload = JSON.parse(atob(token.split('.')[1]))
+                    const expirationTime = tokenPayload.exp * 1000 // converter para milissegundos
+
+                    if (Date.now() >= expirationTime) {
+                        console.warn('⚠️ Token expirado, redirecionando para login...')
+                        authService.logout()
+                        return
+                    }
+
+                    console.log('✅ Token válido até:', new Date(expirationTime).toLocaleString())
+                } catch (e) {
+                    console.error('❌ Token inválido:', e)
+                    authService.logout()
+                    return
+                }
+
+                setLoading(true)
+                setError(null)
+
+                // ✅ CORRIGIDO: URL sem duplicação de /api
+                console.log('👤 Buscando perfil em: GET /api/users/me')
                 const userResponse = await api.get('/api/users/me')
+
                 if (cancelled) return
-                const userData = userResponse.data as Record<string, unknown>
+
+                console.log('✅ Resposta do perfil:', userResponse.data)
+                const userData = userResponse.data
 
                 if (!cancelled) {
                     setUsuario({
-                        name: (userData.fullName as string) || 'Usuário',
+                        name: userData.fullName || 'Usuário',
                         username: '@' + ((userData.fullName as string) || 'usuario').toLowerCase().replace(/\s/g, '_'),
-                        bio: (userData.bio as string) || 'Sem bio',
-                        avatar: (userData.avatarUrl as string) || null,
-                        city: (userData.city as string) || 'São Paulo',
-                        state: (userData.state as string) || 'SP',
-                        reputation: (userData.reputationScore as number) || 0,
+                        bio: userData.bio || 'Sem bio',
+                        avatar: userData.avatarUrl || null,
+                        city: userData.city || 'São Paulo',
+                        state: userData.state || 'SP',
+                        reputation: userData.reputationScore || 0,
                         memberSince: userData.createdAt
                             ? new Date(userData.createdAt as string).getFullYear().toString()
                             : '2025',
-                        produtos: (userData.totalSales as number) || 0,
+                        produtos: userData.totalSales || 0,
                         posts: 0,
                         seguidores: 0,
                         seguindo: 0,
                     })
+                    console.log('✅ Perfil processado com sucesso')
                 }
 
-                const [prodRes, tornRes, avalRes] = await Promise.all([
-                    api.get('/products/my'),
-                    api.get('/tournaments/my'),
-                    api.get('/reviews/received'),
-                ])
-                if (cancelled) return
+                // ✅ Carregar dados adicionais (não bloqueia se falhar)
+                console.log('📦 Carregando dados complementares...')
 
-                const prodData = prodRes.data as { content?: Produto[] }
-                const tornData = tornRes.data as Torneio[]
-                const avalData = avalRes.data as { content?: Avaliacao[] }
+                try {
+                    const [prodRes, tornRes, avalRes] = await Promise.allSettled([
+                        api.get('/api/products/my'),
+                        api.get('/api/tournaments/my'),
+                        api.get('/api/reviews/received'),
+                    ])
+
+                    if (cancelled) return
+
+                    // Processar produtos
+                    if (prodRes.status === 'fulfilled') {
+                        const prodData = prodRes.value.data
+                        const produtosArray = prodData.content || prodData || []
+                        setProdutos(Array.isArray(produtosArray) ? produtosArray : [])
+                        console.log(`✅ ${produtosArray.length || 0} produtos carregados`)
+                    } else {
+                        console.error('❌ Erro ao carregar produtos:', prodRes.reason?.message)
+                        setProdutos([])
+                    }
+
+                    // Processar torneios
+                    if (tornRes.status === 'fulfilled') {
+                        const tornData = tornRes.value.data
+                        const torneiosArray = Array.isArray(tornData) ? tornData : tornData?.content || []
+                        setTorneios(torneiosArray)
+                        console.log(`✅ ${torneiosArray.length} torneios carregados`)
+                    } else {
+                        console.error('❌ Erro ao carregar torneios:', tornRes.reason?.message)
+                        setTorneios([])
+                    }
+
+                    // Processar avaliações
+                    if (avalRes.status === 'fulfilled') {
+                        const avalData = avalRes.value.data
+                        const avaliacoesArray = avalData.content || avalData || []
+                        setAvaliacoes(Array.isArray(avaliacoesArray) ? avaliacoesArray : [])
+                        console.log(`✅ ${avaliacoesArray.length || 0} avaliações carregadas`)
+                    } else {
+                        console.error('❌ Erro ao carregar avaliações:', avalRes.reason?.message)
+                        setAvaliacoes([])
+                    }
+
+                } catch (additionalError) {
+                    console.error('❌ Erro ao carregar dados adicionais:', additionalError)
+                    // Não bloqueia a página, continua com arrays vazios
+                    setProdutos([])
+                    setTorneios([])
+                    setAvaliacoes([])
+                }
+
+            } catch (error: any) {
+                console.error('❌ ERRO CRÍTICO NO PERFIL:', {
+                    message: error.message,
+                    status: error.response?.status,
+                    statusText: error.response?.statusText,
+                    url: error.config?.url,
+                    data: error.response?.data,
+                })
 
                 if (!cancelled) {
-                    setProdutos(prodData.content || [])
-                    setTorneios(Array.isArray(tornData) ? tornData : [])
-                    setAvaliacoes(avalData.content || [])
+                    // Tratar diferentes tipos de erro
+                    if (error.response?.status === 401) {
+                        console.warn('🔄 Token inválido ou expirado')
+                        setError('Sua sessão expirou. Por favor, faça login novamente.')
+                        authService.logout()
+                    } else if (error.response?.status === 403) {
+                        setError('Você não tem permissão para acessar este perfil.')
+                    } else if (error.response?.status === 404) {
+                        setError('Perfil não encontrado. Verifique se a rota da API está correta.')
+                    } else if (error.response?.status === 500) {
+                        setError('Erro no servidor. Tente novamente mais tarde.')
+                    } else if (error.code === 'ERR_NETWORK') {
+                        setError('Erro de conexão. Verifique sua internet.')
+                    } else {
+                        setError(error.response?.data?.message || 'Erro ao carregar perfil')
+                    }
                 }
-            } catch {
-                // silencioso
             } finally {
-                if (!cancelled) setLoading(false)
+                if (!cancelled) {
+                    setLoading(false)
+                    console.log('🏁 Carregamento do perfil finalizado')
+                }
             }
         }
 
         load()
-        return () => { cancelled = true }
+        return () => {
+            cancelled = true
+            console.log('🧹 Cleanup: requisições canceladas')
+        }
     }, [router])
 
+    // ===== ESTADOS DE UI =====
+
+    // Loading
     if (loading) {
         return (
             <div style={centerStyle}>
-                <p style={{ color: '#888' }}>Carregando...</p>
+                <div style={{ textAlign: 'center' }}>
+                    <div style={{ marginBottom: '16px' }}>
+                        <div style={{
+                            width: '40px', height: '40px',
+                            border: '3px solid #e5e5e5',
+                            borderTopColor: '#DC2626',
+                            borderRadius: '50%',
+                            animation: 'spin 1s linear infinite',
+                            margin: '0 auto'
+                        }} />
+                    </div>
+                    <p style={{ color: '#888', marginBottom: '4px', fontSize: '15px' }}>Carregando perfil...</p>
+                    <p style={{ fontSize: '12px', color: '#aaa' }}>Buscando suas informações</p>
+                    <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+                </div>
             </div>
         )
     }
 
+    // Error
+    if (error) {
+        return (
+            <div style={{ ...centerStyle, flexDirection: 'column', gap: '16px', padding: '20px' }}>
+                <div style={{ textAlign: 'center' }}>
+                    <div style={{
+                        width: '64px', height: '64px',
+                        borderRadius: '50%',
+                        backgroundColor: '#FEE2E2',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        margin: '0 auto 16px'
+                    }}>
+                        <span style={{ fontSize: '32px' }}>⚠️</span>
+                    </div>
+                    <h2 style={{ fontSize: '18px', fontWeight: '600', color: '#1a1a1a', marginBottom: '8px' }}>
+                        Ops! Algo deu errado
+                    </h2>
+                    <p style={{ color: '#666', fontSize: '14px', marginBottom: '20px', lineHeight: '1.5' }}>
+                        {error}
+                    </p>
+                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                        <button
+                            onClick={() => window.location.reload()}
+                            style={{
+                                ...loginBtnStyle,
+                                backgroundColor: '#DC2626',
+                            }}
+                        >
+                            Tentar novamente
+                        </button>
+                        <button
+                            onClick={() => {
+                                authService.logout()
+                                router.push('/login')
+                            }}
+                            style={{
+                                ...loginBtnStyle,
+                                backgroundColor: '#1a1a1a',
+                            }}
+                        >
+                            Fazer login
+                        </button>
+                    </div>
+                </div>
+            </div>
+        )
+    }
+
+    // Not authenticated
     if (!usuario) {
         return (
             <div style={{ ...centerStyle, flexDirection: 'column', gap: '16px' }}>
-                <p style={{ color: '#888' }}>Faça login para ver seu perfil</p>
+                <div style={{ textAlign: 'center', marginBottom: '8px' }}>
+                    <div style={{
+                        width: '64px', height: '64px',
+                        borderRadius: '50%',
+                        backgroundColor: '#F3F4F6',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        margin: '0 auto 12px'
+                    }}>
+                        <Award size={32} color="#888" />
+                    </div>
+                    <p style={{ color: '#888', fontSize: '15px', marginBottom: '4px' }}>
+                        Faça login para ver seu perfil
+                    </p>
+                </div>
                 <button onClick={() => router.push('/login')} style={loginBtnStyle}>
                     Fazer login
                 </button>
@@ -148,21 +333,32 @@ export default function PerfilPage() {
         )
     }
 
+    // ===== PERFIL CARREGADO COM SUCESSO =====
+
     const nomeInicial = usuario.name.charAt(0).toUpperCase()
     const formatarPreco = (valor: number): string =>
         new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor)
 
     return (
         <div style={pageStyle}>
+            {/* Header */}
             <div style={topBarStyle}>
-                <button onClick={() => router.back()} style={headerBtn}><ArrowLeft size={20} color="#1a1a1a" /></button>
+                <button onClick={() => router.back()} style={headerBtn}>
+                    <ArrowLeft size={20} color="#1a1a1a" />
+                </button>
                 <span style={topBarTitle}>{usuario.username}</span>
                 <div style={{ display: 'flex', gap: '4px' }}>
                     <button style={headerBtn}><Share2 size={18} color="#1a1a1a" /></button>
-                    <button style={headerBtn}><Settings size={18} color="#1a1a1a" /></button>
+                    <button
+                        onClick={() => router.push('/configuracoes')}
+                        style={headerBtn}
+                    >
+                        <Settings size={18} color="#1a1a1a" />
+                    </button>
                 </div>
             </div>
 
+            {/* Profile Info */}
             <div style={profileSection}>
                 <div style={profileRow}>
                     <div style={{
@@ -172,7 +368,9 @@ export default function PerfilPage() {
                             : 'linear-gradient(135deg, #DC2626, #991b1b)',
                     }}>
                         {!usuario.avatar && nomeInicial}
-                        <div style={cameraBadge}><Camera size={13} color="#fff" /></div>
+                        <div style={cameraBadge}>
+                            <Camera size={13} color="#fff" />
+                        </div>
                     </div>
                     <div style={statsRow}>
                         <Stat valor={usuario.produtos} label="Produtos" />
@@ -197,6 +395,7 @@ export default function PerfilPage() {
                 </div>
             </div>
 
+            {/* Tabs */}
             <div style={tabsContainer}>
                 {TABS.map((tab) => {
                     const isActive = tabAtiva === tab.key
@@ -219,6 +418,7 @@ export default function PerfilPage() {
                 })}
             </div>
 
+            {/* Content */}
             <div style={contentStyle}>
                 {tabAtiva === 'produtos' && (
                     produtos.length === 0 ? (
@@ -242,6 +442,10 @@ export default function PerfilPage() {
                             ))}
                         </div>
                     )
+                )}
+
+                {tabAtiva === 'posts' && (
+                    <Empty icon={<Grid3X3 size={36} />} title="Nenhum post" desc="Seus posts aparecerão aqui" />
                 )}
 
                 {tabAtiva === 'torneios' && (
@@ -309,6 +513,8 @@ export default function PerfilPage() {
     )
 }
 
+// ===== COMPONENTES AUXILIARES =====
+
 function Stat({ valor, label }: { valor: number; label: string }) {
     return (
         <div style={{ textAlign: 'center' }}>
@@ -340,12 +546,16 @@ function Empty({ icon, title, desc }: { icon: React.ReactNode; title: string; de
     )
 }
 
+// ===== CONSTANTES =====
+
 const TABS: { key: TabKey; icon: React.ElementType; label: string }[] = [
     { key: 'produtos', icon: Bike, label: 'Produtos' },
     { key: 'posts', icon: Grid3X3, label: 'Posts' },
     { key: 'torneios', icon: Trophy, label: 'Torneios' },
     { key: 'avaliacoes', icon: Award, label: 'Avaliações' },
 ]
+
+// ===== ESTILOS =====
 
 const centerStyle: React.CSSProperties = {
     minHeight: '100vh', backgroundColor: '#f5f5f5',
