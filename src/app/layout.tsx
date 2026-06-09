@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
 import { Providers } from './providers'
+import { ClerkProvider } from '@clerk/nextjs'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -13,12 +14,24 @@ export const viewport: Viewport = {
 }
 
 export const metadata: Metadata = {
+    metadataBase: new URL('https://imperiumbikes0.com.br'),
     title: {
         default: 'Imperium Bikes - Marketplace de Bicicletas',
         template: '%s | Imperium Bikes',
     },
-    description: 'Compre e venda bikes, peças e acessórios. Participe de torneios, assista vídeos e conecte-se com a comunidade de ciclismo.',
-    keywords: ['bikes', 'bicicletas', 'MTB', 'speed', 'downhill', 'peças', 'acessórios', 'torneios', 'ciclismo'],
+    description:
+        'Compre e venda bikes, peças e acessórios. Participe de torneios, assista vídeos e conecte-se com a comunidade de ciclismo.',
+    keywords: [
+        'bikes',
+        'bicicletas',
+        'MTB',
+        'speed',
+        'downhill',
+        'peças',
+        'acessórios',
+        'torneios',
+        'ciclismo',
+    ],
     authors: [{ name: 'Imperium Bikes' }],
     creator: 'Imperium Bikes',
     publisher: 'Imperium Bikes',
@@ -33,7 +46,8 @@ export const metadata: Metadata = {
         url: 'https://imperiumbikes0.com.br',
         siteName: 'Imperium Bikes',
         title: 'Imperium Bikes - Marketplace de Bicicletas',
-        description: 'Compre e venda bikes, peças e acessórios. Participe de torneios e conecte-se com a comunidade.',
+        description:
+            'Compre e venda bikes, peças e acessórios. Participe de torneios e conecte-se com a comunidade.',
         images: [
             {
                 url: '/logo.png',
@@ -68,10 +82,12 @@ export default function RootLayout({
     children: React.ReactNode
 }) {
     return (
-        <html lang="pt-BR" suppressHydrationWarning>
-        <body className={inter.className}>
-        <Providers>{children}</Providers>
-        </body>
-        </html>
+        <ClerkProvider>
+            <html lang="pt-BR" suppressHydrationWarning>
+            <body className={inter.className}>
+            <Providers>{children}</Providers>
+            </body>
+            </html>
+        </ClerkProvider>
     )
 }

@@ -3,17 +3,19 @@
 import { Home, Search, Trophy, MessageCircle, User } from 'lucide-react'
 import { usePathname } from 'next/navigation'
 import Link from 'next/link'
-
-const navItems = [
-    { icon: Home, label: 'Home', href: '/' },
-    { icon: Search, label: 'Buscar', href: '/buscar' },
-    { icon: Trophy, label: 'Torneios', href: '/torneios' },
-    { icon: MessageCircle, label: 'Chat', href: '/chat' },
-    { icon: User, label: 'Perfil', href: '/perfil' },
-]
+import { useUser, SignInButton } from '@clerk/nextjs'
 
 export function BottomNav() {
     const pathname = usePathname()
+    const { isSignedIn } = useUser()
+
+    const navItems = [
+        { icon: Home, label: 'Home', href: '/' },
+        { icon: Search, label: 'Buscar', href: '/buscar' },
+        { icon: Trophy, label: 'Torneios', href: '/torneios' },
+        { icon: MessageCircle, label: 'Chat', href: '/chat' },
+        { icon: User, label: 'Perfil', href: '/perfil', protected: true },
+    ]
 
     return (
         <nav className="bottom-nav" style={{
@@ -33,7 +35,38 @@ export function BottomNav() {
             {navItems.map((item) => {
                 const isActive = pathname === item.href
                 const Icon = item.icon
-                const isTorneio = item.label === 'Torneios'
+
+                // Se for rota protegida e usuário não estiver logado, mostra modal de login
+                if (item.protected && !isSignedIn) {
+                    return (
+                        <SignInButton key={item.href} mode="modal">
+                            <button style={{
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                gap: '4px',
+                                padding: '6px 14px',
+                                background: 'none',
+                                border: 'none',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s'
+                            }}>
+                                <div style={{ position: 'relative', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <Icon size={24} color="#888888" strokeWidth={1.5} />
+                                </div>
+                                <span style={{
+                                    fontSize: '10px',
+                                    fontWeight: '500',
+                                    color: '#888888',
+                                    letterSpacing: '0.5px',
+                                    textTransform: 'uppercase'
+                                }}>
+                                    {item.label}
+                                </span>
+                            </button>
+                        </SignInButton>
+                    )
+                }
 
                 return (
                     <Link
@@ -50,7 +83,6 @@ export function BottomNav() {
                             transition: 'all 0.2s'
                         }}
                     >
-                        {/* Indicador ativo */}
                         {isActive && (
                             <div style={{
                                 position: 'absolute',
@@ -62,7 +94,6 @@ export function BottomNav() {
                             }} />
                         )}
 
-                        {/* Ícone */}
                         <div style={{
                             position: 'relative',
                             width: '28px',
@@ -78,7 +109,6 @@ export function BottomNav() {
                                 style={{ transition: 'all 0.2s' }}
                             />
 
-                            {/* Brilho sutil quando ativo */}
                             {isActive && (
                                 <div style={{
                                     position: 'absolute',
@@ -93,7 +123,6 @@ export function BottomNav() {
                             )}
                         </div>
 
-                        {/* Label */}
                         <span style={{
                             fontSize: '10px',
                             fontWeight: isActive ? '700' : '500',
@@ -102,24 +131,24 @@ export function BottomNav() {
                             textTransform: 'uppercase',
                             transition: 'color 0.2s'
                         }}>
-              {item.label}
-            </span>
+                            {item.label}
+                        </span>
                     </Link>
                 )
             })}
 
             <style>{`
-        @keyframes pulseBg {
-          0%, 100% {
-            transform: scale(1);
-            opacity: 0.6;
-          }
-          50% {
-            transform: scale(1.3);
-            opacity: 0;
-          }
-        }
-      `}</style>
+                @keyframes pulseBg {
+                    0%, 100% {
+                        transform: scale(1);
+                        opacity: 0.6;
+                    }
+                    50% {
+                        transform: scale(1.3);
+                        opacity: 0;
+                    }
+                }
+            `}</style>
         </nav>
     )
 }
