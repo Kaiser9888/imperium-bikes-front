@@ -1,60 +1,33 @@
-'use client'
+// src/components/layout/SearchBar.tsx
+'use client';
 
-import { Search } from 'lucide-react'
-import { useState } from 'react'
+import { Search } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useState, FormEvent } from 'react';
 
 export function SearchBar() {
-    const [query, setQuery] = useState('')
+    const router = useRouter();
+    const [query, setQuery] = useState('');
 
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault()
+    const handleSearch = (e: FormEvent) => {
+        e.preventDefault();
         if (query.trim()) {
-            window.location.href = `/buscar?q=${encodeURIComponent(query.trim())}`
+            router.push(`/buscar?q=${encodeURIComponent(query.trim())}`);
         }
-    }
+    };
 
     return (
-        <form onSubmit={handleSubmit} style={{ padding: '16px' }}>
-            <div style={{
-                position: 'relative',
-                display: 'flex',
-                alignItems: 'center'
-            }}>
-                <Search
-                    size={20}
-                    color="#999"
-                    style={{
-                        position: 'absolute',
-                        left: '14px',
-                        pointerEvents: 'none'
-                    }}
-                />
+        <form onSubmit={handleSearch}>
+            <div className="relative">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
                     type="text"
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
-                    placeholder="Buscar no marketplace..."
-                    style={{
-                        width: '100%',
-                        padding: '14px 16px 14px 44px',
-                        backgroundColor: '#ffffff',
-                        border: '1px solid #e5e5e5',
-                        borderRadius: '12px',
-                        fontSize: '16px',
-                        color: '#333',
-                        outline: 'none',
-                        transition: 'all 0.2s'
-                    }}
-                    onFocus={(e) => {
-                        e.target.style.borderColor = '#DC2626'
-                        e.target.style.boxShadow = '0 0 0 3px rgba(220,38,38,0.1)'
-                    }}
-                    onBlur={(e) => {
-                        e.target.style.borderColor = '#e5e5e5'
-                        e.target.style.boxShadow = 'none'
-                    }}
+                    placeholder="O que você procura?"
+                    className="w-full pl-11 pr-4 py-3.5 bg-white text-gray-800 placeholder-gray-400 rounded-2xl border border-gray-200 focus:border-[#C9A96E] focus:ring-2 focus:ring-[#C9A96E]/10 focus:outline-none transition-all text-sm shadow-sm"
                 />
             </div>
         </form>
-    )
+    );
 }

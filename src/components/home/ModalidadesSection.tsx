@@ -1,156 +1,37 @@
-'use client'
-
-import { Mountain, Zap, Battery, Bike } from 'lucide-react'
+// src/components/home/ModalidadesSection.tsx
+import { Mountain, Timer, Bike, Crosshair, Car, Trophy } from 'lucide-react';
 
 const modalidades = [
-    {
-        nome: 'MTB',
-        desc: 'Mountain Bike',
-        imagem: '/header/mtb.jpg',
-        slug: 'mtb',
-        icon: Mountain,
-        cor: '#4CAF50'
-    },
-    {
-        nome: 'Speed',
-        desc: 'Ciclismo de Estrada',
-        imagem: '/header/speed.jpg',
-        slug: 'speed',
-        icon: Zap,
-        cor: '#2196F3'
-    },
-    {
-        nome: 'Downhill',
-        desc: 'Descida Radical',
-        imagem: '/header/downhill1.jpg',
-        slug: 'downhill',
-        icon: Mountain,
-        cor: '#FF5722'
-    },
-    {
-        nome: 'BMX',
-        desc: 'Manobras e Corridas',
-        imagem: '/header/bmx.jpg',
-        slug: 'bmx',
-        icon: Bike,
-        cor: '#FFC107'
-    },
-    {
-        nome: 'Gravel',
-        desc: 'Estrada e Terra',
-        imagem: '/header/midia2.jpg',  // ou qualquer foto
-        slug: 'gravel',
-        icon: Bike,
-        cor: '#795548'
-    },
-]
+    { id: 1, nome: 'Mountain', icon: Mountain, count: 145 },
+    { id: 2, nome: 'Speed', icon: Timer, count: 89 },
+    { id: 3, nome: 'BMX', icon: Bike, count: 56 },
+    { id: 4, nome: 'Downhill', icon: Crosshair, count: 34 },
+    { id: 5, nome: 'Urbana', icon: Car, count: 78 },
+    { id: 6, nome: 'Corrida', icon: Trophy, count: 23 },
+];
 
 export function ModalidadesSection() {
     return (
-        <section style={{ padding: '0 16px 16px 16px' }}>
-            <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginBottom: '12px'
-            }}>
-                <h2 style={{
-                    fontSize: '18px',
-                    fontWeight: 'bold',
-                    color: '#1a1a1a'
-                }}>
-                    Modalidades
-                </h2>
-                <span style={{
-                    fontSize: '13px',
-                    color: '#DC2626',
-                    cursor: 'pointer',
-                    fontWeight: '500'
-                }}>
-          Ver todas
-        </span>
-            </div>
-
-            <div style={{
-                display: 'flex',
-                gap: '10px',
-                overflowX: 'auto',
-                paddingBottom: '4px'
-            }}>
-                {modalidades.map((mod, index) => {
-                    const Icon = mod.icon
-                    return (
-                        <div
-                            key={index}
-                            onClick={() => window.location.href = `/produtos?modalidade=${mod.slug}`}
-                            style={{
-                                minWidth: '140px',
-                                borderRadius: '12px',
-                                overflow: 'hidden',
-                                cursor: 'pointer',
-                                flexShrink: 0,
-                                border: '1px solid #e5e5e5',
-                                backgroundColor: '#fff',
-                                transition: 'transform 0.2s'
-                            }}
-                            onMouseEnter={(e) => {
-                                e.currentTarget.style.transform = 'scale(1.02)'
-                            }}
-                            onMouseLeave={(e) => {
-                                e.currentTarget.style.transform = 'scale(1)'
-                            }}
-                        >
-                            {/* Imagem */}
-                            <div style={{
-                                height: '90px',
-                                backgroundImage: `url(${mod.imagem})`,
-                                backgroundSize: 'cover',
-                                backgroundPosition: 'center',
-                                position: 'relative'
-                            }}>
-                                <div style={{
-                                    position: 'absolute',
-                                    top: 8,
-                                    left: 8,
-                                    backgroundColor: mod.cor,
-                                    borderRadius: '50%',
-                                    width: '30px',
-                                    height: '30px',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center'
-                                }}>
-                                    <Icon size={16} color="#fff" />
-                                </div>
-                            </div>
-
-                            {/* Info */}
-                            <div style={{ padding: '10px 12px' }}>
-                                <h3 style={{
-                                    fontSize: '14px',
-                                    fontWeight: 'bold',
-                                    color: '#1a1a1a',
-                                    marginBottom: '2px'
-                                }}>
-                                    {mod.nome}
-                                </h3>
-                                <p style={{
-                                    fontSize: '12px',
-                                    color: '#888'
-                                }}>
-                                    {mod.desc}
-                                </p>
-                            </div>
+        <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
+            {modalidades.map((modalidade) => {
+                const Icon = modalidade.icon;
+                return (
+                    <button
+                        key={modalidade.id}
+                        className="flex flex-col items-center p-4 bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-md hover:border-[#C9A96E]/30 transition-all duration-200 group"
+                    >
+                        <div className="w-10 h-10 rounded-full bg-[#FAF8F5] flex items-center justify-center mb-2 group-hover:bg-[#C9A96E]/10 transition-colors">
+                            <Icon className="w-4 h-4 text-gray-600 group-hover:text-[#C9A96E] transition-colors" />
                         </div>
-                    )
-                })}
-            </div>
-
-            <style>{`
-        div::-webkit-scrollbar {
-          display: none;
-        }
-      `}</style>
-        </section>
-    )
+                        <span className="text-xs font-medium text-gray-700 group-hover:text-[#1A1A1A] text-center">
+              {modalidade.nome}
+            </span>
+                        <span className="text-[10px] text-gray-400 mt-0.5">
+              {modalidade.count}
+            </span>
+                    </button>
+                );
+            })}
+        </div>
+    );
 }

@@ -1,152 +1,104 @@
-'use client'
+// src/components/home/BannerCarousel.tsx
+'use client';
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 const banners = [
     {
         id: 1,
-        titulo: 'Nova Coleção 2026',
-        subtitulo: 'As melhores bikes para você',
-        cor: '#DC2626',
-        imagem: '/header/speed.jpg'
+        title: 'Mountain Bike Pro',
+        subtitle: 'Performance e resistência para qualquer trilha',
+        tag: '30% OFF',
+        bg: 'bg-gradient-to-r from-slate-800 to-slate-700',
+        textColor: 'text-white',
     },
     {
         id: 2,
-        titulo: 'Até 30% OFF',
-        subtitulo: 'Em acessórios e peças',
-        cor: '#1a1a1a',
-        imagem: '/header/mtb.jpg'
+        title: 'Speed Elite 2026',
+        subtitle: 'Tecnologia de ponta para velocidade máxima',
+        tag: 'LANÇAMENTO',
+        bg: 'bg-gradient-to-r from-gray-900 to-gray-800',
+        textColor: 'text-white',
     },
     {
         id: 3,
-        titulo: 'Torneios Imperium',
-        subtitulo: 'Inscreva-se e participe',
-        cor: '#DC2626',
-        imagem: '/header/downhill1.jpg'
+        title: 'Urban Collection',
+        subtitle: 'Estilo e conforto para o dia a dia',
+        tag: 'FRETE GRÁTIS',
+        bg: 'bg-gradient-to-r from-stone-700 to-stone-600',
+        textColor: 'text-white',
     },
-]
+];
 
 export function BannerCarousel() {
-    const [atual, setAtual] = useState(0)
+    const [current, setCurrent] = useState(0);
 
     useEffect(() => {
-        const intervalo = setInterval(() => {
-            setAtual((prev) => (prev + 1) % banners.length)
-        }, 4000)
-        return () => clearInterval(intervalo)
-    }, [])
+        const timer = setInterval(() => {
+            setCurrent((prev) => (prev + 1) % banners.length);
+        }, 5000);
+        return () => clearInterval(timer);
+    }, []);
+
+    const prev = () => setCurrent((prev) => (prev - 1 + banners.length) % banners.length);
+    const next = () => setCurrent((prev) => (prev + 1) % banners.length);
 
     return (
-        <div style={{ padding: '0 16px 16px 16px' }}>
-            <div className="banner-height" style={{
-                position: 'relative',
-                height: '160px',
-                borderRadius: '16px',
-                overflow: 'hidden'
-            }}>
-                {banners.map((banner, index) => (
+        <div className="relative overflow-hidden rounded-3xl">
+            <div
+                className="flex transition-transform duration-700 ease-in-out"
+                style={{ transform: `translateX(-${current * 100}%)` }}
+            >
+                {banners.map((banner) => (
                     <div
                         key={banner.id}
-                        style={{
-                            position: 'absolute',
-                            top: 0,
-                            left: 0,
-                            right: 0,
-                            bottom: 0,
-                            opacity: index === atual ? 1 : 0,
-                            transition: 'opacity 0.6s ease-in-out',
-                            backgroundImage: `url(${banner.imagem})`,
-                            backgroundSize: 'cover',
-                            backgroundPosition: 'center',
-                            cursor: 'pointer'
-                        }}
-                        onClick={() => window.location.href = '/produtos'}
+                        className={`w-full flex-shrink-0 ${banner.bg} p-8 md:p-12 rounded-3xl`}
                     >
-                        {/* Overlay gradiente */}
-                        <div style={{
-                            position: 'absolute',
-                            top: 0, left: 0, right: 0, bottom: 0,
-                            background: `linear-gradient(135deg, ${banner.cor}dd, ${banner.cor}88)`
-                        }} />
-
-                        {/* Conteúdo */}
-                        <div style={{
-                            position: 'relative',
-                            zIndex: 1,
-                            height: '100%',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            justifyContent: 'center',
-                            padding: '24px'
-                        }}>
-                            <h2 style={{
-                                color: '#ffffff',
-                                fontSize: '22px',
-                                fontWeight: 'bold',
-                                marginBottom: '6px',
-                                textShadow: '0 2px 4px rgba(0,0,0,0.3)'
-                            }}>
-                                {banner.titulo}
-                            </h2>
-                            <p style={{
-                                color: 'rgba(255,255,255,0.9)',
-                                fontSize: '14px',
-                                marginBottom: '16px'
-                            }}>
-                                {banner.subtitulo}
+                        <div className={`${banner.textColor}`}>
+              <span className="inline-block px-3 py-1 bg-white/20 rounded-full text-xs font-semibold mb-4 backdrop-blur-sm">
+                {banner.tag}
+              </span>
+                            <h3 className="text-2xl md:text-3xl font-bold mb-2">
+                                {banner.title}
+                            </h3>
+                            <p className="text-sm md:text-base opacity-80 mb-6 max-w-md">
+                                {banner.subtitle}
                             </p>
-                            <button style={{
-                                backgroundColor: '#ffffff',
-                                color: banner.cor,
-                                border: 'none',
-                                padding: '8px 20px',
-                                borderRadius: '20px',
-                                fontSize: '13px',
-                                fontWeight: 'bold',
-                                cursor: 'pointer',
-                                width: 'fit-content',
-                                transition: 'transform 0.2s'
-                            }}
-                                    onMouseEnter={(e) => {
-                                        e.currentTarget.style.transform = 'scale(1.05)'
-                                    }}
-                                    onMouseLeave={(e) => {
-                                        e.currentTarget.style.transform = 'scale(1)'
-                                    }}
-                            >
-                                Ver Ofertas
+                            <button className="px-6 py-2.5 bg-white text-gray-900 rounded-full font-medium text-sm hover:bg-gray-100 transition-colors">
+                                Conferir
                             </button>
                         </div>
                     </div>
                 ))}
+            </div>
 
-                {/* Indicadores */}
-                <div style={{
-                    position: 'absolute',
-                    bottom: '12px',
-                    left: '50%',
-                    transform: 'translateX(-50%)',
-                    display: 'flex',
-                    gap: '6px',
-                    zIndex: 2
-                }}>
-                    {banners.map((_, index) => (
-                        <button
-                            key={index}
-                            onClick={() => setAtual(index)}
-                            style={{
-                                width: index === atual ? '20px' : '6px',
-                                height: '6px',
-                                borderRadius: '3px',
-                                border: 'none',
-                                backgroundColor: index === atual ? '#ffffff' : 'rgba(255,255,255,0.5)',
-                                cursor: 'pointer',
-                                transition: 'all 0.3s'
-                            }}
-                        />
-                    ))}
-                </div>
+            {/* Controles */}
+            <button
+                onClick={prev}
+                className="absolute left-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/20 text-white hover:bg-white/30 transition-colors backdrop-blur-sm"
+            >
+                <ChevronLeft className="w-4 h-4" />
+            </button>
+            <button
+                onClick={next}
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/20 text-white hover:bg-white/30 transition-colors backdrop-blur-sm"
+            >
+                <ChevronRight className="w-4 h-4" />
+            </button>
+
+            {/* Indicadores */}
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex space-x-2">
+                {banners.map((_, index) => (
+                    <button
+                        key={index}
+                        onClick={() => setCurrent(index)}
+                        className={`h-1.5 rounded-full transition-all duration-300 ${
+                            index === current ? 'bg-white w-8' : 'bg-white/40 w-1.5'
+                        }`}
+                    />
+                ))}
             </div>
         </div>
-    )
+    );
 }
