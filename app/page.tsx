@@ -1,27 +1,26 @@
+// app/page.tsx
 import { Header } from '@/components/layout/Header'
 import { BottomNav } from '@/components/layout/BottomNav'
 import { SearchBar } from '@/components/layout/SearchBar'
-import { CategoryChips } from '@/components/home/CategoryChips'
 import { BannerCarousel } from '@/components/home/BannerCarousel'
+import { CategoryChips } from '@/components/home/CategoryChips'
 import { ModalidadesSection } from '@/components/home/ModalidadesSection'
-import { BikeFeed } from '@/components/home/BikeFeed'
+
+// Mude esta linha de:
+// import { BikeFeed } from '@/components/home/BikeFeed'
+// Para:
+import BikeFeed from '@/components/home/BikeFeed'  // SEM chaves
 
 export default function Home() {
     return (
-        <div style={{
-            minHeight: '100vh',
-            backgroundColor: '#f5f5f5',
-            paddingBottom: '70px'
-        }}>
+        <main className="min-h-screen bg-gray-50">
             <Header />
-            <div className="container">
-                <SearchBar />
-                <CategoryChips />
-                <BannerCarousel />
-                <ModalidadesSection />
-                <BikeFeed />
-            </div>
+            <SearchBar />
+            <BannerCarousel />
+            <CategoryChips />
+            <ModalidadesSection />
+            <BikeFeed />
             <BottomNav />
-        </div>
-    )
+        </main>
+    );
 }
