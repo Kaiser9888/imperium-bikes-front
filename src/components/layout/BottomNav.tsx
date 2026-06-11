@@ -1,4 +1,3 @@
-// src/components/layout/BottomNav.tsx
 'use client';
 
 import { usePathname } from 'next/navigation';
@@ -17,29 +16,24 @@ export function BottomNav() {
     const pathname = usePathname();
 
     return (
-        <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 z-50">
-            <div className="max-w-7xl mx-auto px-2">
-                <div className="flex justify-around items-center h-16">
-                    {navItems.map((item) => {
-                        const Icon = item.icon;
-                        const isActive = pathname === item.href;
-
-                        return (
-                            <Link
-                                key={item.href}
-                                href={item.href}
-                                className={`flex flex-col items-center justify-center px-3 py-1 rounded-xl transition-all ${
-                                    isActive
-                                        ? 'text-[#C9A96E]'
-                                        : 'text-gray-400 hover:text-gray-600'
-                                }`}
-                            >
-                                <Icon className="w-5 h-5" />
-                                <span className="text-[10px] font-medium mt-1">{item.label}</span>
-                            </Link>
-                        );
-                    })}
-                </div>
+        <nav className="fixed bottom-0 left-0 right-0 bg-[#0D0D0D] border-t border-[#8B0000]/30 z-50">
+            <div className="flex justify-around items-center h-16">
+                {navItems.map((item) => {
+                    const Icon = item.icon;
+                    const isActive = pathname === item.href;
+                    return (
+                        <Link
+                            key={item.href}
+                            href={item.href}
+                            className={`flex flex-col items-center px-3 py-1 transition-colors ${
+                                isActive ? 'text-[#DC143C]' : 'text-[#6B0000] hover:text-[#D4C5A9]'
+                            }`}
+                        >
+                            <Icon className="w-5 h-5" />
+                            <span className="text-[10px] mt-1">{item.label}</span>
+                        </Link>
+                    );
+                })}
             </div>
         </nav>
     );

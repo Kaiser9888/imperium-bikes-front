@@ -1,9 +1,8 @@
-// src/components/layout/Header.tsx
 'use client';
 
 import { useState } from 'react';
 import { useUser, SignInButton, UserButton } from '@clerk/nextjs';
-import { Menu, X, Bell } from 'lucide-react';
+import { Menu, X, Bell, Shield } from 'lucide-react';
 
 interface HeaderProps {
     menuOpen: boolean;
@@ -15,35 +14,23 @@ export default function Header({ menuOpen, setMenuOpen }: HeaderProps) {
     const [notifications] = useState(3);
 
     return (
-        <header className="sticky top-0 z-50 bg-white border-b border-gray-100 shadow-sm">
+        <header className="sticky top-0 z-50 bg-[#0D0D0D] border-b border-[#8B0000]/30">
             <div className="max-w-7xl mx-auto px-4">
                 <div className="flex items-center justify-between h-16">
-                    {/* Menu Hamburguer */}
-                    <button
-                        onClick={() => setMenuOpen(!menuOpen)}
-                        className="p-2 rounded-lg hover:bg-gray-50 transition-colors"
-                        aria-label="Menu"
-                    >
-                        {menuOpen ? (
-                            <X className="w-5 h-5 text-gray-700" />
-                        ) : (
-                            <Menu className="w-5 h-5 text-gray-700" />
-                        )}
-                    </button>
-
-                    {/* Logo */}
+                    {/* Logo - ESQUERDA */}
                     <div className="flex items-center space-x-2">
-                        <h1 className="text-xl font-bold text-[#1A1A1A] tracking-tight">
-                            IMPERIUM <span className="text-[#C9A96E]">BIKES</span>
+                        <Shield className="w-6 h-6 text-[#8B0000]" />
+                        <h1 className="text-lg font-bold text-[#D4C5A9] tracking-widest">
+                            IMPERIUM <span className="text-[#8B0000]">BIKES</span>
                         </h1>
                     </div>
 
-                    {/* Notificações e Perfil */}
-                    <div className="flex items-center space-x-2">
-                        <button className="relative p-2 rounded-lg hover:bg-gray-50 transition-colors">
-                            <Bell className="w-5 h-5 text-gray-600" />
+                    {/* Ícones - DIREITA */}
+                    <div className="flex items-center space-x-1">
+                        <button className="relative p-2 rounded hover:bg-[#2F2F2F] transition-colors">
+                            <Bell className="w-5 h-5 text-[#D4C5A9]" />
                             {notifications > 0 && (
-                                <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-xs w-4 h-4 rounded-full flex items-center justify-center font-medium">
+                                <span className="absolute top-1 right-1 bg-[#DC143C] text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold">
                   {notifications}
                 </span>
                             )}
@@ -53,31 +40,37 @@ export default function Header({ menuOpen, setMenuOpen }: HeaderProps) {
                             <UserButton />
                         ) : (
                             <SignInButton mode="modal">
-                                <button className="px-4 py-2 bg-[#1A1A1A] text-white rounded-full text-sm font-medium hover:bg-gray-800 transition-colors">
+                                <button className="px-4 py-2 bg-[#8B0000] text-[#D4C5A9] rounded text-sm font-medium hover:bg-[#DC143C] transition-colors">
                                     Entrar
                                 </button>
                             </SignInButton>
                         )}
+
+                        {/* Menu Hamburguer - DIREITA */}
+                        <button
+                            onClick={() => setMenuOpen(!menuOpen)}
+                            className="p-2 rounded hover:bg-[#2F2F2F] transition-colors"
+                        >
+                            {menuOpen ? (
+                                <X className="w-5 h-5 text-[#D4C5A9]" />
+                            ) : (
+                                <Menu className="w-5 h-5 text-[#D4C5A9]" />
+                            )}
+                        </button>
                     </div>
                 </div>
 
                 {/* Menu Mobile */}
                 {menuOpen && (
-                    <div className="lg:hidden border-t border-gray-100 py-4">
+                    <div className="border-t border-[#8B0000]/30 py-4">
                         <nav className="space-y-1">
-                            {[
-                                { label: 'Home', href: '/' },
-                                { label: 'Buscar', href: '/buscar' },
-                                { label: 'Torneios', href: '/torneios' },
-                                { label: 'Chat', href: '/chat' },
-                                { label: 'Perfil', href: '/perfil' },
-                            ].map((item) => (
+                            {['Home', 'Buscar', 'Torneios', 'Chat', 'Perfil'].map((item) => (
                                 <a
-                                    key={item.href}
-                                    href={item.href}
-                                    className="block px-4 py-3 text-gray-600 hover:bg-gray-50 hover:text-[#1A1A1A] rounded-lg transition-colors text-sm"
+                                    key={item}
+                                    href={item === 'Home' ? '/' : `/${item.toLowerCase()}`}
+                                    className="block px-4 py-3 text-[#D4C5A9] hover:bg-[#2F2F2F] hover:text-[#DC143C] transition-colors text-sm font-medieval"
                                 >
-                                    {item.label}
+                                    {item}
                                 </a>
                             ))}
                         </nav>

@@ -1,4 +1,3 @@
-// app/page.tsx
 'use client';
 
 import { useState } from 'react';
@@ -15,80 +14,50 @@ export default function Home() {
     const [menuOpen, setMenuOpen] = useState(false);
 
     return (
-        <main className="min-h-screen bg-[#FAF8F5] pb-20">
+        <main className="min-h-screen bg-[#0D0D0D] pb-20">
             <Header menuOpen={menuOpen} setMenuOpen={setMenuOpen} />
 
             {menuOpen && (
                 <div
-                    className="fixed inset-0 bg-black/20 z-40 lg:hidden"
+                    className="fixed inset-0 bg-black/60 z-40"
                     onClick={() => setMenuOpen(false)}
                 />
             )}
 
             <div className="max-w-7xl mx-auto px-4">
-                {/* Barra de Pesquisa */}
                 <div className="mt-6 mb-8">
                     <SearchBar />
                 </div>
 
-                {/* Banner Carrossel */}
                 <section className="mb-10">
                     <BannerCarousel />
                 </section>
 
-                {/* Vídeos, Fórum, Favoritos - VISÍVEIS E ELEGANTES */}
+                {/* Vídeos, Fórum, Favoritos */}
                 <section className="mb-10">
-                    <div className="grid grid-cols-3 gap-4">
-                        <Link
-                            href="/videos"
-                            className="group relative bg-white rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-300 border border-gray-100"
-                        >
-                            <div className="flex flex-col items-center text-center">
-                                <div className="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                                    <Play className="w-5 h-5 text-red-500" />
-                                </div>
-                                <span className="text-sm font-semibold text-[#1A1A1A]">Vídeos</span>
-                                <span className="text-xs text-gray-400 mt-1">Assistir</span>
-                            </div>
+                    <div className="grid grid-cols-3 gap-3">
+                        <Link href="/videos" className="bg-[#2F2F2F] border border-[#8B0000]/30 rounded p-4 flex flex-col items-center hover:border-[#8B0000] transition-colors">
+                            <Play className="w-5 h-5 text-[#DC143C] mb-2" />
+                            <span className="text-xs text-[#D4C5A9]">Vídeos</span>
                         </Link>
-
-                        <Link
-                            href="/forum"
-                            className="group relative bg-white rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-300 border border-gray-100"
-                        >
-                            <div className="flex flex-col items-center text-center">
-                                <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                                    <MessageSquare className="w-5 h-5 text-blue-500" />
-                                </div>
-                                <span className="text-sm font-semibold text-[#1A1A1A]">Fórum</span>
-                                <span className="text-xs text-gray-400 mt-1">Comunidade</span>
-                            </div>
+                        <Link href="/forum" className="bg-[#2F2F2F] border border-[#8B0000]/30 rounded p-4 flex flex-col items-center hover:border-[#8B0000] transition-colors">
+                            <MessageSquare className="w-5 h-5 text-[#DC143C] mb-2" />
+                            <span className="text-xs text-[#D4C5A9]">Fórum</span>
                         </Link>
-
-                        <Link
-                            href="/favoritos"
-                            className="group relative bg-white rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-300 border border-gray-100"
-                        >
-                            <div className="flex flex-col items-center text-center">
-                                <div className="w-12 h-12 rounded-full bg-rose-50 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                                    <Heart className="w-5 h-5 text-rose-500" />
-                                </div>
-                                <span className="text-sm font-semibold text-[#1A1A1A]">Favoritos</span>
-                                <span className="text-xs text-gray-400 mt-1">Salvos</span>
-                            </div>
+                        <Link href="/favoritos" className="bg-[#2F2F2F] border border-[#8B0000]/30 rounded p-4 flex flex-col items-center hover:border-[#8B0000] transition-colors">
+                            <Heart className="w-5 h-5 text-[#DC143C] mb-2" />
+                            <span className="text-xs text-[#D4C5A9]">Favoritos</span>
                         </Link>
                     </div>
                 </section>
 
-                {/* Modalidades */}
                 <section className="mb-10">
-                    <h2 className="text-lg font-semibold text-[#1A1A1A] mb-4">Modalidades</h2>
+                    <h2 className="text-lg font-bold text-[#D4C5A9] mb-4 border-l-4 border-[#8B0000] pl-3">MODALIDADES</h2>
                     <ModalidadesSection />
                 </section>
 
-                {/* Produtos em Destaque */}
                 <section>
-                    <h2 className="text-lg font-semibold text-[#1A1A1A] mb-4">Destaques</h2>
+                    <h2 className="text-lg font-bold text-[#D4C5A9] mb-4 border-l-4 border-[#8B0000] pl-3">DESTAQUES</h2>
                     <BikeFeed />
                 </section>
             </div>

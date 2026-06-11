@@ -1,4 +1,3 @@
-// src/components/home/ModalidadesSection.tsx
 import { Mountain, Timer, Bike, Crosshair, Car, Trophy } from 'lucide-react';
 
 const modalidades = [
@@ -12,23 +11,17 @@ const modalidades = [
 
 export function ModalidadesSection() {
     return (
-        <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
-            {modalidades.map((modalidade) => {
-                const Icon = modalidade.icon;
+        <div className="grid grid-cols-3 gap-3">
+            {modalidades.map((m) => {
+                const Icon = m.icon;
                 return (
                     <button
-                        key={modalidade.id}
-                        className="flex flex-col items-center p-4 bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-md hover:border-[#C9A96E]/30 transition-all duration-200 group"
+                        key={m.id}
+                        className="bg-[#2F2F2F] border border-[#8B0000]/20 rounded p-4 flex flex-col items-center hover:border-[#DC143C] hover:bg-[#1A1A1A] transition-all group"
                     >
-                        <div className="w-10 h-10 rounded-full bg-[#FAF8F5] flex items-center justify-center mb-2 group-hover:bg-[#C9A96E]/10 transition-colors">
-                            <Icon className="w-4 h-4 text-gray-600 group-hover:text-[#C9A96E] transition-colors" />
-                        </div>
-                        <span className="text-xs font-medium text-gray-700 group-hover:text-[#1A1A1A] text-center">
-              {modalidade.nome}
-            </span>
-                        <span className="text-[10px] text-gray-400 mt-0.5">
-              {modalidade.count}
-            </span>
+                        <Icon className="w-6 h-6 text-[#8B0000] group-hover:text-[#DC143C] mb-2" />
+                        <span className="text-xs text-[#D4C5A9] group-hover:text-white">{m.nome}</span>
+                        <span className="text-[10px] text-[#8B0000] mt-1">{m.count}</span>
                     </button>
                 );
             })}
