@@ -1,21 +1,18 @@
-// app/perfil/page.tsx
-'use client';
-
+﻿'use client';
 import { useUser } from '@clerk/nextjs';
 
 export default function PerfilPage() {
     const { user, isLoaded } = useUser();
-
-    if (!isLoaded) return <div>Carregando...</div>;
-
+    if (!isLoaded) return <div className="p-6">Carregando...</div>;
     return (
-        <div className="container mx-auto px-4 py-8">
-            <h1 className="text-3xl font-bold mb-6">Meu Perfil</h1>
-            <div className="bg-white rounded-lg shadow p-6">
-                <p>Nome: {user?.fullName}</p>
-                <p>Email: {user?.primaryEmailAddress?.emailAddress}</p>
-                <p className="text-gray-500 mt-4">Página em construção...</p>
-            </div>
+        <div className="p-6">
+            <h1 className="text-2xl font-bold mb-4">Meu Perfil</h1>
+            {user && (
+                <div className="bg-white rounded-lg shadow p-6">
+                    <p className="text-lg">Nome: {user.fullName}</p>
+                    <p className="text-gray-600">Email: {user.primaryEmailAddress?.emailAddress}</p>
+                </div>
+            )}
         </div>
     );
 }

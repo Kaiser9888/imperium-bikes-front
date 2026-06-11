@@ -1,61 +1,40 @@
-import api from '@/lib/api'
-
-const ENDPOINTS = {
-    LIST: '/api/products',
-    DETAIL: (id: number) => `/api/products/${id}`,
-    CREATE: '/api/products',
-    UPDATE: (id: number) => `/api/products/${id}`,
-    DELETE: (id: number) => `/api/products/${id}`,
-}
+// src/services/productService.ts
+import api from '../lib/api';
 
 export const productService = {
-    async listar(params?: {
-        page?: number
-        size?: number
-        categoria?: string
-        busca?: string
-        minPreco?: number
-        maxPreco?: number
-        condicao?: string
-        sort?: string
-    }) {
-        const response = await api.get(ENDPOINTS.LIST, { params })
-        return response.data
+    async getAll(page = 0, size = 10, sort = 'createdAt,desc') {
+        try {
+            const response = await api.get('/api/products', {
+                params: { page, size, sort }
+            });
+            console.log('✅ Produtos recebidos:', response.data);
+            return response.data;
+        } catch (error) {
+            console.error('❌ Erro ao buscar produtos:', error);
+            throw error;
+        }
     },
 
-    async buscarPorId(id: number) {
-        const response = await api.get(ENDPOINTS.DETAIL(id))
-        return response.data
+    async getById(id: string) {
+        try {
+            const response = await api.get(`/api/products/${id}`);
+            return response.data;
+        } catch (error) {
+            console.error(`❌ Erro ao buscar produto ${id}:`, error);
+            throw error;
+        }
     },
 
-    // ✅ CORRIGIDO: usa listar() com sort em vez de endpoint inexistente
-    async destaques() {
-        const response = await api.get(ENDPOINTS.LIST, {
-            params: {
-                page: 0,
-                size: 10,
-                sort: 'createdAt,desc'
-            }
-        })
-        // Retorna só o array de produtos
-        return response.data.content || response.data || []
-    },
-
-    async criar(data: FormData) {
-        const response = await api.post(ENDPOINTS.CREATE, data, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-        })
-        return response.data
-    },
-
-    async atualizar(id: number, data: FormData) {
-        const response = await api.put(ENDPOINTS.UPDATE(id), data, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-        })
-        return response.data
-    },
-
-    async deletar(id: number) {
-        await api.delete(ENDPOINTS.DELETE(id))
-    },
-}
+    async getDestaques() {
+        try {
+            // Tentar endpoint de destaques, se existir
+            const response = await api.get('/api/products/destaques');
+            return response.data;
+        } catch (error) {
+            // Fallback: buscar todos e filtrar
+            console.log('⚠️ Endpoint /destaques não encontrado, usando /api/products');
+            const allProducts = await this.getAll(0, 10, 'createdAt,desc');
+            return allProducts;
+        }
+    }
+};
