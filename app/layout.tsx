@@ -1,22 +1,25 @@
-import type { Metadata } from "next";
-import { ClerkProvider } from "@clerk/nextjs";
-import "./globals.css";
+// app/layout.tsx
+import { ClerkProvider } from '@clerk/nextjs'
+import type { Metadata } from 'next'
+import './globals.css'
 
 export const metadata: Metadata = {
-  title: "Imperium Bikes",
-  description: "Marketplace de Bicicletas",
-};
+    title: 'Imperium Sports',
+    description: 'Marketplace de bicicletas e esportes',
+}
 
 export default function RootLayout({
-                                     children,
-                                   }: Readonly<{
-  children: React.ReactNode;
-}>) {
-  return (
-      <ClerkProvider>
-        <html lang="pt-BR">
-        <body>{children}</body>
-        </html>
-      </ClerkProvider>
-  );
+                                       children,
+                                   }: {
+    children: React.ReactNode
+}) {
+    return (
+        <ClerkProvider>
+            <html lang="pt-BR">
+            <body className="bg-[#1E1F22] text-[#EFEDE6]">
+            {children}
+            </body>
+            </html>
+        </ClerkProvider>
+    )
 }
