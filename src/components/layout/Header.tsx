@@ -15,7 +15,7 @@ export function Header({ onMenuClick, cartCount = 0, notificationCount = 0 }: He
     return (
         <header
             className="sticky top-0 z-40 border-b border-border/60 bg-marble bg-cover bg-center shadow-sm"
-            style={{ backgroundImage: "url(public/images/marble-light.png)" }}
+            style={{ backgroundImage: "url(public/imagem/marble-light.png)" }}
         >
             {/* overlay para garantir legibilidade sobre o mármore */}
             <div className="bg-marble/70 backdrop-blur-[2px]">
