@@ -22,18 +22,12 @@ export default function Page() {
 
             <MenuDrawer open={menuOpen} onClose={() => setMenuOpen(false)} />
 
-            <main className="mx-auto w-full max-w-7xl pb-24 px-4 md:px-6 lg:px-8">
-                <div className="flex flex-col gap-6 py-5">
+            <main className="mx-auto w-full max-w-7xl pb-24">
+                <div className="flex flex-col gap-6 py-5 px-4">
                     <BannerCarousel />
                     <QuickActions />
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        <div className="lg:col-span-2">
-                            <ProdutosDestaque />
-                        </div>
-                        <div className="lg:col-span-1">
-                            <ModalidadesSection />
-                        </div>
-                    </div>
+                    <ModalidadesSection />
+                    <ProdutosDestaque />
                 </div>
             </main>
 
