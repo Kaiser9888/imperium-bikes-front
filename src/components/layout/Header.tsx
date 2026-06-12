@@ -17,10 +17,8 @@ export function Header({ onMenuClick, cartCount = 0, notificationCount = 0 }: He
             className="sticky top-0 z-40 border-b border-border/60 bg-marble bg-cover bg-center shadow-sm"
             style={{ backgroundImage: "url(/images/marble-light.png)" }}
         >
-            {/* overlay para garantir legibilidade sobre o mármore */}
             <div className="bg-marble/1 backdrop-blur-[2px]">
-                <div className="mx-auto flex w-full max-w-2xl items-center justify-between gap-3 px-4 py-3">
-                    {/* Logo */}
+                <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-3 px-4 py-3">
                     <Link href="/" className="flex shrink-0 flex-col leading-none" aria-label="Imperium Bikes - início">
                         <span className="font-blackletter text-2xl leading-none text-primary">Imperium</span>
                         <span className="font-heading text-[0.6rem] font-semibold uppercase tracking-[0.35em] text-marble-foreground/70">
@@ -28,7 +26,6 @@ export function Header({ onMenuClick, cartCount = 0, notificationCount = 0 }: He
             </span>
                     </Link>
 
-                    {/* Ações à direita */}
                     <div className="flex items-center gap-1">
                         <IconButton label="Notificações" badge={notificationCount}>
                             <Bell className="size-5" />
@@ -37,7 +34,6 @@ export function Header({ onMenuClick, cartCount = 0, notificationCount = 0 }: He
                             <ShoppingCart className="size-5" />
                         </IconButton>
 
-                        {/* Conta do usuário (Clerk) */}
                         <Guest>
                             <SignInButton mode="modal">
                                 <button
@@ -68,8 +64,7 @@ export function Header({ onMenuClick, cartCount = 0, notificationCount = 0 }: He
                     </div>
                 </div>
 
-                {/* Busca central */}
-                <div className="mx-auto w-full max-w-2xl px-4 pb-3">
+                <div className="mx-auto w-full max-w-7xl px-4 pb-3">
                     <form
                         role="search"
                         className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2.5 shadow-sm focus-within:ring-2 focus-within:ring-ring/40"

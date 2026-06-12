@@ -23,7 +23,7 @@ export function BottomNav({ onMenuClick }: BottomNavProps) {
             aria-label="Navegação inferior"
             className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card/95 backdrop-blur-md"
         >
-            <ul className="mx-auto flex w-full max-w-2xl items-stretch justify-between px-2">
+            <ul className="mx-auto flex w-full max-w-7xl items-stretch justify-between px-2">
                 {navItems.map(({ icon: Icon, label, key }) => {
                     const isActive = active === key
                     return (
