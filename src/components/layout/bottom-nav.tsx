@@ -36,7 +36,7 @@ export function BottomNav({ onMenuClick }: BottomNavProps) {
                                 }}
                                 aria-current={isActive ? "page" : undefined}
                                 className={`flex w-full flex-col items-center gap-1 py-2.5 text-[0.65rem] font-medium transition-colors ${
-                                    isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
+                                    isActive ? "text-gold" : "text-muted-foreground hover:text-foreground"
                                 }`}
                             >
                                 <Icon className="size-5" strokeWidth={isActive ? 2.4 : 1.8} />
