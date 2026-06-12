@@ -1,82 +1,114 @@
-'use client';
+"use client"
 
-import { useState } from 'react';
-import { useUser, SignInButton, UserButton } from '@clerk/nextjs';
-import { Menu, X, Bell, Shield } from 'lucide-react';
+import { Bell, Menu, ShoppingCart, Search, User } from "lucide-react"
+import { SignInButton, UserButton } from "@clerk/nextjs"
+import { Authed, Guest } from "@/components/auth/auth-gates"
+import Link from "next/link";
 
-interface HeaderProps {
-    menuOpen: boolean;
-    setMenuOpen: (open: boolean) => void;
+type HeaderProps = {
+    onMenuClick: () => void
+    cartCount?: number
+    notificationCount?: number
 }
 
-export default function Header({ menuOpen, setMenuOpen }: HeaderProps) {
-    const { user, isSignedIn } = useUser();
-    const [notifications] = useState(3);
-
+export function Header({ onMenuClick, cartCount = 0, notificationCount = 0 }: HeaderProps) {
     return (
-        <header className="sticky top-0 z-50 bg-[#0D0D0D] border-b border-[#8B0000]/30">
-            <div className="max-w-7xl mx-auto px-4">
-                <div className="flex items-center justify-between h-16">
-                    {/* Logo - ESQUERDA */}
-                    <div className="flex items-center space-x-2">
-                        <Shield className="w-6 h-6 text-[#8B0000]" />
-                        <h1 className="text-lg font-bold text-[#D4C5A9] tracking-widest">
-                            IMPERIUM <span className="text-[#8B0000]">BIKES</span>
-                        </h1>
-                    </div>
+        <header
+            className="sticky top-0 z-40 border-b border-border/60 bg-marble bg-cover bg-center shadow-sm"
+            style={{ backgroundImage: "url(/images/marble-light.png)" }}
+        >
+            {/* overlay para garantir legibilidade sobre o mármore */}
+            <div className="bg-marble/70 backdrop-blur-[2px]">
+                <div className="mx-auto flex w-full max-w-2xl items-center justify-between gap-3 px-4 py-3">
+                    {/* Logo */}
+                    <Link href="/" className="flex shrink-0 flex-col leading-none" aria-label="Imperium Bikes - início">
+                        <span className="font-blackletter text-2xl leading-none text-primary">Imperium</span>
+                        <span className="font-heading text-[0.6rem] font-semibold uppercase tracking-[0.35em] text-marble-foreground/70">
+              Bikes
+            </span>
+                    </Link>
 
-                    {/* Ícones - DIREITA */}
-                    <div className="flex items-center space-x-1">
-                        <button className="relative p-2 rounded hover:bg-[#2F2F2F] transition-colors">
-                            <Bell className="w-5 h-5 text-[#D4C5A9]" />
-                            {notifications > 0 && (
-                                <span className="absolute top-1 right-1 bg-[#DC143C] text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold">
-                  {notifications}
-                </span>
-                            )}
-                        </button>
+                    {/* Ações à direita */}
+                    <div className="flex items-center gap-1">
+                        <IconButton label="Notificações" badge={notificationCount}>
+                            <Bell className="size-5" />
+                        </IconButton>
+                        <IconButton label="Carrinho" badge={cartCount}>
+                            <ShoppingCart className="size-5" />
+                        </IconButton>
 
-                        {isSignedIn ? (
-                            <UserButton />
-                        ) : (
+                        {/* Conta do usuário (Clerk) */}
+                        <Guest>
                             <SignInButton mode="modal">
-                                <button className="px-4 py-2 bg-[#8B0000] text-[#D4C5A9] rounded text-sm font-medium hover:bg-[#DC143C] transition-colors">
-                                    Entrar
+                                <button
+                                    type="button"
+                                    aria-label="Entrar"
+                                    className="flex size-10 items-center justify-center rounded-md text-marble-foreground transition-colors hover:bg-marble-foreground/10"
+                                >
+                                    <User className="size-5" />
                                 </button>
                             </SignInButton>
-                        )}
+                        </Guest>
+                        <Authed>
+                            <div className="flex size-10 items-center justify-center">
+                                <UserButton
+                                    appearance={{ elements: { avatarBox: "size-7" } }}
+                                />
+                            </div>
+                        </Authed>
 
-                        {/* Menu Hamburguer - DIREITA */}
                         <button
-                            onClick={() => setMenuOpen(!menuOpen)}
-                            className="p-2 rounded hover:bg-[#2F2F2F] transition-colors"
+                            type="button"
+                            onClick={onMenuClick}
+                            aria-label="Abrir menu"
+                            className="flex size-10 items-center justify-center rounded-md text-marble-foreground transition-colors hover:bg-marble-foreground/10"
                         >
-                            {menuOpen ? (
-                                <X className="w-5 h-5 text-[#D4C5A9]" />
-                            ) : (
-                                <Menu className="w-5 h-5 text-[#D4C5A9]" />
-                            )}
+                            <Menu className="size-5" />
                         </button>
                     </div>
                 </div>
 
-                {/* Menu Mobile */}
-                {menuOpen && (
-                    <div className="border-t border-[#8B0000]/30 py-4">
-                        <nav className="space-y-1">
-                            {['Home', 'Buscar', 'Torneios', 'Chat', 'Perfil'].map((item) => (
-                                <a
-                                    key={item}
-                                    href={item === 'Home' ? '/' : `/${item.toLowerCase()}`}
-                                    className="block px-4 py-3 text-[#D4C5A9] hover:bg-[#2F2F2F] hover:text-[#DC143C] transition-colors text-sm font-medieval"
-                                >
-                                    {item}
-                                </a>
-                            ))}
-                        </nav>
-                    </div>
-                )}
+                {/* Busca central */}
+                <div className="mx-auto w-full max-w-2xl px-4 pb-3">
+                    <form
+                        role="search"
+                        className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2.5 shadow-sm focus-within:ring-2 focus-within:ring-ring/40"
+                        onSubmit={(e) => e.preventDefault()}
+                    >
+                        <Search className="size-4 shrink-0 text-muted-foreground" />
+                        <input
+                            type="search"
+                            placeholder="Buscar bikes, peças, marcas..."
+                            className="w-full bg-transparent text-sm text-card-foreground outline-none placeholder:text-muted-foreground"
+                        />
+                    </form>
+                </div>
             </div>
         </header>
-    );
+    )
+}
+
+function IconButton({
+                        children,
+                        label,
+                        badge = 0,
+                    }: {
+    children: React.ReactNode
+    label: string
+    badge?: number
+}) {
+    return (
+        <button
+            type="button"
+            aria-label={label}
+            className="relative flex size-10 items-center justify-center rounded-md text-marble-foreground transition-colors hover:bg-marble-foreground/10"
+        >
+            {children}
+            {badge > 0 && (
+                <span className="absolute right-1 top-1 flex min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[0.6rem] font-bold leading-4 text-primary-foreground">
+          {badge > 9 ? "9+" : badge}
+        </span>
+            )}
+        </button>
+    )
 }
