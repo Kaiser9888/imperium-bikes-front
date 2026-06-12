@@ -18,7 +18,7 @@ export function Header({ onMenuClick, cartCount = 0, notificationCount = 0 }: He
             style={{ backgroundImage: "url(/images/marble-light.png)" }}
         >
             {/* overlay para garantir legibilidade sobre o mármore */}
-            <div className="bg-marble/40 backdrop-blur-[2px]">
+            <div className="bg-marble/30 backdrop-blur-[2px]">
                 <div className="mx-auto flex w-full max-w-2xl items-center justify-between gap-3 px-4 py-3">
                     {/* Logo */}
                     <Link href="/" className="flex shrink-0 flex-col leading-none" aria-label="Imperium Bikes - início">
