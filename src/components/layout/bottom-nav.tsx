@@ -1,10 +1,10 @@
 "use client"
 
-import { Menu, Search, Trophy, MessageCircle, User } from "lucide-react"
+import { Home, Search, Trophy, MessageCircle, User } from "lucide-react"
 import { useState } from "react"
 
 const navItems = [
-    { icon: Menu, label: "Menu", key: "menu" },
+    { icon: Home, label: "Menu", key: "menu" },
     { icon: Search, label: "Pesquisa", key: "pesquisa" },
     { icon: Trophy, label: "Torneio", key: "torneio" },
     { icon: MessageCircle, label: "Chat", key: "chat" },
