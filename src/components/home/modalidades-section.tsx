@@ -1,8 +1,8 @@
 const modalidades = [
     { label: "Downhill", img: "/images/mod-downhill.png", href: "/modalidades/downhill" },
+    { label: "BMX", img: "/images/mod-bmx.png", href: "/modalidades/bmx" },
     { label: "Mountain", img: "/images/mod-mountain.png", href: "/modalidades/mountain" },
     { label: "Speed", img: "/images/mod-speed.png", href: "/modalidades/speed" },
-    { label: "BMX", img: "/images/mod-bmx.png", href: "/modalidades/bmx" },
     { label: "Urbana", img: "/images/mod-urbana.png", href: "/modalidades/urbana" },
 ]
 
