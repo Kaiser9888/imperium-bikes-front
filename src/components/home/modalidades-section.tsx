@@ -4,6 +4,7 @@ const modalidades = [
     { label: "Mountain", img: "/images/mod-mountain.png", href: "/modalidades/mountain" },
     { label: "Speed", img: "/images/mod-speed.png", href: "/modalidades/speed" },
     { label: "Urbana", img: "/images/mod-urbana.png", href: "/modalidades/urbana" },
+    { label: "Outros", img: "/images/mod-outros.png", href: "/modalidades/outros" },
 ]
 
 export function ModalidadesSection() {
