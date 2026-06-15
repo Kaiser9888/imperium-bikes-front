@@ -1,29 +1,20 @@
-// app/modalidades/downhill/page.tsx
 "use client"
 
 import { Header } from "@/components/layout/Header"
 import { BottomNav } from "@/components/layout/bottom-nav"
-import { Heart, Star, ArrowLeft } from "lucide-react"
+import { ArrowLeft, Bike, Frame, Wrench, Shirt } from "lucide-react"
 import Link from "next/link"
 import { useState } from "react"
 
-const produtos = [
-    { id: 1, nome: "Gladius DH Pro", preco: 18990, precoAntigo: 22990, img: "/images/produto-dh-1.png", nota: 4.9 },
-    { id: 2, nome: "Colossus Downhill", preco: 24990, precoAntigo: null, img: "/images/produto-dh-2.png", nota: 4.8 },
-    { id: 3, nome: "Furia DH Carbon", preco: 15990, precoAntigo: 18990, img: "/images/produto-dh-3.png", nota: 4.7 },
-    { id: 4, nome: "Abyss Gravity", preco: 21990, precoAntigo: null, img: "/images/produto-dh-4.png", nota: 4.6 },
+const filtros = [
+    { key: "bikes", label: "Bikes", icon: Bike },
+    { key: "quadros", label: "Quadros", icon: Frame },
+    { key: "pecas", label: "Peças", icon: Wrench },
+    { key: "vestuario", label: "Vestuário", icon: Shirt },
 ]
 
-function formatPreco(valor: number) {
-    return valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 0 })
-}
-
 export default function DownhillPage() {
-    const [favoritos, setFavoritos] = useState<number[]>([])
-
-    const toggleFavorito = (id: number) => {
-        setFavoritos((prev) => prev.includes(id) ? prev.filter((f) => f !== id) : [...prev, id])
-    }
+    const [ativo, setAtivo] = useState("bikes")
 
     return (
         <div className="min-h-screen bg-background">
@@ -43,7 +34,6 @@ export default function DownhillPage() {
                 </video>
                 <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
 
-                {/* Voltar */}
                 <Link
                     href="/"
                     className="absolute left-4 top-4 z-10 flex items-center gap-1 rounded-full bg-background/80 px-3 py-2 text-sm font-medium text-foreground backdrop-blur hover:bg-background"
@@ -52,7 +42,6 @@ export default function DownhillPage() {
                     Voltar
                 </Link>
 
-                {/* Texto sobre o vídeo */}
                 <div className="absolute bottom-0 left-0 right-0 p-6 md:p-10">
                     <span className="inline-block rounded-full bg-primary px-3 py-1 font-heading text-xs font-semibold uppercase tracking-widest text-primary-foreground">
                         Modalidade
@@ -89,70 +78,37 @@ export default function DownhillPage() {
                 </div>
             </section>
 
-            {/* Produtos */}
+            {/* Filtros */}
             <section className="mx-auto max-w-7xl px-4 py-10">
-                <div className="flex items-center justify-between mb-6">
-                    <h2 className="font-heading text-lg font-bold uppercase tracking-wide text-foreground">
-                        Bikes de Downhill
-                    </h2>
-                    <a href="/produtos?modalidade=downhill" className="text-xs font-medium text-primary hover:underline">
-                        Ver todas
-                    </a>
+                <h2 className="font-heading text-lg font-bold uppercase tracking-wide text-foreground mb-5">
+                    Explorar Downhill
+                </h2>
+
+                <div className="flex gap-2 overflow-x-auto pb-2 [scrollbar-width:none]">
+                    {filtros.map(({ key, label, icon: Icon }) => (
+                        <button
+                            key={key}
+                            onClick={() => setAtivo(key)}
+                            className={`flex shrink-0 items-center gap-2 rounded-full px-4 py-2.5 text-sm font-medium transition-colors ${
+                                ativo === key
+                                    ? "bg-primary text-primary-foreground"
+                                    : "bg-card border border-border text-muted-foreground hover:text-foreground hover:border-primary/30"
+                            }`}
+                        >
+                            <Icon className="size-4" />
+                            {label}
+                        </button>
+                    ))}
                 </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    {produtos.map((produto) => {
-                        const isFav = favoritos.includes(produto.id)
-                        return (
-                            <article
-                                key={produto.id}
-                                className="flex flex-col overflow-hidden rounded-xl border border-border bg-card transition-shadow hover:shadow-md"
-                            >
-                                <div className="relative aspect-square bg-secondary">
-                                    <img
-                                        src={produto.img || "/placeholder.svg"}
-                                        alt={produto.nome}
-                                        className="size-full object-cover"
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={() => toggleFavorito(produto.id)}
-                                        aria-label={isFav ? "Remover dos favoritos" : "Adicionar aos favoritos"}
-                                        className="absolute right-2 top-2 flex size-8 items-center justify-center rounded-full bg-card/90 text-foreground shadow-sm backdrop-blur hover:bg-card"
-                                    >
-                                        <Heart className={`size-4 ${isFav ? "fill-primary text-primary" : ""}`} />
-                                    </button>
-                                    {produto.precoAntigo && (
-                                        <span className="absolute left-2 top-2 rounded-md bg-primary px-1.5 py-0.5 font-heading text-[0.6rem] font-bold uppercase text-primary-foreground">
-                                            Oferta
-                                        </span>
-                                    )}
-                                </div>
-                                <div className="flex flex-1 flex-col gap-1 p-3">
-                                    <span className="font-heading text-[0.6rem] font-semibold uppercase tracking-widest text-muted-foreground">
-                                        Downhill
-                                    </span>
-                                    <h3 className="text-sm font-semibold leading-tight text-card-foreground">
-                                        {produto.nome}
-                                    </h3>
-                                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                                        <Star className="size-3 fill-accent text-accent" />
-                                        {produto.nota.toFixed(1)}
-                                    </div>
-                                    <div className="mt-auto flex flex-col pt-1">
-                                        {produto.precoAntigo && (
-                                            <span className="text-xs text-muted-foreground line-through">
-                                                {formatPreco(produto.precoAntigo)}
-                                            </span>
-                                        )}
-                                        <span className="font-heading text-base font-bold text-foreground">
-                                            {formatPreco(produto.preco)}
-                                        </span>
-                                    </div>
-                                </div>
-                            </article>
-                        )
-                    })}
+                {/* Conteúdo do filtro */}
+                <div className="mt-6 rounded-xl border border-border bg-card p-8 text-center">
+                    <p className="text-muted-foreground text-sm">
+                        {ativo === "bikes" && "Bikes completas de downhill — em breve."}
+                        {ativo === "quadros" && "Quadros e chassis para downhill — em breve."}
+                        {ativo === "pecas" && "Suspensão, freios, rodas e componentes — em breve."}
+                        {ativo === "vestuario" && "Capacetes, luvas, joelheiras e roupas técnicas — em breve."}
+                    </p>
                 </div>
             </section>
 
