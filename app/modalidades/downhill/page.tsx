@@ -57,7 +57,7 @@ export default function DownhillPage() {
                     <span className="inline-block rounded-full bg-primary px-3 py-1 font-heading text-xs font-semibold uppercase tracking-widest text-primary-foreground">
                         Modalidade
                     </span>
-                    <h1 className="mt-3 font-blackletter text-4xl leading-none text-background md:text-6xl">
+                    <h1 className="mt-3 font-blackletter text-4xl leading-none text-primary md:text-6xl">
                         Downhill
                     </h1>
                     <p className="mt-2 max-w-xl text-sm text-background/80 md:text-base">
