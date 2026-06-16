@@ -4,7 +4,8 @@
 import { Header } from "@/components/layout/Header"
 import { BottomNav } from "@/components/layout/bottom-nav"
 import { useUser, SignInButton } from "@clerk/nextjs"
-import { Camera, Package, Trophy, Grid3X3, ShoppingBag, Medal, Settings, MapPin, Link2 } from "lucide-react"
+import { Camera, Package, Trophy, Grid3X3, ShoppingBag, Medal, Settings, MapPin, Link2, X } from "lucide-react"
+import Link from "next/link"
 import { useState } from "react"
 
 type Aba = "fotos" | "produtos" | "torneios"
@@ -27,6 +28,21 @@ const torneiosFake = [
 export default function PerfilPage() {
     const { user, isSignedIn, isLoaded } = useUser()
     const [aba, setAba] = useState<Aba>("fotos")
+    const [fotoSelecionada, setFotoSelecionada] = useState<number | null>(null)
+    const [comentario, setComentario] = useState("")
+    const [comentarios, setComentarios] = useState<{ texto: string; autor: string }[]>([])
+
+    const abrirFoto = (index: number) => setFotoSelecionada(index)
+    const fecharFoto = () => {
+        setFotoSelecionada(null)
+        setComentario("")
+    }
+
+    const enviarComentario = () => {
+        if (!comentario.trim()) return
+        setComentarios([...comentarios, { texto: comentario, autor: user?.fullName || "Anônimo" }])
+        setComentario("")
+    }
 
     if (!isLoaded) {
         return (
@@ -56,7 +72,23 @@ export default function PerfilPage() {
 
     return (
         <div className="min-h-screen bg-background">
-            <Header onMenuClick={() => {}} cartCount={0} notificationCount={0} />
+            {/* Header sem busca */}
+            <header
+                className="sticky top-0 z-40 border-b border-border/60 bg-marble bg-cover bg-center shadow-sm"
+                style={{ backgroundImage: "url(/images/marble-light.png)" }}
+            >
+                <div className="bg-marble/15 backdrop-blur-[2px]">
+                    <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 py-3">
+                        <Link href="/" className="flex shrink-0 flex-col leading-none">
+                            <span className="font-blackletter text-2xl leading-none text-primary">Imperium</span>
+                            <span className="font-heading text-[0.6rem] font-semibold uppercase tracking-[0.35em] text-marble-foreground/70">Bikes</span>
+                        </Link>
+                        <Link href="/configuracoes" className="flex size-10 items-center justify-center rounded-md text-marble-foreground hover:bg-marble-foreground/10 transition-colors">
+                            <Settings className="size-5" />
+                        </Link>
+                    </div>
+                </div>
+            </header>
 
             {/* Cabeçalho do perfil */}
             <section className="mx-auto max-w-2xl px-4 py-8">
@@ -92,10 +124,6 @@ export default function PerfilPage() {
                             </span>
                         </div>
                     </div>
-
-                    <button className="flex size-9 items-center justify-center rounded-full border border-border text-muted-foreground hover:text-foreground hover:border-primary/30 transition-colors">
-                        <Settings className="size-4" />
-                    </button>
                 </div>
 
                 {/* Stats */}
@@ -141,13 +169,23 @@ export default function PerfilPage() {
             <section className="mx-auto max-w-2xl px-4 py-6">
                 {/* Fotos */}
                 {aba === "fotos" && (
-                    <div className="grid grid-cols-3 gap-1.5">
-                        {fotosFake.map((foto, i) => (
-                            <div key={i} className="aspect-square bg-secondary rounded-lg overflow-hidden">
-                                <img src={foto} alt={`Foto ${i + 1}`} className="size-full object-cover" />
-                            </div>
-                        ))}
-                    </div>
+                    <>
+                        <div className="grid grid-cols-3 gap-1.5">
+                            {fotosFake.map((foto, i) => (
+                                <button
+                                    key={i}
+                                    onClick={() => abrirFoto(i)}
+                                    className="aspect-square bg-secondary rounded-lg overflow-hidden hover:opacity-80 transition-opacity"
+                                >
+                                    <img src={foto} alt={`Foto ${i + 1}`} className="size-full object-cover" />
+                                </button>
+                            ))}
+                        </div>
+                        {/* Botão flutuante de postar */}
+                        <button className="fixed bottom-24 right-4 z-30 flex size-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 transition-colors">
+                            <Camera className="size-5" />
+                        </button>
+                    </>
                 )}
 
                 {/* Produtos */}
@@ -155,9 +193,12 @@ export default function PerfilPage() {
                     <div className="text-center py-12">
                         <Package className="size-12 text-muted-foreground mx-auto mb-3" />
                         <p className="text-muted-foreground text-sm">Nenhum produto cadastrado</p>
-                        <button className="mt-4 rounded-full bg-primary px-5 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
+                        <Link
+                            href="/vender"
+                            className="mt-4 inline-block rounded-full bg-primary px-5 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+                        >
                             Vender agora
-                        </button>
+                        </Link>
                     </div>
                 )}
 
@@ -197,6 +238,61 @@ export default function PerfilPage() {
 
             <div className="pb-24" />
             <BottomNav onMenuClick={() => {}} />
+
+            {/* Modal de visualização de foto */}
+            {fotoSelecionada !== null && (
+                <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/95">
+                    {/* Fechar */}
+                    <button
+                        onClick={fecharFoto}
+                        className="absolute top-4 right-4 z-10 flex size-10 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors"
+                    >
+                        <X className="size-5" />
+                    </button>
+
+                    {/* Imagem */}
+                    <div className="flex-1 flex items-center justify-center p-4">
+                        <img
+                            src={fotosFake[fotoSelecionada]}
+                            alt="Foto expandida"
+                            className="max-h-full max-w-full rounded-xl object-contain"
+                        />
+                    </div>
+
+                    {/* Comentários */}
+                    <div className="bg-background rounded-t-2xl max-h-56 overflow-y-auto">
+                        <div className="p-4 space-y-3">
+                            {comentarios.length === 0 && (
+                                <p className="text-sm text-muted-foreground text-center py-4">
+                                    Nenhum comentário ainda. Seja o primeiro!
+                                </p>
+                            )}
+                            {comentarios.map((c, i) => (
+                                <div key={i} className="flex gap-2">
+                                    <span className="text-sm font-semibold text-foreground">{c.autor}:</span>
+                                    <span className="text-sm text-muted-foreground">{c.texto}</span>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="flex items-center gap-2 border-t border-border p-3">
+                            <input
+                                type="text"
+                                value={comentario}
+                                onChange={(e) => setComentario(e.target.value)}
+                                placeholder="Adicione um comentário..."
+                                className="flex-1 rounded-full border border-border bg-card px-4 py-2 text-sm outline-none focus:border-primary/30"
+                                onKeyDown={(e) => e.key === "Enter" && enviarComentario()}
+                            />
+                            <button
+                                onClick={enviarComentario}
+                                className="text-sm font-semibold text-primary hover:text-primary/80 transition-colors"
+                            >
+                                Enviar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }
