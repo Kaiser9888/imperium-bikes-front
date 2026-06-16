@@ -51,7 +51,7 @@ export default function OutrosPage() {
             {/* Hero sem vídeo (imagem de fundo) */}
             <section className="relative h-[40vh] min-h-[300px] overflow-hidden bg-secondary">
                 <img
-                    src="/images/outros-poster.png"
+                    src="/images/'outros-poster'.png"
                     alt="Acessórios e equipamentos"
                     className="absolute inset-0 size-full object-cover"
                 />
