@@ -170,7 +170,7 @@ export default function PerfilPage() {
                 <div className="mt-8">
                     <div className="flex items-center justify-between mb-3">
                         <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Patrocinadores</p>
-                        <Link href="/configuracoes#patrocinadores" className="text-xs font-medium text-primary hover:underline">Gerenciar</Link>
+                        <Link href="/configuracoes/patrocinadores" className="text-xs font-medium text-primary hover:underline">Gerenciar</Link>
                     </div>
                     <div className="grid grid-cols-3 gap-2">
                         {patrocinadoresFake.map((p, i) => (
