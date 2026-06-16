@@ -4,7 +4,7 @@
 import { Header } from "@/components/layout/Header"
 import { BottomNav } from "@/components/layout/bottom-nav"
 import { useUser, SignInButton } from "@clerk/nextjs"
-import { Camera, Package, Trophy, Grid3X3, ShoppingBag, Medal, Settings, MapPin, Link2, X, Flame, Send, Trash2, Users, BadgeDollarSign, UserPlus } from "lucide-react"
+import { Camera, Package, Trophy, Grid3X3, ShoppingBag, Medal, Settings, MapPin, Link2, X, Flame, Send, Trash2, UserPlus } from "lucide-react"
 import Link from "next/link"
 import { useState } from "react"
 
@@ -29,6 +29,9 @@ const patrocinadoresFake = [
     { nome: "Nike SB", logo: "/images/patro-nike.png" },
     { nome: "Red Bull", logo: "/images/patro-redbull.png" },
     { nome: "Shimano", logo: "/images/patro-shimano.png" },
+    { nome: "Fox Racing", logo: "/images/patro-fox.png" },
+    { nome: "Monster", logo: "/images/patro-monster.png" },
+    { nome: "Oakley", logo: "/images/patro-oakley.png" },
 ]
 
 export default function PerfilPage() {
@@ -43,8 +46,6 @@ export default function PerfilPage() {
     )
     const [modoExclusao, setModoExclusao] = useState(false)
     const [fotos, setFotos] = useState(fotosFake)
-
-    // Fictícios
     const [seguidores, setSeguidores] = useState(1247)
     const [seguindo, setSeguindo] = useState(389)
     const [jaSegue, setJaSegue] = useState(false)
@@ -171,56 +172,48 @@ export default function PerfilPage() {
                                 @{user.username || "usuario"}
                             </span>
                         </div>
-                        <p className="text-sm text-foreground mt-2">
-                            Atleta de downhill e mountain bike. Patrocinado por Nike SB, Red Bull e Shimano.
-                        </p>
                     </div>
                 </div>
 
-                {/* Stats */}
-                <div className="mt-6">
-                    <div className="grid grid-cols-5 gap-2">
-                        {[
-                            { valor: fotos.length, label: "Fotos" },
-                            { valor: 0, label: "Produtos" },
-                            { valor: torneiosFake.length, label: "Torneios" },
-                            { valor: seguidores, label: "Seguidores" },
-                            { valor: patrocinadoresFake.length, label: "Patroc." },
-                        ].map((stat) => (
-                            <button
-                                key={stat.label}
-                                onClick={() => {
-                                    if (stat.label === "Fotos") setAba("fotos")
-                                    if (stat.label === "Produtos") setAba("produtos")
-                                    if (stat.label === "Torneios") setAba("torneios")
-                                }}
-                                className="rounded-xl bg-card border border-border p-2.5 text-center hover:border-primary/30 transition-colors"
-                            >
-                                <p className="font-heading text-base font-bold text-foreground">{stat.valor}</p>
-                                <p className="text-[0.6rem] text-muted-foreground uppercase tracking-wider">{stat.label}</p>
-                            </button>
-                        ))}
-                    </div>
+                {/* Seguidores | Seguindo */}
+                <div className="mt-6 flex items-center gap-6">
+                    <button className="text-center hover:opacity-80 transition-opacity">
+                        <p className="font-heading text-xl font-bold text-foreground">{seguidores.toLocaleString()}</p>
+                        <p className="text-xs text-muted-foreground">Seguidores</p>
+                    </button>
+                    <button className="text-center hover:opacity-80 transition-opacity">
+                        <p className="font-heading text-xl font-bold text-foreground">{seguindo.toLocaleString()}</p>
+                        <p className="text-xs text-muted-foreground">Seguindo</p>
+                    </button>
+                </div>
 
-                    {/* Banner de patrocinadores */}
-                    {patrocinadoresFake.length > 0 && (
-                        <div className="mt-4">
-                            <p className="text-[0.6rem] text-muted-foreground uppercase tracking-wider mb-2">Patrocinadores</p>
-                            <div className="flex gap-3 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                                {patrocinadoresFake.map((p, i) => (
-                                    <div key={i} className="flex shrink-0 items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 hover:border-primary/30 transition-colors cursor-pointer">
-                                        <img src={p.logo} alt={p.nome} className="size-6 rounded object-cover" />
-                                        <span className="text-xs font-medium text-foreground whitespace-nowrap">{p.nome}</span>
-                                    </div>
-                                ))}
+                {/* Banner de patrocinadores */}
+                <div className="mt-6">
+                    <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">Patrocinadores</p>
+                    <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                        {patrocinadoresFake.map((p, i) => (
+                            <div
+                                key={i}
+                                className="flex shrink-0 items-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 hover:border-primary/30 transition-all cursor-pointer hover:shadow-sm"
+                            >
+                                <img src={p.logo} alt={p.nome} className="size-7 rounded-lg object-cover" />
+                                <span className="text-xs font-semibold text-foreground whitespace-nowrap">{p.nome}</span>
                             </div>
-                        </div>
-                    )}
+                        ))}
+                        {/* Botão para adicionar patrocinador */}
+                        <Link
+                            href="/configuracoes"
+                            className="flex shrink-0 items-center gap-2 rounded-xl border border-dashed border-border bg-transparent px-4 py-2.5 hover:border-primary/50 transition-all text-muted-foreground hover:text-primary"
+                        >
+                            <span className="text-lg leading-none">+</span>
+                            <span className="text-xs font-medium whitespace-nowrap">Anunciar</span>
+                        </Link>
+                    </div>
                 </div>
             </section>
 
             {/* Abas */}
-            <section className="mx-auto max-w-2xl px-4">
+            <section className="mx-auto max-w-2xl px-4 mt-4">
                 <div className="flex border-b border-border">
                     {[
                         { key: "fotos", label: "Fotos", icon: Grid3X3 },
@@ -261,9 +254,7 @@ export default function PerfilPage() {
                                 {modoExclusao && (
                                     <div className="flex items-center justify-between mb-2">
                                         <p className="text-xs text-red-500">Toque na foto para excluir</p>
-                                        <button onClick={() => setModoExclusao(false)} className="text-xs font-medium text-primary hover:underline">
-                                            Concluído
-                                        </button>
+                                        <button onClick={() => setModoExclusao(false)} className="text-xs font-medium text-primary hover:underline">Concluído</button>
                                     </div>
                                 )}
                                 <div className="grid grid-cols-3 gap-1.5">
@@ -291,10 +282,7 @@ export default function PerfilPage() {
                                     ))}
                                 </div>
                                 {!modoExclusao && (
-                                    <button
-                                        onClick={() => setModoExclusao(true)}
-                                        className="mt-3 text-xs text-muted-foreground hover:text-foreground transition-colors w-full text-center"
-                                    >
+                                    <button onClick={() => setModoExclusao(true)} className="mt-3 text-xs text-muted-foreground hover:text-foreground transition-colors w-full text-center">
                                         Gerenciar fotos
                                     </button>
                                 )}
@@ -364,11 +352,9 @@ export default function PerfilPage() {
                             </button>
                         </div>
                     </div>
-
                     <div className="flex-1 flex items-center justify-center px-2">
                         <img src={fotos[fotoSelecionada]} alt="Foto" className="max-h-full max-w-full rounded-lg object-contain" />
                     </div>
-
                     <div className="px-4 py-3">
                         <div className="flex items-center gap-4">
                             <button onClick={() => toggleCurtida(fotoSelecionada)} className="transition-transform active:scale-125">
@@ -379,7 +365,6 @@ export default function PerfilPage() {
                             </span>
                         </div>
                     </div>
-
                     <div className="bg-background rounded-t-2xl max-h-64 overflow-y-auto">
                         <div className="p-4 space-y-3">
                             {comentarios.length === 0 && (
