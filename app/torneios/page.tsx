@@ -1,7 +1,6 @@
 ﻿// app/torneios/page.tsx
 "use client"
 
-import { Header } from "@/components/layout/Header"
 import { BottomNav } from "@/components/layout/bottom-nav"
 import { Search, Plus, Trophy, MapPin, Calendar, Users, Flame, ChevronRight } from "lucide-react"
 import Link from "next/link"
@@ -11,22 +10,22 @@ const torneiosFake = [
     {
         id: "1", nome: "Downhill Cup 2026", modalidade: "Downhill", data: "15 Ago 2026", local: "Campos do Jordão, SP",
         participantes: 32, maxParticipantes: 48, valor: "R$ 89,90", status: "aberto", banner: "/images/torneio-1.png",
-        organizador: "@pedalpesado", premiacao: "R$ 5.000", diasRestantes: 12,
+        organizador: "@pedalpesado", premiacao: "R$ 5.000",
     },
     {
         id: "2", nome: "Mountain Challenge", modalidade: "Mountain Bike", data: "03 Set 2026", local: "Monte Verde, MG",
         participantes: 18, maxParticipantes: 30, valor: "Grátis", status: "aberto", banner: "/images/torneio-2.png",
-        organizador: "@trilheirapro", premiacao: "R$ 3.000", diasRestantes: 31,
+        organizador: "@trilheirapro", premiacao: "R$ 3.000",
     },
     {
         id: "3", nome: "Speed Elite Race", modalidade: "Speed", data: "22 Out 2026", local: "Rio de Janeiro, RJ",
         participantes: 45, maxParticipantes: 50, valor: "R$ 120,00", status: "quase_cheio", banner: "/images/torneio-3.png",
-        organizador: "@velocista", premiacao: "R$ 8.000", diasRestantes: 80,
+        organizador: "@velocista", premiacao: "R$ 8.000",
     },
     {
         id: "4", nome: "Urban Street Session", modalidade: "Urbana", data: "10 Jul 2026", local: "São Paulo, SP",
         participantes: 24, maxParticipantes: 40, valor: "R$ 49,90", status: "encerrado", banner: "/images/torneio-4.png",
-        organizador: "@urbanrider", premiacao: "R$ 2.500", diasRestantes: 0,
+        organizador: "@urbanrider", premiacao: "R$ 2.500",
     },
 ]
 
@@ -68,7 +67,7 @@ export default function TorneiosPage() {
             </header>
 
             <main className="mx-auto max-w-7xl px-4 py-6">
-                {/* Hero */}
+                {/* Título */}
                 <div className="mb-6">
                     <h1 className="font-blackletter text-3xl text-primary">Torneios</h1>
                     <p className="text-sm text-muted-foreground mt-1">Compita, vença e conquiste sua glória</p>
@@ -82,7 +81,12 @@ export default function TorneiosPage() {
 
                 {/* Filtros */}
                 <div className="flex gap-2 overflow-x-auto pb-3 [scrollbar-width:none]">
-                    {[{ key: "todos", label: "Todos" },{ key: "aberto", label: "Inscrições abertas" },{ key: "andamento", label: "Em andamento" },{ key: "encerrado", label: "Encerrados" }].map((f) => (
+                    {[
+                        { key: "todos", label: "Todos" },
+                        { key: "aberto", label: "Inscrições abertas" },
+                        { key: "andamento", label: "Em andamento" },
+                        { key: "encerrado", label: "Encerrados" },
+                    ].map((f) => (
                         <button key={f.key} onClick={() => setFiltro(f.key as FiltroStatus)}
                                 className={`shrink-0 rounded-full px-4 py-2 text-xs font-medium transition-colors ${filtro === f.key ? "bg-primary text-primary-foreground" : "bg-card border border-border text-muted-foreground hover:text-foreground"}`}>
                             {f.label}
