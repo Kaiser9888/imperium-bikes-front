@@ -4,7 +4,7 @@
 import { Header } from "@/components/layout/Header"
 import { BottomNav } from "@/components/layout/bottom-nav"
 import { useUser } from "@clerk/nextjs"
-import { ArrowLeft, Calendar, MapPin, Users, DollarSign, Trophy, FileText, Image, X, Info, Shield } from "lucide-react"
+import { ArrowLeft, Calendar, MapPin, Users, DollarSign, Trophy, Image, X, Info, Shield } from "lucide-react"
 import Link from "next/link"
 import { useState } from "react"
 
@@ -28,6 +28,7 @@ export default function CriarTorneioPage() {
         valorInscricao: "",
         premiacao: "",
         regras: "",
+        capa: "",
     })
 
     const [passo, setPasso] = useState(1)
@@ -49,7 +50,6 @@ export default function CriarTorneioPage() {
     const { total, comissao, organizador } = calcularComissao()
 
     const handleSubmit = () => {
-        // Futuro: POST /api/tournaments
         setEnviado(true)
     }
 
@@ -115,7 +115,7 @@ export default function CriarTorneioPage() {
                     ))}
                 </div>
 
-                {/* PASSO 1 - Informações básicas */}
+                {/* PASSO 1 */}
                 {passo === 1 && (
                     <div className="space-y-5">
                         <h2 className="font-heading text-lg font-bold text-foreground">Informações do torneio</h2>
@@ -123,6 +123,37 @@ export default function CriarTorneioPage() {
                         <div>
                             <label className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Nome do torneio *</label>
                             <input type="text" value={form.nome} onChange={(e) => update("nome", e.target.value)} placeholder="Ex: Downhill Cup 2026" className="w-full rounded-xl border border-border bg-card px-4 py-3 text-sm mt-1 outline-none focus:border-primary/30" />
+                        </div>
+
+                        {/* CAPA DO TORNEIO */}
+                        <div>
+                            <label className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Capa do torneio</label>
+                            <div className="mt-1">
+                                {form.capa ? (
+                                    <div className="relative rounded-xl overflow-hidden border border-border">
+                                        <img src={form.capa} alt="Capa" className="w-full h-40 object-cover" />
+                                        <button
+                                            onClick={() => update("capa", "")}
+                                            className="absolute top-2 right-2 size-7 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-red-500 transition-colors"
+                                        >
+                                            <X className="size-3.5" />
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-border p-8 hover:border-primary/30 transition-colors">
+                                        <Image className="size-10 text-muted-foreground mb-2" />
+                                        <p className="text-sm text-muted-foreground">Adicionar capa</p>
+                                        <p className="text-[10px] text-muted-foreground mt-1">PNG, JPG ou WEBP • Recomendado 1200×630px</p>
+                                        <input
+                                            type="text"
+                                            value={form.capa}
+                                            onChange={(e) => update("capa", e.target.value)}
+                                            placeholder="Cole a URL da imagem"
+                                            className="mt-3 w-full max-w-xs rounded-xl border border-border bg-background px-4 py-2 text-xs text-center outline-none focus:border-primary/30"
+                                        />
+                                    </div>
+                                )}
+                            </div>
                         </div>
 
                         <div>
@@ -167,7 +198,7 @@ export default function CriarTorneioPage() {
                     </div>
                 )}
 
-                {/* PASSO 2 - Local e Vagas */}
+                {/* PASSO 2 */}
                 {passo === 2 && (
                     <div className="space-y-5">
                         <h2 className="font-heading text-lg font-bold text-foreground">Local e Participantes</h2>
@@ -222,7 +253,7 @@ export default function CriarTorneioPage() {
                     </div>
                 )}
 
-                {/* PASSO 3 - Financeiro e Finalizar */}
+                {/* PASSO 3 */}
                 {passo === 3 && (
                     <div className="space-y-5">
                         <h2 className="font-heading text-lg font-bold text-foreground">Inscrição e Premiação</h2>
@@ -245,7 +276,6 @@ export default function CriarTorneioPage() {
                             </div>
                         </div>
 
-                        {/* Resumo financeiro */}
                         {Number(form.valorInscricao) > 0 && Number(form.maxParticipantes) > 0 && (
                             <div className="rounded-xl border border-border bg-card p-4 space-y-3">
                                 <h3 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Resumo financeiro</h3>
