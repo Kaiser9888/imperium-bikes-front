@@ -8,7 +8,12 @@ import Link from "next/link"
 import { useParams } from "next/navigation"
 import { useState } from "react"
 
-// Dados fictícios do torneio
+interface Inscrito {
+    id: string
+    nome: string
+    posicao: number | null
+}
+
 const torneio = {
     id: "1",
     nome: "Downhill Cup 2026",
@@ -18,14 +23,7 @@ const torneio = {
     participantes: 32,
     maxParticipantes: 48,
     valorInscricao: 89.90,
-    status: "aberto", // rascunho | aberto | andamento | finalizado | cancelado
-    inscritos: [
-        { id: "1", nome: "Carlos Silva", posicao: null },
-        { id: "2", nome: "Ana Oliveira", posicao: null },
-        { id: "3", nome: "Pedro Santos", posicao: null },
-        { id: "4", nome: "Marina Costa", posicao: null },
-        { id: "5", nome: "Lucas Ferreira", posicao: null },
-    ],
+    status: "aberto",
     live: {
         ativa: false,
         titulo: "",
@@ -44,8 +42,14 @@ export default function GerenciarTorneioPage() {
     const [nome, setNome] = useState(torneio.nome)
     const [local, setLocal] = useState(torneio.local)
     const [mostrarResultados, setMostrarResultados] = useState(false)
-    const [inscritos, setInscritos] = useState(torneio.inscritos)
-    const [temInscritosPagos] = useState(false) // Depois virá da API
+    const [inscritos, setInscritos] = useState<Inscrito[]>([
+        { id: "1", nome: "Carlos Silva", posicao: null },
+        { id: "2", nome: "Ana Oliveira", posicao: null },
+        { id: "3", nome: "Pedro Santos", posicao: null },
+        { id: "4", nome: "Marina Costa", posicao: null },
+        { id: "5", nome: "Lucas Ferreira", posicao: null },
+    ])
+    const [temInscritosPagos] = useState(false)
 
     const iniciarLive = () => setLiveAtiva(true)
     const encerrarLive = () => setLiveAtiva(false)
@@ -139,7 +143,6 @@ export default function GerenciarTorneioPage() {
                         )}
                     </div>
 
-                    {/* Stats rápidos */}
                     <div className="grid grid-cols-3 gap-3 mt-5">
                         <div className="rounded-xl bg-secondary p-3 text-center">
                             <Users className="size-4 text-muted-foreground mx-auto mb-1" />
@@ -159,7 +162,7 @@ export default function GerenciarTorneioPage() {
                     </div>
                 </div>
 
-                {/* Ações do status */}
+                {/* Ações */}
                 <div className="grid grid-cols-2 gap-3">
                     {status === "rascunho" && (
                         <button onClick={abrirTorneio} className="col-span-2 rounded-xl bg-green-600 py-3 text-sm font-semibold text-white hover:bg-green-700 transition-colors">
@@ -194,7 +197,7 @@ export default function GerenciarTorneioPage() {
                     )}
                     {status === "finalizado" && (
                         <div className="col-span-2 text-center py-4 text-sm text-muted-foreground">
-                            Este torneio foi finalizado. {liveAtiva && "A live ainda está disponível para replay."}
+                            Este torneio foi finalizado.
                         </div>
                     )}
                     {status === "cancelado" && (
@@ -224,7 +227,7 @@ export default function GerenciarTorneioPage() {
                     </div>
                 )}
 
-                {/* Participantes e Resultados */}
+                {/* Participantes */}
                 <div className="rounded-2xl border border-border bg-card p-6">
                     <div className="flex items-center justify-between mb-4">
                         <h3 className="font-heading text-sm font-bold uppercase tracking-wide text-foreground">
@@ -244,21 +247,26 @@ export default function GerenciarTorneioPage() {
                                 {mostrarResultados ? (
                                     <div className="flex gap-1">
                                         {[1, 2, 3].map((pos) => (
-                                            <button key={pos} onClick={() => definirPosicao(p.id, pos)}
-                                                    className={`flex size-8 items-center justify-center rounded-full text-xs font-bold transition-colors ${
-                                                        p.posicao === pos
-                                                            ? pos === 1 ? "bg-yellow-500 text-white" : pos === 2 ? "bg-gray-400 text-white" : "bg-amber-600 text-white"
-                                                            : "bg-secondary text-muted-foreground hover:bg-border"
-                                                    }`}>
+                                            <button
+                                                key={pos}
+                                                onClick={() => definirPosicao(p.id, pos)}
+                                                className={`flex size-8 items-center justify-center rounded-full text-xs font-bold transition-colors ${
+                                                    p.posicao === pos
+                                                        ? pos === 1 ? "bg-yellow-500 text-white" : pos === 2 ? "bg-gray-400 text-white" : "bg-amber-600 text-white"
+                                                        : "bg-secondary text-muted-foreground hover:bg-border"
+                                                }`}
+                                            >
                                                 {pos}º
                                             </button>
                                         ))}
                                     </div>
                                 ) : (
-                                    p.posicao && (
+                                    p.posicao !== null && (
                                         <span className={`text-xs font-bold px-2 py-1 rounded-full ${
                                             p.posicao === 1 ? "bg-yellow-500/10 text-yellow-600" : p.posicao === 2 ? "bg-gray-300/20 text-gray-400" : "bg-amber-600/10 text-amber-700"
-                                        }`}>{p.posicao}º lugar</span>
+                                        }`}>
+                                            {p.posicao}º lugar
+                                        </span>
                                     )
                                 )}
                             </div>
@@ -266,7 +274,7 @@ export default function GerenciarTorneioPage() {
                     </div>
                 </div>
 
-                {/* Valor da inscrição (travado) */}
+                {/* Valor travado */}
                 {temInscritosPagos && (
                     <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
                         <div className="flex items-start gap-2">
