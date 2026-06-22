@@ -1,13 +1,13 @@
 // app/chat/[id]/page.tsx
 "use client"
 
-import { Header } from "@/components/layout/Header"
 import { BottomNav } from "@/components/layout/bottom-nav"
 import { useUser } from "@clerk/nextjs"
-import { ArrowLeft, Send, Phone, MoreHorizontal, Image } from "lucide-react"
+import { ArrowLeft, Send, Image, Phone, MoreHorizontal } from "lucide-react"
 import Link from "next/link"
 import { useParams } from "next/navigation"
 import { useState, useRef, useEffect } from "react"
+import api from "@/lib/api"
 
 interface Mensagem {
     id: string
@@ -16,52 +16,67 @@ interface Mensagem {
     horario: string
 }
 
-const mensagensFake: Mensagem[] = [
-    { id: "1", texto: "Olá! Vi seu anúncio da MTB Mountain Pro", remetente: "eu", horario: "10:30" },
-    { id: "2", texto: "Oi! Sim, ainda está disponível!", remetente: "outro", horario: "10:32" },
-    { id: "3", texto: "Qual o estado dela? Tem nota fiscal?", remetente: "eu", horario: "10:33" },
-    { id: "4", texto: "Está perfeita, uso há 6 meses. Tenho nota fiscal e manual sim. Posso enviar mais fotos se quiser.", remetente: "outro", horario: "10:35" },
-    { id: "5", texto: "Aceita proposta? Posso fazer pix à vista.", remetente: "eu", horario: "10:40" },
-    { id: "6", texto: "Qual seria sua oferta?", remetente: "outro", horario: "10:42" },
-    { id: "7", texto: "R$ 3.000 à vista, busco hoje ainda.", remetente: "eu", horario: "10:45" },
-]
-
 export default function ConversaPage() {
     const { user, isSignedIn, isLoaded } = useUser()
     const params = useParams()
     const chatId = params.id as string
-    const [mensagens, setMensagens] = useState<Mensagem[]>(mensagensFake)
+    const [mensagens, setMensagens] = useState<Mensagem[]>([])
     const [novaMensagem, setNovaMensagem] = useState("")
+    const [loading, setLoading] = useState(true)
     const fimRef = useRef<HTMLDivElement>(null)
+
+    useEffect(() => {
+        if (isSignedIn) {
+            setLoading(true)
+            api.get(`/api/messages/${chatId}`)
+                .then((res) => {
+                    if (res.data) setMensagens(res.data)
+                })
+                .catch((error) => {
+                    console.error("Erro ao carregar mensagens:", error)
+                })
+                .finally(() => {
+                    setLoading(false)
+                })
+        }
+    }, [isSignedIn, chatId])
 
     useEffect(() => {
         fimRef.current?.scrollIntoView({ behavior: "smooth" })
     }, [mensagens])
 
-    const enviar = () => {
+    const enviar = async () => {
         if (!novaMensagem.trim()) return
-        const msg: Mensagem = {
-            id: Date.now().toString(),
-            texto: novaMensagem,
-            remetente: "eu",
-            horario: new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
+        try {
+            const res = await api.post(`/api/messages/${chatId}`, { texto: novaMensagem })
+            if (res.data) {
+                setMensagens((prev) => [...prev, res.data])
+                setNovaMensagem("")
+            }
+        } catch (error) {
+            console.error("Erro ao enviar:", error)
         }
-        setMensagens([...mensagens, msg])
-        setNovaMensagem("")
+    }
+
+    if (!isLoaded || loading) {
+        return (
+            <div className="min-h-screen bg-background flex items-center justify-center">
+                <p className="text-muted-foreground">Carregando conversa...</p>
+            </div>
+        )
     }
 
     return (
         <div className="min-h-screen bg-background">
-            {/* Header */}
             <header className="sticky top-0 z-40 border-b border-border/60 bg-marble bg-cover bg-center shadow-sm" style={{ backgroundImage: "url(/images/marble-light.png)" }}>
                 <div className="bg-marble/15 backdrop-blur-[2px]">
                     <div className="mx-auto flex w-full max-w-7xl items-center gap-3 px-4 py-3">
                         <Link href="/chat" className="flex items-center gap-2 text-marble-foreground hover:text-foreground">
                             <ArrowLeft className="size-5" />
                         </Link>
-                        <img src="/placeholder.svg" alt="Carlos Silva" className="size-9 rounded-full object-cover" />
+                        <img src="/placeholder.svg" alt="Usuário" className="size-9 rounded-full object-cover" />
                         <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold text-foreground">Carlos Silva</p>
+                            <p className="text-sm font-semibold text-foreground">Conversa</p>
                             <p className="text-[0.6rem] text-muted-foreground">Online</p>
                         </div>
                         <div className="flex items-center gap-1">
@@ -76,17 +91,12 @@ export default function ConversaPage() {
                 </div>
             </header>
 
-            {/* Mensagens */}
             <main className="mx-auto max-w-2xl px-4 py-4 space-y-1">
-                {/* Produto referência */}
-                <div className="flex justify-center mb-4">
-                    <Link href="/produto/1" className="inline-flex items-center gap-2 rounded-full bg-card border border-border px-4 py-2 text-xs hover:border-primary/30 transition-colors">
-                        <img src="/placeholder.svg" alt="Produto" className="size-6 rounded object-cover" />
-                        <span className="text-foreground font-medium">MTB Mountain Pro</span>
-                        <span className="text-primary font-bold">R$ 3.500</span>
-                    </Link>
-                </div>
-
+                {mensagens.length === 0 && (
+                    <p className="text-center text-sm text-muted-foreground py-10">
+                        Nenhuma mensagem ainda. Envie a primeira!
+                    </p>
+                )}
                 {mensagens.map((msg) => (
                     <div key={msg.id} className={`flex ${msg.remetente === "eu" ? "justify-end" : "justify-start"}`}>
                         <div className={`max-w-[80%] rounded-2xl px-4 py-2.5 ${
@@ -104,7 +114,6 @@ export default function ConversaPage() {
                 <div ref={fimRef} />
             </main>
 
-            {/* Input */}
             <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-border px-4 py-3 z-30">
                 <div className="mx-auto max-w-2xl flex items-center gap-2">
                     <button className="flex size-10 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:text-foreground transition-colors">
