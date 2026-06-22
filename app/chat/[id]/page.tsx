@@ -1,9 +1,10 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 // app/chat/[id]/page.tsx
 "use client"
 
 import { BottomNav } from "@/components/layout/bottom-nav"
 import { useUser } from "@clerk/nextjs"
-import { ArrowLeft, Send, Image, Phone, MoreHorizontal } from "lucide-react"
+import { ArrowLeft, Send, Image, MoreHorizontal } from "lucide-react"
 import Link from "next/link"
 import { useParams } from "next/navigation"
 import { useState, useRef, useEffect } from "react"
@@ -26,19 +27,17 @@ export default function ConversaPage() {
     const fimRef = useRef<HTMLDivElement>(null)
 
     useEffect(() => {
-        if (isSignedIn) {
-            setLoading(true)
-            api.get(`/api/messages/${chatId}`)
-                .then((res) => {
-                    if (res.data) setMensagens(res.data)
-                })
-                .catch((error) => {
-                    console.error("Erro ao carregar mensagens:", error)
-                })
-                .finally(() => {
-                    setLoading(false)
-                })
-        }
+        if (!isSignedIn) return
+        setLoading(true)
+        api.get(`/api/messages/${chatId}`)
+            .then((res) => {
+                if (res.data) {
+                    const data = res.data.content || res.data || []
+                    setMensagens(data)
+                }
+            })
+            .catch((error) => console.error("Erro ao carregar mensagens:", error))
+            .finally(() => setLoading(false))
     }, [isSignedIn, chatId])
 
     useEffect(() => {
@@ -77,16 +76,10 @@ export default function ConversaPage() {
                         <img src="/placeholder.svg" alt="Usuário" className="size-9 rounded-full object-cover" />
                         <div className="flex-1 min-w-0">
                             <p className="text-sm font-semibold text-foreground">Conversa</p>
-                            <p className="text-[0.6rem] text-muted-foreground">Online</p>
                         </div>
-                        <div className="flex items-center gap-1">
-                            <button className="flex size-9 items-center justify-center rounded-md text-marble-foreground hover:bg-marble-foreground/10">
-                                <Phone className="size-4" />
-                            </button>
-                            <button className="flex size-9 items-center justify-center rounded-md text-marble-foreground hover:bg-marble-foreground/10">
-                                <MoreHorizontal className="size-4" />
-                            </button>
-                        </div>
+                        <button className="flex size-9 items-center justify-center rounded-md text-marble-foreground hover:bg-marble-foreground/10">
+                            <MoreHorizontal className="size-4" />
+                        </button>
                     </div>
                 </div>
             </header>
