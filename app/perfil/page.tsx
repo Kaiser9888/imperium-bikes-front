@@ -1,13 +1,13 @@
-﻿// app/perfil/page.tsx
+﻿/* eslint-disable react-hooks/set-state-in-effect */
+// app/perfil/page.tsx
 "use client"
 
-import { Header } from "@/components/layout/Header"
-import { BottomNav } from "@/components/layout/bottom-nav"
 import { useUser, SignInButton } from "@clerk/nextjs"
-import { Camera, Package, Trophy, Grid3X3, ShoppingBag, Medal, Settings, MapPin, Link2, X, Flame, Send, Trash2, ChevronRight, Plus, Pencil } from "lucide-react"
+import { Camera, Package, Trophy, Grid3X3, ShoppingBag, Medal, Settings, MapPin, Link2, X, Flame, Send, Trash2, ChevronRight, Plus, Pencil, UserPlus, UserCheck } from "lucide-react"
 import Link from "next/link"
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect } from "react"
 import api from "@/lib/api"
+import { BottomNav } from "@/components/layout/bottom-nav"
 
 type Aba = "fotos" | "produtos" | "torneios"
 
@@ -40,7 +40,6 @@ interface FotoItem {
 export default function PerfilPage() {
     const { user, isSignedIn, isLoaded } = useUser()
 
-    // Dados reais do backend
     const [fotos, setFotos] = useState<FotoItem[]>([])
     const [produtos, setProdutos] = useState<Produto[]>([])
     const [torneios, setTorneios] = useState<Torneio[]>([])
@@ -51,9 +50,8 @@ export default function PerfilPage() {
     const [pais, setPais] = useState("Brasil")
     const [seguidores, setSeguidores] = useState(0)
     const [seguindo, setSeguindo] = useState(0)
+    const [jaSegue, setJaSegue] = useState(false)
     const [loading, setLoading] = useState(true)
-
-    // UI
     const [aba, setAba] = useState<Aba>("fotos")
     const [fotoSelecionada, setFotoSelecionada] = useState<number | null>(null)
     const [comentario, setComentario] = useState("")
@@ -65,52 +63,69 @@ export default function PerfilPage() {
     const [editEstado, setEditEstado] = useState("")
     const [editPais, setEditPais] = useState("Brasil")
 
-    const carregarPerfil = useCallback(async () => {
+    const carregarPerfil = () => {
         if (!user) return
-        try {
-            setLoading(true)
-            const userId = user.id
-
-            const [resPerfil, resFotos, resProdutos, resTorneios, resBanners] = await Promise.all([
-                api.get(`/api/users/${userId}`).catch(() => null),
-                api.get(`/api/users/${userId}/fotos`).catch(() => null),
-                api.get("/api/products", { params: { userId } }).catch(() => null),
-                api.get(`/api/users/${userId}/torneios`).catch(() => null),
-                api.get(`/api/users/${userId}/banners`).catch(() => null),
-            ])
-
+        setLoading(true)
+        const userId = user.id
+        api.post("/api/users/sync").catch(() => {})
+        Promise.all([
+            api.get(`/api/users/${userId}`).catch(() => null),
+            api.get(`/api/users/${userId}/fotos`).catch(() => null),
+            api.get("/api/products", { params: { userId } }).catch(() => null),
+            api.get(`/api/users/${userId}/torneios`).catch(() => null),
+            api.get(`/api/users/${userId}/banners`).catch(() => null),
+            api.get(`/api/users/${userId}/seguidores/count`).catch(() => null),
+            api.get(`/api/users/${userId}/seguindo/count`).catch(() => null),
+            api.get(`/api/users/${userId}/segue`).catch(() => null),
+        ]).then(([resPerfil, resFotos, resProdutos, resTorneios, resBanners, resSeguidores, resSeguindo, resSegue]) => {
             if (resPerfil?.data) {
                 setBio(resPerfil.data.bio || "")
-                setCidade(resPerfil.data.cidade || "")
-                setEstado(resPerfil.data.estado || "")
-                setPais(resPerfil.data.pais || "Brasil")
-                setSeguidores(resPerfil.data.seguidores || 0)
-                setSeguindo(resPerfil.data.seguindo || 0)
+                setCidade(resPerfil.data.cidade || resPerfil.data.city || "")
+                setEstado(resPerfil.data.estado || resPerfil.data.state || "")
+                setPais(resPerfil.data.pais || resPerfil.data.country || "Brasil")
             }
-
-            if (resFotos?.data) setFotos(resFotos.data)
+            if (resFotos?.data) setFotos(Array.isArray(resFotos.data) ? resFotos.data : [])
             if (resProdutos?.data) setProdutos(resProdutos.data.content || resProdutos.data || [])
-            if (resTorneios?.data) setTorneios(resTorneios.data)
-            if (resBanners?.data) setBanners(resBanners.data.map((b: { url: string }) => b.url))
-        } catch (error) {
+            if (resTorneios?.data) setTorneios(Array.isArray(resTorneios.data) ? resTorneios.data : [])
+            if (resBanners?.data) {
+                const bannersData = Array.isArray(resBanners.data) ? resBanners.data : []
+                setBanners(bannersData.map((b: unknown) => typeof b === 'string' ? b : (b as { url: string }).url || ''))
+            }
+            if (resSeguidores?.data) setSeguidores(resSeguidores.data.count || 0)
+            if (resSeguindo?.data) setSeguindo(resSeguindo.data.count || 0)
+            if (resSegue?.data) setJaSegue(resSegue.data.segue || false)
+        }).catch((error) => {
             console.error("Erro ao carregar perfil:", error)
-        } finally {
-            setLoading(false)
-        }
-    }, [user])
+        }).finally(() => setLoading(false))
+    }
 
     useEffect(() => {
         if (isSignedIn) carregarPerfil()
-    }, [isSignedIn, carregarPerfil])
+    }, [isSignedIn, user])
 
-    // Foto
+    const toggleSeguir = async () => {
+        if (!user) return
+        try {
+            if (jaSegue) {
+                await api.delete(`/api/users/${user.id}/seguir`)
+                setSeguidores((prev) => prev - 1)
+            } else {
+                await api.post(`/api/users/${user.id}/seguir`)
+                setSeguidores((prev) => prev + 1)
+            }
+            setJaSegue(!jaSegue)
+        } catch (error) {
+            console.error("Erro ao seguir:", error)
+        }
+    }
+
     const abrirFoto = async (index: number) => {
         setFotoSelecionada(index)
         setComentarios([])
         try {
             const fotoId = fotos[index].id
             const res = await api.get(`/api/fotos/${fotoId}/comentarios`)
-            if (res?.data) setComentarios(res.data)
+            if (res?.data) setComentarios(Array.isArray(res.data) ? res.data : [])
         } catch {}
     }
 
@@ -122,7 +137,7 @@ export default function PerfilPage() {
         try {
             const res = await api.post(`/api/fotos/${fotoId}/comentarios`, { texto: comentario })
             if (res?.data) {
-                setComentarios([...comentarios, res.data])
+                setComentarios((prev) => [...prev, res.data])
                 setComentario("")
             }
         } catch (error) {
@@ -136,9 +151,7 @@ export default function PerfilPage() {
             await api.post(`/api/fotos/${foto.id}/curtir`)
             setFotos((prev) =>
                 prev.map((f, i) =>
-                    i === index
-                        ? { ...f, curtiu: !f.curtiu, curtidas: f.curtidas + (f.curtiu ? -1 : 1) }
-                        : f
+                    i === index ? { ...f, curtiu: !f.curtiu, curtidas: f.curtidas + (f.curtiu ? -1 : 1) } : f
                 )
             )
         } catch (error) {
@@ -150,7 +163,7 @@ export default function PerfilPage() {
         const foto = fotos[index]
         try {
             await api.delete(`/api/fotos/${foto.id}`)
-            setFotos(fotos.filter((_, i) => i !== index))
+            setFotos((prev) => prev.filter((_, i) => i !== index))
             if (fotoSelecionada === index) fecharFoto()
         } catch (error) {
             console.error("Erro ao excluir foto:", error)
@@ -167,11 +180,12 @@ export default function PerfilPage() {
 
     const salvarEditRapido = async () => {
         try {
-            await api.put(`/api/users/${user?.id}`, {
+            await api.put(`/api/users/me`, {
+                fullName: user?.fullName,
                 bio: editBio,
-                cidade: editCidade,
-                estado: editEstado,
-                pais: editPais,
+                city: editCidade,
+                state: editEstado,
+                country: editPais,
             })
             setBio(editBio)
             setCidade(editCidade)
@@ -192,7 +206,17 @@ export default function PerfilPage() {
     if (!isSignedIn) {
         return (
             <div className="min-h-screen bg-background">
-                <Header onMenuClick={() => {}} cartCount={0} notificationCount={0} />
+                <header className="sticky top-0 z-40 border-b border-border/60 bg-marble bg-cover bg-center shadow-sm" style={{ backgroundImage: "url(/images/marble-light.png)" }}>
+                    <div className="bg-marble/15 backdrop-blur-[2px]">
+                        <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 py-3">
+                            <Link href="/" className="flex shrink-0 flex-col leading-none">
+                                <span className="font-blackletter text-2xl leading-none text-primary">Imperium</span>
+                                <span className="font-heading text-[0.6rem] font-semibold uppercase tracking-[0.35em] text-marble-foreground/70">Bikes</span>
+                            </Link>
+                            <div className="size-10" />
+                        </div>
+                    </div>
+                </header>
                 <div className="flex flex-col items-center justify-center px-4 py-20 text-center">
                     <h1 className="font-blackletter text-3xl text-primary mb-4">Imperium</h1>
                     <p className="text-muted-foreground mb-6">Entre para acessar seu perfil</p>
@@ -208,7 +232,17 @@ export default function PerfilPage() {
     if (loading) {
         return (
             <div className="min-h-screen bg-background">
-                <Header onMenuClick={() => {}} cartCount={0} notificationCount={0} />
+                <header className="sticky top-0 z-40 border-b border-border/60 bg-marble bg-cover bg-center shadow-sm" style={{ backgroundImage: "url(/images/marble-light.png)" }}>
+                    <div className="bg-marble/15 backdrop-blur-[2px]">
+                        <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 py-3">
+                            <Link href="/" className="flex shrink-0 flex-col leading-none">
+                                <span className="font-blackletter text-2xl leading-none text-primary">Imperium</span>
+                                <span className="font-heading text-[0.6rem] font-semibold uppercase tracking-[0.35em] text-marble-foreground/70">Bikes</span>
+                            </Link>
+                            <div className="size-10" />
+                        </div>
+                    </div>
+                </header>
                 <div className="flex items-center justify-center py-20">
                     <p className="text-muted-foreground">Carregando perfil...</p>
                 </div>
@@ -242,23 +276,34 @@ export default function PerfilPage() {
                         </button>
                     </div>
                     <div className="flex-1 min-w-0">
-                        <h1 className="font-heading text-xl font-bold text-foreground">{user.fullName || "Usuário Imperium"}</h1>
+                        <div className="flex items-center gap-2">
+                            <h1 className="font-heading text-xl font-bold text-foreground">{user.fullName || "Usuário Imperium"}</h1>
+                            <button onClick={toggleSeguir} className={`flex shrink-0 items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-semibold transition-all ${jaSegue ? "bg-secondary text-muted-foreground hover:bg-red-50 hover:text-red-500" : "bg-primary text-primary-foreground hover:bg-primary/90"}`}>
+                                {jaSegue ? <UserCheck className="size-3.5" /> : <UserPlus className="size-3.5" />}
+                                {jaSegue ? "Seguindo" : "Seguir"}
+                            </button>
+                        </div>
                         <p className="text-sm text-muted-foreground">@{user.username || "usuario"}</p>
-                        {(cidade || estado || pais !== "Brasil") && (
-                            <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
-                                <MapPin className="size-3" />
-                                {[cidade, estado, pais !== "Brasil" ? pais : null].filter(Boolean).join(", ")}
-                            </div>
-                        )}
-                        {!cidade && !estado && pais === "Brasil" && (
-                            <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
-                                <MapPin className="size-3" />Brasil
-                            </div>
-                        )}
+                        <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
+                            <MapPin className="size-3" />
+                            {[cidade, estado, pais !== "Brasil" ? pais : null].filter(Boolean).join(", ") || "Brasil"}
+                        </div>
+                        {bio && <p className="text-sm text-foreground mt-2">{bio}</p>}
                         <button onClick={abrirModalEdit} className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-border px-4 py-2 text-xs font-medium text-foreground hover:bg-secondary transition-colors">
                             <Pencil className="size-3" />Editar perfil
                         </button>
                     </div>
+                </div>
+
+                <div className="mt-6 flex items-center gap-6">
+                    <button className="text-center hover:opacity-80 transition-opacity">
+                        <p className="font-heading text-xl font-bold text-foreground">{seguidores.toLocaleString()}</p>
+                        <p className="text-xs text-muted-foreground">Seguidores</p>
+                    </button>
+                    <button className="text-center hover:opacity-80 transition-opacity">
+                        <p className="font-heading text-xl font-bold text-foreground">{seguindo.toLocaleString()}</p>
+                        <p className="text-xs text-muted-foreground">Seguindo</p>
+                    </button>
                 </div>
 
                 <div className="mt-8 grid grid-cols-3 gap-2">
@@ -271,23 +316,6 @@ export default function PerfilPage() {
                     ))}
                 </div>
 
-                <div className="mt-6 flex items-center divide-x divide-border">
-                    <button className="flex-1 text-left pr-4 hover:opacity-80 transition-opacity">
-                        <p className="text-sm text-muted-foreground uppercase tracking-wider">Seguidores</p>
-                        <div className="flex items-center justify-between mt-1">
-                            <p className="font-heading text-xl font-bold text-foreground">{seguidores.toLocaleString()}</p>
-                            <ChevronRight className="size-4 text-muted-foreground" />
-                        </div>
-                    </button>
-                    <button className="flex-1 text-left pl-4 hover:opacity-80 transition-opacity">
-                        <p className="text-sm text-muted-foreground uppercase tracking-wider">Seguindo</p>
-                        <div className="flex items-center justify-between mt-1">
-                            <p className="font-heading text-xl font-bold text-foreground">{seguindo.toLocaleString()}</p>
-                            <ChevronRight className="size-4 text-muted-foreground" />
-                        </div>
-                    </button>
-                </div>
-
                 {banners.length > 0 && (
                     <div className="mt-8">
                         <div className="flex items-center justify-between mb-3">
@@ -296,13 +324,12 @@ export default function PerfilPage() {
                         </div>
                         <div className="grid grid-cols-3 gap-2">
                             {banners.map((banner, i) => (
-                                <div key={i} className="rounded-xl border border-border bg-card overflow-hidden hover:border-primary/30 transition-all">
+                                <div key={i} className="rounded-xl border border-border bg-card overflow-hidden">
                                     <img src={banner} alt={`Banner ${i + 1}`} className="w-full h-20 object-cover" />
                                 </div>
                             ))}
                             <Link href="/configuracoes/patrocinadores" className="flex flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-border bg-transparent p-3 hover:border-primary/50 transition-all text-muted-foreground hover:text-primary">
-                                <Plus className="size-5" />
-                                <span className="text-[0.6rem] font-medium text-center leading-tight">Anunciar</span>
+                                <Plus className="size-5" /><span className="text-[0.6rem] font-medium">Anunciar</span>
                             </Link>
                         </div>
                     </div>
@@ -310,8 +337,7 @@ export default function PerfilPage() {
 
                 <div className="mt-8 flex border-b border-border">
                     {[{ key: "fotos", label: "Fotos", icon: Grid3X3 },{ key: "produtos", label: "Produtos", icon: ShoppingBag },{ key: "torneios", label: "Torneios", icon: Trophy }].map(({ key, label, icon: Icon }) => (
-                        <button key={key} onClick={() => setAba(key as Aba)}
-                                className={`flex flex-1 items-center justify-center gap-1.5 py-3 text-sm font-medium transition-colors border-b-2 ${aba === key ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
+                        <button key={key} onClick={() => setAba(key as Aba)} className={`flex flex-1 items-center justify-center gap-1.5 py-3 text-sm font-medium transition-colors border-b-2 ${aba === key ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
                             <Icon className="size-4" />{label}
                         </button>
                     ))}
@@ -319,26 +345,24 @@ export default function PerfilPage() {
 
                 <div className="py-6">
                     {aba === "fotos" && (
-                        <>
-                            {fotos.length === 0 ? (
-                                <div className="text-center py-12"><Camera className="size-12 text-muted-foreground mx-auto mb-3" /><p className="text-muted-foreground text-sm">Nenhuma foto postada</p></div>
-                            ) : (
-                                <>
-                                    {modoExclusao && <div className="flex items-center justify-between mb-2"><p className="text-xs text-red-500">Toque para excluir</p><button onClick={() => setModoExclusao(false)} className="text-xs font-medium text-primary hover:underline">Concluído</button></div>}
-                                    <div className="grid grid-cols-3 gap-1.5">
-                                        {fotos.map((foto, i) => (
-                                            <button key={foto.id} onClick={() => modoExclusao ? excluirFoto(i) : abrirFoto(i)} onContextMenu={(e) => { e.preventDefault(); setModoExclusao(true) }} className="aspect-square bg-secondary rounded-lg overflow-hidden hover:opacity-80 transition-opacity group relative">
-                                                <img src={foto.url} alt={`Foto ${i + 1}`} className="size-full object-cover" />
-                                                {modoExclusao ? <div className="absolute inset-0 bg-red-500/40 flex items-center justify-center"><Trash2 className="size-6 text-white" /></div>
-                                                    : <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-end justify-start p-2 opacity-0 group-hover:opacity-100"><Flame className={`size-3 ${foto.curtiu ? "fill-orange-500" : "fill-white"}`} /><span className="text-white text-xs ml-1">{foto.curtidas}</span></div>}
-                                            </button>
-                                        ))}
-                                    </div>
-                                    {!modoExclusao && <button onClick={() => setModoExclusao(true)} className="mt-3 text-xs text-muted-foreground hover:text-foreground w-full text-center">Gerenciar fotos</button>}
-                                    <button className="fixed bottom-24 right-4 z-30 flex size-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 transition-colors"><Camera className="size-5" /></button>
-                                </>
-                            )}
-                        </>
+                        fotos.length === 0 ? (
+                            <div className="text-center py-12"><Camera className="size-12 text-muted-foreground mx-auto mb-3" /><p className="text-muted-foreground text-sm">Nenhuma foto postada</p></div>
+                        ) : (
+                            <>
+                                {modoExclusao && <div className="flex items-center justify-between mb-2"><p className="text-xs text-red-500">Toque para excluir</p><button onClick={() => setModoExclusao(false)} className="text-xs font-medium text-primary hover:underline">Concluído</button></div>}
+                                <div className="grid grid-cols-3 gap-1.5">
+                                    {fotos.map((foto, i) => (
+                                        <button key={foto.id} onClick={() => modoExclusao ? excluirFoto(i) : abrirFoto(i)} onContextMenu={(e) => { e.preventDefault(); setModoExclusao(true) }} className="aspect-square bg-secondary rounded-lg overflow-hidden hover:opacity-80 transition-opacity group relative">
+                                            <img src={foto.url} alt={`Foto ${i + 1}`} className="size-full object-cover" />
+                                            {modoExclusao ? <div className="absolute inset-0 bg-red-500/40 flex items-center justify-center"><Trash2 className="size-6 text-white" /></div>
+                                                : <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-end justify-start p-2 opacity-0 group-hover:opacity-100"><Flame className={`size-3 ${foto.curtiu ? "fill-orange-500" : "fill-white"}`} /><span className="text-white text-xs ml-1">{foto.curtidas}</span></div>}
+                                        </button>
+                                    ))}
+                                </div>
+                                {!modoExclusao && <button onClick={() => setModoExclusao(true)} className="mt-3 text-xs text-muted-foreground hover:text-foreground w-full text-center">Gerenciar fotos</button>}
+                                <button className="fixed bottom-24 right-4 z-30 flex size-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 transition-colors"><Camera className="size-5" /></button>
+                            </>
+                        )
                     )}
 
                     {aba === "produtos" && (
@@ -376,15 +400,11 @@ export default function PerfilPage() {
 
             <div className="pb-24" /><BottomNav onMenuClick={() => {}} />
 
-            {/* Modal edição rápida */}
             {modalEditOpen && (
                 <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
                     <div className="absolute inset-0 bg-black/40" onClick={() => setModalEditOpen(false)} />
                     <div className="relative bg-background rounded-t-2xl sm:rounded-2xl w-full sm:max-w-md p-6 shadow-2xl">
-                        <div className="flex items-center justify-between mb-6">
-                            <h3 className="font-heading text-base font-bold">Editar perfil</h3>
-                            <button onClick={() => setModalEditOpen(false)} className="size-8 flex items-center justify-center rounded-md hover:bg-secondary"><X className="size-4" /></button>
-                        </div>
+                        <div className="flex items-center justify-between mb-6"><h3 className="font-heading text-base font-bold">Editar perfil</h3><button onClick={() => setModalEditOpen(false)} className="size-8 flex items-center justify-center rounded-md hover:bg-secondary"><X className="size-4" /></button></div>
                         <div className="space-y-4">
                             <div><label className="text-[10px] text-muted-foreground uppercase">Bio</label><textarea value={editBio} onChange={(e) => setEditBio(e.target.value)} rows={2} className="w-full rounded-xl border border-border bg-card px-4 py-3 text-sm mt-1 outline-none focus:border-primary/30 resize-none" /></div>
                             <div className="grid grid-cols-2 gap-3">
@@ -393,36 +413,17 @@ export default function PerfilPage() {
                             </div>
                             <div><label className="text-[10px] text-muted-foreground uppercase">País</label><input value={editPais} onChange={(e) => setEditPais(e.target.value)} className="w-full rounded-xl border border-border bg-card px-4 py-2.5 text-sm mt-1 outline-none focus:border-primary/30" /></div>
                         </div>
-                        <div className="flex gap-2 mt-6">
-                            <button onClick={() => setModalEditOpen(false)} className="flex-1 rounded-xl border border-border py-2.5 text-sm font-medium hover:bg-secondary">Cancelar</button>
-                            <button onClick={salvarEditRapido} className="flex-1 rounded-xl bg-primary py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90">Salvar</button>
-                        </div>
+                        <div className="flex gap-2 mt-6"><button onClick={() => setModalEditOpen(false)} className="flex-1 rounded-xl border border-border py-2.5 text-sm font-medium hover:bg-secondary">Cancelar</button><button onClick={salvarEditRapido} className="flex-1 rounded-xl bg-primary py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90">Salvar</button></div>
                     </div>
                 </div>
             )}
 
-            {/* Modal foto */}
             {fotoSelecionada !== null && (
                 <div className="fixed inset-0 z-50 flex flex-col bg-black">
-                    <div className="flex items-center justify-between px-4 py-3">
-                        <div className="flex items-center gap-3"><img src={user?.imageUrl||"/placeholder.svg"} alt="Avatar" className="size-8 rounded-full object-cover" /><span className="text-sm font-medium text-white">{user?.fullName||"Usuário"}</span></div>
-                        <div className="flex items-center gap-1">
-                            <button onClick={() => excluirFoto(fotoSelecionada)} className="flex size-9 items-center justify-center rounded-full bg-white/10 text-white hover:bg-red-500/50"><Trash2 className="size-4"/></button>
-                            <button onClick={fecharFoto} className="flex size-9 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20"><X className="size-4"/></button>
-                        </div>
-                    </div>
+                    <div className="flex items-center justify-between px-4 py-3"><div className="flex items-center gap-3"><img src={user?.imageUrl||"/placeholder.svg"} alt="Avatar" className="size-8 rounded-full object-cover" /><span className="text-sm font-medium text-white">{user?.fullName||"Usuário"}</span></div><div className="flex items-center gap-1"><button onClick={() => excluirFoto(fotoSelecionada)} className="flex size-9 items-center justify-center rounded-full bg-white/10 text-white hover:bg-red-500/50"><Trash2 className="size-4"/></button><button onClick={fecharFoto} className="flex size-9 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20"><X className="size-4"/></button></div></div>
                     <div className="flex-1 flex items-center justify-center px-2"><img src={fotos[fotoSelecionada].url} alt="Foto" className="max-h-full max-w-full rounded-lg object-contain"/></div>
-                    <div className="px-4 py-3 flex items-center gap-4">
-                        <button onClick={() => toggleCurtida(fotoSelecionada)} className="transition-transform active:scale-125"><Flame className={`size-6 ${fotos[fotoSelecionada].curtiu?"fill-orange-500 text-orange-500":"text-white"}`}/></button>
-                        <span className="text-sm font-medium text-white">{fotos[fotoSelecionada].curtidas} {fotos[fotoSelecionada].curtidas===1?"curtida":"curtidas"}</span>
-                    </div>
-                    <div className="bg-background rounded-t-2xl max-h-64 overflow-y-auto">
-                        <div className="p-4 space-y-3">{comentarios.length===0&&<p className="text-sm text-muted-foreground text-center py-4">Nenhum comentário ainda.</p>}{comentarios.map((c)=><div key={c.id}><span className="text-sm font-semibold text-foreground">{c.autor}</span> <span className="text-sm text-muted-foreground">{c.texto}</span></div>)}</div>
-                        <div className="flex items-center gap-2 border-t border-border/50 px-4 py-2.5">
-                            <input type="text" value={comentario} onChange={(e)=>setComentario(e.target.value)} placeholder="Adicionar comentário..." className="flex-1 bg-transparent text-[13px] outline-none placeholder:text-muted-foreground/50" onKeyDown={(e)=>{if(e.key==="Enter"&&comentario.trim())enviarComentario()}}/>
-                            {comentario.trim()&&<button onClick={enviarComentario} className="text-primary/70 hover:text-primary"><Send className="size-3.5"/></button>}
-                        </div>
-                    </div>
+                    <div className="px-4 py-3 flex items-center gap-4"><button onClick={() => toggleCurtida(fotoSelecionada)} className="transition-transform active:scale-125"><Flame className={`size-6 ${fotos[fotoSelecionada].curtiu?"fill-orange-500 text-orange-500":"text-white"}`}/></button><span className="text-sm font-medium text-white">{fotos[fotoSelecionada].curtidas} {fotos[fotoSelecionada].curtidas===1?"curtida":"curtidas"}</span></div>
+                    <div className="bg-background rounded-t-2xl max-h-64 overflow-y-auto"><div className="p-4 space-y-3">{comentarios.length===0&&<p className="text-sm text-muted-foreground text-center py-4">Nenhum comentário ainda.</p>}{comentarios.map((c)=><div key={c.id}><span className="text-sm font-semibold text-foreground">{c.autor}</span> <span className="text-sm text-muted-foreground">{c.texto}</span></div>)}</div><div className="flex items-center gap-2 border-t border-border/50 px-4 py-2.5"><input type="text" value={comentario} onChange={(e)=>setComentario(e.target.value)} placeholder="Adicionar comentário..." className="flex-1 bg-transparent text-[13px] outline-none placeholder:text-muted-foreground/50" onKeyDown={(e)=>{if(e.key==="Enter"&&comentario.trim())enviarComentario()}}/>{comentario.trim()&&<button onClick={enviarComentario} className="text-primary/70 hover:text-primary"><Send className="size-3.5"/></button>}</div></div>
                 </div>
             )}
         </div>
