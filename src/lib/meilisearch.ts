@@ -17,22 +17,31 @@ export async function searchProducts(query: string) {
 }
 
 export async function searchUsers(query: string) {
-    // Buscar usuários da API do backend em vez do Meilisearch
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://imperium-bikes-production.up.railway.app'
-    const response = await fetch(`${API_URL}/api/users/search?q=${encodeURIComponent(query)}&size=20`)
-    if (!response.ok) {
-        console.error('Erro ao buscar usuários:', response.status)
+    // URL ABSOLUTA do backend (com https://)
+    const API_URL = 'https://imperium-bikes-production.up.railway.app'
+    const url = `${API_URL}/api/users/search?q=${encodeURIComponent(query)}&size=20`
+    console.log('🔍 Buscando usuários em:', url)
+
+    try {
+        const response = await fetch(url)
+        if (!response.ok) {
+            console.error('Erro ao buscar usuários:', response.status)
+            return []
+        }
+        const data = await response.json()
+        console.log('✅ Usuários encontrados:', data.totalElements)
+        return data.content.map((user: any) => ({
+            id: user.userId,
+            nome: user.fullName || 'Usuário',
+            username: user.email?.split('@')[0] || user.userId,
+            avatar: user.avatarUrl || '/placeholder.svg',
+            bio: user.bio || '',
+            seguidores: 0,
+            cidade: user.city,
+            estado: user.state,
+        }))
+    } catch (error) {
+        console.error('❌ Erro na busca:', error)
         return []
     }
-    const data = await response.json()
-    return data.content.map((user: any) => ({
-        id: user.userId,
-        nome: user.fullName || 'Usuário',
-        username: user.email?.split('@')[0] || user.userId,
-        avatar: user.avatarUrl || '/placeholder.svg',
-        bio: user.bio || '',
-        seguidores: 0,
-        cidade: user.city,
-        estado: user.state,
-    }))
 }
