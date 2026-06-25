@@ -17,9 +17,22 @@ export async function searchProducts(query: string) {
 }
 
 export async function searchUsers(query: string) {
-    const results = await usersIndex.search(query, {
-        limit: 20,
-        attributesToHighlight: ['nome', 'username'],
-    })
-    return results.hits
+    // Buscar usuários da API do backend em vez do Meilisearch
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://imperium-bikes-production.up.railway.app'
+    const response = await fetch(`${API_URL}/api/users/search?q=${encodeURIComponent(query)}&size=20`)
+    if (!response.ok) {
+        console.error('Erro ao buscar usuários:', response.status)
+        return []
+    }
+    const data = await response.json()
+    return data.content.map((user: any) => ({
+        id: user.userId,
+        nome: user.fullName || 'Usuário',
+        username: user.email?.split('@')[0] || user.userId,
+        avatar: user.avatarUrl || '/placeholder.svg',
+        bio: user.bio || '',
+        seguidores: 0,
+        cidade: user.city,
+        estado: user.state,
+    }))
 }
