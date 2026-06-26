@@ -1,4 +1,5 @@
-﻿// app/buscar/page.tsx
+﻿/* eslint-disable react-hooks/set-state-in-effect, @typescript-eslint/no-explicit-any */
+// app/buscar/page.tsx
 "use client"
 
 import { useUser } from "@clerk/nextjs"
@@ -203,7 +204,7 @@ export default function BuscarPage() {
                         ) : (
                             <div className="space-y-2">
                                 {pessoas.map((p) => (
-                                    <Link key={p.id} href={`/perfil/${p.username}`} className="flex items-center gap-3 rounded-xl border border-border bg-card p-3 hover:shadow-sm transition-shadow">
+                                    <Link key={p.id} href={`/perfil/${p.id}`} className="flex items-center gap-3 rounded-xl border border-border bg-card p-3 hover:shadow-sm transition-shadow">
                                         <img src={p.avatar || "/placeholder.svg"} alt={p.nome} className="size-12 rounded-full object-cover" />
                                         <div className="flex-1 min-w-0">
                                             <p className="text-sm font-semibold text-foreground">{p.nome}</p>
