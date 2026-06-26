@@ -26,6 +26,16 @@ interface PerfilUsuario {
 
 const API_URL = 'https://imperium-bikes-production.up.railway.app'
 
+declare global {
+    interface Window {
+        Clerk?: {
+            session?: {
+                getToken: () => Promise<string>
+            }
+        }
+    }
+}
+
 export default function PerfilPublicoPage() {
     const { id } = useParams()
     const { user: currentUser } = useUser()
@@ -36,31 +46,43 @@ export default function PerfilPublicoPage() {
     const [seguidores, setSeguidores] = useState(0)
     const [seguindo, setSeguindo] = useState(0)
 
-    const token = currentUser ? window.Clerk?.session?.getToken : null
-
     useEffect(() => {
-        Promise.all([
-            fetch(`${API_URL}/api/users/${id}`).then(r => r.json()),
-            fetch(`${API_URL}/api/users/${id}/followers/count`).then(r => r.json()),
-            fetch(`${API_URL}/api/users/${id}/following/count`).then(r => r.json()),
-            currentUser
-                ? fetch(`${API_URL}/api/users/${id}/is-following`, {
-                    headers: { 'Authorization': `Bearer ${await window.Clerk?.session?.getToken()}` }
-                }).then(r => r.json())
-                : Promise.resolve({ isFollowing: false })
-        ]).then(async ([perfilData, followersData, followingData, isFollowingData]) => {
-            setPerfil(perfilData)
-            setSeguidores(followersData.count || 0)
-            setSeguindo(followingData.count || 0)
-            setJaSegue(isFollowingData.isFollowing || false)
+        const carregarDados = async () => {
+            try {
+                const perfilRes = await fetch(`${API_URL}/api/users/${id}`)
+                const perfilData = await perfilRes.json()
+
+                const followersRes = await fetch(`${API_URL}/api/users/${id}/followers/count`)
+                const followersData = await followersRes.json()
+
+                const followingRes = await fetch(`${API_URL}/api/users/${id}/following/count`)
+                const followingData = await followingRes.json()
+
+                let isFollowingData = { isFollowing: false }
+                if (currentUser) {
+                    const token = await window.Clerk?.session?.getToken()
+                    const isFollowingRes = await fetch(`${API_URL}/api/users/${id}/is-following`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    })
+                    isFollowingData = await isFollowingRes.json()
+                }
+
+                setPerfil(perfilData)
+                setSeguidores(followersData.count || 0)
+                setSeguindo(followingData.count || 0)
+                setJaSegue(isFollowingData.isFollowing || false)
+            } catch (error) {
+                console.error("Erro ao carregar perfil:", error)
+            }
             setLoading(false)
-        }).catch(() => setLoading(false))
-    }, [id])
+        }
+        carregarDados()
+    }, [id, currentUser])
 
     const toggleSeguir = async () => {
         if (!currentUser) return
-        const tok = await window.Clerk?.session?.getToken()
         try {
+            const tok = await window.Clerk?.session?.getToken()
             if (jaSegue) {
                 await fetch(`${API_URL}/api/users/${id}/follow`, {
                     method: 'DELETE',
