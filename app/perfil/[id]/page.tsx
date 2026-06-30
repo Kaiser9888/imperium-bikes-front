@@ -24,7 +24,7 @@ interface PerfilUsuario {
     totalSales: number
 }
 
-const API_URL = 'https://imperium-bikes-production.up.railway.app'
+const API_URL = 'https://imperium-bikes.onrender.com'
 
 declare global {
     interface Window {

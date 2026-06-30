@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Meilisearch } from 'meilisearch'
 
 const client = new Meilisearch({
@@ -18,7 +19,7 @@ export async function searchProducts(query: string) {
 
 export async function searchUsers(query: string) {
     // URL ABSOLUTA do backend (com https://)
-    const API_URL = 'https://imperium-bikes-production.up.railway.app'
+    const API_URL = 'https://imperium-bikes.onrender.com'
     const url = `${API_URL}/api/users/search?q=${encodeURIComponent(query)}&size=20`
     console.log('🔍 Buscando usuários em:', url)
 
