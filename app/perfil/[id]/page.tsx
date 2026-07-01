@@ -3,7 +3,7 @@
 "use client"
 
 import { useUser } from "@clerk/nextjs"
-import { ArrowLeft, Package, Trophy, Grid3X3, ShoppingBag, Medal, MapPin, UserPlus, UserCheck, Camera } from "lucide-react"
+import { ArrowLeft, Package, Trophy, Grid3X3, ShoppingBag, Medal, MapPin, UserPlus, UserCheck, Camera, X } from "lucide-react"
 import Link from "next/link"
 import { useState, useEffect } from "react"
 import { useParams } from "next/navigation"
@@ -45,6 +45,9 @@ export default function PerfilPublicoPage() {
     const [jaSegue, setJaSegue] = useState(false)
     const [seguidores, setSeguidores] = useState(0)
     const [seguindo, setSeguindo] = useState(0)
+    const [modalSeguidores, setModalSeguidores] = useState<"seguidores" | "seguindo" | null>(null)
+    const [listaModal, setListaModal] = useState<any[]>([])
+    const [loadingModal, setLoadingModal] = useState(false)
 
     useEffect(() => {
         const carregarDados = async () => {
@@ -61,10 +64,12 @@ export default function PerfilPublicoPage() {
                 let isFollowingData = { isFollowing: false }
                 if (currentUser) {
                     const token = await window.Clerk?.session?.getToken()
-                    const isFollowingRes = await fetch(`${API_URL}/api/users/${id}/is-following`, {
-                        headers: { 'Authorization': `Bearer ${token}` }
-                    })
-                    isFollowingData = await isFollowingRes.json()
+                    if (token) {
+                        const isFollowingRes = await fetch(`${API_URL}/api/users/${id}/is-following`, {
+                            headers: { 'Authorization': `Bearer ${token}` }
+                        })
+                        isFollowingData = await isFollowingRes.json()
+                    }
                 }
 
                 setPerfil(perfilData)
@@ -83,23 +88,42 @@ export default function PerfilPublicoPage() {
         if (!currentUser) return
         try {
             const tok = await window.Clerk?.session?.getToken()
+            if (!tok) return
+
             if (jaSegue) {
                 await fetch(`${API_URL}/api/users/${id}/follow`, {
                     method: 'DELETE',
                     headers: { 'Authorization': `Bearer ${tok}` }
                 })
-                setSeguidores(prev => prev - 1)
+                setSeguidores(prev => Math.max(0, prev - 1))
+                setJaSegue(false)
             } else {
-                await fetch(`${API_URL}/api/users/${id}/follow`, {
+                const res = await fetch(`${API_URL}/api/users/${id}/follow`, {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${tok}` }
                 })
-                setSeguidores(prev => prev + 1)
+                if (res.ok) {
+                    setSeguidores(prev => prev + 1)
+                    setJaSegue(true)
+                }
             }
-            setJaSegue(!jaSegue)
         } catch (error) {
             console.error("Erro ao seguir:", error)
         }
+    }
+
+    const abrirModal = async (tipo: "seguidores" | "seguindo") => {
+        setModalSeguidores(tipo)
+        setLoadingModal(true)
+        try {
+            const endpoint = tipo === "seguidores" ? "followers" : "following"
+            const res = await fetch(`${API_URL}/api/users/${id}/${endpoint}`)
+            const data = await res.json()
+            setListaModal(data.content || [])
+        } catch (error) {
+            console.error("Erro ao carregar lista:", error)
+        }
+        setLoadingModal(false)
     }
 
     if (loading) {
@@ -187,11 +211,11 @@ export default function PerfilPublicoPage() {
                 </div>
 
                 <div className="mt-6 flex items-center gap-6">
-                    <button className="text-center">
+                    <button onClick={() => abrirModal("seguidores")} className="text-center hover:opacity-80 transition-opacity">
                         <p className="font-heading text-xl font-bold text-foreground">{seguidores}</p>
                         <p className="text-xs text-muted-foreground">Seguidores</p>
                     </button>
-                    <button className="text-center">
+                    <button onClick={() => abrirModal("seguindo")} className="text-center hover:opacity-80 transition-opacity">
                         <p className="font-heading text-xl font-bold text-foreground">{seguindo}</p>
                         <p className="text-xs text-muted-foreground">Seguindo</p>
                     </button>
@@ -238,6 +262,43 @@ export default function PerfilPublicoPage() {
 
             <div className="pb-24" />
             <BottomNav onMenuClick={() => {}} />
+
+            {/* Modal de Seguidores/Seguindo */}
+            {modalSeguidores && (
+                <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+                    <div className="absolute inset-0 bg-black/40" onClick={() => setModalSeguidores(null)} />
+                    <div className="relative bg-background rounded-t-2xl sm:rounded-2xl w-full sm:max-w-md max-h-[70vh] overflow-y-auto p-6 shadow-2xl">
+                        <div className="flex items-center justify-between mb-4">
+                            <h3 className="font-heading text-base font-bold">
+                                {modalSeguidores === "seguidores" ? "Seguidores" : "Seguindo"}
+                            </h3>
+                            <button onClick={() => setModalSeguidores(null)} className="size-8 flex items-center justify-center rounded-md hover:bg-secondary">
+                                <X className="size-4" />
+                            </button>
+                        </div>
+                        {loadingModal ? (
+                            <p className="text-sm text-muted-foreground text-center py-8">Carregando...</p>
+                        ) : listaModal.length === 0 ? (
+                            <p className="text-sm text-muted-foreground text-center py-8">
+                                {modalSeguidores === "seguidores" ? "Nenhum seguidor ainda" : "Não segue ninguém ainda"}
+                            </p>
+                        ) : (
+                            <div className="space-y-2">
+                                {listaModal.map((u: any) => (
+                                    <Link key={u.userId} href={`/perfil/${u.userId}`} onClick={() => setModalSeguidores(null)}
+                                          className="flex items-center gap-3 rounded-xl border border-border bg-card p-3 hover:shadow-sm transition-shadow">
+                                        <img src={u.avatarUrl || "/placeholder.svg"} alt={u.fullName} className="size-10 rounded-full object-cover" />
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-sm font-semibold text-foreground">{u.fullName}</p>
+                                            {u.bio && <p className="text-xs text-muted-foreground truncate">{u.bio}</p>}
+                                        </div>
+                                    </Link>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
         </div>
     )
 }
