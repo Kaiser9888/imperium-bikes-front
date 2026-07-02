@@ -59,24 +59,21 @@ export default function PerfilPage() {
     const [editCidade, setEditCidade] = useState("")
     const [editEstado, setEditEstado] = useState("")
     const [editPais, setEditPais] = useState("Brasil")
-    const [userIdBanco, setUserIdBanco] = useState<string | null>(null)
 
     const carregarPerfil = async () => {
         if (!user) return
         setLoading(true)
         try {
-            // Primeiro sincroniza para obter o UUID do banco
-            const syncRes = await api.post("/api/users/sync").catch(() => null)
-            const meuId = syncRes?.data?.id || user.id
-            setUserIdBanco(meuId)
+            const syncRes = await api.post("/api/users/sync")
+            const meuId = syncRes.data.id
 
-            const resPerfil = await api.get(`/api/users/${meuId}`).catch(() => null)
-            if (resPerfil?.data) {
-                setBio(resPerfil.data.bio || "")
-                setCidade(resPerfil.data.city || resPerfil.data.cidade || "")
-                setEstado(resPerfil.data.state || resPerfil.data.estado || "")
-                setPais(resPerfil.data.country || resPerfil.data.pais || "Brasil")
-            }
+            const perfilRes = await api.get(`/api/users/${meuId}`)
+            const perfilData = perfilRes.data
+
+            setBio(perfilData.bio || "")
+            setCidade(perfilData.city || perfilData.cidade || "")
+            setEstado(perfilData.state || perfilData.estado || "")
+            setPais(perfilData.country || perfilData.pais || "Brasil")
         } catch (error) {
             console.error("Erro ao carregar perfil:", error)
         }
