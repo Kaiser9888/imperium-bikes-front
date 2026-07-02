@@ -5,7 +5,7 @@
 import { useUser } from "@clerk/nextjs"
 import { ArrowLeft, Package, Trophy, Grid3X3, ShoppingBag, Medal, MapPin, UserPlus, UserCheck, Camera, X } from "lucide-react"
 import Link from "next/link"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useParams } from "next/navigation"
 import { BottomNav } from "@/components/layout/bottom-nav"
 
@@ -28,11 +28,7 @@ const API_URL = 'https://imperium-bikes.onrender.com'
 
 declare global {
     interface Window {
-        Clerk?: {
-            session?: {
-                getToken: () => Promise<string>
-            }
-        }
+        Clerk?: { session?: { getToken: () => Promise<string> } }
     }
 }
 
@@ -48,68 +44,70 @@ export default function PerfilPublicoPage() {
     const [modalSeguidores, setModalSeguidores] = useState<"seguidores" | "seguindo" | null>(null)
     const [listaModal, setListaModal] = useState<any[]>([])
     const [loadingModal, setLoadingModal] = useState(false)
+    const [seguirLoading, setSeguirLoading] = useState(false)
 
-    useEffect(() => {
-        const carregarDados = async () => {
-            try {
-                const perfilRes = await fetch(`${API_URL}/api/users/${id}`)
-                const perfilData = await perfilRes.json()
+    const carregarDados = useCallback(async () => {
+        try {
+            const [perfilRes, followersRes, followingRes] = await Promise.all([
+                fetch(`${API_URL}/api/users/${id}`),
+                fetch(`${API_URL}/api/users/${id}/followers/count`),
+                fetch(`${API_URL}/api/users/${id}/following/count`)
+            ])
+            const perfilData = await perfilRes.json()
+            const followersData = await followersRes.json()
+            const followingData = await followingRes.json()
 
-                const followersRes = await fetch(`${API_URL}/api/users/${id}/followers/count`)
-                const followersData = await followersRes.json()
+            setPerfil(perfilData)
+            setSeguidores(followersData.count || 0)
+            setSeguindo(followingData.count || 0)
 
-                const followingRes = await fetch(`${API_URL}/api/users/${id}/following/count`)
-                const followingData = await followingRes.json()
-
-                let isFollowingData = { isFollowing: false }
-                if (currentUser) {
-                    const token = await window.Clerk?.session?.getToken()
-                    if (token) {
-                        const isFollowingRes = await fetch(`${API_URL}/api/users/${id}/is-following`, {
-                            headers: { 'Authorization': `Bearer ${token}` }
-                        })
-                        isFollowingData = await isFollowingRes.json()
-                    }
+            if (currentUser) {
+                const token = await window.Clerk?.session?.getToken()
+                if (token) {
+                    const isFollowingRes = await fetch(`${API_URL}/api/users/${id}/is-following`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    })
+                    const isFollowingData = await isFollowingRes.json()
+                    setJaSegue(isFollowingData.isFollowing || false)
                 }
-
-                setPerfil(perfilData)
-                setSeguidores(followersData.count || 0)
-                setSeguindo(followingData.count || 0)
-                setJaSegue(isFollowingData.isFollowing || false)
-            } catch (error) {
-                console.error("Erro ao carregar perfil:", error)
             }
-            setLoading(false)
+        } catch (error) {
+            console.error("Erro ao carregar perfil:", error)
         }
-        carregarDados()
+        setLoading(false)
     }, [id, currentUser])
 
+    useEffect(() => { carregarDados() }, [carregarDados])
+
     const toggleSeguir = async () => {
-        if (!currentUser) return
+        if (!currentUser || seguirLoading) return
+        setSeguirLoading(true)
         try {
             const tok = await window.Clerk?.session?.getToken()
             if (!tok) return
 
-            if (jaSegue) {
-                await fetch(`${API_URL}/api/users/${id}/follow`, {
-                    method: 'DELETE',
-                    headers: { 'Authorization': `Bearer ${tok}` }
-                })
-                setSeguidores(prev => Math.max(0, prev - 1))
-                setJaSegue(false)
-            } else {
-                const res = await fetch(`${API_URL}/api/users/${id}/follow`, {
-                    method: 'POST',
-                    headers: { 'Authorization': `Bearer ${tok}` }
-                })
-                if (res.ok) {
-                    setSeguidores(prev => prev + 1)
-                    setJaSegue(true)
-                }
+            const method = jaSegue ? 'DELETE' : 'POST'
+            const res = await fetch(`${API_URL}/api/users/${id}/follow`, {
+                method,
+                headers: { 'Authorization': `Bearer ${tok}` }
+            })
+
+            if (res.ok) {
+                // Recarregar contagens reais do servidor
+                const [followersRes, followingRes] = await Promise.all([
+                    fetch(`${API_URL}/api/users/${id}/followers/count`),
+                    fetch(`${API_URL}/api/users/${id}/following/count`)
+                ])
+                const followersData = await followersRes.json()
+                const followingData = await followingRes.json()
+                setSeguidores(followersData.count || 0)
+                setSeguindo(followingData.count || 0)
+                setJaSegue(!jaSegue)
             }
         } catch (error) {
             console.error("Erro ao seguir:", error)
         }
+        setSeguirLoading(false)
     }
 
     const abrirModal = async (tipo: "seguidores" | "seguindo") => {
@@ -132,15 +130,11 @@ export default function PerfilPublicoPage() {
                 <header className="sticky top-0 z-40 border-b border-border/60 bg-marble bg-cover bg-center shadow-sm" style={{ backgroundImage: "url(/images/marble-light.png)" }}>
                     <div className="bg-marble/15 backdrop-blur-[2px]">
                         <div className="mx-auto flex w-full max-w-7xl items-center px-4 py-3">
-                            <Link href="/buscar" className="flex shrink-0 items-center">
-                                <ArrowLeft className="size-5" />
-                            </Link>
+                            <Link href="/buscar" className="flex shrink-0 items-center"><ArrowLeft className="size-5" /></Link>
                         </div>
                     </div>
                 </header>
-                <div className="flex items-center justify-center py-20">
-                    <p className="text-muted-foreground">Carregando perfil...</p>
-                </div>
+                <div className="flex items-center justify-center py-20"><p className="text-muted-foreground">Carregando perfil...</p></div>
                 <BottomNav onMenuClick={() => {}} />
             </div>
         )
@@ -152,21 +146,19 @@ export default function PerfilPublicoPage() {
                 <header className="sticky top-0 z-40 border-b border-border/60 bg-marble bg-cover bg-center shadow-sm" style={{ backgroundImage: "url(/images/marble-light.png)" }}>
                     <div className="bg-marble/15 backdrop-blur-[2px]">
                         <div className="mx-auto flex w-full max-w-7xl items-center px-4 py-3">
-                            <Link href="/buscar" className="flex shrink-0 items-center">
-                                <ArrowLeft className="size-5" />
-                            </Link>
+                            <Link href="/buscar" className="flex shrink-0 items-center"><ArrowLeft className="size-5" /></Link>
                         </div>
                     </div>
                 </header>
-                <div className="flex items-center justify-center py-20">
-                    <p className="text-muted-foreground">Usuário não encontrado</p>
-                </div>
+                <div className="flex items-center justify-center py-20"><p className="text-muted-foreground">Usuário não encontrado</p></div>
                 <BottomNav onMenuClick={() => {}} />
             </div>
         )
     }
 
-    const ehPerfilProprio = currentUser?.id === id
+    const meuClerkId = currentUser?.id
+    // Comparar pelo clerkId do token, não pelo UUID do banco
+    const ehPerfilProprio = meuClerkId === id || currentUser?.id === id
 
     return (
         <div className="min-h-screen bg-background">
@@ -174,9 +166,7 @@ export default function PerfilPublicoPage() {
                 <div className="bg-marble/15 backdrop-blur-[2px]">
                     <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 py-3">
                         <div className="flex items-center gap-3">
-                            <Link href="/buscar" className="flex shrink-0 items-center">
-                                <ArrowLeft className="size-5" />
-                            </Link>
+                            <Link href="/buscar" className="flex shrink-0 items-center"><ArrowLeft className="size-5" /></Link>
                             <span className="font-heading text-lg font-bold text-foreground truncate">{perfil.fullName}</span>
                         </div>
                         <div className="size-10" />
@@ -193,9 +183,10 @@ export default function PerfilPublicoPage() {
                         <div className="flex items-center gap-2">
                             <h1 className="font-heading text-xl font-bold text-foreground">{perfil.fullName}</h1>
                             {!ehPerfilProprio && currentUser && (
-                                <button onClick={toggleSeguir} className={`flex shrink-0 items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-semibold transition-all ${jaSegue ? "bg-secondary text-muted-foreground hover:bg-red-50 hover:text-red-500" : "bg-primary text-primary-foreground hover:bg-primary/90"}`}>
+                                <button onClick={toggleSeguir} disabled={seguirLoading}
+                                        className={`flex shrink-0 items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-semibold transition-all ${jaSegue ? "bg-secondary text-muted-foreground hover:bg-red-50 hover:text-red-500" : "bg-primary text-primary-foreground hover:bg-primary/90"}`}>
                                     {jaSegue ? <UserCheck className="size-3.5" /> : <UserPlus className="size-3.5" />}
-                                    {jaSegue ? "Seguindo" : "Seguir"}
+                                    {seguirLoading ? "..." : jaSegue ? "Seguindo" : "Seguir"}
                                 </button>
                             )}
                         </div>
@@ -204,9 +195,7 @@ export default function PerfilPublicoPage() {
                             {[perfil.city, perfil.state].filter(Boolean).join(", ") || "Brasil"}
                         </div>
                         {perfil.bio && <p className="text-sm text-foreground mt-2">{perfil.bio}</p>}
-                        <span className="inline-block mt-2 rounded-full bg-primary/10 px-3 py-0.5 text-[0.6rem] font-semibold uppercase tracking-wider text-primary">
-                            {perfil.userLevel}
-                        </span>
+                        <span className="inline-block mt-2 rounded-full bg-primary/10 px-3 py-0.5 text-[0.6rem] font-semibold uppercase tracking-wider text-primary">{perfil.userLevel}</span>
                     </div>
                 </div>
 
@@ -218,14 +207,6 @@ export default function PerfilPublicoPage() {
                     <button onClick={() => abrirModal("seguindo")} className="text-center hover:opacity-80 transition-opacity">
                         <p className="font-heading text-xl font-bold text-foreground">{seguindo}</p>
                         <p className="text-xs text-muted-foreground">Seguindo</p>
-                    </button>
-                    <button className="text-center">
-                        <p className="font-heading text-xl font-bold text-foreground">{perfil.totalSales}</p>
-                        <p className="text-xs text-muted-foreground">Vendas</p>
-                    </button>
-                    <button className="text-center">
-                        <p className="font-heading text-xl font-bold text-foreground">{perfil.reputationScore.toFixed(1)}</p>
-                        <p className="text-xs text-muted-foreground">Nota</p>
                     </button>
                 </div>
 
@@ -248,54 +229,37 @@ export default function PerfilPublicoPage() {
                 </div>
 
                 <div className="py-6">
-                    {aba === "fotos" && (
-                        <div className="text-center py-12"><Camera className="size-12 text-muted-foreground mx-auto mb-3" /><p className="text-muted-foreground text-sm">Nenhuma foto postada</p></div>
-                    )}
-                    {aba === "produtos" && (
-                        <div className="text-center py-12"><Package className="size-12 text-muted-foreground mx-auto mb-3" /><p className="text-muted-foreground text-sm">Nenhum produto cadastrado</p></div>
-                    )}
-                    {aba === "torneios" && (
-                        <div className="text-center py-12"><Trophy className="size-12 text-muted-foreground mx-auto mb-3" /><p className="text-muted-foreground text-sm">Nenhum torneio disputado</p></div>
-                    )}
+                    {aba === "fotos" && <div className="text-center py-12"><Camera className="size-12 text-muted-foreground mx-auto mb-3" /><p className="text-muted-foreground text-sm">Nenhuma foto postada</p></div>}
+                    {aba === "produtos" && <div className="text-center py-12"><Package className="size-12 text-muted-foreground mx-auto mb-3" /><p className="text-muted-foreground text-sm">Nenhum produto cadastrado</p></div>}
+                    {aba === "torneios" && <div className="text-center py-12"><Trophy className="size-12 text-muted-foreground mx-auto mb-3" /><p className="text-muted-foreground text-sm">Nenhum torneio disputado</p></div>}
                 </div>
             </main>
 
             <div className="pb-24" />
             <BottomNav onMenuClick={() => {}} />
 
-            {/* Modal de Seguidores/Seguindo */}
             {modalSeguidores && (
                 <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
                     <div className="absolute inset-0 bg-black/40" onClick={() => setModalSeguidores(null)} />
                     <div className="relative bg-background rounded-t-2xl sm:rounded-2xl w-full sm:max-w-md max-h-[70vh] overflow-y-auto p-6 shadow-2xl">
                         <div className="flex items-center justify-between mb-4">
-                            <h3 className="font-heading text-base font-bold">
-                                {modalSeguidores === "seguidores" ? "Seguidores" : "Seguindo"}
-                            </h3>
-                            <button onClick={() => setModalSeguidores(null)} className="size-8 flex items-center justify-center rounded-md hover:bg-secondary">
-                                <X className="size-4" />
-                            </button>
+                            <h3 className="font-heading text-base font-bold">{modalSeguidores === "seguidores" ? "Seguidores" : "Seguindo"}</h3>
+                            <button onClick={() => setModalSeguidores(null)} className="size-8 flex items-center justify-center rounded-md hover:bg-secondary"><X className="size-4" /></button>
                         </div>
-                        {loadingModal ? (
-                            <p className="text-sm text-muted-foreground text-center py-8">Carregando...</p>
-                        ) : listaModal.length === 0 ? (
-                            <p className="text-sm text-muted-foreground text-center py-8">
-                                {modalSeguidores === "seguidores" ? "Nenhum seguidor ainda" : "Não segue ninguém ainda"}
-                            </p>
-                        ) : (
-                            <div className="space-y-2">
-                                {listaModal.map((u: any) => (
-                                    <Link key={u.userId} href={`/perfil/${u.userId}`} onClick={() => setModalSeguidores(null)}
-                                          className="flex items-center gap-3 rounded-xl border border-border bg-card p-3 hover:shadow-sm transition-shadow">
-                                        <img src={u.avatarUrl || "/placeholder.svg"} alt={u.fullName} className="size-10 rounded-full object-cover" />
-                                        <div className="flex-1 min-w-0">
-                                            <p className="text-sm font-semibold text-foreground">{u.fullName}</p>
-                                            {u.bio && <p className="text-xs text-muted-foreground truncate">{u.bio}</p>}
-                                        </div>
-                                    </Link>
-                                ))}
-                            </div>
-                        )}
+                        {loadingModal ? <p className="text-sm text-muted-foreground text-center py-8">Carregando...</p>
+                            : listaModal.length === 0 ? <p className="text-sm text-muted-foreground text-center py-8">{modalSeguidores === "seguidores" ? "Nenhum seguidor ainda" : "Não segue ninguém ainda"}</p>
+                                : <div className="space-y-2">
+                                    {listaModal.map((u: any) => (
+                                        <Link key={u.userId} href={`/perfil/${u.userId}`} onClick={() => setModalSeguidores(null)}
+                                              className="flex items-center gap-3 rounded-xl border border-border bg-card p-3 hover:shadow-sm transition-shadow">
+                                            <img src={u.avatarUrl || "/placeholder.svg"} alt={u.fullName} className="size-10 rounded-full object-cover" />
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-sm font-semibold text-foreground">{u.fullName}</p>
+                                                {u.bio && <p className="text-xs text-muted-foreground truncate">{u.bio}</p>}
+                                            </div>
+                                        </Link>
+                                    ))}
+                                </div>}
                     </div>
                 </div>
             )}
