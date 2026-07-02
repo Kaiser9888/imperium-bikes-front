@@ -1,11 +1,10 @@
-/* eslint-disable react-hooks/set-state-in-effect, @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // app/perfil/[id]/page.tsx
 "use client"
 
-import { useUser } from "@clerk/nextjs"
-import { ArrowLeft, Package, Trophy, Grid3X3, ShoppingBag, Medal, MapPin, UserPlus, UserCheck, Camera, X } from "lucide-react"
+import { ArrowLeft, Package, Trophy, Grid3X3, ShoppingBag, Medal, MapPin, Camera } from "lucide-react"
 import Link from "next/link"
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect } from "react"
 import { useParams } from "next/navigation"
 import { BottomNav } from "@/components/layout/bottom-nav"
 
@@ -26,103 +25,21 @@ interface PerfilUsuario {
 
 const API_URL = 'https://imperium-bikes.onrender.com'
 
-declare global {
-    interface Window {
-        Clerk?: { session?: { getToken: () => Promise<string> } }
-    }
-}
-
 export default function PerfilPublicoPage() {
     const { id } = useParams()
-    const { user: currentUser } = useUser()
     const [perfil, setPerfil] = useState<PerfilUsuario | null>(null)
     const [loading, setLoading] = useState(true)
     const [aba, setAba] = useState<Aba>("fotos")
-    const [jaSegue, setJaSegue] = useState(false)
-    const [seguidores, setSeguidores] = useState(0)
-    const [seguindo, setSeguindo] = useState(0)
-    const [modalSeguidores, setModalSeguidores] = useState<"seguidores" | "seguindo" | null>(null)
-    const [listaModal, setListaModal] = useState<any[]>([])
-    const [loadingModal, setLoadingModal] = useState(false)
-    const [seguirLoading, setSeguirLoading] = useState(false)
 
-    const carregarDados = useCallback(async () => {
-        try {
-            const [perfilRes, followersRes, followingRes] = await Promise.all([
-                fetch(`${API_URL}/api/users/${id}`),
-                fetch(`${API_URL}/api/users/${id}/followers/count`),
-                fetch(`${API_URL}/api/users/${id}/following/count`)
-            ])
-            const perfilData = await perfilRes.json()
-            const followersData = await followersRes.json()
-            const followingData = await followingRes.json()
-
-            setPerfil(perfilData)
-            setSeguidores(followersData.count || 0)
-            setSeguindo(followingData.count || 0)
-
-            if (currentUser) {
-                const token = await window.Clerk?.session?.getToken()
-                if (token) {
-                    const isFollowingRes = await fetch(`${API_URL}/api/users/${id}/is-following`, {
-                        headers: { 'Authorization': `Bearer ${token}` }
-                    })
-                    const isFollowingData = await isFollowingRes.json()
-                    setJaSegue(isFollowingData.isFollowing || false)
-                }
-            }
-        } catch (error) {
-            console.error("Erro ao carregar perfil:", error)
-        }
-        setLoading(false)
-    }, [id, currentUser])
-
-    useEffect(() => { carregarDados() }, [carregarDados])
-
-    const toggleSeguir = async () => {
-        if (!currentUser || seguirLoading) return
-        setSeguirLoading(true)
-        try {
-            const tok = await window.Clerk?.session?.getToken()
-            if (!tok) return
-
-            const method = jaSegue ? 'DELETE' : 'POST'
-            const res = await fetch(`${API_URL}/api/users/${id}/follow`, {
-                method,
-                headers: { 'Authorization': `Bearer ${tok}` }
+    useEffect(() => {
+        fetch(`${API_URL}/api/users/${id}`)
+            .then(r => r.json())
+            .then(data => {
+                setPerfil(data)
+                setLoading(false)
             })
-
-            if (res.ok) {
-                // Recarregar contagens reais do servidor
-                const [followersRes, followingRes] = await Promise.all([
-                    fetch(`${API_URL}/api/users/${id}/followers/count`),
-                    fetch(`${API_URL}/api/users/${id}/following/count`)
-                ])
-                const followersData = await followersRes.json()
-                const followingData = await followingRes.json()
-                setSeguidores(followersData.count || 0)
-                setSeguindo(followingData.count || 0)
-                setJaSegue(!jaSegue)
-            }
-        } catch (error) {
-            console.error("Erro ao seguir:", error)
-        }
-        setSeguirLoading(false)
-    }
-
-    const abrirModal = async (tipo: "seguidores" | "seguindo") => {
-        setModalSeguidores(tipo)
-        setLoadingModal(true)
-        try {
-            const endpoint = tipo === "seguidores" ? "followers" : "following"
-            const res = await fetch(`${API_URL}/api/users/${id}/${endpoint}`)
-            const data = await res.json()
-            setListaModal(data.content || [])
-        } catch (error) {
-            console.error("Erro ao carregar lista:", error)
-        }
-        setLoadingModal(false)
-    }
+            .catch(() => setLoading(false))
+    }, [id])
 
     if (loading) {
         return (
@@ -134,7 +51,7 @@ export default function PerfilPublicoPage() {
                         </div>
                     </div>
                 </header>
-                <div className="flex items-center justify-center py-20"><p className="text-muted-foreground">Carregando perfil...</p></div>
+                <div className="flex items-center justify-center py-20"><p className="text-muted-foreground">Carregando...</p></div>
                 <BottomNav onMenuClick={() => {}} />
             </div>
         )
@@ -156,10 +73,6 @@ export default function PerfilPublicoPage() {
         )
     }
 
-    const meuClerkId = currentUser?.id
-    // Comparar pelo clerkId do token, não pelo UUID do banco
-    const ehPerfilProprio = meuClerkId === id || currentUser?.id === id
-
     return (
         <div className="min-h-screen bg-background">
             <header className="sticky top-0 z-40 border-b border-border/60 bg-marble bg-cover bg-center shadow-sm" style={{ backgroundImage: "url(/images/marble-light.png)" }}>
@@ -180,16 +93,7 @@ export default function PerfilPublicoPage() {
                         <img src={perfil.avatarUrl || "/placeholder.svg"} alt={perfil.fullName} className="size-20 rounded-xl border-2 border-primary/20 object-cover md:size-24" />
                     </div>
                     <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                            <h1 className="font-heading text-xl font-bold text-foreground">{perfil.fullName}</h1>
-                            {!ehPerfilProprio && currentUser && (
-                                <button onClick={toggleSeguir} disabled={seguirLoading}
-                                        className={`flex shrink-0 items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-semibold transition-all ${jaSegue ? "bg-secondary text-muted-foreground hover:bg-red-50 hover:text-red-500" : "bg-primary text-primary-foreground hover:bg-primary/90"}`}>
-                                    {jaSegue ? <UserCheck className="size-3.5" /> : <UserPlus className="size-3.5" />}
-                                    {seguirLoading ? "..." : jaSegue ? "Seguindo" : "Seguir"}
-                                </button>
-                            )}
-                        </div>
+                        <h1 className="font-heading text-xl font-bold text-foreground">{perfil.fullName}</h1>
                         <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
                             <MapPin className="size-3" />
                             {[perfil.city, perfil.state].filter(Boolean).join(", ") || "Brasil"}
@@ -197,27 +101,6 @@ export default function PerfilPublicoPage() {
                         {perfil.bio && <p className="text-sm text-foreground mt-2">{perfil.bio}</p>}
                         <span className="inline-block mt-2 rounded-full bg-primary/10 px-3 py-0.5 text-[0.6rem] font-semibold uppercase tracking-wider text-primary">{perfil.userLevel}</span>
                     </div>
-                </div>
-
-                <div className="mt-6 flex items-center gap-6">
-                    <button onClick={() => abrirModal("seguidores")} className="text-center hover:opacity-80 transition-opacity">
-                        <p className="font-heading text-xl font-bold text-foreground">{seguidores}</p>
-                        <p className="text-xs text-muted-foreground">Seguidores</p>
-                    </button>
-                    <button onClick={() => abrirModal("seguindo")} className="text-center hover:opacity-80 transition-opacity">
-                        <p className="font-heading text-xl font-bold text-foreground">{seguindo}</p>
-                        <p className="text-xs text-muted-foreground">Seguindo</p>
-                    </button>
-                </div>
-
-                <div className="mt-8 grid grid-cols-3 gap-2">
-                    {[{ valor: 0, label: "Fotos" },{ valor: 0, label: "Produtos" },{ valor: 0, label: "Torneios" }].map((stat) => (
-                        <button key={stat.label} onClick={() => { if (stat.label === "Fotos") setAba("fotos"); if (stat.label === "Produtos") setAba("produtos"); if (stat.label === "Torneios") setAba("torneios") }}
-                                className="rounded-xl bg-card border border-border p-4 text-center hover:border-primary/30 transition-colors">
-                            <p className="font-heading text-2xl font-bold text-foreground">{stat.valor}</p>
-                            <p className="text-[0.65rem] text-muted-foreground uppercase tracking-wider mt-1">{stat.label}</p>
-                        </button>
-                    ))}
                 </div>
 
                 <div className="mt-8 flex border-b border-border">
@@ -237,32 +120,6 @@ export default function PerfilPublicoPage() {
 
             <div className="pb-24" />
             <BottomNav onMenuClick={() => {}} />
-
-            {modalSeguidores && (
-                <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
-                    <div className="absolute inset-0 bg-black/40" onClick={() => setModalSeguidores(null)} />
-                    <div className="relative bg-background rounded-t-2xl sm:rounded-2xl w-full sm:max-w-md max-h-[70vh] overflow-y-auto p-6 shadow-2xl">
-                        <div className="flex items-center justify-between mb-4">
-                            <h3 className="font-heading text-base font-bold">{modalSeguidores === "seguidores" ? "Seguidores" : "Seguindo"}</h3>
-                            <button onClick={() => setModalSeguidores(null)} className="size-8 flex items-center justify-center rounded-md hover:bg-secondary"><X className="size-4" /></button>
-                        </div>
-                        {loadingModal ? <p className="text-sm text-muted-foreground text-center py-8">Carregando...</p>
-                            : listaModal.length === 0 ? <p className="text-sm text-muted-foreground text-center py-8">{modalSeguidores === "seguidores" ? "Nenhum seguidor ainda" : "Não segue ninguém ainda"}</p>
-                                : <div className="space-y-2">
-                                    {listaModal.map((u: any) => (
-                                        <Link key={u.userId} href={`/perfil/${u.userId}`} onClick={() => setModalSeguidores(null)}
-                                              className="flex items-center gap-3 rounded-xl border border-border bg-card p-3 hover:shadow-sm transition-shadow">
-                                            <img src={u.avatarUrl || "/placeholder.svg"} alt={u.fullName} className="size-10 rounded-full object-cover" />
-                                            <div className="flex-1 min-w-0">
-                                                <p className="text-sm font-semibold text-foreground">{u.fullName}</p>
-                                                {u.bio && <p className="text-xs text-muted-foreground truncate">{u.bio}</p>}
-                                            </div>
-                                        </Link>
-                                    ))}
-                                </div>}
-                    </div>
-                </div>
-            )}
         </div>
     )
 }

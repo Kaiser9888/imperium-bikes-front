@@ -9,8 +9,6 @@ import { useState, useEffect } from "react"
 import api from "@/lib/api"
 import { BottomNav } from "@/components/layout/bottom-nav"
 
-const API_URL = 'https://imperium-bikes.onrender.com'
-
 type Aba = "fotos" | "produtos" | "torneios"
 
 interface Produto {
@@ -50,8 +48,6 @@ export default function PerfilPage() {
     const [cidade, setCidade] = useState("")
     const [estado, setEstado] = useState("")
     const [pais, setPais] = useState("Brasil")
-    const [seguidores, setSeguidores] = useState(0)
-    const [seguindo, setSeguindo] = useState(0)
     const [loading, setLoading] = useState(true)
     const [aba, setAba] = useState<Aba>("fotos")
     const [fotoSelecionada, setFotoSelecionada] = useState<number | null>(null)
@@ -63,50 +59,33 @@ export default function PerfilPage() {
     const [editCidade, setEditCidade] = useState("")
     const [editEstado, setEditEstado] = useState("")
     const [editPais, setEditPais] = useState("Brasil")
-    const [modalSeguidores, setModalSeguidores] = useState<"seguidores" | "seguindo" | null>(null)
-    const [listaModal, setListaModal] = useState<any[]>([])
-    const [loadingModal, setLoadingModal] = useState(false)
+    const [userIdBanco, setUserIdBanco] = useState<string | null>(null)
 
-    const carregarPerfil = () => {
+    const carregarPerfil = async () => {
         if (!user) return
         setLoading(true)
-        const userId = user.id
-        api.post("/api/users/sync").catch(() => {})
-        Promise.all([
-            api.get(`/api/users/${userId}`).catch(() => null),
-            api.get(`/api/users/${userId}/followers/count`).catch(() => null),
-            api.get(`/api/users/${userId}/following/count`).catch(() => null),
-        ]).then(([resPerfil, resSeguidores, resSeguindo]) => {
+        try {
+            // Primeiro sincroniza para obter o UUID do banco
+            const syncRes = await api.post("/api/users/sync").catch(() => null)
+            const meuId = syncRes?.data?.id || user.id
+            setUserIdBanco(meuId)
+
+            const resPerfil = await api.get(`/api/users/${meuId}`).catch(() => null)
             if (resPerfil?.data) {
                 setBio(resPerfil.data.bio || "")
                 setCidade(resPerfil.data.city || resPerfil.data.cidade || "")
                 setEstado(resPerfil.data.state || resPerfil.data.estado || "")
                 setPais(resPerfil.data.country || resPerfil.data.pais || "Brasil")
             }
-            if (resSeguidores?.data) setSeguidores(resSeguidores.data.count || 0)
-            if (resSeguindo?.data) setSeguindo(resSeguindo.data.count || 0)
-        }).catch((error) => {
+        } catch (error) {
             console.error("Erro ao carregar perfil:", error)
-        }).finally(() => setLoading(false))
+        }
+        setLoading(false)
     }
 
     useEffect(() => {
         if (isSignedIn) carregarPerfil()
     }, [isSignedIn, user])
-
-    const abrirModal = async (tipo: "seguidores" | "seguindo") => {
-        if (!user) return
-        setModalSeguidores(tipo)
-        setLoadingModal(true)
-        try {
-            const endpoint = tipo === "seguidores" ? "followers" : "following"
-            const res = await api.get(`/api/users/${user.id}/${endpoint}`)
-            setListaModal(res.data.content || [])
-        } catch (error) {
-            console.error("Erro ao carregar lista:", error)
-        }
-        setLoadingModal(false)
-    }
 
     const abrirFoto = async (index: number) => {
         setFotoSelecionada(index)
@@ -278,17 +257,6 @@ export default function PerfilPage() {
                     </div>
                 </div>
 
-                <div className="mt-6 flex items-center gap-6">
-                    <button onClick={() => abrirModal("seguidores")} className="text-center hover:opacity-80 transition-opacity">
-                        <p className="font-heading text-xl font-bold text-foreground">{seguidores.toLocaleString()}</p>
-                        <p className="text-xs text-muted-foreground">Seguidores</p>
-                    </button>
-                    <button onClick={() => abrirModal("seguindo")} className="text-center hover:opacity-80 transition-opacity">
-                        <p className="font-heading text-xl font-bold text-foreground">{seguindo.toLocaleString()}</p>
-                        <p className="text-xs text-muted-foreground">Seguindo</p>
-                    </button>
-                </div>
-
                 <div className="mt-8 grid grid-cols-3 gap-2">
                     {[{ valor: fotos.length, label: "Fotos" },{ valor: produtos.length, label: "Produtos" },{ valor: torneios.length, label: "Torneios" }].map((stat) => (
                         <button key={stat.label} onClick={() => { if (stat.label === "Fotos") setAba("fotos"); if (stat.label === "Produtos") setAba("produtos"); if (stat.label === "Torneios") setAba("torneios") }}
@@ -383,7 +351,6 @@ export default function PerfilPage() {
 
             <div className="pb-24" /><BottomNav onMenuClick={() => {}} />
 
-            {/* Modal de Editar Perfil */}
             {modalEditOpen && (
                 <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
                     <div className="absolute inset-0 bg-black/40" onClick={() => setModalEditOpen(false)} />
@@ -402,44 +369,6 @@ export default function PerfilPage() {
                 </div>
             )}
 
-            {/* Modal de Seguidores/Seguindo */}
-            {modalSeguidores && (
-                <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
-                    <div className="absolute inset-0 bg-black/40" onClick={() => setModalSeguidores(null)} />
-                    <div className="relative bg-background rounded-t-2xl sm:rounded-2xl w-full sm:max-w-md max-h-[70vh] overflow-y-auto p-6 shadow-2xl">
-                        <div className="flex items-center justify-between mb-4">
-                            <h3 className="font-heading text-base font-bold">
-                                {modalSeguidores === "seguidores" ? "Seguidores" : "Seguindo"}
-                            </h3>
-                            <button onClick={() => setModalSeguidores(null)} className="size-8 flex items-center justify-center rounded-md hover:bg-secondary">
-                                <X className="size-4" />
-                            </button>
-                        </div>
-                        {loadingModal ? (
-                            <p className="text-sm text-muted-foreground text-center py-8">Carregando...</p>
-                        ) : listaModal.length === 0 ? (
-                            <p className="text-sm text-muted-foreground text-center py-8">
-                                {modalSeguidores === "seguidores" ? "Nenhum seguidor ainda" : "Não segue ninguém ainda"}
-                            </p>
-                        ) : (
-                            <div className="space-y-2">
-                                {listaModal.map((u: any) => (
-                                    <Link key={u.userId} href={`/perfil/${u.userId}`} onClick={() => setModalSeguidores(null)}
-                                          className="flex items-center gap-3 rounded-xl border border-border bg-card p-3 hover:shadow-sm transition-shadow">
-                                        <img src={u.avatarUrl || "/placeholder.svg"} alt={u.fullName} className="size-10 rounded-full object-cover" />
-                                        <div className="flex-1 min-w-0">
-                                            <p className="text-sm font-semibold text-foreground">{u.fullName}</p>
-                                            {u.bio && <p className="text-xs text-muted-foreground truncate">{u.bio}</p>}
-                                        </div>
-                                    </Link>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                </div>
-            )}
-
-            {/* Modal de Foto */}
             {fotoSelecionada !== null && (
                 <div className="fixed inset-0 z-50 flex flex-col bg-black">
                     <div className="flex items-center justify-between px-4 py-3"><div className="flex items-center gap-3"><img src={user?.imageUrl||"/placeholder.svg"} alt="Avatar" className="size-8 rounded-full object-cover" /><span className="text-sm font-medium text-white">{user?.fullName||"Usuário"}</span></div><div className="flex items-center gap-1"><button onClick={() => excluirFoto(fotoSelecionada)} className="flex size-9 items-center justify-center rounded-full bg-white/10 text-white hover:bg-red-500/50"><Trash2 className="size-4"/></button><button onClick={fecharFoto} className="flex size-9 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20"><X className="size-4"/></button></div></div>
