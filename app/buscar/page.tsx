@@ -2,7 +2,6 @@
 // app/buscar/page.tsx
 "use client"
 
-import { useUser } from "@clerk/nextjs"
 import { Search, Package, User, X, TrendingUp, MapPin, Star } from "lucide-react"
 import Link from "next/link"
 import { useState, useEffect, useRef } from "react"
@@ -30,13 +29,11 @@ interface PessoaResult {
     username: string
     avatar: string
     bio: string
-    seguidores: number
     cidade?: string
     estado?: string
 }
 
 export default function BuscarPage() {
-    const { user, isSignedIn, isLoaded } = useUser()
     const [query, setQuery] = useState("")
     const [aba, setAba] = useState<"produtos" | "pessoas">("produtos")
     const [produtos, setProdutos] = useState<ProdutoResult[]>([])
@@ -160,36 +157,41 @@ export default function BuscarPage() {
 
                 {loading && (
                     <div className="text-center py-10">
-                        <p className="text-sm text-muted-foreground">Buscando...</p>
+                        <div className="inline-block size-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+                        <p className="text-sm text-muted-foreground mt-3">Buscando...</p>
                     </div>
                 )}
 
                 {!loading && aba === "produtos" && query.trim().length >= 2 && (
                     <>
                         {produtos.length === 0 ? (
-                            <div className="text-center py-10">
-                                <Package className="size-10 text-muted-foreground mx-auto mb-2" />
-                                <p className="text-sm text-muted-foreground">Nenhum produto encontrado</p>
+                            <div className="text-center py-16">
+                                <Package className="size-12 text-muted-foreground/40 mx-auto mb-4" />
+                                <p className="text-sm font-medium text-muted-foreground">Nenhum produto encontrado</p>
+                                <p className="text-xs text-muted-foreground/60 mt-1">Tente outro termo de busca</p>
                             </div>
                         ) : (
-                            <div className="grid grid-cols-2 gap-3">
-                                {produtos.map((p) => (
-                                    <Link key={p.id} href={`/produto/${p.id}`} className="rounded-xl border border-border bg-card overflow-hidden hover:shadow-md transition-shadow">
-                                        <div className="aspect-square bg-secondary">
-                                            <img src={p.img || p.imageUrl || "/placeholder.svg"} alt={p.title || p.nome || ""} className="size-full object-cover" />
-                                        </div>
-                                        <div className="p-3">
-                                            <span className="text-[0.6rem] uppercase tracking-widest text-muted-foreground">{p.category || p.modalidade || "Geral"}</span>
-                                            <h3 className="text-sm font-semibold mt-1 line-clamp-2">{p.title || p.nome}</h3>
-                                            <div className="flex items-center gap-1 mt-1">
-                                                <Star className="size-3 fill-yellow-500 text-yellow-500" />
-                                                <span className="text-xs text-muted-foreground">{p.rating || p.nota || "—"}</span>
+                            <>
+                                <p className="text-xs text-muted-foreground mb-3">{produtos.length} produto{produtos.length > 1 ? 's' : ''} encontrado{produtos.length > 1 ? 's' : ''}</p>
+                                <div className="grid grid-cols-2 gap-3">
+                                    {produtos.map((p) => (
+                                        <Link key={p.id} href={`/produto/${p.id}`} className="group rounded-xl border border-border bg-card overflow-hidden hover:shadow-md transition-all hover:border-primary/20">
+                                            <div className="aspect-square bg-secondary relative overflow-hidden">
+                                                <img src={p.img || p.imageUrl || "/placeholder.svg"} alt={p.title || p.nome || ""} className="size-full object-cover group-hover:scale-105 transition-transform duration-300" />
                                             </div>
-                                            <p className="font-heading text-base font-bold text-foreground mt-1">{formatPreco(p.price || p.preco || 0)}</p>
-                                        </div>
-                                    </Link>
-                                ))}
-                            </div>
+                                            <div className="p-3">
+                                                <span className="text-[0.6rem] uppercase tracking-widest text-muted-foreground">{p.category || p.modalidade || "Geral"}</span>
+                                                <h3 className="text-sm font-semibold mt-1 line-clamp-2 group-hover:text-primary transition-colors">{p.title || p.nome}</h3>
+                                                <div className="flex items-center gap-1 mt-1">
+                                                    <Star className="size-3 fill-yellow-500 text-yellow-500" />
+                                                    <span className="text-xs text-muted-foreground">{p.rating || p.nota || "—"}</span>
+                                                </div>
+                                                <p className="font-heading text-base font-bold text-foreground mt-1">{formatPreco(p.price || p.preco || 0)}</p>
+                                            </div>
+                                        </Link>
+                                    ))}
+                                </div>
+                            </>
                         )}
                     </>
                 )}
@@ -197,38 +199,41 @@ export default function BuscarPage() {
                 {!loading && aba === "pessoas" && query.trim().length >= 2 && (
                     <>
                         {pessoas.length === 0 ? (
-                            <div className="text-center py-10">
-                                <User className="size-10 text-muted-foreground mx-auto mb-2" />
-                                <p className="text-sm text-muted-foreground">Nenhuma pessoa encontrada</p>
+                            <div className="text-center py-16">
+                                <User className="size-12 text-muted-foreground/40 mx-auto mb-4" />
+                                <p className="text-sm font-medium text-muted-foreground">Nenhuma pessoa encontrada</p>
+                                <p className="text-xs text-muted-foreground/60 mt-1">Tente outro termo de busca</p>
                             </div>
                         ) : (
-                            <div className="space-y-2">
-                                {pessoas.map((p) => (
-                                    <Link key={p.id} href={`/perfil/${p.id}`} className="flex items-center gap-3 rounded-xl border border-border bg-card p-3 hover:shadow-sm transition-shadow">
-                                        <img src={p.avatar || "/placeholder.svg"} alt={p.nome} className="size-12 rounded-full object-cover" />
-                                        <div className="flex-1 min-w-0">
-                                            <p className="text-sm font-semibold text-foreground">{p.nome}</p>
-                                            <p className="text-xs text-muted-foreground">@{p.username}</p>
-                                            {(p.cidade || p.estado) && (
-                                                <div className="flex items-center gap-1 mt-1 text-[0.6rem] text-muted-foreground">
-                                                    <MapPin className="size-3" />
-                                                    {[p.cidade, p.estado].filter(Boolean).join(", ")}
-                                                </div>
-                                            )}
-                                        </div>
-                                        <div className="text-right">
-                                            <p className="text-sm font-bold text-foreground">{p.seguidores}</p>
-                                            <p className="text-[0.6rem] text-muted-foreground">seguidores</p>
-                                        </div>
-                                    </Link>
-                                ))}
-                            </div>
+                            <>
+                                <p className="text-xs text-muted-foreground mb-3">{pessoas.length} pessoa{pessoas.length > 1 ? 's' : ''} encontrada{pessoas.length > 1 ? 's' : ''}</p>
+                                <div className="space-y-2">
+                                    {pessoas.map((p) => (
+                                        <Link key={p.id} href={`/perfil/${p.id}`} className="flex items-center gap-3 rounded-xl border border-border bg-card p-3 hover:shadow-sm hover:border-primary/20 transition-all group">
+                                            <img src={p.avatar || "/placeholder.svg"} alt={p.nome} className="size-12 rounded-full object-cover ring-2 ring-border/50 group-hover:ring-primary/30 transition-all" />
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">{p.nome}</p>
+                                                <p className="text-xs text-muted-foreground">@{p.username}</p>
+                                                {(p.cidade || p.estado) && (
+                                                    <div className="flex items-center gap-1 mt-1 text-[0.6rem] text-muted-foreground">
+                                                        <MapPin className="size-3" />
+                                                        {[p.cidade, p.estado].filter(Boolean).join(", ")}
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div className="text-[0.6rem] text-muted-foreground bg-secondary px-2 py-1 rounded-full">
+                                                Perfil
+                                            </div>
+                                        </Link>
+                                    ))}
+                                </div>
+                            </>
                         )}
                     </>
                 )}
 
                 {query.trim().length > 0 && query.trim().length < 2 && (
-                    <p className="text-center text-sm text-muted-foreground py-10">Digite pelo menos 2 caracteres para buscar</p>
+                    <p className="text-center text-sm text-muted-foreground py-16">Digite pelo menos 2 caracteres para buscar</p>
                 )}
             </main>
         </div>

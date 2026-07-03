@@ -31,37 +31,15 @@ export async function searchUsers(query: string) {
         const data = await response.json()
         console.log('✅ Usuários encontrados:', data.totalElements)
 
-        // Buscar contagem real de seguidores para cada usuário
-        const usersWithCounts = await Promise.all(
-            data.content.map(async (user: any) => {
-                try {
-                    const countRes = await fetch(`${API_URL}/api/users/${user.userId}/followers/count`)
-                    const countData = await countRes.json()
-                    return {
-                        id: user.userId,
-                        nome: user.fullName || 'Usuário',
-                        username: user.email?.split('@')[0] || user.userId,
-                        avatar: user.avatarUrl || '/placeholder.svg',
-                        bio: user.bio || '',
-                        seguidores: countData.count || 0,
-                        cidade: user.city,
-                        estado: user.state,
-                    }
-                } catch {
-                    return {
-                        id: user.userId,
-                        nome: user.fullName || 'Usuário',
-                        username: user.email?.split('@')[0] || user.userId,
-                        avatar: user.avatarUrl || '/placeholder.svg',
-                        bio: user.bio || '',
-                        seguidores: 0,
-                        cidade: user.city,
-                        estado: user.state,
-                    }
-                }
-            })
-        )
-        return usersWithCounts
+        return data.content.map((user: any) => ({
+            id: user.userId,
+            nome: user.fullName || 'Usuário',
+            username: user.email?.split('@')[0] || user.userId,
+            avatar: user.avatarUrl || '/placeholder.svg',
+            bio: user.bio || '',
+            cidade: user.city,
+            estado: user.state,
+        }))
     } catch (error) {
         console.error('❌ Erro na busca:', error)
         return []
