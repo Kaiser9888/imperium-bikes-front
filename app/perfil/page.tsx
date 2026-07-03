@@ -3,11 +3,13 @@
 "use client"
 
 import { useUser, SignInButton, UserProfile } from "@clerk/nextjs"
-import { Settings, MapPin, X, Pencil, Camera, Check, Loader2 } from "lucide-react"
+import { Camera, Package, Trophy, Grid3X3, ShoppingBag, Medal, Settings, MapPin, X, Pencil, Plus, Loader2, Check } from "lucide-react"
 import Link from "next/link"
 import { useState, useEffect } from "react"
 import api from "@/lib/api"
 import { BottomNav } from "@/components/layout/bottom-nav"
+
+type Aba = "fotos" | "produtos" | "torneios"
 
 export default function PerfilPage() {
     const { user, isSignedIn, isLoaded } = useUser()
@@ -17,6 +19,7 @@ export default function PerfilPage() {
     const [estado, setEstado] = useState("")
     const [pais, setPais] = useState("Brasil")
     const [loading, setLoading] = useState(true)
+    const [aba, setAba] = useState<Aba>("fotos")
     const [modalEditOpen, setModalEditOpen] = useState(false)
     const [editBio, setEditBio] = useState("")
     const [editCidade, setEditCidade] = useState("")
@@ -152,30 +155,60 @@ export default function PerfilPage() {
                     </div>
                 </div>
 
-                <div className="mt-10 p-6 rounded-2xl border border-border bg-card">
-                    <h3 className="font-heading text-sm font-bold mb-4">Informações do perfil</h3>
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                        <div>
-                            <p className="text-[0.6rem] uppercase tracking-wider text-muted-foreground">Nome</p>
-                            <p className="font-medium">{user.fullName || "—"}</p>
+                {/* Estatísticas */}
+                <div className="mt-8 grid grid-cols-3 gap-2">
+                    {[{ valor: 0, label: "Fotos" },{ valor: 0, label: "Produtos" },{ valor: 0, label: "Torneios" }].map((stat) => (
+                        <button key={stat.label} onClick={() => { if (stat.label === "Fotos") setAba("fotos"); if (stat.label === "Produtos") setAba("produtos"); if (stat.label === "Torneios") setAba("torneios") }}
+                                className="rounded-xl bg-card border border-border p-4 text-center hover:border-primary/30 transition-colors">
+                            <p className="font-heading text-2xl font-bold text-foreground">{stat.valor}</p>
+                            <p className="text-[0.65rem] text-muted-foreground uppercase tracking-wider mt-1">{stat.label}</p>
+                        </button>
+                    ))}
+                </div>
+
+                {/* Abas */}
+                <div className="mt-8 flex border-b border-border">
+                    {[{ key: "fotos", label: "Fotos", icon: Grid3X3 },{ key: "produtos", label: "Produtos", icon: ShoppingBag },{ key: "torneios", label: "Torneios", icon: Trophy }].map(({ key, label, icon: Icon }) => (
+                        <button key={key} onClick={() => setAba(key as Aba)} className={`flex flex-1 items-center justify-center gap-1.5 py-3 text-sm font-medium transition-colors border-b-2 ${aba === key ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
+                            <Icon className="size-4" />{label}
+                        </button>
+                    ))}
+                </div>
+
+                {/* Conteúdo das abas */}
+                <div className="py-6">
+                    {aba === "fotos" && (
+                        <div className="text-center py-16">
+                            <Camera className="size-16 text-muted-foreground/30 mx-auto mb-4" />
+                            <p className="text-sm font-medium text-muted-foreground">Fotos em breve</p>
+                            <p className="text-xs text-muted-foreground/60 mt-1">Compartilhe momentos com a comunidade</p>
+                            <button disabled className="mt-6 inline-flex items-center gap-2 rounded-full bg-primary/50 px-5 py-2.5 text-sm font-medium text-primary-foreground/50 cursor-not-allowed">
+                                <Camera className="size-4" />Postar foto
+                            </button>
                         </div>
-                        <div>
-                            <p className="text-[0.6rem] uppercase tracking-wider text-muted-foreground">Username</p>
-                            <p className="font-medium">@{user.username || "—"}</p>
+                    )}
+
+                    {aba === "produtos" && (
+                        <div className="text-center py-16">
+                            <Package className="size-16 text-muted-foreground/30 mx-auto mb-4" />
+                            <p className="text-sm font-medium text-muted-foreground">Produtos em breve</p>
+                            <p className="text-xs text-muted-foreground/60 mt-1">Anuncie suas bikes e peças para venda</p>
+                            <button disabled className="mt-6 inline-flex items-center gap-2 rounded-full bg-primary/50 px-5 py-2.5 text-sm font-medium text-primary-foreground/50 cursor-not-allowed">
+                                <Plus className="size-4" />Anunciar
+                            </button>
                         </div>
-                        <div>
-                            <p className="text-[0.6rem] uppercase tracking-wider text-muted-foreground">Cidade</p>
-                            <p className="font-medium">{cidade || "—"}</p>
+                    )}
+
+                    {aba === "torneios" && (
+                        <div className="text-center py-16">
+                            <Trophy className="size-16 text-muted-foreground/30 mx-auto mb-4" />
+                            <p className="text-sm font-medium text-muted-foreground">Torneios em breve</p>
+                            <p className="text-xs text-muted-foreground/60 mt-1">Participe de competições e ganhe prêmios</p>
+                            <button disabled className="mt-6 inline-flex items-center gap-2 rounded-full bg-primary/50 px-5 py-2.5 text-sm font-medium text-primary-foreground/50 cursor-not-allowed">
+                                <Trophy className="size-4" />Inscrever-se
+                            </button>
                         </div>
-                        <div>
-                            <p className="text-[0.6rem] uppercase tracking-wider text-muted-foreground">Estado</p>
-                            <p className="font-medium">{estado || "—"}</p>
-                        </div>
-                        <div className="col-span-2">
-                            <p className="text-[0.6rem] uppercase tracking-wider text-muted-foreground">Bio</p>
-                            <p className="font-medium">{bio || "—"}</p>
-                        </div>
-                    </div>
+                    )}
                 </div>
             </main>
 
