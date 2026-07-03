@@ -3,6 +3,7 @@ import { ClerkProvider } from '@clerk/nextjs'
 import { ptBR } from '@clerk/localizations'
 import type { Metadata } from 'next'
 import { Geist, Cinzel, UnifrakturCook } from 'next/font/google'
+import AutoSync from '@/components/auth/AutoSync'
 import './globals.css'
 
 const geistSans = Geist({ variable: '--font-geist-sans', subsets: ['latin'] })
@@ -62,6 +63,7 @@ export default function RootLayout({
                 className={`${geistSans.variable} ${cinzel.variable} ${blackletter.variable} bg-background`}
             >
             <body className="font-sans antialiased">
+            <AutoSync />
             {children}
             {process.env.NODE_ENV === 'production' && <Analytics />}
             </body>
