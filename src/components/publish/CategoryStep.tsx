@@ -4,12 +4,10 @@
 import { useState } from "react"
 import { ChevronRight, ChevronLeft, Check } from "lucide-react"
 
-// Estrutura de categorias completa
 const CATEGORIES = [
     {
         id: "bicicletas",
         name: "Bicicletas",
-        icon: "bike",
         subcategories: [
             { id: "bicicletas-mtb", name: "Mountain Bike (MTB)" },
             { id: "bicicletas-speed", name: "Estrada (Speed)" },
@@ -23,7 +21,6 @@ const CATEGORIES = [
     {
         id: "componentes",
         name: "Componentes",
-        icon: "components",
         subcategories: [
             { id: "comp-quadros", name: "Quadros e Suspensoes" },
             { id: "comp-transmissao", name: "Transmissao" },
@@ -36,7 +33,6 @@ const CATEGORIES = [
     {
         id: "equipamentos",
         name: "Equipamentos e Acessorios",
-        icon: "equipment",
         subcategories: [
             { id: "equip-seguranca", name: "Seguranca e Iluminacao" },
             { id: "equip-transporte", name: "Transporte e Hidratacao" },
@@ -46,7 +42,6 @@ const CATEGORIES = [
     {
         id: "vestuario",
         name: "Vestuario e Protecao",
-        icon: "clothing",
         subcategories: [
             { id: "vest-roupas", name: "Roupas" },
             { id: "vest-acessorios", name: "Acessorios de Vestuario" },
@@ -55,7 +50,6 @@ const CATEGORIES = [
     {
         id: "ferramentas",
         name: "Ferramentas e Manutencao",
-        icon: "tools",
         subcategories: [
             { id: "ferr-ferramentas", name: "Ferramentas" },
             { id: "ferr-manutencao", name: "Manutencao e Limpeza" },
@@ -70,29 +64,31 @@ interface Props {
 }
 
 export function CategoryStep({ categoryId, subcategoryId, onCategoryChange }: Props) {
-    const [selectedCategory, setSelectedCategory] = useState<string>("")
-    const [showSubs, setShowSubs] = useState(false)
+    // Usar categoryId existente para determinar qual categoria esta selecionada
+    const [viewingCategoryId, setViewingCategoryId] = useState<string>(categoryId || "")
 
-    const category = CATEGORIES.find(c => c.id === selectedCategory)
+    const viewingCategory = CATEGORIES.find(c => c.id === viewingCategoryId)
+    const isViewingSubs = viewingCategoryId !== ""
+
     const selectedCatName = CATEGORIES.find(c => c.id === categoryId)?.name
     const selectedSubName = CATEGORIES.find(c => c.id === categoryId)?.subcategories.find(s => s.id === subcategoryId)?.name
 
     const handleSelectCategory = (catId: string) => {
-        setSelectedCategory(catId)
-        setShowSubs(true)
+        setViewingCategoryId(catId)
+        // Ao selecionar categoria, limpa subcategoria anterior
+        onCategoryChange(catId, "")
     }
 
-    const handleSelectSub = (catId: string, subId: string) => {
-        onCategoryChange(catId, subId)
+    const handleSelectSub = (subId: string) => {
+        onCategoryChange(viewingCategoryId, subId)
     }
 
     const handleBackToCategories = () => {
-        setShowSubs(false)
-        setSelectedCategory("")
+        setViewingCategoryId("")
     }
 
-    // Etapa 2: mostrar subcategorias
-    if (showSubs && category) {
+    // Mostrar subcategorias
+    if (isViewingSubs && viewingCategory) {
         return (
             <div className="space-y-4">
                 <button
@@ -104,17 +100,17 @@ export function CategoryStep({ categoryId, subcategoryId, onCategoryChange }: Pr
                 </button>
 
                 <div>
-                    <h2 className="font-heading text-lg font-bold text-foreground">{category.name}</h2>
+                    <h2 className="font-heading text-lg font-bold text-foreground">{viewingCategory.name}</h2>
                     <p className="text-sm text-muted-foreground mt-1">Escolha a modalidade ou tipo especifico</p>
                 </div>
 
                 <div className="space-y-2">
-                    {category.subcategories.map(sub => {
-                        const isSelected = categoryId === category.id && subcategoryId === sub.id
+                    {viewingCategory.subcategories.map(sub => {
+                        const isSelected = categoryId === viewingCategory.id && subcategoryId === sub.id
                         return (
                             <button
                                 key={sub.id}
-                                onClick={() => handleSelectSub(category.id, sub.id)}
+                                onClick={() => handleSelectSub(sub.id)}
                                 className={`w-full flex items-center justify-between rounded-xl border p-4 text-left transition-all ${
                                     isSelected
                                         ? 'border-primary bg-primary/5 shadow-sm'
@@ -142,7 +138,7 @@ export function CategoryStep({ categoryId, subcategoryId, onCategoryChange }: Pr
         )
     }
 
-    // Etapa 1: mostrar categorias principais
+    // Mostrar categorias principais
     return (
         <div className="space-y-4">
             <div>
@@ -153,6 +149,9 @@ export function CategoryStep({ categoryId, subcategoryId, onCategoryChange }: Pr
             <div className="space-y-2">
                 {CATEGORIES.map(cat => {
                     const isSelected = categoryId === cat.id
+                    const catSubName = isSelected && subcategoryId
+                        ? CATEGORIES.find(c => c.id === categoryId)?.subcategories.find(s => s.id === subcategoryId)?.name
+                        : null
                     return (
                         <button
                             key={cat.id}
@@ -165,8 +164,8 @@ export function CategoryStep({ categoryId, subcategoryId, onCategoryChange }: Pr
                         >
                             <div>
                                 <span className="text-sm font-semibold text-foreground">{cat.name}</span>
-                                {isSelected && selectedSubName && (
-                                    <p className="text-xs text-primary mt-0.5">{selectedSubName}</p>
+                                {catSubName && (
+                                    <p className="text-xs text-primary mt-0.5">{catSubName}</p>
                                 )}
                             </div>
                             <ChevronRight className="size-4 text-muted-foreground" />
