@@ -1,7 +1,7 @@
 ﻿// components/publish/PublishNavigation.tsx
 "use client"
 
-import { ChevronLeft, ChevronRight, Save, Send } from "lucide-react"
+import { ChevronLeft, ChevronRight, Send } from "lucide-react"
 
 interface Props {
     step: number
@@ -13,6 +13,10 @@ interface Props {
 export function PublishNavigation({ step, totalSteps, onNext, onPrev }: Props) {
     const isLastStep = step === totalSteps - 1
     const isFirstStep = step === 0
+
+    const nextButtonClass = isLastStep
+        ? 'bg-green-500 text-white hover:bg-green-600'
+        : 'bg-primary text-primary-foreground hover:bg-primary/90'
 
     return (
         <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-background/80 backdrop-blur-sm">
@@ -32,12 +36,12 @@ export function PublishNavigation({ step, totalSteps, onNext, onPrev }: Props) {
 
                 <button
                     onClick={onNext}
-                    className={lex items-center gap-1.5 rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors {isLastStep ? 'bg-green-500 text-white hover:bg-green-600' : 'bg-primary text-primary-foreground hover:bg-primary/90'}}
+                    className={`flex items-center gap-1.5 rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors ${nextButtonClass}`}
                 >
                     {isLastStep ? (
                         <>Publicar <Send className="size-4" /></>
                     ) : (
-                        <>Próximo <ChevronRight className="size-4" /></>
+                        <>Proximo <ChevronRight className="size-4" /></>
                     )}
                 </button>
             </div>

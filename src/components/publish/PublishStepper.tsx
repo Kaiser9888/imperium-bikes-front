@@ -3,7 +3,7 @@
 
 import { Check } from "lucide-react"
 
-const STEPS = ["Categoria", "Informações", "Fotos", "Venda", "Revisão"]
+const STEPS = ["Categoria", "Informacoes", "Fotos", "Venda", "Revisao"]
 
 interface Props {
     currentStep: number
@@ -20,15 +20,15 @@ export function PublishStepper({ currentStep, totalSteps, onStepClick }: Props) 
                         <div key={i} className="flex items-center">
                             <button
                                 onClick={() => onStepClick(i)}
-                                className={lex items-center gap-1.5 text-xs font-medium transition-colors {i === currentStep ? 'text-primary' : i < currentStep ? 'text-green-500' : 'text-muted-foreground'}}
+                                className={`flex items-center gap-1.5 text-xs font-medium transition-colors ${i === currentStep ? 'text-primary' : i < currentStep ? 'text-green-500' : 'text-muted-foreground'}`}
                             >
-                                <span className={lex size-5 items-center justify-center rounded-full text-[10px] {i === currentStep ? 'bg-primary text-primary-foreground' : i < currentStep ? 'bg-green-500 text-white' : 'bg-secondary text-muted-foreground'}}>
+                                <span className={`flex size-5 items-center justify-center rounded-full text-[10px] ${i === currentStep ? 'bg-primary text-primary-foreground' : i < currentStep ? 'bg-green-500 text-white' : 'bg-secondary text-muted-foreground'}`}>
                                     {i < currentStep ? <Check className="size-3" /> : i + 1}
                                 </span>
                                 <span className="hidden sm:inline">{label}</span>
                             </button>
                             {i < STEPS.length - 1 && (
-                                <div className={w-6 sm:w-10 h-px mx-1 {i < currentStep ? 'bg-green-500' : 'bg-border'}} />
+                                <div className={`w-6 sm:w-10 h-px mx-1 ${i < currentStep ? 'bg-green-500' : 'bg-border'}`} />
                             )}
                         </div>
                     ))}
