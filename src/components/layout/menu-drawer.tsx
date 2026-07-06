@@ -35,7 +35,7 @@ const menuItems = [
     { icon: User, label: "Minha conta", href: "/conta" },
     { icon: Headphones, label: "Contato", href: "/contato", hint: "Ajuda em geral" },
     { icon: LayoutGrid, label: "Categorias", href: "/categorias" },
-    { icon: Store, label: "Vender", href: "/vender" },
+    { icon: Store, label: "Publicar anuncio", href: "/publicar" },
 ]
 
 export function MenuDrawer({ open, onClose }: MenuDrawerProps) {
