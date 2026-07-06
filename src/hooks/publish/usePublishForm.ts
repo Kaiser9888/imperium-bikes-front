@@ -1,8 +1,9 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 // hooks/publish/usePublishForm.ts
 "use client"
 
-import { useState, useCallback, useEffect } from 'react'
-import { ProductFormData, ProductCondition, ShippingType, ProductImage } from '@/types/publish/product'
+import { useState, useCallback, useEffect, useRef } from 'react'
+import { ProductFormData, ProductImage } from '@/types/publish/product'
 
 const STORAGE_KEY = 'imperium_publish_draft'
 
@@ -31,29 +32,33 @@ export function usePublishForm() {
     const [isDirty, setIsDirty] = useState(false)
     const [lastSaved, setLastSaved] = useState<Date | null>(null)
     const [isSaving, setIsSaving] = useState(false)
+    const loadedRef = useRef(false)
 
-    // Carregar rascunho do localStorage
+    // Carregar rascunho do localStorage (apenas uma vez)
     useEffect(() => {
+        if (loadedRef.current) return
+        loadedRef.current = true
         const saved = localStorage.getItem(STORAGE_KEY)
         if (saved) {
             try {
                 const parsed = JSON.parse(saved)
                 setFormData(prev => ({ ...prev, ...parsed }))
-            } catch {}
+            } catch {
+                // ignorar erro de parse
+            }
         }
     }, [])
 
-    // Salvar rascunho no localStorage quando houver mudanças
+    // Salvar rascunho no localStorage quando houver mudancas
     useEffect(() => {
-        if (isDirty) {
-            const timer = setTimeout(() => {
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(formData))
-                setLastSaved(new Date())
-                setIsDirty(false)
-                setIsSaving(false)
-            }, 2000)
-            return () => clearTimeout(timer)
-        }
+        if (!isDirty) return
+        const timer = setTimeout(() => {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(formData))
+            setLastSaved(new Date())
+            setIsDirty(false)
+            setIsSaving(false)
+        }, 2000)
+        return () => clearTimeout(timer)
     }, [formData, isDirty])
 
     const updateField = useCallback(<K extends keyof ProductFormData>(field: K, value: ProductFormData[K]) => {
@@ -109,17 +114,30 @@ export function usePublishForm() {
         setIsDirty(false)
     }, [])
 
+    // Validar etapa atual antes de avancar
     const nextStep = useCallback(() => {
+        if (step === 0 && (!formData.categoryId || !formData.subcategoryId)) return
+        if (step === 1 && (!formData.title || formData.title.length < 10 || !formData.condition || !formData.description || formData.description.length < 40)) return
+        if (step === 2 && formData.images.length < 3) return
+        if (step === 3 && (!formData.price || formData.price <= 0 || !formData.shippingType)) return
         setStep(prev => Math.min(prev + 1, 4))
-    }, [])
+    }, [step, formData])
 
     const prevStep = useCallback(() => {
         setStep(prev => Math.max(prev - 1, 0))
     }, [])
 
     const goToStep = useCallback((s: number) => {
-        setStep(s)
-    }, [])
+        // Permitir voltar para etapas ja preenchidas
+        if (s < step) {
+            setStep(s)
+            return
+        }
+        // So avancar se a etapa atual for valida
+        if (s === step + 1) {
+            nextStep()
+        }
+    }, [step, nextStep])
 
     return {
         step,

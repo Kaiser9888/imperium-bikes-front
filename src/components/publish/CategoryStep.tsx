@@ -2,57 +2,66 @@
 "use client"
 
 import { useState } from "react"
-import { Package, ChevronRight, Search } from "lucide-react"
+import { ChevronRight, ChevronLeft, Check } from "lucide-react"
 
-interface Category {
-    id: string
-    name: string
-}
-
-interface SubCategory {
-    id: string
-    name: string
-}
-
-const CATEGORIES: Category[] = [
-    { id: "cat-1", name: "Bike" },
-    { id: "cat-2", name: "Quadro" },
-    { id: "cat-3", name: "Suspensao" },
-    { id: "cat-4", name: "Freios" },
-    { id: "cat-5", name: "Rodas" },
-    { id: "cat-6", name: "Pneus" },
-    { id: "cat-7", name: "Transmissao" },
-    { id: "cat-8", name: "Cockpit" },
-    { id: "cat-9", name: "Pecas" },
-    { id: "cat-10", name: "Equipamentos" },
-    { id: "cat-11", name: "Ferramentas" },
-    { id: "cat-12", name: "Vestuario" },
-    { id: "cat-13", name: "Eletronicos" },
-    { id: "cat-14", name: "Outros" },
+// Estrutura de categorias completa
+const CATEGORIES = [
+    {
+        id: "bicicletas",
+        name: "Bicicletas",
+        icon: "bike",
+        subcategories: [
+            { id: "bicicletas-mtb", name: "Mountain Bike (MTB)" },
+            { id: "bicicletas-speed", name: "Estrada (Speed)" },
+            { id: "bicicletas-urbana", name: "Urbana / Lazer" },
+            { id: "bicicletas-eletrica", name: "Eletrica (E-Bike)" },
+            { id: "bicicletas-gravel", name: "Gravel" },
+            { id: "bicicletas-bmx", name: "BMX" },
+            { id: "bicicletas-infantil", name: "Infantil" },
+        ]
+    },
+    {
+        id: "componentes",
+        name: "Componentes",
+        icon: "components",
+        subcategories: [
+            { id: "comp-quadros", name: "Quadros e Suspensoes" },
+            { id: "comp-transmissao", name: "Transmissao" },
+            { id: "comp-freios", name: "Freios" },
+            { id: "comp-rodas", name: "Rodas e Pneus" },
+            { id: "comp-cockpit", name: "Cockpit e Selim" },
+            { id: "comp-pedais", name: "Pedais e Outros" },
+        ]
+    },
+    {
+        id: "equipamentos",
+        name: "Equipamentos e Acessorios",
+        icon: "equipment",
+        subcategories: [
+            { id: "equip-seguranca", name: "Seguranca e Iluminacao" },
+            { id: "equip-transporte", name: "Transporte e Hidratacao" },
+            { id: "equip-eletronicos", name: "Ciclocomputadores e Eletronicos" },
+        ]
+    },
+    {
+        id: "vestuario",
+        name: "Vestuario e Protecao",
+        icon: "clothing",
+        subcategories: [
+            { id: "vest-roupas", name: "Roupas" },
+            { id: "vest-acessorios", name: "Acessorios de Vestuario" },
+        ]
+    },
+    {
+        id: "ferramentas",
+        name: "Ferramentas e Manutencao",
+        icon: "tools",
+        subcategories: [
+            { id: "ferr-ferramentas", name: "Ferramentas" },
+            { id: "ferr-manutencao", name: "Manutencao e Limpeza" },
+        ]
+    },
 ]
-
-const SUBCATEGORIES: Record<string, SubCategory[]> = {
-    "cat-1": [
-        { id: "sub-1-1", name: "MTB" }, { id: "sub-1-2", name: "Downhill" },
-        { id: "sub-1-3", name: "Enduro" }, { id: "sub-1-4", name: "Trail" },
-        { id: "sub-1-5", name: "XC" }, { id: "sub-1-6", name: "Gravel" },
-        { id: "sub-1-7", name: "Speed" }, { id: "sub-1-8", name: "BMX" },
-        { id: "sub-1-9", name: "Infantil" }, { id: "sub-1-10", name: "Eletrica" },
-    ],
-    "cat-2": [{ id: "sub-2-1", name: "Carbono" }, { id: "sub-2-2", name: "Aluminio" }, { id: "sub-2-3", name: "Aco" }, { id: "sub-2-4", name: "Titanio" }],
-    "cat-3": [{ id: "sub-3-1", name: "Dianteira" }, { id: "sub-3-2", name: "Traseira" }, { id: "sub-3-3", name: "Canote retratil" }],
-    "cat-4": [{ id: "sub-4-1", name: "Hidraulico" }, { id: "sub-4-2", name: "Mecanico" }, { id: "sub-4-3", name: "Pastilhas" }],
-    "cat-5": [{ id: "sub-5-1", name: "Aro 26" }, { id: "sub-5-2", name: "Aro 27.5" }, { id: "sub-5-3", name: "Aro 29" }, { id: "sub-5-4", name: "Cubo" }],
-    "cat-6": [{ id: "sub-6-1", name: "Tubeless" }, { id: "sub-6-2", name: "Com camara" }, { id: "sub-6-3", name: "Estrada" }],
-    "cat-7": [{ id: "sub-7-1", name: "Grupo completo" }, { id: "sub-7-2", name: "Cambio" }, { id: "sub-7-3", name: "Corrente" }],
-    "cat-8": [{ id: "sub-8-1", name: "Guidao" }, { id: "sub-8-2", name: "Mesa" }, { id: "sub-8-3", name: "Selim" }],
-    "cat-9": [{ id: "sub-9-1", name: "Motor" }, { id: "sub-9-2", name: "Eletrica" }, { id: "sub-9-3", name: "Variada" }],
-    "cat-10": [{ id: "sub-10-1", name: "Capacete" }, { id: "sub-10-2", name: "Luva" }, { id: "sub-10-3", name: "Oculos" }],
-    "cat-11": [{ id: "sub-11-1", name: "Chaves" }, { id: "sub-11-2", name: "Bombas" }, { id: "sub-11-3", name: "Suportes" }],
-    "cat-12": [{ id: "sub-12-1", name: "Camisa" }, { id: "sub-12-2", name: "Bermuda" }, { id: "sub-12-3", name: "Sapatilha" }],
-    "cat-13": [{ id: "sub-13-1", name: "Ciclocomputador" }, { id: "sub-13-2", name: "Lanternas" }, { id: "sub-13-3", name: "Sensores" }],
-    "cat-14": [{ id: "sub-14-1", name: "Diversos" }],
-}
 
 interface Props {
     categoryId: string
@@ -61,81 +70,117 @@ interface Props {
 }
 
 export function CategoryStep({ categoryId, subcategoryId, onCategoryChange }: Props) {
-    const [search, setSearch] = useState("")
+    const [selectedCategory, setSelectedCategory] = useState<string>("")
     const [showSubs, setShowSubs] = useState(false)
 
-    const filteredCategories = CATEGORIES.filter(c =>
-        c.name.toLowerCase().includes(search.toLowerCase())
-    )
-
-    const selectedCategory = CATEGORIES.find(c => c.id === categoryId)
-    const subs = categoryId ? SUBCATEGORIES[categoryId] || [] : []
+    const category = CATEGORIES.find(c => c.id === selectedCategory)
+    const selectedCatName = CATEGORIES.find(c => c.id === categoryId)?.name
+    const selectedSubName = CATEGORIES.find(c => c.id === categoryId)?.subcategories.find(s => s.id === subcategoryId)?.name
 
     const handleSelectCategory = (catId: string) => {
-        onCategoryChange(catId, "")
+        setSelectedCategory(catId)
         setShowSubs(true)
     }
 
-    const handleSelectSub = (subId: string) => {
-        onCategoryChange(categoryId, subId)
+    const handleSelectSub = (catId: string, subId: string) => {
+        onCategoryChange(catId, subId)
     }
 
-    const handleBack = () => {
+    const handleBackToCategories = () => {
         setShowSubs(false)
-        onCategoryChange("", "")
+        setSelectedCategory("")
     }
 
-    if (showSubs && selectedCategory) {
+    // Etapa 2: mostrar subcategorias
+    if (showSubs && category) {
         return (
-            <div>
-                <button onClick={handleBack} className="text-sm text-primary mb-4 flex items-center gap-1">
-                    Voltar
+            <div className="space-y-4">
+                <button
+                    onClick={handleBackToCategories}
+                    className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                    <ChevronLeft className="size-4" />
+                    Voltar para categorias
                 </button>
-                <h2 className="font-heading text-lg font-bold mb-4">{selectedCategory.name} - Subcategoria</h2>
-                <div className="grid grid-cols-2 gap-2">
-                    {subs.map(sub => (
-                        <button
-                            key={sub.id}
-                            onClick={() => handleSelectSub(sub.id)}
-                            className={`rounded-xl border p-4 text-left text-sm font-medium transition-all hover:border-primary/30 ${
-                                subcategoryId === sub.id ? 'border-primary bg-primary/5' : 'border-border bg-card'
-                            }`}
-                        >
-                            {sub.name}
-                        </button>
-                    ))}
+
+                <div>
+                    <h2 className="font-heading text-lg font-bold text-foreground">{category.name}</h2>
+                    <p className="text-sm text-muted-foreground mt-1">Escolha a modalidade ou tipo especifico</p>
                 </div>
+
+                <div className="space-y-2">
+                    {category.subcategories.map(sub => {
+                        const isSelected = categoryId === category.id && subcategoryId === sub.id
+                        return (
+                            <button
+                                key={sub.id}
+                                onClick={() => handleSelectSub(category.id, sub.id)}
+                                className={`w-full flex items-center justify-between rounded-xl border p-4 text-left transition-all ${
+                                    isSelected
+                                        ? 'border-primary bg-primary/5 shadow-sm'
+                                        : 'border-border bg-card hover:border-primary/30 hover:shadow-sm'
+                                }`}
+                            >
+                                <span className="text-sm font-medium">{sub.name}</span>
+                                <div className={`size-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                                    isSelected ? 'border-primary bg-primary' : 'border-muted-foreground/30'
+                                }`}>
+                                    {isSelected && <Check className="size-3 text-white" />}
+                                </div>
+                            </button>
+                        )
+                    })}
+                </div>
+
+                {categoryId && subcategoryId && (
+                    <div className="rounded-xl bg-green-50 border border-green-200 p-4">
+                        <p className="text-sm font-medium text-green-800">Selecionado:</p>
+                        <p className="text-sm text-green-700">{selectedCatName} &gt; {selectedSubName}</p>
+                    </div>
+                )}
             </div>
         )
     }
 
+    // Etapa 1: mostrar categorias principais
     return (
-        <div>
-            <h2 className="font-heading text-lg font-bold mb-4">Escolha a categoria</h2>
-            <div className="relative mb-4">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-                <input
-                    type="text"
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Buscar categoria..."
-                    className="w-full rounded-xl border border-border bg-card pl-10 pr-4 py-2.5 text-sm outline-none focus:border-primary/30"
-                />
+        <div className="space-y-4">
+            <div>
+                <h2 className="font-heading text-lg font-bold text-foreground">Qual categoria melhor descreve seu produto?</h2>
+                <p className="text-sm text-muted-foreground mt-1">Escolha uma categoria principal para continuar</p>
             </div>
-            <div className="grid grid-cols-2 gap-2">
-                {filteredCategories.map(cat => (
-                    <button
-                        key={cat.id}
-                        onClick={() => handleSelectCategory(cat.id)}
-                        className={`rounded-xl border p-4 text-left text-sm font-medium transition-all hover:border-primary/30 flex items-center justify-between ${
-                            categoryId === cat.id ? 'border-primary bg-primary/5' : 'border-border bg-card'
-                        }`}
-                    >
-                        <span>{cat.name}</span>
-                        <ChevronRight className="size-4 text-muted-foreground" />
-                    </button>
-                ))}
+
+            <div className="space-y-2">
+                {CATEGORIES.map(cat => {
+                    const isSelected = categoryId === cat.id
+                    return (
+                        <button
+                            key={cat.id}
+                            onClick={() => handleSelectCategory(cat.id)}
+                            className={`w-full flex items-center justify-between rounded-xl border p-4 text-left transition-all ${
+                                isSelected
+                                    ? 'border-primary bg-primary/5 shadow-sm'
+                                    : 'border-border bg-card hover:border-primary/30 hover:shadow-sm'
+                            }`}
+                        >
+                            <div>
+                                <span className="text-sm font-semibold text-foreground">{cat.name}</span>
+                                {isSelected && selectedSubName && (
+                                    <p className="text-xs text-primary mt-0.5">{selectedSubName}</p>
+                                )}
+                            </div>
+                            <ChevronRight className="size-4 text-muted-foreground" />
+                        </button>
+                    )
+                })}
             </div>
+
+            {categoryId && subcategoryId && (
+                <div className="rounded-xl bg-green-50 border border-green-200 p-4">
+                    <p className="text-sm font-medium text-green-800">Selecionado:</p>
+                    <p className="text-sm text-green-700">{selectedCatName} &gt; {selectedSubName}</p>
+                </div>
+            )}
         </div>
     )
 }
