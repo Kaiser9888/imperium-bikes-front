@@ -1,8 +1,8 @@
 // components/publish/CategoryStep.tsx
 "use client"
 
-import { useState, useEffect } from "react"
-import { ChevronRight, ChevronLeft, X, Search } from "lucide-react"
+import { useState, useEffect, useRef } from "react"
+import { ChevronRight, ChevronLeft, Search } from "lucide-react"
 
 // ============================================================
 // TIPOS
@@ -286,7 +286,8 @@ interface Props {
 }
 
 export function CategoryStep({ categoryId, subcategoryId, onCategoryChange }: Props) {
-    // Parse do estado atual vindo das props
+    const initializedRef = useRef(false)
+
     const parseSelection = (): SelectionState => {
         try {
             if (subcategoryId && subcategoryId.startsWith("{")) {
@@ -300,12 +301,14 @@ export function CategoryStep({ categoryId, subcategoryId, onCategoryChange }: Pr
     const [viewingCategoryId, setViewingCategoryId] = useState<string>(categoryId || "")
     const [searchTerm, setSearchTerm] = useState("")
 
-    // Sincroniza se as props mudarem externamente
+    // Sincroniza apenas na primeira carga
     useEffect(() => {
+        if (initializedRef.current) return
+        initializedRef.current = true
         const parsed = parseSelection()
         setSelection(parsed)
         setViewingCategoryId(parsed.categoryId || "")
-    }, [categoryId, subcategoryId])
+    }, [])
 
     const emit = (newSelection: SelectionState) => {
         setSelection(newSelection)
@@ -331,12 +334,7 @@ export function CategoryStep({ categoryId, subcategoryId, onCategoryChange }: Pr
         const newModalities = selection.modalities.includes(modId)
             ? selection.modalities.filter(m => m !== modId)
             : [...selection.modalities, modId]
-        const newSelection: SelectionState = {
-            ...selection,
-            categoryId: viewingCategoryId,
-            modalities: newModalities,
-        }
-        emit(newSelection)
+        emit({ ...selection, categoryId: viewingCategoryId, modalities: newModalities })
     }
 
     const toggleAttribute = (attrId: string) => {
@@ -344,26 +342,17 @@ export function CategoryStep({ categoryId, subcategoryId, onCategoryChange }: Pr
         const newAttributes = selection.attributes.includes(attrId)
             ? selection.attributes.filter(a => a !== attrId)
             : [...selection.attributes, attrId]
-        const newSelection: SelectionState = {
-            ...selection,
-            categoryId: viewingCategoryId,
-            attributes: newAttributes,
-        }
-        emit(newSelection)
+        emit({ ...selection, categoryId: viewingCategoryId, attributes: newAttributes })
     }
 
     const handleBack = () => {
         setViewingCategoryId("")
     }
 
-    // Filtrar categorias por busca
     const filteredCategories = CATEGORIES.filter(c =>
         c.label.toLowerCase().includes(searchTerm.toLowerCase())
     )
 
-    // ============================================================
-    // TELA DE SELEÇÃO DE ATRIBUTOS (dentro de uma categoria)
-    // ============================================================
     if (isViewingDetails && viewingCategory) {
         const hasModalities = viewingCategory.modalities.length > 0
         const hasAttributes = viewingCategory.attributes.length > 0
@@ -380,7 +369,6 @@ export function CategoryStep({ categoryId, subcategoryId, onCategoryChange }: Pr
 
                 <h2 className="font-heading text-lg font-bold text-foreground">{viewingCategory.label}</h2>
 
-                {/* Modalidades */}
                 {hasModalities && (
                     <div>
                         <p className="text-sm font-semibold text-foreground mb-2">
@@ -407,7 +395,6 @@ export function CategoryStep({ categoryId, subcategoryId, onCategoryChange }: Pr
                     </div>
                 )}
 
-                {/* Atributos */}
                 {hasAttributes && (
                     <div>
                         <p className="text-sm font-semibold text-foreground mb-2">
@@ -434,7 +421,6 @@ export function CategoryStep({ categoryId, subcategoryId, onCategoryChange }: Pr
                     </div>
                 )}
 
-                {/* Resumo do selecionado */}
                 {(selection.modalities.length > 0 || selection.attributes.length > 0) && (
                     <div className="rounded-xl bg-emerald-50 border border-emerald-200 p-4">
                         <p className="text-sm font-semibold text-emerald-800 mb-2">Selecionado nesta categoria:</p>
@@ -470,9 +456,6 @@ export function CategoryStep({ categoryId, subcategoryId, onCategoryChange }: Pr
         )
     }
 
-    // ============================================================
-    // TELA DE CATEGORIAS PRINCIPAIS
-    // ============================================================
     return (
         <div className="space-y-4">
             <div>
@@ -484,7 +467,6 @@ export function CategoryStep({ categoryId, subcategoryId, onCategoryChange }: Pr
                 </p>
             </div>
 
-            {/* Busca */}
             <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
                 <input
@@ -496,13 +478,10 @@ export function CategoryStep({ categoryId, subcategoryId, onCategoryChange }: Pr
                 />
             </div>
 
-            {/* Lista de categorias */}
             <div className="space-y-2">
                 {filteredCategories.map(cat => {
                     const isSelected = selection.categoryId === cat.id
-                    const modCount = selection.modalities.length
-                    const attrCount = selection.attributes.length
-                    const totalSelected = modCount + attrCount
+                    const totalSelected = selection.modalities.length + selection.attributes.length
 
                     return (
                         <button
@@ -530,7 +509,7 @@ export function CategoryStep({ categoryId, subcategoryId, onCategoryChange }: Pr
 
             {filteredCategories.length === 0 && (
                 <p className="text-center text-sm text-muted-foreground py-8">
-                    Nenhuma categoria encontrada para "{searchTerm}"
+                    Nenhuma categoria encontrada para &ldquo;{searchTerm}&rdquo;
                 </p>
             )}
         </div>

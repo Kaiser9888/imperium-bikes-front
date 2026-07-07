@@ -31,7 +31,8 @@ export default function PublicarPage() {
             <PublishStepper currentStep={step} totalSteps={totalSteps} onStepClick={goToStep} />
             <SaveDraftIndicator isSaving={isSaving} lastSaved={lastSaved} />
 
-            <main className="mx-auto max-w-2xl px-4 py-6">
+
+                <main className="mx-auto max-w-2xl px-4 py-6 pb-24">
                 {step === 0 && (
                     <CategoryStep
                         categoryId={formData.categoryId}
