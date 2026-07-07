@@ -1,181 +1,283 @@
 // components/publish/CategoryStep.tsx
 "use client"
 
-import { useState } from "react"
-import { ChevronRight, ChevronLeft, X, Plus } from "lucide-react"
+import { useState, useEffect } from "react"
+import { ChevronRight, ChevronLeft, X, Search } from "lucide-react"
 
-interface Tag {
+// ============================================================
+// TIPOS
+// ============================================================
+
+interface Attribute {
     id: string
-    name: string
+    label: string
 }
 
-interface Category {
+interface CategoryDefinition {
     id: string
-    name: string
-    subcategories: { id: string; name: string }[]
-    tags: Tag[]
+    label: string
+    modalities: Attribute[]
+    attributes: Attribute[]
 }
 
-const CATEGORIES: Category[] = [
+// ============================================================
+// DADOS - Todas as categorias do marketplace de bikes
+// ============================================================
+
+const CATEGORIES: CategoryDefinition[] = [
     {
         id: "bicicletas",
-        name: "Bicicletas",
-        subcategories: [],
-        tags: [
-            { id: "mtb", name: "Mountain Bike (MTB)" },
-            { id: "speed", name: "Estrada (Speed)" },
-            { id: "urbana", name: "Urbana / Lazer" },
-            { id: "eletrica", name: "Eletrica (E-Bike)" },
-            { id: "gravel", name: "Gravel" },
-            { id: "bmx", name: "BMX" },
-            { id: "infantil", name: "Infantil" },
-            { id: "dobravel", name: "Dobravel" },
-        ]
+        label: "Bicicletas Completas",
+        modalities: [
+            { id: "mtb", label: "Mountain Bike (MTB)" },
+            { id: "downhill", label: "Downhill" },
+            { id: "enduro", label: "Enduro" },
+            { id: "trail", label: "Trail" },
+            { id: "xc", label: "Cross Country (XC)" },
+            { id: "gravel", label: "Gravel" },
+            { id: "speed", label: "Estrada (Speed)" },
+            { id: "bmx", label: "BMX" },
+            { id: "eletrica", label: "Elétrica (E-Bike)" },
+            { id: "urbana", label: "Urbana / Lazer" },
+            { id: "infantil", label: "Infantil" },
+            { id: "dobravel", label: "Dobrável" },
+        ],
+        attributes: [
+            { id: "aro-26", label: "Aro 26" },
+            { id: "aro-275", label: "Aro 27.5" },
+            { id: "aro-29", label: "Aro 29" },
+            { id: "carbono", label: "Carbono" },
+            { id: "aluminio", label: "Alumínio" },
+            { id: "aco", label: "Aço" },
+            { id: "titanio", label: "Titânio" },
+        ],
     },
     {
-        id: "quadros-suspensoes",
-        name: "Quadros e Suspensoes",
-        subcategories: [],
-        tags: [
-            { id: "carbono", name: "Carbono" },
-            { id: "aluminio", name: "Aluminio" },
-            { id: "aco", name: "Aco" },
-            { id: "titanio", name: "Titanio" },
-            { id: "full-suspension", name: "Full Suspension" },
-            { id: "hardtail", name: "Hardtail" },
-            { id: "rigida", name: "Rigida" },
-            { id: "mtb", name: "MTB" },
-            { id: "speed", name: "Speed" },
-            { id: "gravel", name: "Gravel" },
-            { id: "downhill", name: "Downhill" },
-            { id: "enduro", name: "Enduro" },
-        ]
+        id: "quadros",
+        label: "Quadros",
+        modalities: [
+            { id: "mtb", label: "Mountain Bike (MTB)" },
+            { id: "downhill", label: "Downhill" },
+            { id: "enduro", label: "Enduro" },
+            { id: "trail", label: "Trail" },
+            { id: "xc", label: "Cross Country (XC)" },
+            { id: "gravel", label: "Gravel" },
+            { id: "speed", label: "Estrada (Speed)" },
+            { id: "bmx", label: "BMX" },
+            { id: "eletrica", label: "Elétrica" },
+            { id: "urbana", label: "Urbana / Lazer" },
+        ],
+        attributes: [
+            { id: "carbono", label: "Carbono" },
+            { id: "aluminio", label: "Alumínio" },
+            { id: "aco", label: "Aço" },
+            { id: "titanio", label: "Titânio" },
+            { id: "full-suspension", label: "Full Suspension" },
+            { id: "hardtail", label: "Hardtail" },
+            { id: "rigida", label: "Rígida" },
+            { id: "aro-26", label: "Aro 26" },
+            { id: "aro-275", label: "Aro 27.5" },
+            { id: "aro-29", label: "Aro 29" },
+        ],
+    },
+    {
+        id: "garfos-suspensoes",
+        label: "Garfos e Suspensões",
+        modalities: [
+            { id: "mtb", label: "Mountain Bike (MTB)" },
+            { id: "downhill", label: "Downhill" },
+            { id: "enduro", label: "Enduro" },
+            { id: "trail", label: "Trail" },
+            { id: "xc", label: "Cross Country (XC)" },
+            { id: "gravel", label: "Gravel" },
+            { id: "speed", label: "Estrada (Speed)" },
+        ],
+        attributes: [
+            { id: "dianteiro", label: "Dianteiro" },
+            { id: "traseiro", label: "Traseiro" },
+            { id: "ar", label: "A Ar" },
+            { id: "mola", label: "Mola" },
+            { id: "hidraulico", label: "Hidráulico" },
+            { id: "eletronico", label: "Eletrônico" },
+            { id: "curso-100", label: "Curso até 100mm" },
+            { id: "curso-150", label: "Curso 100-150mm" },
+            { id: "curso-200", label: "Curso 150-200mm" },
+        ],
     },
     {
         id: "transmissao",
-        name: "Transmissao",
-        subcategories: [],
-        tags: [
-            { id: "cambio", name: "Cambio" },
-            { id: "passador", name: "Passador" },
-            { id: "cassete", name: "Cassete" },
-            { id: "corrente", name: "Corrente" },
-            { id: "pedivela", name: "Pedivela" },
-            { id: "mov-central", name: "Movimento Central" },
-            { id: "shimano", name: "Shimano" },
-            { id: "sram", name: "SRAM" },
-            { id: "12v", name: "12 velocidades" },
-            { id: "11v", name: "11 velocidades" },
-            { id: "10v", name: "10 velocidades" },
-        ]
+        label: "Transmissão",
+        modalities: [
+            { id: "mtb", label: "Mountain Bike (MTB)" },
+            { id: "speed", label: "Estrada (Speed)" },
+            { id: "gravel", label: "Gravel" },
+        ],
+        attributes: [
+            { id: "cambio-dianteiro", label: "Câmbio Dianteiro" },
+            { id: "cambio-traseiro", label: "Câmbio Traseiro" },
+            { id: "passador", label: "Passador / Alavanca" },
+            { id: "cassete", label: "Cassete / K7" },
+            { id: "corrente", label: "Corrente" },
+            { id: "pedivela", label: "Pedivela" },
+            { id: "mov-central", label: "Movimento Central" },
+            { id: "shimano", label: "Shimano" },
+            { id: "sram", label: "SRAM" },
+            { id: "campagnolo", label: "Campagnolo" },
+            { id: "microshift", label: "MicroSHIFT" },
+            { id: "12v", label: "12 velocidades" },
+            { id: "11v", label: "11 velocidades" },
+            { id: "10v", label: "10 velocidades" },
+            { id: "9v", label: "9 velocidades" },
+            { id: "eletronico", label: "Eletrônico" },
+            { id: "mecanico", label: "Mecânico" },
+        ],
     },
     {
         id: "freios",
-        name: "Freios",
-        subcategories: [],
-        tags: [
-            { id: "disco-hidraulico", name: "Disco Hidraulico" },
-            { id: "disco-mecanico", name: "Disco Mecanico" },
-            { id: "pastilhas", name: "Pastilhas" },
-            { id: "discos-rotores", name: "Discos / Rotores" },
-            { id: "manetes", name: "Manetes" },
-            { id: "shimano", name: "Shimano" },
-            { id: "sram", name: "SRAM" },
-            { id: "magura", name: "Magura" },
-        ]
+        label: "Freios",
+        modalities: [
+            { id: "mtb", label: "Mountain Bike (MTB)" },
+            { id: "speed", label: "Estrada (Speed)" },
+            { id: "gravel", label: "Gravel" },
+        ],
+        attributes: [
+            { id: "disco-hidraulico", label: "Disco Hidráulico" },
+            { id: "disco-mecanico", label: "Disco Mecânico" },
+            { id: "ferradura", label: "Ferradura" },
+            { id: "pastilhas", label: "Pastilhas" },
+            { id: "rotor", label: "Discos / Rotores" },
+            { id: "manete", label: "Manetes" },
+            { id: "shimano", label: "Shimano" },
+            { id: "sram", label: "SRAM" },
+            { id: "magura", label: "Magura" },
+            { id: "hope", label: "Hope" },
+        ],
     },
     {
         id: "rodas-pneus",
-        name: "Rodas e Pneus",
-        subcategories: [],
-        tags: [
-            { id: "pneus", name: "Pneus" },
-            { id: "camaras", name: "Camaras de Ar" },
-            { id: "rodas-completas", name: "Rodas Completas" },
-            { id: "cubos", name: "Cubos" },
-            { id: "raios", name: "Raios" },
-            { id: "aro-26", name: "Aro 26" },
-            { id: "aro-275", name: "Aro 27.5" },
-            { id: "aro-29", name: "Aro 29" },
-            { id: "tubeless", name: "Tubeless" },
-        ]
+        label: "Rodas e Pneus",
+        modalities: [
+            { id: "mtb", label: "Mountain Bike (MTB)" },
+            { id: "speed", label: "Estrada (Speed)" },
+            { id: "gravel", label: "Gravel" },
+            { id: "bmx", label: "BMX" },
+            { id: "eletrica", label: "Elétrica" },
+        ],
+        attributes: [
+            { id: "pneu", label: "Pneu" },
+            { id: "camara", label: "Câmara de Ar" },
+            { id: "roda-completa", label: "Roda Completa" },
+            { id: "cubo", label: "Cubo" },
+            { id: "raio", label: "Raio" },
+            { id: "aro-26", label: "Aro 26" },
+            { id: "aro-275", label: "Aro 27.5" },
+            { id: "aro-29", label: "Aro 29" },
+            { id: "aro-700", label: "Aro 700" },
+            { id: "tubeless", label: "Tubeless" },
+            { id: "com-camara", label: "Com Câmara" },
+        ],
     },
     {
-        id: "cockpit-selim",
-        name: "Cockpit e Selim",
-        subcategories: [],
-        tags: [
-            { id: "guidao", name: "Guidao" },
-            { id: "avancos", name: "Avancos / Mesas" },
-            { id: "selins", name: "Selins" },
-            { id: "canotes", name: "Canotes" },
-            { id: "fitas", name: "Fitas e Manoplas" },
-            { id: "carbono", name: "Carbono" },
-            { id: "aluminio", name: "Aluminio" },
-        ]
+        id: "cockpit",
+        label: "Cockpit e Selim",
+        modalities: [
+            { id: "mtb", label: "Mountain Bike (MTB)" },
+            { id: "speed", label: "Estrada (Speed)" },
+            { id: "gravel", label: "Gravel" },
+        ],
+        attributes: [
+            { id: "guidao", label: "Guidão" },
+            { id: "mesa", label: "Mesa / Avanço" },
+            { id: "selim", label: "Selim" },
+            { id: "canote", label: "Canote" },
+            { id: "fita", label: "Fita de Guidão" },
+            { id: "manopla", label: "Manopla" },
+            { id: "carbono", label: "Carbono" },
+            { id: "aluminio", label: "Alumínio" },
+        ],
     },
     {
-        id: "pedais-outros",
-        name: "Pedais e Outros",
-        subcategories: [],
-        tags: [
-            { id: "pedal-clip", name: "Pedais de Encaixe (Clip)" },
-            { id: "pedal-plataforma", name: "Pedais Plataforma" },
-            { id: "caixa-direcao", name: "Caixas de Direcao" },
-        ]
+        id: "pedais",
+        label: "Pedais",
+        modalities: [
+            { id: "mtb", label: "Mountain Bike (MTB)" },
+            { id: "speed", label: "Estrada (Speed)" },
+            { id: "gravel", label: "Gravel" },
+            { id: "bmx", label: "BMX" },
+            { id: "urbana", label: "Urbana / Lazer" },
+        ],
+        attributes: [
+            { id: "clip", label: "Encaixe (Clip)" },
+            { id: "plataforma", label: "Plataforma" },
+            { id: "misto", label: "Misto (Clip + Plataforma)" },
+            { id: "shimano-spd", label: "Shimano SPD" },
+            { id: "look", label: "Look" },
+            { id: "crankbrothers", label: "Crankbrothers" },
+        ],
     },
     {
         id: "equipamentos",
-        name: "Equipamentos e Acessorios",
-        subcategories: [],
-        tags: [
-            { id: "capacetes", name: "Capacetes" },
-            { id: "lanternas", name: "Lanternas" },
-            { id: "farois", name: "Farois" },
-            { id: "sinalizadores", name: "Sinalizadores" },
-            { id: "cadeados", name: "Cadeados" },
-            { id: "garrafas", name: "Caramanholas" },
-            { id: "suportes", name: "Suportes de Garrafa" },
-            { id: "bolsas", name: "Bolsas de Selim / Quadro" },
-            { id: "mochilas", name: "Mochilas de Hidratacao" },
-            { id: "transbikes", name: "Transbikes" },
-            { id: "gps", name: "GPS" },
-            { id: "ciclocomputadores", name: "Ciclocomputadores" },
-            { id: "sensores", name: "Sensores" },
-            { id: "cameras", name: "Cameras de Acao" },
-        ]
+        label: "Equipamentos e Acessórios",
+        modalities: [],
+        attributes: [
+            { id: "capacete", label: "Capacete" },
+            { id: "lanterna", label: "Lanterna / Farol" },
+            { id: "sinalizador", label: "Sinalizador" },
+            { id: "cadeado", label: "Cadeado" },
+            { id: "garrafa", label: "Caramanhola (Garrafa)" },
+            { id: "suporte-garrafa", label: "Suporte de Garrafa" },
+            { id: "bolsa-selim", label: "Bolsa de Selim" },
+            { id: "bolsa-quadro", label: "Bolsa de Quadro" },
+            { id: "mochila", label: "Mochila de Hidratação" },
+            { id: "transbike", label: "Transbike (Suporte para Carro)" },
+            { id: "gps", label: "GPS" },
+            { id: "ciclocomputador", label: "Ciclocomputador" },
+            { id: "sensor", label: "Sensor de Cadência / Cardíaco" },
+            { id: "camera-acao", label: "Câmera de Ação" },
+        ],
     },
     {
         id: "vestuario",
-        name: "Vestuario e Protecao",
-        subcategories: [],
-        tags: [
-            { id: "bermudas", name: "Bermudas e Bretelles" },
-            { id: "camisas", name: "Camisas de Ciclismo" },
-            { id: "jaquetas", name: "Jaquetas Corta-Vento" },
-            { id: "meias", name: "Meias" },
-            { id: "sapatilhas", name: "Sapatilhas" },
-            { id: "luvas", name: "Luvas" },
-            { id: "oculos", name: "Oculos de Sol" },
-            { id: "manguitos", name: "Manguitos e Pernitos" },
-        ]
+        label: "Vestuário e Proteção",
+        modalities: [],
+        attributes: [
+            { id: "bermuda", label: "Bermuda / Bretelle" },
+            { id: "camisa", label: "Camisa de Ciclismo" },
+            { id: "jaqueta", label: "Jaqueta Corta-Vento" },
+            { id: "meia", label: "Meia" },
+            { id: "sapatilha", label: "Sapatilha" },
+            { id: "luva", label: "Luva" },
+            { id: "oculos", label: "Óculos de Sol" },
+            { id: "manguito", label: "Manguito / Pernito" },
+        ],
     },
     {
         id: "ferramentas",
-        name: "Ferramentas e Manutencao",
-        subcategories: [],
-        tags: [
-            { id: "multiferramentas", name: "Canivetes Multi-ferramentas" },
-            { id: "chaves-corrente", name: "Chaves de Corrente" },
-            { id: "chaves-raio", name: "Chaves de Raio" },
-            { id: "bombas", name: "Bombas de Ar" },
-            { id: "lubrificantes", name: "Lubrificantes de Corrente" },
-            { id: "desengraxantes", name: "Desengraxantes" },
-            { id: "selantes", name: "Selantes para Tubeless" },
-            { id: "kits-reparo", name: "Kits de Reparo de Pneu" },
-        ]
+        label: "Ferramentas e Manutenção",
+        modalities: [],
+        attributes: [
+            { id: "multiferramenta", label: "Canivete Multi-ferramenta" },
+            { id: "chave-corrente", label: "Chave de Corrente" },
+            { id: "chave-raio", label: "Chave de Raio" },
+            { id: "bomba-chao", label: "Bomba de Chão" },
+            { id: "bomba-mao", label: "Bomba de Mão" },
+            { id: "lubrificante", label: "Lubrificante de Corrente" },
+            { id: "desengraxante", label: "Desengraxante" },
+            { id: "selante", label: "Selante para Tubeless" },
+            { id: "kit-reparo", label: "Kit de Reparo de Pneu" },
+        ],
     },
 ]
+
+// ============================================================
+// INTERFACE DO COMPONENTE
+// ============================================================
+
+interface SelectionState {
+    categoryId: string
+    modalities: string[]
+    attributes: string[]
+}
 
 interface Props {
     categoryId: string
@@ -184,147 +286,252 @@ interface Props {
 }
 
 export function CategoryStep({ categoryId, subcategoryId, onCategoryChange }: Props) {
+    // Parse do estado atual vindo das props
+    const parseSelection = (): SelectionState => {
+        try {
+            if (subcategoryId && subcategoryId.startsWith("{")) {
+                return JSON.parse(subcategoryId)
+            }
+        } catch { /* ignora */ }
+        return { categoryId: categoryId || "", modalities: [], attributes: [] }
+    }
+
+    const [selection, setSelection] = useState<SelectionState>(parseSelection)
     const [viewingCategoryId, setViewingCategoryId] = useState<string>(categoryId || "")
-    const [selectedTags, setSelectedTags] = useState<string[]>(() => {
-        if (subcategoryId) {
-            return subcategoryId.split(",").filter(Boolean)
-        }
-        return []
-    })
+    const [searchTerm, setSearchTerm] = useState("")
+
+    // Sincroniza se as props mudarem externamente
+    useEffect(() => {
+        const parsed = parseSelection()
+        setSelection(parsed)
+        setViewingCategoryId(parsed.categoryId || "")
+    }, [categoryId, subcategoryId])
+
+    const emit = (newSelection: SelectionState) => {
+        setSelection(newSelection)
+        const json = JSON.stringify(newSelection)
+        onCategoryChange(newSelection.categoryId, json)
+    }
 
     const viewingCategory = CATEGORIES.find(c => c.id === viewingCategoryId)
-    const isViewingTags = viewingCategoryId !== ""
-
-    const selectedCatName = CATEGORIES.find(c => c.id === categoryId)?.name
+    const isViewingDetails = viewingCategoryId !== ""
 
     const handleSelectCategory = (catId: string) => {
-        setViewingCategoryId(catId)
-        if (catId !== categoryId) {
-            // Nova categoria, limpa tags
-            setSelectedTags([])
-            onCategoryChange(catId, "")
+        const newSelection: SelectionState = {
+            categoryId: catId,
+            modalities: [],
+            attributes: [],
         }
+        emit(newSelection)
+        setViewingCategoryId(catId)
     }
 
-    const toggleTag = (tagId: string) => {
-        const newTags = selectedTags.includes(tagId)
-            ? selectedTags.filter(t => t !== tagId)
-            : [...selectedTags, tagId]
-        setSelectedTags(newTags)
-        onCategoryChange(viewingCategoryId, newTags.join(","))
+    const toggleModality = (modId: string) => {
+        if (!viewingCategory) return
+        const newModalities = selection.modalities.includes(modId)
+            ? selection.modalities.filter(m => m !== modId)
+            : [...selection.modalities, modId]
+        const newSelection: SelectionState = {
+            ...selection,
+            categoryId: viewingCategoryId,
+            modalities: newModalities,
+        }
+        emit(newSelection)
     }
 
-    const handleBackToCategories = () => {
+    const toggleAttribute = (attrId: string) => {
+        if (!viewingCategory) return
+        const newAttributes = selection.attributes.includes(attrId)
+            ? selection.attributes.filter(a => a !== attrId)
+            : [...selection.attributes, attrId]
+        const newSelection: SelectionState = {
+            ...selection,
+            categoryId: viewingCategoryId,
+            attributes: newAttributes,
+        }
+        emit(newSelection)
+    }
+
+    const handleBack = () => {
         setViewingCategoryId("")
     }
 
-    // Mostrar tags da categoria
-    if (isViewingTags && viewingCategory) {
+    // Filtrar categorias por busca
+    const filteredCategories = CATEGORIES.filter(c =>
+        c.label.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+
+    // ============================================================
+    // TELA DE SELEÇÃO DE ATRIBUTOS (dentro de uma categoria)
+    // ============================================================
+    if (isViewingDetails && viewingCategory) {
+        const hasModalities = viewingCategory.modalities.length > 0
+        const hasAttributes = viewingCategory.attributes.length > 0
+
         return (
-            <div className="space-y-4">
+            <div className="space-y-6">
                 <button
-                    onClick={handleBackToCategories}
-                    className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                    onClick={handleBack}
+                    className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
                 >
                     <ChevronLeft className="size-4" />
                     Voltar para categorias
                 </button>
 
-                <div>
-                    <h2 className="font-heading text-lg font-bold text-foreground">{viewingCategory.name}</h2>
-                    <p className="text-sm text-muted-foreground mt-1">
-                        Selecione uma ou mais caracteristicas do produto
-                    </p>
-                </div>
+                <h2 className="font-heading text-lg font-bold text-foreground">{viewingCategory.label}</h2>
 
-                <div className="flex flex-wrap gap-2">
-                    {viewingCategory.tags.map(tag => {
-                        const isSelected = selectedTags.includes(tag.id)
-                        return (
-                            <button
-                                key={tag.id}
-                                onClick={() => toggleTag(tag.id)}
-                                className={`rounded-full px-4 py-2 text-sm font-medium transition-all ${
-                                    isSelected
-                                        ? 'bg-primary text-primary-foreground shadow-sm'
-                                        : 'bg-card border border-border text-foreground hover:border-primary/30'
-                                }`}
-                            >
-                                {tag.name}
-                                {isSelected && <X className="size-3 inline ml-1" />}
-                            </button>
-                        )
-                    })}
-                </div>
-
-                {selectedTags.length > 0 && (
-                    <div className="rounded-xl bg-green-50 border border-green-200 p-4">
-                        <p className="text-sm font-medium text-green-800">Selecionado ({selectedTags.length}):</p>
-                        <div className="flex flex-wrap gap-1 mt-1">
-                            {selectedTags.map(tagId => {
-                                const tag = viewingCategory.tags.find(t => t.id === tagId)
-                                return tag ? (
-                                    <span key={tagId} className="text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded-full">
-                                        {tag.name}
-                                    </span>
-                                ) : null
+                {/* Modalidades */}
+                {hasModalities && (
+                    <div>
+                        <p className="text-sm font-semibold text-foreground mb-2">
+                            Modalidade (selecione uma ou mais)
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                            {viewingCategory.modalities.map(mod => {
+                                const isSelected = selection.modalities.includes(mod.id)
+                                return (
+                                    <button
+                                        key={mod.id}
+                                        onClick={() => toggleModality(mod.id)}
+                                        className={`rounded-full px-4 py-2 text-sm font-medium transition-all ${
+                                            isSelected
+                                                ? "bg-primary text-primary-foreground shadow-sm"
+                                                : "bg-card border border-border text-foreground hover:border-primary/40"
+                                        }`}
+                                    >
+                                        {mod.label}
+                                    </button>
+                                )
                             })}
                         </div>
+                    </div>
+                )}
+
+                {/* Atributos */}
+                {hasAttributes && (
+                    <div>
+                        <p className="text-sm font-semibold text-foreground mb-2">
+                            Características (selecione uma ou mais)
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                            {viewingCategory.attributes.map(attr => {
+                                const isSelected = selection.attributes.includes(attr.id)
+                                return (
+                                    <button
+                                        key={attr.id}
+                                        onClick={() => toggleAttribute(attr.id)}
+                                        className={`rounded-full px-4 py-2 text-sm font-medium transition-all ${
+                                            isSelected
+                                                ? "bg-primary text-primary-foreground shadow-sm"
+                                                : "bg-card border border-border text-foreground hover:border-primary/40"
+                                        }`}
+                                    >
+                                        {attr.label}
+                                    </button>
+                                )
+                            })}
+                        </div>
+                    </div>
+                )}
+
+                {/* Resumo do selecionado */}
+                {(selection.modalities.length > 0 || selection.attributes.length > 0) && (
+                    <div className="rounded-xl bg-emerald-50 border border-emerald-200 p-4">
+                        <p className="text-sm font-semibold text-emerald-800 mb-2">Selecionado nesta categoria:</p>
+                        {selection.modalities.length > 0 && (
+                            <div className="mb-1">
+                                <span className="text-xs text-emerald-700 font-medium">Modalidades: </span>
+                                {selection.modalities.map(mId => {
+                                    const mod = viewingCategory.modalities.find(m => m.id === mId)
+                                    return (
+                                        <span key={mId} className="text-xs bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full mr-1">
+                                            {mod?.label || mId}
+                                        </span>
+                                    )
+                                })}
+                            </div>
+                        )}
+                        {selection.attributes.length > 0 && (
+                            <div>
+                                <span className="text-xs text-emerald-700 font-medium">Características: </span>
+                                {selection.attributes.map(aId => {
+                                    const attr = viewingCategory.attributes.find(a => a.id === aId)
+                                    return (
+                                        <span key={aId} className="text-xs bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full mr-1">
+                                            {attr?.label || aId}
+                                        </span>
+                                    )
+                                })}
+                            </div>
+                        )}
                     </div>
                 )}
             </div>
         )
     }
 
-    // Mostrar categorias principais
+    // ============================================================
+    // TELA DE CATEGORIAS PRINCIPAIS
+    // ============================================================
     return (
         <div className="space-y-4">
             <div>
-                <h2 className="font-heading text-lg font-bold text-foreground">Qual categoria melhor descreve seu produto?</h2>
-                <p className="text-sm text-muted-foreground mt-1">Escolha uma categoria e depois selecione as caracteristicas</p>
+                <h2 className="font-heading text-lg font-bold text-foreground">
+                    Em qual categoria seu produto se encaixa?
+                </h2>
+                <p className="text-sm text-muted-foreground mt-1">
+                    Escolha a categoria para definir modalidade e características
+                </p>
             </div>
 
+            {/* Busca */}
+            <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                <input
+                    type="text"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    placeholder="Buscar categoria..."
+                    className="w-full rounded-xl border border-border bg-card pl-10 pr-4 py-2.5 text-sm outline-none focus:border-primary/30"
+                />
+            </div>
+
+            {/* Lista de categorias */}
             <div className="space-y-2">
-                {CATEGORIES.map(cat => {
-                    const isSelected = categoryId === cat.id
-                    const tagCount = selectedTags.length
+                {filteredCategories.map(cat => {
+                    const isSelected = selection.categoryId === cat.id
+                    const modCount = selection.modalities.length
+                    const attrCount = selection.attributes.length
+                    const totalSelected = modCount + attrCount
+
                     return (
                         <button
                             key={cat.id}
                             onClick={() => handleSelectCategory(cat.id)}
                             className={`w-full flex items-center justify-between rounded-xl border p-4 text-left transition-all ${
                                 isSelected
-                                    ? 'border-primary bg-primary/5 shadow-sm'
-                                    : 'border-border bg-card hover:border-primary/30 hover:shadow-sm'
+                                    ? "border-primary bg-primary/5 shadow-sm"
+                                    : "border-border bg-card hover:border-primary/30 hover:shadow-sm"
                             }`}
                         >
                             <div>
-                                <span className="text-sm font-semibold text-foreground">{cat.name}</span>
-                                {isSelected && tagCount > 0 && (
-                                    <p className="text-xs text-primary mt-0.5">{tagCount} caracteristica(s) selecionada(s)</p>
+                                <span className="text-sm font-semibold text-foreground">{cat.label}</span>
+                                {isSelected && totalSelected > 0 && (
+                                    <p className="text-xs text-primary mt-0.5">
+                                        {totalSelected} item(ns) selecionado(s)
+                                    </p>
                                 )}
                             </div>
-                            <ChevronRight className="size-4 text-muted-foreground" />
+                            <ChevronRight className="size-4 text-muted-foreground shrink-0" />
                         </button>
                     )
                 })}
             </div>
 
-            {categoryId && selectedTags.length > 0 && (
-                <div className="rounded-xl bg-green-50 border border-green-200 p-4">
-                    <p className="text-sm font-medium text-green-800">{selectedCatName}:</p>
-                    <div className="flex flex-wrap gap-1 mt-1">
-                        {selectedTags.map(tagId => {
-                            const cat = CATEGORIES.find(c => c.id === categoryId)
-                            const tag = cat?.tags.find(t => t.id === tagId)
-                            return tag ? (
-                                <span key={tagId} className="text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded-full">
-                                    {tag.name}
-                                </span>
-                            ) : null
-                        })}
-                    </div>
-                </div>
+            {filteredCategories.length === 0 && (
+                <p className="text-center text-sm text-muted-foreground py-8">
+                    Nenhuma categoria encontrada para "{searchTerm}"
+                </p>
             )}
         </div>
     )
