@@ -1,16 +1,17 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import { useAuth } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
+import MuxUploader from "@mux/mux-uploader-react";
 
 const MAX_SIZE_MB = 500;
 const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
 
 const HASHTAGS_SUGERIDAS = [
     "MTB", "Speed", "BMX", "Downhill", "MountainBike",
-    "Ciclismo", "Trilha", "Competicao", "Fly", "Review",
-    "Manutencao", "Pedal", "BikeLife", "Ciclista", "Edit"
+    "Ciclismo", "Trilha", "Competicao", "Tutorial", "Review",
+    "Manutencao", "Pedal", "BikeLife", "Ciclista", "Estrada"
 ];
 
 export default function UploadPage() {
@@ -23,13 +24,16 @@ export default function UploadPage() {
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
     const [hashtags, setHashtags] = useState("");
-    const [uploading, setUploading] = useState(false);
-    const [progress, setProgress] = useState(0);
     const [error, setError] = useState("");
     const [videoDuration, setVideoDuration] = useState(0);
+    const [uploadId, setUploadId] = useState("");
+    const [uploadUrl, setUploadUrl] = useState("");
+    const [status, setStatus] = useState<"idle" | "uploading" | "processing" | "done">("idle");
+    const [progress, setProgress] = useState(0);
+    const [assetId, setAssetId] = useState("");
+    const [playbackId, setPlaybackId] = useState("");
 
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const videoRef = useRef<HTMLVideoElement>(null);
 
     const handleFileSelect = (selectedFile: File) => {
         setError("");
@@ -75,85 +79,68 @@ export default function UploadPage() {
         }
     };
 
-    const handleUpload = async () => {
+    const handleUploadStart = async () => {
         if (!file) return;
         if (!isMemento && !title.trim()) {
             setError("Titulo obrigatorio para video normal");
             return;
         }
 
-        setUploading(true);
-        setProgress(0);
+        setError("");
+        setStatus("uploading");
 
         try {
             const token = await getToken();
 
-            // 1. Criar upload URL no Mux
-            const muxRes = await fetch("https://api.mux.com/video/v1/uploads", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Basic ${btoa(
-                        `${process.env.NEXT_PUBLIC_MUX_TOKEN_ID}:${process.env.NEXT_PUBLIC_MUX_TOKEN_SECRET}`
-                    )}`,
-                },
-                body: JSON.stringify({
-                    cors_origin: window.location.origin,
-                    new_asset_settings: {
-                        playback_policy: ["public"],
-                        mp4_support: "standard",
+            const res = await fetch(
+                `${process.env.NEXT_PUBLIC_API_URL}/api/videos/upload-url`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${token}`,
                     },
-                }),
-            });
-
-            const muxData = await muxRes.json();
-
-            // 2. Upload do arquivo
-            const xhr = new XMLHttpRequest();
-            xhr.open("PUT", muxData.data.url);
-
-            xhr.upload.onprogress = (event) => {
-                if (event.lengthComputable) {
-                    setProgress(Math.round((event.loaded / event.total) * 100));
                 }
-            };
+            );
 
-            await new Promise((resolve, reject) => {
-                xhr.onload = () => {
-                    if (xhr.status >= 200 && xhr.status < 300) resolve(xhr);
-                    else reject(new Error("Falha no upload"));
-                };
-                xhr.onerror = () => reject(new Error("Erro de rede"));
-                xhr.send(file);
-            });
+            if (!res.ok) throw new Error("Erro ao criar upload");
 
-            // 3. Aguardar processamento
-            setProgress(100);
+            const data = await res.json();
+            setUploadUrl(data.uploadUrl);
+            setUploadId(data.uploadId);
+        } catch (err) {
+            setError("Erro ao iniciar upload. Tente novamente.");
+            setStatus("idle");
+            console.error(err);
+        }
+    };
 
+    const handleUploadSuccess = async () => {
+        setStatus("processing");
+
+        try {
+            const token = await getToken();
             let assetReady = false;
             let attempts = 0;
 
             while (!assetReady && attempts < 60) {
                 await new Promise((r) => setTimeout(r, 3000));
+
                 const assetRes = await fetch(
-                    `https://api.mux.com/video/v1/assets/${muxData.data.id}`,
+                    `${process.env.NEXT_PUBLIC_API_URL}/api/videos/asset-status?uploadId=${uploadId}`,
                     {
-                        headers: {
-                            Authorization: `Basic ${btoa(
-                                `${process.env.NEXT_PUBLIC_MUX_TOKEN_ID}:${process.env.NEXT_PUBLIC_MUX_TOKEN_SECRET}`
-                            )}`,
-                        },
+                        headers: { Authorization: `Bearer ${token}` },
                     }
                 );
                 const assetData = await assetRes.json();
 
-                if (assetData.data?.status === "ready") {
+                if (assetData.status === "ready") {
                     assetReady = true;
+                    setAssetId(assetData.assetId);
+                    setPlaybackId(assetData.playbackId);
 
-                    const playbackId = assetData.data.playback_ids?.[0]?.id;
-                    const thumbUrl = `https://image.mux.com/${playbackId}/thumbnail.jpg`;
+                    const thumbUrl = `https://image.mux.com/${assetData.playbackId}/thumbnail.jpg`;
 
-                    // 4. Salvar no backend
                     await fetch(
                         `${process.env.NEXT_PUBLIC_API_URL}/api/videos/mux-callback`,
                         {
@@ -163,43 +150,46 @@ export default function UploadPage() {
                                 Authorization: `Bearer ${token}`,
                             },
                             body: JSON.stringify({
-                                muxAssetId: muxData.data.id,
-                                muxPlaybackId: playbackId,
+                                muxAssetId: assetData.assetId,
+                                muxPlaybackId: assetData.playbackId,
                                 title: isMemento
                                     ? description.slice(0, 100) || "Memento"
                                     : title,
-                                description: isMemento ? description : `${description} ${hashtags}`.trim(),
+                                description: isMemento
+                                    ? description
+                                    : `${description} ${hashtags}`.trim(),
                                 durationSeconds: Math.round(videoDuration),
                                 thumbnailUrl: thumbUrl,
                                 isShort: isMemento,
-                                originalFilename: file.name,
-                                fileSize: file.size,
-                                mimeType: file.type,
+                                originalFilename: file?.name || "",
+                                fileSize: file?.size || 0,
+                                mimeType: file?.type || "video/mp4",
                             }),
                         }
                     );
 
-                    router.push(`/videos/watch/${muxData.data.id}`);
+                    setStatus("done");
+                    router.push(`/videos/watch/${assetData.assetId}`);
                 }
                 attempts++;
             }
 
             if (!assetReady) {
-                setError("Processamento demorou muito. O video ficara disponivel em breve.");
+                setError("Processamento demorou. O video ficara disponivel em breve.");
+                setStatus("idle");
             }
         } catch (err) {
-            setError("Erro no upload. Tente novamente.");
+            setError("Erro ao processar video. Tente novamente.");
+            setStatus("idle");
             console.error(err);
-        } finally {
-            setUploading(false);
         }
     };
 
-    useEffect(() => {
-        return () => {
-            if (previewUrl) URL.revokeObjectURL(previewUrl);
-        };
-    }, [previewUrl]);
+    const handleUploadError = (event: any) => {
+        setError("Erro no upload. Tente novamente.");
+        setStatus("idle");
+        console.error(event);
+    };
 
     return (
         <div className="max-w-2xl mx-auto px-4 py-6">
@@ -213,7 +203,6 @@ export default function UploadPage() {
                 </div>
             )}
 
-            {/* Área de upload */}
             {!file ? (
                 <div
                     onDrop={handleDrop}
@@ -253,7 +242,6 @@ export default function UploadPage() {
                     {/* Preview */}
                     <div className="relative rounded-2xl overflow-hidden bg-black">
                         <video
-                            ref={videoRef}
                             src={previewUrl}
                             className={`w-full ${isMemento ? "max-h-[70vh] object-contain" : "aspect-video object-contain"}`}
                             controls
@@ -333,9 +321,16 @@ export default function UploadPage() {
                         </div>
                     )}
 
-                    {/* Barra de progresso */}
-                    {uploading && (
+                    {/* Status do upload */}
+                    {status === "uploading" && uploadUrl && (
                         <div>
+                            <MuxUploader
+                                endpoint={uploadUrl}
+                                onSuccess={handleUploadSuccess}
+                                onError={handleUploadError}
+                                onProgress={(event: any) => setProgress(Math.round((event.loaded / event.total) * 100))}
+                                className="hidden"
+                            />
                             <div className="h-2 bg-secondary rounded-full overflow-hidden">
                                 <div
                                     className="h-full bg-primary transition-all duration-300 rounded-full"
@@ -343,27 +338,29 @@ export default function UploadPage() {
                                 />
                             </div>
                             <p className="text-sm text-muted-foreground mt-2 text-center">
-                                {progress < 100
-                                    ? `Enviando... ${progress}%`
-                                    : "Processando video..."}
+                                Enviando... {progress}%
+                            </p>
+                        </div>
+                    )}
+
+                    {status === "processing" && (
+                        <div className="text-center py-4">
+                            <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin mx-auto mb-3" />
+                            <p className="text-sm text-muted-foreground">
+                                Processando video...
                             </p>
                         </div>
                     )}
 
                     {/* Botão de publicar */}
-                    <button
-                        onClick={handleUpload}
-                        disabled={uploading}
-                        className="w-full bg-primary text-primary-foreground py-3 rounded-xl font-semibold hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                    >
-                        {uploading
-                            ? progress < 100
-                                ? "Enviando..."
-                                : "Processando..."
-                            : isMemento
-                                ? "Publicar Memento"
-                                : "Publicar Video"}
-                    </button>
+                    {status === "idle" && (
+                        <button
+                            onClick={handleUploadStart}
+                            className="w-full bg-primary text-primary-foreground py-3 rounded-xl font-semibold hover:bg-primary/90 transition-colors"
+                        >
+                            {isMemento ? "Publicar Memento" : "Publicar Video"}
+                        </button>
+                    )}
 
                     <button
                         onClick={() => {
@@ -373,6 +370,7 @@ export default function UploadPage() {
                             setDescription("");
                             setHashtags("");
                             setError("");
+                            setStatus("idle");
                         }}
                         className="w-full text-muted-foreground text-sm py-2 hover:text-foreground transition-colors"
                     >
