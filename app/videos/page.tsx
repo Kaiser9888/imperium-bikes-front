@@ -102,9 +102,6 @@ export default function VideosPage() {
         <div className="max-w-7xl mx-auto px-4 py-6">
             <div className="mb-6">
                 <h1 className="font-blackletter text-3xl text-primary">Videos</h1>
-                <p className="text-sm text-muted-foreground mt-1">
-                    Tutoriais, reviews, trilhas e muito mais
-                </p>
             </div>
 
             {loading ? (
