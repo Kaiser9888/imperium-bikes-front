@@ -9,7 +9,7 @@ export default function VideosLayout({ children }: { children: React.ReactNode }
 
     const navItems = [
         { icon: Home, label: "Home", href: "/videos" },
-        { icon: Search, label: "Buscar", href: "/schear" },
+        { icon: Search, label: "Buscar", href: "/videos" },
         { icon: Plus, label: "Postar", href: "/videos/upload", highlight: true },
         { icon: Play, label: "Memento", href: "/videos/memento" },
         { icon: User, label: "Perfil", href: "/perfil" },
