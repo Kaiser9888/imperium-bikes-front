@@ -8,8 +8,8 @@ export default function VideosLayout({ children }: { children: React.ReactNode }
     const pathname = usePathname();
 
     const navItems = [
-        { icon: Home, label: "Home", href: "/" },
-        { icon: Search, label: "Buscar", href: "/videos" },
+        { icon: Home, label: "Home", href: "/videos" },
+        { icon: Search, label: "Buscar", href: "/schear" },
         { icon: Plus, label: "Postar", href: "/videos/upload", highlight: true },
         { icon: Play, label: "Memento", href: "/videos/memento" },
         { icon: User, label: "Perfil", href: "/perfil" },
