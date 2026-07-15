@@ -173,7 +173,7 @@ export default function UploadPage() {
                     );
 
                     setStatus("done");
-                    router.push(`/videos/watch/${assetData.assetId}`);
+                    router.push("/videos");
                 }
             }
 
