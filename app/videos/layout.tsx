@@ -2,29 +2,26 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Search, Plus, Play, User } from "lucide-react";
+import { Home, Search, Plus, Play, Video } from "lucide-react";
 
 export default function VideosLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
 
     const navItems = [
-        { icon: Home, label: "Home", href: "/videos" },
+        { icon: Home, label: "Videos", href: "/videos" },
         { icon: Search, label: "Buscar", href: "/videos" },
         { icon: Plus, label: "Postar", href: "/videos/upload", highlight: true },
         { icon: Play, label: "Memento", href: "/videos/memento" },
-        { icon: User, label: "Perfil", href: "/perfil" },
+        { icon: Video, label: "Gestao", href: "/videos/meus-videos" },
     ];
 
     return (
         <div className="min-h-screen bg-background">
-            {/* Header */}
             <header className="sticky top-0 z-40 border-b border-border/60 bg-marble shadow-sm">
                 <div className="flex items-center justify-between px-4 py-3 max-w-7xl mx-auto">
-                    <div className="flex items-center gap-3">
-                        <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-                            <span className="font-blackletter text-2xl text-primary">Imperium</span>
-                        </Link>
-                    </div>
+                    <Link href="/videos" className="font-blackletter text-2xl text-primary">
+                        Imperium
+                    </Link>
                     <Link
                         href="/"
                         className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-1"
@@ -37,10 +34,8 @@ export default function VideosLayout({ children }: { children: React.ReactNode }
                 </div>
             </header>
 
-            {/* Conteúdo */}
             <main className="pb-20">{children}</main>
 
-            {/* Barra Inferior */}
             <nav className="fixed bottom-0 left-0 right-0 z-40 bg-card border-t border-border">
                 <div className="max-w-7xl mx-auto flex items-center justify-around py-2">
                     {navItems.map((item) => {
@@ -50,9 +45,7 @@ export default function VideosLayout({ children }: { children: React.ReactNode }
                                 key={item.label}
                                 href={item.href}
                                 className={`flex flex-col items-center gap-1 px-3 py-1 transition-colors ${
-                                    item.highlight
-                                        ? "relative -mt-6"
-                                        : ""
+                                    item.highlight ? "relative -mt-6" : ""
                                 }`}
                             >
                                 {item.highlight ? (
@@ -60,19 +53,9 @@ export default function VideosLayout({ children }: { children: React.ReactNode }
                                         <item.icon className="size-5" />
                                     </div>
                                 ) : (
-                                    <item.icon
-                                        className={`size-5 ${
-                                            isActive ? "text-primary" : "text-muted-foreground"
-                                        }`}
-                                    />
+                                    <item.icon className={`size-5 ${isActive ? "text-primary" : "text-muted-foreground"}`} />
                                 )}
-                                <span
-                                    className={`text-[0.6rem] ${
-                                        isActive
-                                            ? "text-primary font-medium"
-                                            : "text-muted-foreground"
-                                    } ${item.highlight ? "mt-1" : ""}`}
-                                >
+                                <span className={`text-[0.6rem] ${isActive ? "text-primary font-medium" : "text-muted-foreground"} ${item.highlight ? "mt-1" : ""}`}>
                   {item.label}
                 </span>
                             </Link>
