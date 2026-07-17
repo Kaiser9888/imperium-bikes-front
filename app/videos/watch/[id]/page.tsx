@@ -116,14 +116,18 @@ export default function WatchPage() {
 
     const toggleLike = async () => {
         if (!currentUserId) return;
-        const token = await getToken();
-        const method = liked ? "DELETE" : "POST";
-        await fetch(`${API_URL}/api/videos/${id}/like`, {
-            method,
-            headers: { Authorization: `Bearer ${token}` },
-        });
-        setLiked(!liked);
-        setLikesCount((prev) => (liked ? prev - 1 : prev + 1));
+        try {
+            const token = await getToken();
+            const res = await fetch(`${API_URL}/api/videos/${id}/like`, {
+                method: "POST",
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            const data = await res.json();
+            setLiked(data.liked);
+            setLikesCount(data.count);
+        } catch (error) {
+            console.error("Erro ao curtir:", error);
+        }
     };
 
     if (loading) {
