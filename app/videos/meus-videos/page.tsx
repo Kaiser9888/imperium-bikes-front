@@ -28,7 +28,7 @@ export default function MeusVideosPage() {
         const fetchMyVideos = async () => {
             try {
                 const token = await getToken();
-                const res = await fetch(`${API_URL}/api/videos/user/me`, {
+                const res = await fetch(`${API_URL}/api/videos/my-videos`, {
                     headers: { Authorization: `Bearer ${token}` },
                 });
                 const data = await res.json();
@@ -37,18 +37,12 @@ export default function MeusVideosPage() {
                     setLoading(false);
                 }
             } catch (error) {
-                if (!cancelled) {
-                    console.error("Erro:", error);
-                    setLoading(false);
-                }
+                if (!cancelled) setLoading(false);
             }
         };
 
         fetchMyVideos();
-
-        return () => {
-            cancelled = true;
-        };
+        return () => { cancelled = true; };
     }, [getToken]);
 
     const deleteVideo = async (videoId: string) => {
@@ -115,7 +109,7 @@ export default function MeusVideosPage() {
                                     {video.title || "Sem titulo"}
                                 </Link>
                                 <p className="text-xs text-muted-foreground mt-1">
-                                    {formatViews(video.viewCount)} views &middot; {video.likesCount} likes &middot; {video.status}
+                                    {formatViews(video.viewCount)} views &middot; {video.likesCount} likes
                                 </p>
                             </div>
                             <button
