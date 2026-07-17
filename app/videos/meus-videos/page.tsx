@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@clerk/nextjs";
 import Link from "next/link";
 
@@ -22,38 +22,41 @@ export default function MeusVideosPage() {
     const [videos, setVideos] = useState<MyVideo[]>([]);
     const [loading, setLoading] = useState(true);
 
+    const fetchMyVideos = useCallback(async () => {
+        try {
+            const token = await getToken();
+            const res = await fetch(`${API_URL}/api/videos/my-videos`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            const data = await res.json();
+            setVideos(data.content || []);
+        } catch (error) {
+            console.error("Erro:", error);
+        } finally {
+            setLoading(false);
+        }
+    }, [getToken]);
+
     useEffect(() => {
         let cancelled = false;
-
-        const fetchMyVideos = async () => {
-            try {
-                const token = await getToken();
-                const res = await fetch(`${API_URL}/api/videos/my-videos`, {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
-                const data = await res.json();
-                if (!cancelled) {
-                    setVideos(data.content || []);
-                    setLoading(false);
-                }
-            } catch (error) {
-                if (!cancelled) setLoading(false);
-            }
-        };
-
-        fetchMyVideos();
+        if (!cancelled) fetchMyVideos();
         return () => { cancelled = true; };
-    }, [getToken]);
+    }, [fetchMyVideos]);
 
     const deleteVideo = async (videoId: string) => {
         if (!confirm("Tem certeza que deseja excluir este video?")) return;
         try {
             const token = await getToken();
-            await fetch(`${API_URL}/api/videos/${videoId}`, {
+            const res = await fetch(`${API_URL}/api/videos/${videoId}`, {
                 method: "DELETE",
                 headers: { Authorization: `Bearer ${token}` },
             });
-            setVideos((prev) => prev.filter((v) => v.id !== videoId));
+
+            if (res.ok) {
+                setVideos((prev) => prev.filter((v) => v.id !== videoId));
+            } else {
+                alert("Erro ao excluir video");
+            }
         } catch (error) {
             console.error("Erro ao excluir:", error);
         }
@@ -78,7 +81,12 @@ export default function MeusVideosPage() {
 
     return (
         <div className="max-w-4xl mx-auto px-4 py-6">
-            <h1 className="font-blackletter text-3xl text-primary mb-6">Meus Videos</h1>
+            <div className="flex items-center justify-between mb-6">
+                <h1 className="font-blackletter text-3xl text-primary">Meus Videos</h1>
+                {videos.length > 0 && (
+                    <span className="text-sm text-muted-foreground">{videos.length} video(s)</span>
+                )}
+            </div>
 
             {videos.length === 0 ? (
                 <div className="text-center py-16">
@@ -114,7 +122,7 @@ export default function MeusVideosPage() {
                             </div>
                             <button
                                 onClick={() => deleteVideo(video.id)}
-                                className="text-muted-foreground hover:text-destructive transition-colors p-2"
+                                className="text-muted-foreground hover:text-destructive transition-colors p-2 flex-shrink-0"
                                 title="Excluir video"
                             >
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
