@@ -36,7 +36,7 @@ export default function MementoPage() {
 
         const fetchMomentos = async () => {
             try {
-                const res = await fetch(`${API_URL}/api/videos?page=0&size=20`);
+                const res = await fetch(`${API_URL}/api/videos?page=0&size=20&isShort=true`);
                 const data = await res.json();
                 if (!cancelled) {
                     const shorts = (data.content || []).filter(

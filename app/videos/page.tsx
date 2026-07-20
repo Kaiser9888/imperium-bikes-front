@@ -31,7 +31,7 @@ export default function VideosPage() {
         const loadVideos = async () => {
             try {
                 const res = await fetch(
-                    `${process.env.NEXT_PUBLIC_API_URL}/api/videos?page=${INITIAL_PAGE}&size=12`
+                    `${process.env.NEXT_PUBLIC_API_URL}/api/videos?page=${INITIAL_PAGE}&size=12&isShort=false`
                 );
                 const data = await res.json();
 
