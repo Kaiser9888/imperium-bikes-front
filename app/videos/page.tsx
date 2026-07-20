@@ -30,12 +30,8 @@ export default function VideosPage() {
 
         const loadVideos = async () => {
             try {
-                const token = await getToken();
                 const res = await fetch(
-                    `${process.env.NEXT_PUBLIC_API_URL}/api/videos?page=${INITIAL_PAGE}&size=12`,
-                    {
-                        headers: { Authorization: `Bearer ${token}` },
-                    }
+                    `${process.env.NEXT_PUBLIC_API_URL}/api/videos?page=${INITIAL_PAGE}&size=12`
                 );
                 const data = await res.json();
 
