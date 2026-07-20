@@ -35,9 +35,7 @@ export default function MementoUploadPage() {
             return;
         }
 
-        setFile(selectedFile);
         const url = URL.createObjectURL(selectedFile);
-        setPreviewUrl(url);
 
         const video = document.createElement("video");
         video.preload = "metadata";
@@ -45,15 +43,17 @@ export default function MementoUploadPage() {
         video.onloadedmetadata = () => {
             const duration = Math.round(video.duration);
             const isVertical = video.videoHeight > video.videoWidth;
-            const isShort = duration <= 60;
 
             setVideoDuration(duration);
 
-            if (!isVertical || !isShort) {
-                setError("O Memento aceita apenas videos verticais de ate 60 segundos");
-                setFile(null);
+            if (!isVertical) {
+                setError("O Memento aceita apenas videos verticais");
                 setPreviewUrl("");
+                return;
             }
+
+            setFile(selectedFile);
+            setPreviewUrl(url);
         };
     };
 
@@ -146,9 +146,8 @@ export default function MementoUploadPage() {
                         }
                     );
 
-                    const savedVideo = await callbackRes.json();
                     setStatus("done");
-                    router.push(`/videos/memento`);
+                    router.push("/videos/memento");
                 }
             }
 
@@ -176,9 +175,7 @@ export default function MementoUploadPage() {
     return (
         <div className="max-w-2xl mx-auto px-4 py-6">
             <h1 className="font-blackletter text-3xl text-primary mb-2">Novo Memento</h1>
-            <p className="text-sm text-muted-foreground mb-6">
-                Videos verticais ate 60 segundos. Lembre-se de viver.
-            </p>
+            <p className="text-sm text-muted-foreground mb-6">Lembre-se de viver.</p>
 
             {error && (
                 <div className="bg-destructive/10 border border-destructive/30 text-destructive rounded-xl px-4 py-3 text-sm mb-4">
@@ -201,7 +198,7 @@ export default function MementoUploadPage() {
                         </svg>
                     </div>
                     <p className="text-foreground font-semibold mb-1">Selecionar video para Memento</p>
-                    <p className="text-muted-foreground text-sm">Vertical &middot; Ate 60s &middot; Ate {MAX_SIZE_MB}MB</p>
+                    <p className="text-muted-foreground text-sm">Vertical &middot; Ate {MAX_SIZE_MB}MB</p>
                     <input
                         ref={fileInputRef}
                         type="file"
