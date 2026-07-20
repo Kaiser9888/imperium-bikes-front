@@ -1,253 +1,265 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef } from "react";
 import { useAuth } from "@clerk/nextjs";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 
-const API_URL = "https://imperium-bikes.onrender.com";
+const MAX_SIZE_MB = 500;
+const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
 
-interface MementoItem {
-    id: string;
-    title: string;
-    description: string;
-    videoUrl: string;
-    thumbnailUrl: string;
-    durationSeconds: number;
-    viewCount: number;
-    likesCount: number;
-    commentsCount: number;
-    userName: string;
-    userAvatarUrl: string;
-    userId: string;
-}
+export default function MementoUploadPage() {
+    const { getToken } = useAuth();
+    const router = useRouter();
 
-export default function MementoPage() {
-    const { getToken, userId: currentUserId } = useAuth();
-    const [momentos, setMomentos] = useState<MementoItem[]>([]);
-    const [currentIndex, setCurrentIndex] = useState(0);
-    const [loading, setLoading] = useState(true);
-    const [liked, setLiked] = useState<Record<string, boolean>>({});
-    const [likeCounts, setLikeCounts] = useState<Record<string, number>>({});
-    const touchStartY = useRef(0);
-    const videoRefs = useRef<Map<string, HTMLVideoElement>>(new Map());
+    const [file, setFile] = useState<File | null>(null);
+    const [previewUrl, setPreviewUrl] = useState("");
+    const [description, setDescription] = useState("");
+    const [error, setError] = useState("");
+    const [videoDuration, setVideoDuration] = useState(0);
+    const [status, setStatus] = useState<"idle" | "uploading" | "processing" | "done">("idle");
+    const [progress, setProgress] = useState(0);
 
-    useEffect(() => {
-        let cancelled = false;
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
-        const fetchMomentos = async () => {
-            try {
-                const res = await fetch(`${API_URL}/api/videos?page=0&size=20`);
-                const data = await res.json();
-                if (!cancelled) {
-                    const shorts = (data.content || []).filter(
-                        (v: MementoItem) => v.durationSeconds <= 60
-                    );
-                    setMomentos(shorts);
-                    setLoading(false);
-                }
-            } catch (error) {
-                if (!cancelled) setLoading(false);
+    const handleFileSelect = (selectedFile: File) => {
+        setError("");
+        setDescription("");
+
+        if (selectedFile.size > MAX_SIZE_BYTES) {
+            setError(`Arquivo muito grande. Maximo: ${MAX_SIZE_MB}MB`);
+            return;
+        }
+
+        if (!selectedFile.type.startsWith("video/")) {
+            setError("Selecione um arquivo de video valido");
+            return;
+        }
+
+        const url = URL.createObjectURL(selectedFile);
+
+        const video = document.createElement("video");
+        video.preload = "metadata";
+        video.src = url;
+        video.onloadedmetadata = () => {
+            const duration = Math.round(video.duration);
+            const isVertical = video.videoHeight > video.videoWidth;
+
+            setVideoDuration(duration);
+
+            if (!isVertical) {
+                setError("O Memento aceita apenas videos verticais");
+                setPreviewUrl("");
+                return;
             }
+
+            setFile(selectedFile);
+            setPreviewUrl(url);
         };
-
-        fetchMomentos();
-        return () => { cancelled = true; };
-    }, []);
-
-    useEffect(() => {
-        const current = momentos[currentIndex];
-        if (!current) return;
-
-        const currentVideo = videoRefs.current.get(current.id);
-        if (currentVideo) {
-            currentVideo.currentTime = 0;
-            currentVideo.play().catch(() => {});
-
-            videoRefs.current.forEach((video, id) => {
-                if (id !== current.id) {
-                    video.pause();
-                }
-            });
-        }
-    }, [currentIndex, momentos]);
-
-    useEffect(() => {
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === "ArrowDown") {
-                e.preventDefault();
-                if (currentIndex < momentos.length - 1) setCurrentIndex((prev) => prev + 1);
-            } else if (e.key === "ArrowUp") {
-                e.preventDefault();
-                if (currentIndex > 0) setCurrentIndex((prev) => prev - 1);
-            }
-        };
-
-        window.addEventListener("keydown", handleKeyDown);
-        return () => window.removeEventListener("keydown", handleKeyDown);
-    }, [currentIndex, momentos.length]);
-
-    const handleTouchStart = (e: React.TouchEvent) => {
-        touchStartY.current = e.touches[0].clientY;
     };
 
-    const handleTouchEnd = (e: React.TouchEvent) => {
-        const diff = touchStartY.current - e.changedTouches[0].clientY;
-        if (Math.abs(diff) > 50) {
-            if (diff > 0 && currentIndex < momentos.length - 1) {
-                setCurrentIndex((prev) => prev + 1);
-            } else if (diff < 0 && currentIndex > 0) {
-                setCurrentIndex((prev) => prev - 1);
-            }
-        }
+    const handleDrop = (e: React.DragEvent) => {
+        e.preventDefault();
+        const droppedFile = e.dataTransfer.files[0];
+        if (droppedFile) handleFileSelect(droppedFile);
     };
 
-    const togglePlayPause = (videoId: string) => {
-        const video = videoRefs.current.get(videoId);
-        if (!video) return;
-        if (video.paused) {
-            video.play().catch(() => {});
-        } else {
-            video.pause();
-        }
-    };
+    const handleUpload = async () => {
+        if (!file) return;
 
-    const toggleLike = async (videoId: string) => {
-        if (!currentUserId) return;
+        setError("");
+        setStatus("uploading");
+        setProgress(0);
+
         try {
             const token = await getToken();
-            const res = await fetch(`${API_URL}/api/videos/${videoId}/like`, {
+
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/videos/upload-url`, {
                 method: "POST",
-                headers: { Authorization: `Bearer ${token}` },
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
             });
+
+            if (!res.ok) throw new Error("Erro ao criar upload");
+
             const data = await res.json();
-            setLiked((prev) => ({ ...prev, [videoId]: data.liked }));
-            setLikeCounts((prev) => ({ ...prev, [videoId]: data.count }));
-        } catch (error) {
-            console.error("Erro ao curtir:", error);
+
+            await new Promise((resolve, reject) => {
+                const xhr = new XMLHttpRequest();
+                xhr.open("PUT", data.uploadUrl);
+
+                xhr.upload.onprogress = (event) => {
+                    if (event.lengthComputable) {
+                        setProgress(Math.round((event.loaded / event.total) * 100));
+                    }
+                };
+
+                xhr.onload = () => {
+                    if (xhr.status >= 200 && xhr.status < 300) resolve(xhr);
+                    else reject(new Error("Falha no upload"));
+                };
+
+                xhr.onerror = () => reject(new Error("Erro de rede"));
+                xhr.send(file);
+            });
+
+            setStatus("processing");
+
+            let assetReady = false;
+            let attempts = 0;
+
+            while (!assetReady && attempts < 60) {
+                await new Promise((r) => setTimeout(r, 3000));
+                attempts++;
+
+                const assetRes = await fetch(
+                    `${process.env.NEXT_PUBLIC_API_URL}/api/videos/asset-status?uploadId=${data.uploadId}`,
+                    { headers: { Authorization: `Bearer ${token}` } }
+                );
+                const assetData = await assetRes.json();
+
+                if (assetData.status === "ready") {
+                    assetReady = true;
+                    const thumbUrl = `https://image.mux.com/${assetData.playbackId}/thumbnail.jpg`;
+
+                    const callbackRes = await fetch(
+                        `${process.env.NEXT_PUBLIC_API_URL}/api/videos/mux-callback`,
+                        {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json",
+                                Authorization: `Bearer ${token}`,
+                            },
+                            body: JSON.stringify({
+                                muxAssetId: assetData.assetId,
+                                muxPlaybackId: assetData.playbackId,
+                                title: description.slice(0, 100) || "Memento",
+                                description: description,
+                                durationSeconds: Math.round(videoDuration),
+                                thumbnailUrl: thumbUrl,
+                                isShort: true,
+                                originalFilename: file.name,
+                                fileSize: file.size,
+                                mimeType: file.type,
+                            }),
+                        }
+                    );
+
+                    setStatus("done");
+                    router.push("/videos/memento");
+                }
+            }
+
+            if (!assetReady) {
+                setError("Processamento demorou. O video ficara disponivel em breve.");
+                setStatus("idle");
+            }
+        } catch (err) {
+            setError("Erro no upload. Tente novamente.");
+            setStatus("idle");
+            console.error(err);
         }
     };
 
-    const formatViews = (views: number) => {
-        if (views >= 1000000) return `${(views / 1000000).toFixed(1)}M`;
-        if (views >= 1000) return `${(views / 1000).toFixed(1)}K`;
-        return String(views);
+    const resetForm = () => {
+        if (previewUrl) URL.revokeObjectURL(previewUrl);
+        setFile(null);
+        setPreviewUrl("");
+        setDescription("");
+        setError("");
+        setStatus("idle");
+        setProgress(0);
     };
 
-    if (loading) {
-        return (
-            <div className="h-screen bg-black flex items-center justify-center">
-                <div className="w-8 h-8 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-            </div>
-        );
-    }
-
     return (
-        <div className="h-screen bg-black relative">
-            {momentos.length === 0 ? (
-                <div className="flex items-center justify-center h-full">
-                    <div className="text-center px-4">
-                        <p className="text-white/60 text-lg">Nenhum Memento ainda</p>
-                        <Link
-                            href="/videos/upload?mode=memento"
-                            className="inline-block mt-4 bg-white text-black px-6 py-2 rounded-full text-sm font-medium"
-                        >
-                            Publicar Memento
-                        </Link>
+        <div className="max-w-2xl mx-auto px-4 py-6">
+            <h1 className="font-blackletter text-3xl text-primary mb-2">Novo Memento</h1>
+            <p className="text-sm text-muted-foreground mb-6">Lembre-se de viver.</p>
+
+            {error && (
+                <div className="bg-destructive/10 border border-destructive/30 text-destructive rounded-xl px-4 py-3 text-sm mb-4">
+                    {error}
+                </div>
+            )}
+
+            {!file ? (
+                <div
+                    onDrop={handleDrop}
+                    onDragOver={(e) => e.preventDefault()}
+                    onClick={() => fileInputRef.current?.click()}
+                    className="border-2 border-dashed border-border rounded-2xl p-16 text-center cursor-pointer hover:border-primary/50 transition-colors bg-card"
+                >
+                    <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-primary">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                            <polyline points="17 8 12 3 7 8" />
+                            <line x1="12" y1="3" x2="12" y2="15" />
+                        </svg>
                     </div>
+                    <p className="text-foreground font-semibold mb-1">Selecionar video para Memento</p>
+                    <p className="text-muted-foreground text-sm">Vertical &middot; Ate {MAX_SIZE_MB}MB</p>
+                    <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="video/*"
+                        onChange={(e) => e.target.files?.[0] && handleFileSelect(e.target.files[0])}
+                        className="hidden"
+                    />
                 </div>
             ) : (
-                <div
-                    className="h-full relative overflow-hidden"
-                    onTouchStart={handleTouchStart}
-                    onTouchEnd={handleTouchEnd}
-                >
-                    {momentos.map((video, index) => (
-                        <div
-                            key={video.id}
-                            className="absolute inset-0 transition-transform duration-300"
-                            style={{ transform: `translateY(${(index - currentIndex) * 100}%)` }}
-                        >
-                            <video
-                                ref={(el) => {
-                                    if (el) videoRefs.current.set(video.id, el);
-                                    else videoRefs.current.delete(video.id);
-                                }}
-                                src={video.videoUrl}
-                                poster={video.thumbnailUrl}
-                                className="w-full h-full object-cover"
-                                loop
-                                playsInline
-                                muted={false}
-                                onClick={() => togglePlayPause(video.id)}
-                            />
+                <div className="space-y-6">
+                    <div className="relative rounded-2xl overflow-hidden bg-black">
+                        <video src={previewUrl} className="w-full max-h-[70vh] object-contain" controls />
+                        <div className="absolute top-3 left-3 flex gap-2">
+                            <span className="bg-primary text-primary-foreground text-xs font-medium px-3 py-1 rounded-full">Memento</span>
+                            <span className="bg-black/60 text-white text-xs font-medium px-3 py-1 rounded-full">{Math.round(videoDuration)}s</span>
+                        </div>
+                    </div>
 
-                            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent pb-20 pt-32 px-4">
-                                <div className="flex items-end justify-between">
-                                    <div className="flex-1 mr-3">
-                                        <div className="flex items-center gap-3 mb-3">
-                                            <img
-                                                src={video.userAvatarUrl || ""}
-                                                alt=""
-                                                className="w-10 h-10 rounded-full border-2 border-white/30 bg-secondary"
-                                            />
-                                            <div>
-                                                <p className="text-white font-semibold text-sm">{video.userName}</p>
-                                                {video.description && (
-                                                    <p className="text-white/80 text-xs mt-0.5 line-clamp-2">{video.description}</p>
-                                                )}
-                                            </div>
-                                        </div>
-                                        <h2 className="text-white font-bold text-base line-clamp-2 mb-1">{video.title}</h2>
-                                        <div className="flex items-center gap-2 text-white/50 text-xs">
-                                            <span>{formatViews(video.viewCount)} views</span>
-                                            <span>&middot;</span>
-                                            <span>{likeCounts[video.id] ?? video.likesCount} likes</span>
-                                        </div>
-                                    </div>
+                    <div>
+                        <label className="text-sm font-medium text-foreground">Frase</label>
+                        <textarea
+                            value={description}
+                            onChange={(e) => setDescription(e.target.value)}
+                            placeholder="Uma frase que aparecera sobre seu Memento..."
+                            rows={2}
+                            className="w-full mt-2 bg-card border border-border rounded-xl px-4 py-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors resize-none"
+                            maxLength={150}
+                        />
+                        <p className="text-xs text-muted-foreground mt-1 text-right">{description.length}/150</p>
+                    </div>
 
-                                    <div className="flex flex-col items-center gap-5">
-                                        <button onClick={() => toggleLike(video.id)} className="flex flex-col items-center gap-1">
-                                            <svg width="28" height="28" viewBox="0 0 24 24"
-                                                 fill={liked[video.id] ? "#ef4444" : "none"}
-                                                 stroke={liked[video.id] ? "#ef4444" : "white"} strokeWidth="2">
-                                                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-                                            </svg>
-                                            <span className="text-white text-xs">{likeCounts[video.id] ?? video.likesCount}</span>
-                                        </button>
-
-                                        <Link href={`/videos/watch/${video.id}`} className="flex flex-col items-center gap-1">
-                                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
-                                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-                                            </svg>
-                                            <span className="text-white text-xs">{video.commentsCount}</span>
-                                        </Link>
-                                    </div>
-                                </div>
+                    {status === "uploading" && (
+                        <div className="space-y-2">
+                            <div className="flex justify-between text-sm">
+                                <span className="text-muted-foreground">Enviando...</span>
+                                <span className="text-foreground font-medium">{progress}%</span>
+                            </div>
+                            <div className="h-2 bg-secondary rounded-full overflow-hidden">
+                                <div className="h-full bg-primary transition-all duration-300 rounded-full" style={{ width: `${progress}%` }} />
                             </div>
                         </div>
-                    ))}
+                    )}
 
-                    {/* Botão Publicar Memento no topo */}
-                    <div className="absolute top-4 right-4 z-10">
-                        <Link
-                            href="/videos/memento/upload"
-                            className="bg-white/20 backdrop-blur text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-white/30 transition-colors"
-                        >
-                            + Memento
-                        </Link>
-                    </div>
+                    {status === "processing" && (
+                        <div className="flex items-center justify-center gap-3 py-4">
+                            <div className="w-6 h-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+                            <p className="text-sm text-muted-foreground">Processando video...</p>
+                        </div>
+                    )}
 
-                    {/* Indicador de progresso */}
-                    <div className="absolute top-4 left-0 right-0 flex justify-center gap-1 z-10">
-                        {momentos.map((_, index) => (
-                            <div
-                                key={index}
-                                className={`h-0.5 rounded-full transition-all duration-300 ${
-                                    index === currentIndex ? "w-6 bg-white" : index < currentIndex ? "w-4 bg-white/60" : "w-4 bg-white/30"
-                                }`}
-                            />
-                        ))}
-                    </div>
+                    {status === "idle" && (
+                        <button onClick={handleUpload} className="w-full bg-primary text-primary-foreground py-3 rounded-xl font-semibold hover:bg-primary/90 transition-colors">
+                            Publicar Memento
+                        </button>
+                    )}
+
+                    {status === "idle" && (
+                        <button onClick={resetForm} className="w-full text-muted-foreground text-sm py-2 hover:text-foreground transition-colors">
+                            Cancelar e selecionar outro video
+                        </button>
+                    )}
                 </div>
             )}
         </div>
