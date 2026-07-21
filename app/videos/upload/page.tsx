@@ -1,79 +1,88 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
+import { useState, useRef, useCallback } from "react";
+import { useAuth } from "@clerk/nextjs";
+import { useRouter } from "next/navigation";
+import {
+    UploadCloud,
+    Film,
+    X,
+    Loader2,
+    CheckCircle2,
+    AlertTriangle,
+    Clock,
+    ArrowRight,
+    Trophy,
+} from "lucide-react";
 
-import { useState, useRef, useCallback } from "react"
-import { useAuth } from "@clerk/nextjs"
-import { useRouter } from "next/navigation"
-import { UploadCloud, Film, X, Loader2, CheckCircle2, AlertTriangle, Clock, ArrowRight, Trophy } from "lucide-react"
-
-const MAX_SIZE_MB = 500
-const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024
+const MAX_SIZE_MB = 500;
+const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
 
 function formatBytes(bytes: number) {
-    if (bytes === 0) return "0 B"
-    const k = 1024
-    const sizes = ["B", "KB", "MB", "GB"]
-    const i = Math.floor(Math.log(bytes) / Math.log(k))
-    return `${Number.parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`
+    if (bytes === 0) return "0 B";
+    const k = 1024;
+    const sizes = ["B", "KB", "MB", "GB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return `${Number.parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
 }
 
 function formatDuration(seconds: number) {
-    const m = Math.floor(seconds / 60)
-    const s = Math.round(seconds % 60)
-    return `${m}:${s.toString().padStart(2, "0")}`
+    const m = Math.floor(seconds / 60);
+    const s = Math.round(seconds % 60);
+    return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
 export default function UploadPage() {
-    const { getToken } = useAuth()
-    const router = useRouter()
+    const { getToken } = useAuth();
+    const router = useRouter();
 
-    const [file, setFile] = useState<File | null>(null)
-    const [previewUrl, setPreviewUrl] = useState("")
-    const [title, setTitle] = useState("")
-    const [description, setDescription] = useState("")
-    const [hashtags, setHashtags] = useState("")
-    const [error, setError] = useState("")
-    const [videoDuration, setVideoDuration] = useState(0)
-    const [status, setStatus] = useState<"idle" | "uploading" | "processing" | "done">("idle")
-    const [progress, setProgress] = useState(0)
-    const [isDragging, setIsDragging] = useState(false)
+    const [file, setFile] = useState<File | null>(null);
+    const [previewUrl, setPreviewUrl] = useState("");
+    const [title, setTitle] = useState("");
+    const [description, setDescription] = useState("");
+    const [hashtags, setHashtags] = useState("");
+    const [error, setError] = useState("");
+    const [videoDuration, setVideoDuration] = useState(0);
+    const [status, setStatus] = useState<"idle" | "uploading" | "processing" | "done">("idle");
+    const [progress, setProgress] = useState(0);
+    const [isDragging, setIsDragging] = useState(false);
 
-    const fileInputRef = useRef<HTMLInputElement>(null)
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleFileSelect = useCallback(
         (selectedFile: File) => {
-            setError("")
+            setError("");
 
             if (selectedFile.size > MAX_SIZE_BYTES) {
-                setError(`Arquivo muito grande. Máximo: ${MAX_SIZE_MB}MB`)
-                return
+                setError(`Arquivo muito grande. Máximo: ${MAX_SIZE_MB}MB`);
+                return;
             }
             if (!selectedFile.type.startsWith("video/")) {
-                setError("Selecione um arquivo de vídeo válido")
-                return
+                setError("Selecione um arquivo de vídeo válido");
+                return;
             }
 
-            if (previewUrl) URL.revokeObjectURL(previewUrl)
+            if (previewUrl) URL.revokeObjectURL(previewUrl);
 
-            setFile(selectedFile)
-            const url = URL.createObjectURL(selectedFile)
-            setPreviewUrl(url)
+            setFile(selectedFile);
+            const url = URL.createObjectURL(selectedFile);
+            setPreviewUrl(url);
 
-            const video = document.createElement("video")
-            video.preload = "metadata"
-            video.src = url
-            video.onloadedmetadata = () => setVideoDuration(Math.round(video.duration))
+            const video = document.createElement("video");
+            video.preload = "metadata";
+            video.src = url;
+            video.onloadedmetadata = () => setVideoDuration(Math.round(video.duration));
         },
         [previewUrl],
-    )
+    );
 
     const handleDrop = (e: React.DragEvent) => {
-        e.preventDefault()
-        setIsDragging(false)
-        const droppedFile = e.dataTransfer.files[0]
-        if (droppedFile) handleFileSelect(droppedFile)
-    }
+        e.preventDefault();
+        setIsDragging(false);
+        const droppedFile = e.dataTransfer.files[0];
+        if (droppedFile) handleFileSelect(droppedFile);
+    };
 
     const removeHashtag = (tag: string) => {
         setHashtags((prev) =>
@@ -81,56 +90,56 @@ export default function UploadPage() {
                 .split(/\s+/)
                 .filter((t) => t !== tag)
                 .join(" "),
-        )
-    }
+        );
+    };
 
-    const tagList = hashtags.split(/\s+/).filter(Boolean)
+    const tagList = hashtags.split(/\s+/).filter(Boolean);
 
     const handleUpload = async () => {
-        if (!file) return
+        if (!file) return;
         if (!title.trim()) {
-            setError("Título obrigatório")
-            return
+            setError("Título obrigatório");
+            return;
         }
 
-        setError("")
-        setStatus("uploading")
-        setProgress(0)
+        setError("");
+        setStatus("uploading");
+        setProgress(0);
 
         try {
-            const token = await getToken()
+            const token = await getToken();
             const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/videos/upload-url`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-            })
-            if (!res.ok) throw new Error("Erro ao criar upload")
-            const data = await res.json()
+            });
+            if (!res.ok) throw new Error("Erro ao criar upload");
+            const data = await res.json();
 
             await new Promise((resolve, reject) => {
-                const xhr = new XMLHttpRequest()
-                xhr.open("PUT", data.uploadUrl)
+                const xhr = new XMLHttpRequest();
+                xhr.open("PUT", data.uploadUrl);
                 xhr.upload.onprogress = (e) => {
-                    if (e.lengthComputable) setProgress(Math.round((e.loaded / e.total) * 100))
-                }
-                xhr.onload = () => (xhr.status >= 200 && xhr.status < 300 ? resolve(xhr) : reject(new Error("Falha")))
-                xhr.onerror = () => reject(new Error("Rede"))
-                xhr.send(file)
-            })
+                    if (e.lengthComputable) setProgress(Math.round((e.loaded / e.total) * 100));
+                };
+                xhr.onload = () => (xhr.status >= 200 && xhr.status < 300 ? resolve(xhr) : reject(new Error("Falha")));
+                xhr.onerror = () => reject(new Error("Rede"));
+                xhr.send(file);
+            });
 
-            setStatus("processing")
-            let ready = false
-            let attempts = 0
+            setStatus("processing");
+            let ready = false;
+            let attempts = 0;
             while (!ready && attempts < 60) {
-                await new Promise((r) => setTimeout(r, 3000))
-                attempts++
+                await new Promise((r) => setTimeout(r, 3000));
+                attempts++;
                 const assetRes = await fetch(
                     `${process.env.NEXT_PUBLIC_API_URL}/api/videos/asset-status?uploadId=${data.uploadId}`,
                     { headers: { Authorization: `Bearer ${token}` } },
-                )
-                const assetData = await assetRes.json()
+                );
+                const assetData = await assetRes.json();
                 if (assetData.status === "ready") {
-                    ready = true
-                    const thumbUrl = `https://image.mux.com/${assetData.playbackId}/thumbnail.jpg`
+                    ready = true;
+                    const thumbUrl = `https://image.mux.com/${assetData.playbackId}/thumbnail.jpg`;
                     const callbackRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/videos/mux-callback`, {
                         method: "POST",
                         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
@@ -146,42 +155,41 @@ export default function UploadPage() {
                             fileSize: file.size,
                             mimeType: file.type,
                         }),
-                    })
-                    const savedVideo = await callbackRes.json()
-                    setStatus("done")
-                    router.push(`/videos/watch/${savedVideo.id}`)
+                    });
+                    const savedVideo = await callbackRes.json();
+                    setStatus("done");
+                    router.push(`/videos/watch/${savedVideo.id}`);
                 }
             }
             if (!ready) {
-                setError("Processamento demorou. O vídeo ficará disponível em breve.")
-                setStatus("idle")
+                setError("Processamento demorou. O vídeo ficará disponível em breve.");
+                setStatus("idle");
             }
         } catch (err) {
-            setError("Erro no upload. Tente novamente.")
-            setStatus("idle")
+            setError("Erro no upload. Tente novamente.");
+            setStatus("idle");
         }
-    }
+    };
 
     const resetForm = () => {
-        if (previewUrl) URL.revokeObjectURL(previewUrl)
-        setFile(null)
-        setPreviewUrl("")
-        setTitle("")
-        setDescription("")
-        setHashtags("")
-        setError("")
-        setStatus("idle")
-        setProgress(0)
-    }
+        if (previewUrl) URL.revokeObjectURL(previewUrl);
+        setFile(null);
+        setPreviewUrl("");
+        setTitle("");
+        setDescription("");
+        setHashtags("");
+        setError("");
+        setStatus("idle");
+        setProgress(0);
+    };
 
-    const busy = status === "uploading" || status === "processing"
+    const busy = status === "uploading" || status === "processing";
 
     return (
         <div className="min-h-screen bg-background text-foreground">
             <div className="mx-auto grid min-h-screen max-w-[1400px] lg:grid-cols-[minmax(320px,420px)_1fr]">
-                {/* ===================== LEFT — ARENA PANEL ===================== */}
+                {/* ===================== LEFT — PANEL ===================== */}
                 <aside className="relative flex flex-col justify-between overflow-hidden border-b border-border bg-card px-8 py-10 lg:sticky lg:top-0 lg:h-screen lg:border-b-0 lg:border-r lg:px-12 lg:py-14">
-                    {/* texture grid */}
                     <div
                         className="pointer-events-none absolute inset-0 opacity-[0.04]"
                         style={{
@@ -202,24 +210,23 @@ export default function UploadPage() {
                         </div>
 
                         <h1 className="mt-8 font-blackletter text-6xl leading-[0.85] text-balance lg:text-7xl">
-                            Entre na
-                            <span className="block text-primary">Arena</span>
+                            Grave sua
+                            <span className="block text-primary">Jornada</span>
                         </h1>
 
                         <p className="mt-6 max-w-xs text-sm leading-relaxed text-muted-foreground">
-                            Cada descida é uma batalha. Envie sua run, marque território e conquiste seu lugar entre os gladiadores do
-                            downhill.
+                            Compartilhe trilhas, tutoriais, reviews e conquistas sobre duas rodas. Cada pedal conta uma história.
                         </p>
                     </div>
 
-                    {/* steps */}
                     <ol className="relative mt-10 space-y-1">
                         {[
-                            { n: "I", label: "Escolha sua run", done: !!file },
-                            { n: "II", label: "Nomeie a batalha", done: !!title.trim() },
-                            { n: "III", label: "Suba para a glória", done: status === "done" },
+                            { n: "I", label: "Escolha seu vídeo", done: !!file },
+                            { n: "II", label: "Dê um título", done: !!title.trim() },
+                            { n: "III", label: "Publique", done: status === "done" },
                         ].map((step, i) => {
-                            const active = (i === 0 && !file) || (i === 1 && file && !title.trim()) || (i === 2 && !!title.trim())
+                            const active =
+                                (i === 0 && !file) || (i === 1 && file && !title.trim()) || (i === 2 && !!title.trim());
                             return (
                                 <li
                                     key={step.n}
@@ -244,7 +251,7 @@ export default function UploadPage() {
                     {step.label}
                   </span>
                                 </li>
-                            )
+                            );
                         })}
                     </ol>
                 </aside>
@@ -259,13 +266,13 @@ export default function UploadPage() {
                     )}
 
                     {!file ? (
-                        /* ---------- DROPZONE with corner brackets ---------- */
+                        /* ---------- DROPZONE ---------- */
                         <button
                             type="button"
                             onDrop={handleDrop}
                             onDragOver={(e) => {
-                                e.preventDefault()
-                                setIsDragging(true)
+                                e.preventDefault();
+                                setIsDragging(true);
                             }}
                             onDragLeave={() => setIsDragging(false)}
                             onClick={() => fileInputRef.current?.click()}
@@ -273,7 +280,6 @@ export default function UploadPage() {
                                 isDragging ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"
                             }`}
                         >
-                            {/* corner brackets */}
                             {["left-4 top-4 border-l-2 border-t-2", "right-4 top-4 border-r-2 border-t-2", "left-4 bottom-4 border-l-2 border-b-2", "right-4 bottom-4 border-r-2 border-b-2"].map(
                                 (pos) => (
                                     <span
@@ -295,13 +301,13 @@ export default function UploadPage() {
                             </div>
 
                             <p className="mt-7 font-blackletter text-4xl text-balance">
-                                {isDragging ? "Solte para lutar" : "Convoque sua run"}
+                                {isDragging ? "Solte o vídeo" : "Selecione um vídeo"}
                             </p>
                             <p className="mt-3 max-w-sm text-sm text-muted-foreground">
-                                Arraste seu vídeo até a arena ou clique para escolher no seu dispositivo.
+                                Arraste seu vídeo até aqui ou clique para escolher no seu dispositivo.
                             </p>
 
-                            <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
+                            <div className="mt-8 flex flex-wrap items-center justify-center gap-2">
                                 {["MP4", "MOV", "WebM"].map((f) => (
                                     <span
                                         key={f}
@@ -360,13 +366,12 @@ export default function UploadPage() {
                                     )}
                                 </div>
 
-                                {/* progress / status live here under the video */}
                                 {status === "uploading" && (
                                     <div className="rounded-xl border border-border bg-card p-4">
                                         <div className="mb-2 flex items-center justify-between text-sm">
                       <span className="flex items-center gap-2 text-muted-foreground">
                         <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                        Enviando para a arena...
+                        Enviando...
                       </span>
                                             <span className="font-blackletter text-lg text-primary">{progress}%</span>
                                         </div>
@@ -381,13 +386,13 @@ export default function UploadPage() {
                                 {status === "processing" && (
                                     <div className="flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-4">
                                         <Loader2 className="h-5 w-5 shrink-0 animate-spin text-primary" />
-                                        <p className="text-sm text-muted-foreground">Preparando o combate... aguarde alguns instantes.</p>
+                                        <p className="text-sm text-muted-foreground">Processando vídeo...</p>
                                     </div>
                                 )}
                                 {status === "done" && (
                                     <div className="flex items-center gap-3 rounded-xl border border-primary/40 bg-primary/10 px-4 py-4">
                                         <Trophy className="h-5 w-5 shrink-0 text-primary" />
-                                        <p className="text-sm font-medium text-primary">Vitória! Redirecionando para sua arena...</p>
+                                        <p className="text-sm font-medium text-primary">Publicado! Redirecionando...</p>
                                     </div>
                                 )}
                             </div>
@@ -397,7 +402,7 @@ export default function UploadPage() {
                                 <div>
                                     <label className="mb-2 flex items-center justify-between text-sm font-semibold">
                     <span>
-                      Título da batalha <span className="text-primary">*</span>
+                      Título do vídeo <span className="text-primary">*</span>
                     </span>
                                         <span className="text-xs font-normal text-muted-foreground">{title.length}/100</span>
                                     </label>
@@ -406,7 +411,7 @@ export default function UploadPage() {
                                         value={title}
                                         onChange={(e) => setTitle(e.target.value)}
                                         disabled={busy}
-                                        placeholder="Descida insana em Campos do Jordão"
+                                        placeholder="Adicione um título que descreva seu vídeo"
                                         className="w-full rounded-lg border border-border bg-card px-4 py-3 transition-colors placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-60"
                                         maxLength={100}
                                     />
@@ -414,14 +419,14 @@ export default function UploadPage() {
 
                                 <div>
                                     <label className="mb-2 flex items-center justify-between text-sm font-semibold">
-                                        <span>Relato</span>
+                                        <span>Descrição</span>
                                         <span className="text-xs font-normal text-muted-foreground">{description.length}/500</span>
                                     </label>
                                     <textarea
                                         value={description}
                                         onChange={(e) => setDescription(e.target.value)}
                                         disabled={busy}
-                                        placeholder="Conte a história por trás dessa descida..."
+                                        placeholder="Conte mais sobre seu vídeo..."
                                         rows={4}
                                         className="w-full resize-none rounded-lg border border-border bg-card px-4 py-3 transition-colors placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-60"
                                         maxLength={500}
@@ -429,13 +434,13 @@ export default function UploadPage() {
                                 </div>
 
                                 <div>
-                                    <label className="mb-2 flex items-center gap-1.5 text-sm font-semibold">Estandartes</label>
+                                    <label className="mb-2 text-sm font-semibold">Hashtags</label>
                                     <input
                                         type="text"
                                         value={hashtags}
                                         onChange={(e) => setHashtags(e.target.value)}
                                         disabled={busy}
-                                        placeholder="downhill trilha mtb enduro"
+                                        placeholder="MTB Downhill Trilha Tutorial"
                                         className="w-full rounded-lg border border-border bg-card px-4 py-3 transition-colors placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-60"
                                     />
                                     {tagList.length > 0 && (
@@ -467,9 +472,9 @@ export default function UploadPage() {
                     <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-4 px-6 py-4 sm:px-10 lg:px-16">
                         <div className="hidden text-sm text-muted-foreground sm:block">
                             {title.trim() ? (
-                                <span className="text-foreground">Pronto para subir à arena.</span>
+                                <span className="text-foreground">Pronto para publicar.</span>
                             ) : (
-                                "Dê um título para liberar a publicação."
+                                "Adicione um título para publicar."
                             )}
                         </div>
                         <div className="flex flex-1 items-center justify-end gap-3">
@@ -486,7 +491,7 @@ export default function UploadPage() {
                                 disabled={!title.trim()}
                                 className="group flex items-center gap-2 rounded-lg bg-primary px-7 py-3 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/25 transition-all hover:bg-primary/90 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
                             >
-                                Subir à arena
+                                Publicar
                                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
                             </button>
                         </div>
@@ -494,5 +499,5 @@ export default function UploadPage() {
                 </div>
             )}
         </div>
-    )
+    );
 }
