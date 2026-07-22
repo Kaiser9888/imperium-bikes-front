@@ -460,6 +460,17 @@ export default function UploadPage() {
                                         </div>
                                     )}
                                 </div>
+
+                                {/* Botão Publicar dentro do formulário */}
+                                <button
+                                    type="button"
+                                    onClick={handleUpload}
+                                    disabled={!title.trim()}
+                                    className="group flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-7 py-3.5 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/25 transition-all hover:bg-primary/90 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
+                                >
+                                    Publicar
+                                    <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                                </button>
                             </div>
                         </div>
                     )}
@@ -468,8 +479,8 @@ export default function UploadPage() {
 
             {/* ===================== STICKY ACTION BAR ===================== */}
             {file && status === "idle" && (
-                <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-background/85 backdrop-blur-md">
-                    <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-4 px-6 py-4 sm:px-10 lg:px-16">
+                <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-background/85 backdrop-blur-md lg:hidden">
+                    <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-4 px-6 py-4 sm:px-10">
                         <div className="hidden text-sm text-muted-foreground sm:block">
                             {title.trim() ? (
                                 <span className="text-foreground">Pronto para publicar.</span>
