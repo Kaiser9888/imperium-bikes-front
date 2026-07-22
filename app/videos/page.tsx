@@ -1,9 +1,9 @@
 ﻿"use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useAuth } from "@clerk/nextjs";
 import Link from "next/link";
-import { Eye, Play, Crown, ArrowRight } from "lucide-react";
+import { Eye, Play, Crown, ArrowRight, Loader2, RotateCcw } from "lucide-react";
 
 interface VideoItem {
     id: string;
@@ -17,69 +17,105 @@ interface VideoItem {
     createdAt: string;
 }
 
+interface VideoPage {
+    content: VideoItem[];
+    last: boolean;
+}
+
+const PAGE_SIZE = 12;
 const INITIAL_PAGE = 0;
 
 export default function VideosPage() {
     const { getToken } = useAuth();
     const [videos, setVideos] = useState<VideoItem[]>([]);
     const [loading, setLoading] = useState(true);
+    const [loadingMore, setLoadingMore] = useState(false);
     const [hasMore, setHasMore] = useState(true);
+    const [error, setError] = useState(false);
     const pageRef = useRef(INITIAL_PAGE);
+
+    const fetchPage = useCallback(
+        async (page: number): Promise<VideoPage> => {
+            const token = await getToken();
+            const res = await fetch(
+                `${process.env.NEXT_PUBLIC_API_URL}/api/videos?page=${page}&size=${PAGE_SIZE}&isShort=false`,
+                {
+                    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+                }
+            );
+
+            if (!res.ok) {
+                throw new Error(`Falha ao carregar vídeos (status ${res.status})`);
+            }
+
+            return res.json();
+        },
+        [getToken]
+    );
+
+    const loadInitial = useCallback(async () => {
+        setLoading(true);
+        setError(false);
+        pageRef.current = INITIAL_PAGE;
+
+        try {
+            const data = await fetchPage(INITIAL_PAGE);
+            setVideos(data.content);
+            setHasMore(!data.last);
+        } catch (err) {
+            console.error("Erro ao carregar vídeos:", err);
+            setError(true);
+        } finally {
+            setLoading(false);
+        }
+    }, [fetchPage]);
 
     useEffect(() => {
         let cancelled = false;
 
-        const loadVideos = async () => {
+        (async () => {
+            setLoading(true);
+            setError(false);
             try {
-                const res = await fetch(
-                    `${process.env.NEXT_PUBLIC_API_URL}/api/videos?page=${INITIAL_PAGE}&size=12&isShort=false`
-                );
-                const data = await res.json();
-
-                if (!cancelled) {
-                    setVideos(data.content);
-                    setHasMore(!data.last);
-                    setLoading(false);
-                }
-            } catch (error) {
-                if (!cancelled) {
-                    console.error("Erro ao carregar videos:", error);
-                    setLoading(false);
-                }
+                const data = await fetchPage(INITIAL_PAGE);
+                if (cancelled) return;
+                setVideos(data.content);
+                setHasMore(!data.last);
+            } catch (err) {
+                if (cancelled) return;
+                console.error("Erro ao carregar vídeos:", err);
+                setError(true);
+            } finally {
+                if (!cancelled) setLoading(false);
             }
-        };
-
-        loadVideos();
+        })();
 
         return () => {
             cancelled = true;
         };
-    }, [getToken]);
+    }, [fetchPage]);
 
     const loadMore = async () => {
-        pageRef.current += 1;
-        const nextPage = pageRef.current;
+        if (loadingMore || !hasMore) return;
+
+        const nextPage = pageRef.current + 1;
+        setLoadingMore(true);
 
         try {
-            const token = await getToken();
-            const res = await fetch(
-                `${process.env.NEXT_PUBLIC_API_URL}/api/videos?page=${nextPage}&size=12`,
-                {
-                    headers: { Authorization: `Bearer ${token}` },
-                }
-            );
-            const data = await res.json();
-
+            const data = await fetchPage(nextPage);
+            pageRef.current = nextPage;
             setVideos((prev) => [...prev, ...data.content]);
             setHasMore(!data.last);
-        } catch (error) {
-            console.error("Erro ao carregar mais videos:", error);
+        } catch (err) {
+            console.error("Erro ao carregar mais vídeos:", err);
+        } finally {
+            setLoadingMore(false);
         }
     };
 
     const formatViews = (views: number) => {
-        if (views >= 1000000) return `${(views / 1000000).toFixed(1)}M`;
-        if (views >= 1000) return `${(views / 1000).toFixed(1)}K`;
+        if (views >= 1_000_000) return `${(views / 1_000_000).toFixed(1)}M`;
+        if (views >= 1_000) return `${(views / 1_000).toFixed(1)}K`;
         return String(views);
     };
 
@@ -88,69 +124,75 @@ export default function VideosPage() {
         const past = new Date(date);
         const diffMs = now.getTime() - past.getTime();
         const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-        if (diffDays === 0) return "Hoje";
+        if (diffDays <= 0) return "Hoje";
         if (diffDays === 1) return "Ontem";
         if (diffDays < 7) return `${diffDays}d`;
         if (diffDays < 30) return `${Math.floor(diffDays / 7)}sem`;
         return `${Math.floor(diffDays / 30)}m`;
     };
 
-    const featured = videos[0];
-    const rest = videos.slice(1);
-
     return (
         <div className="bg-imperial min-h-screen">
             <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-                {/* Masthead imperial */}
-                <header className="mb-12 text-center">
-                    <div className="mb-4 flex items-center justify-center gap-3">
-                        <span className="h-px w-10 bg-gold/50" />
-                        <span className="flex items-center gap-2 text-[0.7rem] font-medium uppercase tracking-[0.35em] text-gold">
-              <Crown className="size-3.5" />
-              Arena Imperium
-            </span>
-                        <span className="h-px w-10 bg-gold/50" />
-                    </div>
-                    <h1 className="font-blackletter text-5xl leading-none text-foreground sm:text-6xl lg:text-7xl text-balance">
-                        O Coliseu das Trilhas
+                {/* Cabeçalho da seção */}
+                <header className="mb-10 text-center">
+                    <span className="mb-4 inline-flex items-center gap-2 text-[0.68rem] font-medium uppercase tracking-[0.3em] text-accent">
+                        <Crown className="size-3.5" />
+                        Arena Velocitas
+                    </span>
+                    <h1 className="font-serif text-4xl leading-tight text-foreground sm:text-5xl">
+                        Trilhas &amp; Conquistas
                     </h1>
-                    <p className="mx-auto mt-5 max-w-xl text-pretty leading-relaxed text-muted-foreground">
-                        Descidas, manobras e conquistas sobre duas rodas. Assista aos feitos
-                        dos gladiadores da montanha e reivindique sua glória.
+                    <p className="mx-auto mt-4 max-w-xl text-pretty leading-relaxed text-muted-foreground">
+                        Descidas e manobras registradas pelos pilotos da montanha.
                     </p>
-                    {/* Filete dourado com losango */}
-                    <div className="mt-8 flex items-center justify-center gap-4">
-                        <span className="rule-gold h-px w-24 sm:w-40" />
-                        <span className="size-2 rotate-45 border border-gold/70 bg-gold/20" />
-                        <span className="rule-gold h-px w-24 sm:w-40" />
-                    </div>
+                    <div className="rule-gold mx-auto mt-8 max-w-xs" />
                 </header>
 
                 {loading ? (
-                    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                    <div
+                        role="status"
+                        aria-label="Carregando vídeos"
+                        className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3"
+                    >
                         {Array.from({ length: 6 }).map((_, i) => (
                             <div key={i} className="animate-pulse">
-                                <div className="aspect-video rounded-t-[2.5rem] rounded-b-xl border border-border bg-secondary" />
-                                <div className="mt-4 space-y-2 px-2">
+                                <div className="aspect-video rounded-lg border border-border bg-secondary" />
+                                <div className="mt-4 space-y-2 px-1">
                                     <div className="h-4 w-3/4 rounded bg-secondary" />
                                     <div className="h-3 w-1/2 rounded bg-secondary" />
                                 </div>
                             </div>
                         ))}
                     </div>
-                ) : videos.length === 0 ? (
-                    <div className="mx-auto max-w-md rounded-t-[4rem] rounded-b-2xl border border-gold/25 bg-marble px-8 py-16 text-center">
-                        <Crown className="mx-auto mb-5 size-10 text-gold/70" />
-                        <p className="font-blackletter text-2xl text-foreground">
-                            A arena aguarda seu primeiro campeão
+                ) : error ? (
+                    <div className="mx-auto max-w-md rounded-lg border border-border bg-card px-8 py-14 text-center">
+                        <p className="font-serif text-xl text-foreground">
+                            Não foi possível carregar os vídeos
                         </p>
                         <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                            Nenhum vídeo foi consagrado ainda. Seja o primeiro a inscrever seu
-                            nome na história.
+                            Verifique sua conexão e tente novamente.
+                        </p>
+                        <button
+                            onClick={loadInitial}
+                            className="mt-6 inline-flex items-center gap-2 rounded-md border border-border bg-background px-5 py-2.5 text-sm font-medium text-foreground transition-colors hover:border-accent/60"
+                        >
+                            <RotateCcw className="size-4" />
+                            Tentar novamente
+                        </button>
+                    </div>
+                ) : videos.length === 0 ? (
+                    <div className="mx-auto max-w-md rounded-lg border border-border bg-card px-8 py-14 text-center">
+                        <Crown className="mx-auto mb-5 size-8 text-accent/70" />
+                        <p className="font-serif text-xl text-foreground">
+                            Nenhum vídeo publicado ainda
+                        </p>
+                        <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                            Seja o primeiro a publicar o seu.
                         </p>
                         <Link
                             href="/videos/upload"
-                            className="mt-6 inline-flex items-center gap-2 rounded-full bg-primary px-7 py-2.5 text-sm font-medium text-primary-foreground shadow-lg shadow-primary/20 transition-colors hover:bg-primary/90"
+                            className="mt-6 inline-flex items-center gap-2 rounded-md bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:opacity-90"
                         >
                             Publicar meu vídeo
                             <ArrowRight className="size-4" />
@@ -158,152 +200,85 @@ export default function VideosPage() {
                     </div>
                 ) : (
                     <>
-                        {/* Vídeo em destaque */}
-                        {featured && (
-                            <Link
-                                href={`/videos/watch/${featured.id}`}
-                                className="group mb-14 block"
-                            >
-                                <article className="relative overflow-hidden rounded-t-[5rem] rounded-b-2xl border border-gold/30 bg-card shadow-xl shadow-black/30">
-                                    <div className="relative aspect-[16/7] w-full overflow-hidden">
-                                        {featured.thumbnailUrl ? (
-                                            <img
-                                                src={featured.thumbnailUrl || "/placeholder.svg"}
-                                                alt={featured.title}
-                                                className="size-full object-cover transition-transform duration-700 group-hover:scale-105"
-                                            />
-                                        ) : (
-                                            <div className="flex size-full items-center justify-center bg-secondary">
-                                                <Play className="size-10 text-muted-foreground" />
-                                            </div>
-                                        )}
-                                        {/* Véu escuro para leitura */}
-                                        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
+                        <ul className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                            {videos.map((video, index) => (
+                                <li key={video.id}>
+                                    <Link
+                                        href={`/videos/watch/${video.id}`}
+                                        className="group block rounded-lg outline-offset-4"
+                                    >
+                                        <article className="overflow-hidden rounded-lg border border-border bg-card transition-colors duration-300 group-hover:border-accent/50">
+                                            <div className="relative aspect-video overflow-hidden bg-secondary">
+                                                {video.thumbnailUrl ? (
+                                                    <img
+                                                        src={video.thumbnailUrl}
+                                                        alt={video.title || "Miniatura do vídeo"}
+                                                        loading={index < 3 ? "eager" : "lazy"}
+                                                        decoding="async"
+                                                        className="size-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+                                                    />
+                                                ) : (
+                                                    <div className="flex size-full items-center justify-center">
+                                                        <Play className="size-8 text-muted-foreground" aria-hidden="true" />
+                                                    </div>
+                                                )}
 
-                                        {/* Selo de destaque */}
-                                        <div className="absolute left-6 top-8 flex items-center gap-2 rounded-full border border-gold/40 bg-background/70 px-4 py-1.5 backdrop-blur-sm">
-                                            <Crown className="size-3.5 text-gold" />
-                                            <span className="text-[0.7rem] font-semibold uppercase tracking-[0.2em] text-gold">
-                        Em destaque
-                      </span>
-                                        </div>
-
-                                        {/* Botão de play central */}
-                                        <div className="absolute inset-0 flex items-center justify-center">
-                      <span className="flex size-16 items-center justify-center rounded-full border border-gold/50 bg-background/50 backdrop-blur-sm transition-all duration-300 group-hover:scale-110 group-hover:bg-primary group-hover:border-primary">
-                        <Play className="ml-1 size-6 fill-foreground text-foreground transition-colors group-hover:fill-primary-foreground group-hover:text-primary-foreground" />
-                      </span>
-                                        </div>
-
-                                        {/* Duração */}
-                                        <span className="absolute bottom-6 right-6 rounded-md border border-gold/30 bg-background/80 px-2.5 py-1 text-xs font-medium tabular-nums text-gold">
-                      {featured.formattedDuration || "00:00"}
-                    </span>
-
-                                        {/* Conteúdo sobreposto */}
-                                        <div className="absolute inset-x-0 bottom-0 p-6 sm:p-8">
-                                            <h2 className="max-w-3xl font-blackletter text-3xl leading-tight text-foreground text-balance sm:text-4xl">
-                                                {featured.title}
-                                            </h2>
-                                            <div className="mt-4 flex items-center gap-4 text-sm text-muted-foreground">
-                        <span className="flex items-center gap-2">
-                          <Avatar
-                              name={featured.userName}
-                              url={featured.userAvatarUrl}
-                          />
-                          <span className="font-medium text-foreground">
-                            {featured.userName}
-                          </span>
-                        </span>
-                                                <span className="flex items-center gap-1.5">
-                          <Eye className="size-4 text-gold/70" />
-                                                    {formatViews(featured.viewCount)}
-                        </span>
-                                                <span className="text-gold/50">&bull;</span>
-                                                <span>{timeAgo(featured.createdAt)}</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </article>
-                            </Link>
-                        )}
-
-                        {/* Título da seção */}
-                        {rest.length > 0 && (
-                            <div className="mb-6 flex items-center gap-4">
-                                <h3 className="font-blackletter text-2xl text-foreground">
-                                    Feitos recentes
-                                </h3>
-                                <span className="rule-gold h-px flex-1" />
-                            </div>
-                        )}
-
-                        {/* Grid de vídeos */}
-                        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                            {rest.map((video) => (
-                                <Link
-                                    key={video.id}
-                                    href={`/videos/watch/${video.id}`}
-                                    className="group block"
-                                >
-                                    <article className="overflow-hidden rounded-t-[2.5rem] rounded-b-xl border border-border bg-card transition-all duration-300 hover:-translate-y-1 hover:border-gold/40 hover:shadow-xl hover:shadow-primary/10">
-                                        <div className="relative aspect-video overflow-hidden">
-                                            {video.thumbnailUrl ? (
-                                                <img
-                                                    src={video.thumbnailUrl || "/placeholder.svg"}
-                                                    alt={video.title}
-                                                    className="size-full object-cover transition-transform duration-500 group-hover:scale-105"
-                                                />
-                                            ) : (
-                                                <div className="flex size-full items-center justify-center bg-secondary">
-                                                    <Play className="size-8 text-muted-foreground" />
+                                                <div className="absolute inset-0 flex items-center justify-center bg-foreground/0 opacity-0 transition-opacity duration-300 group-hover:bg-foreground/10 group-hover:opacity-100">
+                                                    <span className="flex size-11 items-center justify-center rounded-full border border-background/70 bg-background/80 backdrop-blur-sm">
+                                                        <Play className="ml-0.5 size-4 fill-foreground text-foreground" aria-hidden="true" />
+                                                    </span>
                                                 </div>
-                                            )}
-                                            <div className="absolute inset-0 bg-gradient-to-t from-background/60 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
 
-                                            {/* Play no hover */}
-                                            <div className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-                        <span className="flex size-12 items-center justify-center rounded-full border border-gold/50 bg-background/60 backdrop-blur-sm">
-                          <Play className="ml-0.5 size-5 fill-foreground text-foreground" />
-                        </span>
+                                                <span className="wax-seal absolute bottom-2.5 right-2.5 rounded-md bg-background/90 px-2 py-0.5 text-xs font-medium tabular-nums text-foreground">
+                                                    {video.formattedDuration || "00:00"}
+                                                </span>
                                             </div>
 
-                                            {/* Duração */}
-                                            <span className="absolute bottom-3 right-3 rounded border border-gold/25 bg-background/85 px-2 py-0.5 text-xs font-medium tabular-nums text-gold">
-                        {video.formattedDuration || "00:00"}
-                      </span>
-                                        </div>
-
-                                        <div className="bg-marble p-4">
-                                            <h3 className="line-clamp-2 min-h-10 font-medium leading-snug text-foreground transition-colors group-hover:text-gold">
-                                                {video.title}
-                                            </h3>
-                                            <div className="mt-3 flex items-center justify-between border-t border-border/60 pt-3">
-                        <span className="flex items-center gap-2 truncate text-sm text-muted-foreground">
-                          <Avatar name={video.userName} url={video.userAvatarUrl} />
-                          <span className="truncate">{video.userName}</span>
-                        </span>
-                                                <span className="flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground">
-                          <Eye className="size-3.5 text-gold/60" />
-                                                    {formatViews(video.viewCount)}
-                                                    <span className="text-gold/40">&bull;</span>
-                                                    {timeAgo(video.createdAt)}
-                        </span>
+                                            <div className="p-4">
+                                                <h2 className="line-clamp-2 min-h-10 font-medium leading-snug text-foreground transition-colors group-hover:text-primary">
+                                                    {video.title}
+                                                </h2>
+                                                <div className="mt-3 flex items-center justify-between border-t border-border pt-3">
+                                                    <span className="flex min-w-0 items-center gap-2 text-sm text-muted-foreground">
+                                                        <Avatar name={video.userName} url={video.userAvatarUrl} />
+                                                        <span className="truncate">{video.userName}</span>
+                                                    </span>
+                                                    <span className="flex shrink-0 items-center gap-1 text-xs text-muted-foreground">
+                                                        <Eye className="size-3.5" aria-hidden="true" />
+                                                        <span>{formatViews(video.viewCount)}</span>
+                                                        <span aria-hidden="true">&bull;</span>
+                                                        <time dateTime={video.createdAt}>{timeAgo(video.createdAt)}</time>
+                                                    </span>
+                                                </div>
                                             </div>
-                                        </div>
-                                    </article>
-                                </Link>
+                                        </article>
+                                    </Link>
+                                </li>
                             ))}
+                        </ul>
+
+                        <div aria-live="polite" className="sr-only">
+                            {loadingMore ? "Carregando mais vídeos" : `${videos.length} vídeos carregados`}
                         </div>
 
                         {hasMore && (
                             <div className="mt-12 flex justify-center">
                                 <button
                                     onClick={loadMore}
-                                    className="group inline-flex items-center gap-2 rounded-full border border-gold/40 bg-marble px-8 py-3 text-sm font-medium text-foreground transition-colors hover:border-gold hover:bg-card"
+                                    disabled={loadingMore}
+                                    className="inline-flex items-center gap-2 rounded-md border border-border bg-card px-7 py-2.5 text-sm font-medium text-foreground transition-colors hover:border-accent/60 disabled:cursor-not-allowed disabled:opacity-60"
                                 >
-                                    Revelar mais feitos
-                                    <ArrowRight className="size-4 text-gold transition-transform group-hover:translate-x-1" />
+                                    {loadingMore ? (
+                                        <>
+                                            <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                                            Carregando…
+                                        </>
+                                    ) : (
+                                        <>
+                                            Ver mais vídeos
+                                            <ArrowRight className="size-4" aria-hidden="true" />
+                                        </>
+                                    )}
                                 </button>
                             </div>
                         )}
@@ -314,20 +289,15 @@ export default function VideosPage() {
     );
 }
 
-/* Avatar com moldura dourada e fallback com inicial */
 function Avatar({ name, url }: { name: string; url: string }) {
     const initial = name?.trim()?.charAt(0)?.toUpperCase() || "?";
     return (
-        <span className="flex size-7 shrink-0 items-center justify-center overflow-hidden rounded-full border border-gold/40 bg-secondary">
-      {url ? (
-          <img
-              src={url || "/placeholder.svg"}
-              alt={name}
-              className="size-full object-cover"
-          />
-      ) : (
-          <span className="text-xs font-semibold text-gold">{initial}</span>
-      )}
-    </span>
+        <span className="flex size-6 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border bg-secondary">
+            {url ? (
+                <img src={url} alt="" loading="lazy" decoding="async" className="size-full object-cover" />
+            ) : (
+                <span className="text-[0.65rem] font-semibold text-accent">{initial}</span>
+            )}
+        </span>
     );
 }
