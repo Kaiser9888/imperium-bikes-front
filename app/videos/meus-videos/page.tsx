@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@clerk/nextjs";
 import Link from "next/link";
+import { Trash2, Eye, Heart, Clock, Plus, Film } from "lucide-react";
 
 const API_URL = "https://imperium-bikes.onrender.com";
 
@@ -21,6 +22,7 @@ export default function MeusVideosPage() {
     const { getToken } = useAuth();
     const [videos, setVideos] = useState<MyVideo[]>([]);
     const [loading, setLoading] = useState(true);
+    const [deleting, setDeleting] = useState<string | null>(null);
 
     const fetchMyVideos = useCallback(async () => {
         try {
@@ -39,12 +41,13 @@ export default function MeusVideosPage() {
 
     useEffect(() => {
         let cancelled = false;
-        if (!cancelled) fetchMyVideos();
+        fetchMyVideos();
         return () => { cancelled = true; };
     }, [fetchMyVideos]);
 
     const deleteVideo = async (videoId: string) => {
-        if (!confirm("Tem certeza que deseja excluir este video?")) return;
+        if (!confirm("Tem certeza que deseja excluir este vídeo?")) return;
+        setDeleting(videoId);
         try {
             const token = await getToken();
             const res = await fetch(`${API_URL}/api/videos/${videoId}`, {
@@ -55,10 +58,14 @@ export default function MeusVideosPage() {
             if (res.ok) {
                 setVideos((prev) => prev.filter((v) => v.id !== videoId));
             } else {
-                alert("Erro ao excluir video");
+                alert("Erro ao excluir vídeo");
+                await fetchMyVideos();
             }
         } catch (error) {
             console.error("Erro ao excluir:", error);
+            await fetchMyVideos();
+        } finally {
+            setDeleting(null);
         }
     };
 
@@ -68,72 +75,137 @@ export default function MeusVideosPage() {
         return String(views);
     };
 
-    if (loading) {
-        return (
-            <div className="max-w-4xl mx-auto px-4 py-6">
-                <h1 className="font-blackletter text-3xl text-primary mb-6">Meus Videos</h1>
-                <div className="flex justify-center py-12">
-                    <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
-                </div>
-            </div>
-        );
-    }
+    const timeAgo = (date: string) => {
+        if (!date) return "";
+        const now = new Date();
+        const past = new Date(date);
+        const diffMs = now.getTime() - past.getTime();
+        const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+        if (diffDays <= 0) return "Hoje";
+        if (diffDays === 1) return "Ontem";
+        if (diffDays < 7) return `${diffDays}d`;
+        if (diffDays < 30) return `${Math.floor(diffDays / 7)}sem`;
+        return `${Math.floor(diffDays / 30)}m`;
+    };
 
     return (
-        <div className="max-w-4xl mx-auto px-4 py-6">
-            <div className="flex items-center justify-between mb-6">
-                <h1 className="font-blackletter text-3xl text-primary">Meus Videos</h1>
-                {videos.length > 0 && (
-                    <span className="text-sm text-muted-foreground">{videos.length} video(s)</span>
+        <div className="min-h-screen bg-background">
+            <div className="mx-auto max-w-4xl px-4 py-10 sm:px-6">
+                <div className="mb-8 flex items-center justify-between">
+                    <div>
+                        <h1 className="font-blackletter text-3xl text-primary">Meus Vídeos</h1>
+                        <p className="mt-1 text-sm text-muted-foreground">
+                            {videos.length} vídeo{videos.length !== 1 ? "s" : ""} publicado{videos.length !== 1 ? "s" : ""}
+                        </p>
+                    </div>
+                    {videos.length > 0 && (
+                        <Link
+                            href="/videos/upload"
+                            className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+                        >
+                            <Plus className="size-4" />
+                            Novo vídeo
+                        </Link>
+                    )}
+                </div>
+
+                {loading ? (
+                    <div className="space-y-4">
+                        {Array.from({ length: 3 }).map((_, i) => (
+                            <div key={i} className="animate-pulse rounded-xl border border-border bg-card p-4">
+                                <div className="flex gap-4">
+                                    <div className="h-20 w-36 rounded-lg bg-secondary" />
+                                    <div className="flex-1 space-y-2">
+                                        <div className="h-4 w-3/4 rounded bg-secondary" />
+                                        <div className="h-3 w-1/2 rounded bg-secondary" />
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                ) : videos.length === 0 ? (
+                    <div className="rounded-xl border border-border bg-card px-8 py-16 text-center">
+                        <Film className="mx-auto size-10 text-muted-foreground/60" />
+                        <p className="mt-4 font-serif text-lg text-foreground">Nenhum vídeo publicado</p>
+                        <p className="mt-1 text-sm text-muted-foreground">Publique seu primeiro vídeo e veja-o aqui.</p>
+                        <Link
+                            href="/videos/upload"
+                            className="mt-6 inline-flex items-center gap-2 rounded-lg bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+                        >
+                            Publicar vídeo
+                        </Link>
+                    </div>
+                ) : (
+                    <div className="space-y-3">
+                        {videos.map((video) => (
+                            <div
+                                key={video.id}
+                                className="group rounded-xl border border-border bg-card p-4 transition-colors hover:border-primary/30"
+                            >
+                                <div className="flex items-center gap-4">
+                                    <Link
+                                        href={`/videos/watch/${video.id}`}
+                                        className="relative h-20 w-36 flex-shrink-0 overflow-hidden rounded-lg bg-secondary"
+                                    >
+                                        {video.thumbnailUrl ? (
+                                            <img
+                                                src={video.thumbnailUrl}
+                                                alt=""
+                                                className="size-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                            />
+                                        ) : (
+                                            <div className="flex size-full items-center justify-center text-muted-foreground">
+                                                <Film className="size-5" />
+                                            </div>
+                                        )}
+                                        <span className="absolute bottom-1 right-1 rounded bg-black/75 px-1.5 py-0.5 text-[0.6rem] font-medium text-white">
+                                            {video.formattedDuration || "00:00"}
+                                        </span>
+                                    </Link>
+
+                                    <div className="min-w-0 flex-1">
+                                        <Link
+                                            href={`/videos/watch/${video.id}`}
+                                            className="font-medium leading-snug text-foreground transition-colors hover:text-primary line-clamp-1"
+                                        >
+                                            {video.title || "Sem título"}
+                                        </Link>
+                                        <div className="mt-1.5 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                                            <span className="inline-flex items-center gap-1">
+                                                <Eye className="size-3" />
+                                                {formatViews(video.viewCount)}
+                                            </span>
+                                            <span className="inline-flex items-center gap-1">
+                                                <Heart className="size-3" />
+                                                {video.likesCount}
+                                            </span>
+                                            {video.createdAt && (
+                                                <span className="inline-flex items-center gap-1">
+                                                    <Clock className="size-3" />
+                                                    {timeAgo(video.createdAt)}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <button
+                                        onClick={() => deleteVideo(video.id)}
+                                        disabled={deleting === video.id}
+                                        className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive disabled:opacity-50"
+                                        title="Excluir vídeo"
+                                    >
+                                        {deleting === video.id ? (
+                                            <div className="size-4 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
+                                        ) : (
+                                            <Trash2 className="size-4" />
+                                        )}
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
                 )}
             </div>
-
-            {videos.length === 0 ? (
-                <div className="text-center py-16">
-                    <p className="text-muted-foreground text-lg">Voce ainda nao publicou nenhum video</p>
-                    <Link
-                        href="/videos/upload"
-                        className="inline-block mt-4 bg-primary text-primary-foreground px-6 py-2 rounded-full text-sm font-medium"
-                    >
-                        Publicar video
-                    </Link>
-                </div>
-            ) : (
-                <div className="space-y-3">
-                    {videos.map((video) => (
-                        <div key={video.id} className="flex items-center gap-4 p-3 bg-card border border-border rounded-xl">
-                            <Link href={`/videos/watch/${video.id}`} className="relative w-40 aspect-video rounded-lg overflow-hidden bg-secondary flex-shrink-0">
-                                {video.thumbnailUrl ? (
-                                    <img src={video.thumbnailUrl} alt="" className="w-full h-full object-cover" />
-                                ) : (
-                                    <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xs">Sem capa</div>
-                                )}
-                                <span className="absolute bottom-1 right-1 bg-black/80 text-white text-[0.6rem] px-1 rounded">
-                  {video.formattedDuration || "00:00"}
-                </span>
-                            </Link>
-                            <div className="flex-1 min-w-0">
-                                <Link href={`/videos/watch/${video.id}`} className="font-medium text-sm line-clamp-1 hover:text-primary">
-                                    {video.title || "Sem titulo"}
-                                </Link>
-                                <p className="text-xs text-muted-foreground mt-1">
-                                    {formatViews(video.viewCount)} views &middot; {video.likesCount} likes
-                                </p>
-                            </div>
-                            <button
-                                onClick={() => deleteVideo(video.id)}
-                                className="text-muted-foreground hover:text-destructive transition-colors p-2 flex-shrink-0"
-                                title="Excluir video"
-                            >
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <polyline points="3 6 5 6 21 6" />
-                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                                </svg>
-                            </button>
-                        </div>
-                    ))}
-                </div>
-            )}
         </div>
     );
 }
