@@ -5,7 +5,7 @@ const apiKey = process.env.NEXT_PUBLIC_STREAM_API_KEY!;
 export const streamClient = StreamChat.getInstance(apiKey);
 
 export async function connectUser(userId: string, userName: string, userImage: string) {
-    const token = await fetch("/api/chat/token", {
+    const token = await fetch("/api/stream-token", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId }),
