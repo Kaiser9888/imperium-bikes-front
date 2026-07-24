@@ -5,6 +5,8 @@ import { useParams } from "next/navigation";
 import { useAuth } from "@clerk/nextjs";
 import MuxPlayer from "@mux/mux-player-react";
 import Link from "next/link";
+import { VideoComments } from "@/components/video/VideoComments";
+import { Heart, ChevronDown } from "lucide-react";
 
 const API_URL = "https://imperium-bikes.onrender.com";
 
@@ -33,6 +35,7 @@ interface RelatedVideo {
 }
 
 function timeAgo(date: string) {
+    if (!date) return "";
     const now = new Date();
     const past = new Date(date);
     const diffMs = now.getTime() - past.getTime();
@@ -63,54 +66,36 @@ export default function WatchPage() {
 
     useEffect(() => {
         let cancelled = false;
-
         const fetchVideo = async () => {
             try {
                 const res = await fetch(`${API_URL}/api/videos/${id}`);
                 const data = await res.json();
-                if (!cancelled) {
-                    setVideo(data);
-                    setLikesCount(data.likesCount || 0);
-                    setLoading(false);
-                }
-            } catch {
-                if (!cancelled) setLoading(false);
-            }
+                if (!cancelled) { setVideo(data); setLikesCount(data.likesCount || 0); setLoading(false); }
+            } catch { if (!cancelled) setLoading(false); }
         };
-
         const fetchRelated = async () => {
             try {
                 const res = await fetch(`${API_URL}/api/videos?page=0&size=6`);
                 const data = await res.json();
-                if (!cancelled) {
-                    setRelated((data.content || []).filter((v: RelatedVideo) => v.id !== id));
-                }
+                if (!cancelled) setRelated((data.content || []).filter((v: RelatedVideo) => v.id !== id));
             } catch { /* silencioso */ }
         };
-
-        fetchVideo();
-        fetchRelated();
-
+        fetchVideo(); fetchRelated();
         return () => { cancelled = true; };
     }, [id]);
 
     useEffect(() => {
         if (!currentUserId || !id) return;
         let cancelled = false;
-
         const checkLiked = async () => {
             try {
                 const token = await getToken();
-                const res = await fetch(`${API_URL}/api/videos/${id}/liked`, {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
+                const res = await fetch(`${API_URL}/api/videos/${id}/liked`, { headers: { Authorization: `Bearer ${token}` } });
                 const data = await res.json();
                 if (!cancelled) setLiked(data.liked);
             } catch { /* silencioso */ }
         };
-
         checkLiked();
-
         return () => { cancelled = true; };
     }, [id, currentUserId, getToken]);
 
@@ -118,16 +103,10 @@ export default function WatchPage() {
         if (!currentUserId) return;
         try {
             const token = await getToken();
-            const res = await fetch(`${API_URL}/api/videos/${id}/like`, {
-                method: "POST",
-                headers: { Authorization: `Bearer ${token}` },
-            });
+            const res = await fetch(`${API_URL}/api/videos/${id}/like`, { method: "POST", headers: { Authorization: `Bearer ${token}` } });
             const data = await res.json();
-            setLiked(data.liked);
-            setLikesCount(data.count);
-        } catch (error) {
-            console.error("Erro ao curtir:", error);
-        }
+            setLiked(data.liked); setLikesCount(data.count);
+        } catch (error) { console.error("Erro ao curtir:", error); }
     };
 
     if (loading) {
@@ -141,7 +120,7 @@ export default function WatchPage() {
     if (!video) {
         return (
             <div className="min-h-screen bg-background flex items-center justify-center">
-                <p className="text-muted-foreground">Video nao encontrado</p>
+                <p className="text-muted-foreground">Vídeo não encontrado</p>
             </div>
         );
     }
@@ -150,10 +129,13 @@ export default function WatchPage() {
 
     return (
         <div className="min-h-screen bg-background">
-            <div className="max-w-7xl mx-auto px-4 py-6">
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div className="lg:col-span-2 space-y-4">
-                        <div className="rounded-2xl overflow-hidden bg-black">
+            <div className="mx-auto max-w-7xl px-4 py-6">
+                <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+
+                    {/* Coluna principal */}
+                    <div className="lg:col-span-2 space-y-6">
+                        {/* Player */}
+                        <div className="overflow-hidden rounded-2xl bg-black shadow-lg">
                             {playbackId ? (
                                 <MuxPlayer
                                     playbackId={playbackId}
@@ -163,78 +145,93 @@ export default function WatchPage() {
                                     className="w-full aspect-video"
                                 />
                             ) : (
-                                <div className="aspect-video flex items-center justify-center text-muted-foreground bg-secondary">Processando...</div>
+                                <div className="aspect-video flex items-center justify-center bg-secondary text-muted-foreground">
+                                    Processando vídeo...
+                                </div>
                             )}
                         </div>
 
+                        {/* Título */}
                         <h1 className="text-xl font-bold text-foreground">{video.title}</h1>
 
-                        <div className="flex items-center justify-between flex-wrap gap-3">
+                        {/* Autor + Like */}
+                        <div className="flex items-center justify-between flex-wrap gap-4">
                             <div className="flex items-center gap-3">
-                                {video.userAvatarUrl && <img src={video.userAvatarUrl} alt="" className="w-10 h-10 rounded-full" />}
+                                {video.userAvatarUrl && (
+                                    <img src={video.userAvatarUrl} alt="" className="h-10 w-10 rounded-full ring-2 ring-border/50" />
+                                )}
                                 <div>
                                     <p className="font-medium text-foreground">{video.userName}</p>
                                     <p className="text-xs text-muted-foreground">
-                                        {formatViews(video.viewCount)} visualizacoes &middot; {timeAgo(video.createdAt)}
+                                        {formatViews(video.viewCount)} visualizações &middot; {timeAgo(video.createdAt)}
                                     </p>
                                 </div>
                             </div>
+
                             <button
                                 onClick={toggleLike}
-                                className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                                    liked ? "bg-red-50 text-red-600 border border-red-200" : "bg-card border border-border text-muted-foreground hover:text-red-500"
+                                className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-all ${
+                                    liked
+                                        ? "bg-red-50 text-red-600 border border-red-200 shadow-sm"
+                                        : "border border-border bg-card text-muted-foreground hover:border-red-300 hover:text-red-500"
                                 }`}
                             >
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill={liked ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2">
-                                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-                                </svg>
-                                {likesCount}
+                                <Heart className={`h-4 w-4 ${liked ? "fill-current" : ""}`} />
+                                <span>{likesCount}</span>
                             </button>
                         </div>
 
+                        {/* Ver mais */}
                         <button
                             onClick={() => setShowMore(!showMore)}
-                            className="w-full flex items-center justify-between px-4 py-3 bg-card border border-border rounded-xl hover:bg-secondary transition-colors"
+                            className="flex w-full items-center justify-between rounded-xl border border-border bg-card px-4 py-3 text-sm font-medium transition-colors hover:bg-secondary"
                         >
-                            <span className="text-sm font-medium">Ver mais</span>
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-                                 className={`transition-transform ${showMore ? "rotate-180" : ""}`}>
-                                <polyline points="6 9 12 15 18 9" />
-                            </svg>
+                            <span>Ver mais</span>
+                            <ChevronDown className={`h-4 w-4 transition-transform ${showMore ? "rotate-180" : ""}`} />
                         </button>
 
                         {showMore && video.description && (
-                            <div className="p-4 bg-card border border-border rounded-xl">
-                                <p className="text-sm text-muted-foreground whitespace-pre-wrap">{video.description}</p>
+                            <div className="rounded-xl border border-border bg-card p-4">
+                                <p className="whitespace-pre-wrap text-sm text-muted-foreground">{video.description}</p>
                             </div>
                         )}
+
+                        {/* Comentários */}
+                        <div className="rounded-xl border border-border bg-card p-4">
+                            <VideoComments videoId={video.id} />
+                        </div>
                     </div>
 
-                    <div className="lg:col-span-1 space-y-4">
-                        <h2 className="text-lg font-semibold text-foreground">Videos Relacionados</h2>
-                        {related.length === 0 ? (
-                            <p className="text-sm text-muted-foreground">Nenhum video encontrado</p>
-                        ) : (
-                            related.map((v) => (
-                                <Link key={v.id} href={`/videos/watch/${v.id}`} className="flex gap-3 group">
-                                    <div className="relative w-40 aspect-video rounded-lg overflow-hidden bg-secondary flex-shrink-0">
-                                        {v.thumbnailUrl ? (
-                                            <img src={v.thumbnailUrl} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
-                                        ) : (
-                                            <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xs">Sem capa</div>
-                                        )}
-                                        <span className="absolute bottom-1 right-1 bg-black/80 text-white text-[0.6rem] px-1 rounded">
-                      {v.formattedDuration || "00:00"}
-                    </span>
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <h3 className="text-sm font-medium line-clamp-2 group-hover:text-primary transition-colors">{v.title}</h3>
-                                        <p className="text-xs text-muted-foreground mt-1">{v.userName}</p>
-                                        <p className="text-xs text-muted-foreground">{formatViews(v.viewCount)} views &middot; {timeAgo(v.createdAt)}</p>
-                                    </div>
-                                </Link>
-                            ))
-                        )}
+                    {/* Sidebar */}
+                    <div className="lg:col-span-1">
+                        <div className="sticky top-20 space-y-4">
+                            <h2 className="text-lg font-semibold text-foreground">Vídeos Relacionados</h2>
+                            {related.length === 0 ? (
+                                <p className="text-sm text-muted-foreground">Nenhum vídeo encontrado</p>
+                            ) : (
+                                <div className="space-y-3">
+                                    {related.map((v) => (
+                                        <Link key={v.id} href={`/videos/watch/${v.id}`} className="group flex gap-3">
+                                            <div className="relative h-20 w-36 flex-shrink-0 overflow-hidden rounded-lg bg-secondary">
+                                                {v.thumbnailUrl ? (
+                                                    <img src={v.thumbnailUrl} alt="" className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" />
+                                                ) : (
+                                                    <div className="flex h-full w-full items-center justify-center text-xs text-muted-foreground">Sem capa</div>
+                                                )}
+                                                <span className="absolute bottom-1 right-1 rounded bg-black/80 px-1.5 py-0.5 text-[0.6rem] text-white">
+                          {v.formattedDuration || "00:00"}
+                        </span>
+                                            </div>
+                                            <div className="min-w-0 flex-1">
+                                                <h3 className="line-clamp-2 text-sm font-medium transition-colors group-hover:text-primary">{v.title}</h3>
+                                                <p className="mt-1 text-xs text-muted-foreground">{v.userName}</p>
+                                                <p className="text-xs text-muted-foreground">{formatViews(v.viewCount)} views &middot; {timeAgo(v.createdAt)}</p>
+                                            </div>
+                                        </Link>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>
