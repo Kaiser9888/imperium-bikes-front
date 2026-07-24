@@ -10,7 +10,6 @@ import {
 } from "stream-chat-react";
 import { streamClient, connectUser, disconnectUser } from "@/lib/stream-chat";
 import { useAuth } from "@clerk/nextjs";
-import "stream-chat-react/css/v2/index.css";
 import type { Channel as StreamChannel } from "stream-chat";
 
 export function VideoComments({ videoId }: { videoId: string }) {
