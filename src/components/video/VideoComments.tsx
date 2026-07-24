@@ -13,7 +13,7 @@ import { useAuth } from "@clerk/nextjs";
 import type { Channel as StreamChannel } from "stream-chat";
 
 export function VideoComments({ videoId }: { videoId: string }) {
-    const { userId } = useAuth();
+    const { userId, getToken } = useAuth();
     const [channel, setChannel] = useState<StreamChannel | null>(null);
     const [ready, setReady] = useState(false);
     const initialized = useRef(false);
@@ -25,7 +25,7 @@ export function VideoComments({ videoId }: { videoId: string }) {
 
         const init = async () => {
             if (!userId) return;
-            await connectUser(userId, userId, "");
+            await connectUser(userId, userId, "", getToken);
             const chatChannel = streamClient.channel("messaging", `video-${videoId}`, {});
             await chatChannel.watch();
             setChannel(chatChannel);
@@ -34,7 +34,7 @@ export function VideoComments({ videoId }: { videoId: string }) {
 
         init();
         return () => { disconnectUser(); };
-    }, [videoId, userId]);
+    }, [videoId, userId, getToken]);
 
     const sendMessage = async () => {
         if (!channel || !inputRef.current?.value.trim()) return;

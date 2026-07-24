@@ -4,12 +4,18 @@ const apiKey = process.env.NEXT_PUBLIC_STREAM_API_KEY!;
 
 export const streamClient = StreamChat.getInstance(apiKey);
 
-export async function connectUser(userId: string, userName: string, userImage: string) {
-    const token = await fetch("/api/stream-token", {
+export async function connectUser(userId: string, userName: string, userImage: string, getToken: () => Promise<string | null>) {
+    const clerkToken = await getToken();
+
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/videos/stream-token`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId }),
-    }).then((res) => res.json());
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${clerkToken}`,
+        },
+    });
+
+    const data = await res.json();
 
     await streamClient.connectUser(
         {
@@ -17,7 +23,7 @@ export async function connectUser(userId: string, userName: string, userImage: s
             name: userName,
             image: userImage,
         },
-        token.token
+        data.token
     );
 }
 
