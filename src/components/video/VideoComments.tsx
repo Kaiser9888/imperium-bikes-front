@@ -26,13 +26,20 @@ export function VideoComments({ videoId }: { videoId: string }) {
 
         const init = async () => {
             if (!userId) {
-                console.log("[DEBUG] userId nao disponivel - usuario nao logado");
                 setReady(true);
                 return;
             }
-            console.log("[DEBUG] Conectando usuario:", userId);
+
             try {
-                await connectUser(userId, userId, "");
+                // Buscar o UUID do backend em vez de usar o ID do Clerk
+                const userRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/sync`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                });
+                const userData = await userRes.json();
+                const backendUserId = userData.id || userId;
+
+                await connectUser(backendUserId, backendUserId, "");
                 const chatChannel = streamClient.channel("messaging", `video-${videoId}`, {});
                 await chatChannel.watch();
                 setChannel(chatChannel);
