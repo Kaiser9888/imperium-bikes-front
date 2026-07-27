@@ -24,7 +24,11 @@ export function VideoComments({ videoId }: { videoId: string }) {
         initialized.current = true;
 
         const init = async () => {
-            if (!userId) return;
+            if (!userId) {
+                console.log("[DEBUG] userId nao disponivel");
+                return;
+            }
+            console.log("[DEBUG] Conectando usuario:", userId);
             await connectUser(userId, userId, "");
             const chatChannel = streamClient.channel("messaging", `video-${videoId}`, {});
             await chatChannel.watch();
