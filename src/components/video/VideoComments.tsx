@@ -11,7 +11,9 @@ import {
 // Sem esse CSS os ícones/reações do Stream renderizam sem constraint de
 // tamanho (aparecem gigantes). Precisa estar importado em algum lugar que
 // o Next carregue — aqui ou no layout raiz, mas só uma vez no projeto todo.
-import "stream-chat-react/dist/css/v2/index.css";
+// Confirme o caminho contra a versão instalada (node_modules/stream-chat-react/dist/css/)
+// caso troque de versão da lib no futuro — o nome do arquivo já mudou entre versões.
+import "stream-chat-react/dist/css/index.css";
 import { streamClient, connectUser, disconnectUser } from "@/lib/stream-chat";
 import { useAuth, useUser } from "@clerk/nextjs";
 import type { Channel as StreamChannel } from "stream-chat";
