@@ -8,6 +8,10 @@ import {
     MessageList,
     Window,
 } from "stream-chat-react";
+// Sem esse CSS os ícones/reações do Stream renderizam sem constraint de
+// tamanho (aparecem gigantes). Precisa estar importado em algum lugar que
+// o Next carregue — aqui ou no layout raiz, mas só uma vez no projeto todo.
+import "stream-chat-react/dist/css/v2/index.css";
 import { streamClient, connectUser, disconnectUser } from "@/lib/stream-chat";
 import { useAuth, useUser } from "@clerk/nextjs";
 import type { Channel as StreamChannel } from "stream-chat";
@@ -18,13 +22,17 @@ export function VideoComments({ videoId }: { videoId: string }) {
     const [channel, setChannel] = useState<StreamChannel | null>(null);
     const [ready, setReady] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const initialized = useRef(false);
     const inputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         if (!isLoaded) return;
-        if (initialized.current) return;
-        initialized.current = true;
+
+        // Guarda contra a dupla montagem do React Strict Mode (dev) e contra
+        // desmontagens reais no meio do fluxo assíncrono: se o efeito for
+        // limpo antes do connectUser/watch terminarem, essas continuações
+        // não devem mais tocar em estado nem no client do Stream.
+        let cancelled = false;
+        let didConnect = false;
 
         const init = async () => {
             if (!isSignedIn) {
@@ -39,16 +47,27 @@ export function VideoComments({ videoId }: { videoId: string }) {
                 // connectUser busca o token direto do backend, autenticado pelo
                 // Clerk. O backend é quem resolve o userId — o front não decide
                 // por qual usuário se conectar.
-                await connectUser(userName, userImage, getToken);
+                const userId = await connectUser(userName, userImage, getToken);
+                didConnect = true;
 
-                const chatChannel = streamClient.channel("messaging", `video-${videoId}`, {
-                    // members opcional: se quiser restringir quem pode ver o canal,
-                    // adicione os membros aqui em vez de deixar o canal público.
+                if (cancelled) return;
+
+                // Tipo "livestream" em vez de "messaging": no Stream, canais
+                // "messaging" só permitem leitura/escrita para membros
+                // explícitos. Para uma seção de comentários pública por vídeo,
+                // "livestream" já vem com permissão para qualquer usuário
+                // autenticado entrar e postar, sem precisar de lista de membros.
+                const chatChannel = streamClient.channel("livestream", `video-${videoId}`, {
+                    members: [userId],
                 });
                 await chatChannel.watch();
+
+                if (cancelled) return;
+
                 setChannel(chatChannel);
                 setReady(true);
             } catch (err) {
+                if (cancelled) return;
                 console.error("[VideoComments] Erro ao conectar:", err);
                 setError(err instanceof Error ? err.message : "Erro ao conectar ao chat");
                 setReady(true);
@@ -58,8 +77,10 @@ export function VideoComments({ videoId }: { videoId: string }) {
         init();
 
         return () => {
-            disconnectUser();
-            initialized.current = false;
+            cancelled = true;
+            if (didConnect) {
+                disconnectUser();
+            }
         };
     }, [videoId, isSignedIn, isLoaded, getToken, clerkUser]);
 
