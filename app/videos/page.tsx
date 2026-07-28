@@ -126,7 +126,7 @@ export default function VideosPage() {
                          &amp;
                     </h1>
                     <p className="mx-auto mt-4 max-w-xl text-pretty leading-relaxed text-muted-foreground">
-                        
+
                     </p>
                     <div className="rule-gold mx-auto mt-8 max-w-xs" />
                 </header>

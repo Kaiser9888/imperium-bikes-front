@@ -1,152 +1,149 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
-import {
-    Chat,
-    Channel,
-    ChannelHeader,
-    MessageList,
-    Window,
-} from "stream-chat-react";
-// Sem esse CSS os ícones/reações do Stream renderizam sem constraint de
-// tamanho (aparecem gigantes). Precisa estar importado em algum lugar que
-// o Next carregue — aqui ou no layout raiz, mas só uma vez no projeto todo.
-// Confirme o caminho contra a versão instalada (node_modules/stream-chat-react/dist/css/)
-// caso troque de versão da lib no futuro — o nome do arquivo já mudou entre versões.
-import "stream-chat-react/dist/css/index.css";
-import { streamClient, connectUser, disconnectUser } from "@/lib/stream-chat";
-import { useAuth, useUser } from "@clerk/nextjs";
-import type { Channel as StreamChannel } from "stream-chat";
+import { useState, useEffect, useCallback } from "react";
+import { useAuth } from "@clerk/nextjs";
+
+interface Comment {
+    id: string;
+    text: string;
+    userName: string;
+    userAvatar: string;
+    createdAt: string;
+}
 
 export function VideoComments({ videoId }: { videoId: string }) {
-    const { isLoaded, isSignedIn, getToken } = useAuth();
-    const { user: clerkUser } = useUser();
-    const [channel, setChannel] = useState<StreamChannel | null>(null);
-    const [ready, setReady] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-    const inputRef = useRef<HTMLInputElement>(null);
+    const { isSignedIn, getToken } = useAuth();
+    const [comments, setComments] = useState<Comment[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [text, setText] = useState("");
+    const [sending, setSending] = useState(false);
+
+    const fetchComments = useCallback(async () => {
+        try {
+            const res = await fetch(
+                `${process.env.NEXT_PUBLIC_API_URL}/api/videos/${videoId}/comments?limit=20`
+            );
+            const data = await res.json();
+            setComments(data);
+        } catch (error) {
+            console.error("Erro ao buscar comentários:", error);
+        } finally {
+            setLoading(false);
+        }
+    }, [videoId]);
 
     useEffect(() => {
-        if (!isLoaded) return;
+        fetchComments();
+    }, [fetchComments]);
 
-        // Guarda contra a dupla montagem do React Strict Mode (dev) e contra
-        // desmontagens reais no meio do fluxo assíncrono: se o efeito for
-        // limpo antes do connectUser/watch terminarem, essas continuações
-        // não devem mais tocar em estado nem no client do Stream.
-        let cancelled = false;
-        let didConnect = false;
+    const sendComment = async () => {
+        if (!text.trim() || sending) return;
 
-        const init = async () => {
-            if (!isSignedIn) {
-                setReady(true);
-                return;
-            }
-
-            try {
-                const userName = clerkUser?.fullName || clerkUser?.username || "Usuário";
-                const userImage = clerkUser?.imageUrl || "";
-
-                // connectUser busca o token direto do backend, autenticado pelo
-                // Clerk. O backend é quem resolve o userId — o front não decide
-                // por qual usuário se conectar.
-                const userId = await connectUser(userName, userImage, getToken);
-                didConnect = true;
-
-                if (cancelled) return;
-
-                // Tipo "livestream" em vez de "messaging": no Stream, canais
-                // "messaging" só permitem leitura/escrita para membros
-                // explícitos. Para uma seção de comentários pública por vídeo,
-                // "livestream" já vem com permissão para qualquer usuário
-                // autenticado entrar e postar, sem precisar de lista de membros.
-                const chatChannel = streamClient.channel("livestream", `video-${videoId}`, {
-                    members: [userId],
-                });
-                await chatChannel.watch();
-
-                if (cancelled) return;
-
-                setChannel(chatChannel);
-                setReady(true);
-            } catch (err) {
-                if (cancelled) return;
-                console.error("[VideoComments] Erro ao conectar:", err);
-                setError(err instanceof Error ? err.message : "Erro ao conectar ao chat");
-                setReady(true);
-            }
-        };
-
-        init();
-
-        return () => {
-            cancelled = true;
-            if (didConnect) {
-                disconnectUser();
-            }
-        };
-    }, [videoId, isSignedIn, isLoaded, getToken, clerkUser]);
-
-    const sendMessage = async () => {
-        if (!channel || !inputRef.current?.value.trim()) return;
-        await channel.sendMessage({ text: inputRef.current.value });
-        inputRef.current.value = "";
+        setSending(true);
+        try {
+            const token = await getToken();
+            const res = await fetch(
+                `${process.env.NEXT_PUBLIC_API_URL}/api/videos/${videoId}/comments`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${token}`,
+                    },
+                    body: JSON.stringify({ text: text.trim() }),
+                }
+            );
+            const newComment = await res.json();
+            setComments((prev) => [newComment, ...prev]);
+            setText("");
+        } catch (error) {
+            console.error("Erro ao enviar comentário:", error);
+        } finally {
+            setSending(false);
+        }
     };
 
-    if (!ready) {
-        return (
-            <div className="flex items-center justify-center py-8">
-                <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
-            </div>
+    const timeAgo = (date: string) => {
+        const diff = Math.floor(
+            (Date.now() - new Date(date).getTime()) / (1000 * 60 * 60 * 24)
         );
-    }
-
-    if (!isSignedIn) {
-        return (
-            <div className="py-8 text-center">
-                <p className="text-sm text-muted-foreground">Faça login para comentar</p>
-            </div>
-        );
-    }
-
-    if (error || !channel) {
-        return (
-            <div className="py-8 text-center">
-                <p className="text-sm text-destructive">
-                    {error || "Não foi possível carregar os comentários"}
-                </p>
-            </div>
-        );
-    }
+        if (diff === 0) return "Hoje";
+        if (diff === 1) return "Ontem";
+        if (diff < 7) return `${diff}d`;
+        if (diff < 30) return `${Math.floor(diff / 7)}sem`;
+        if (diff < 365) return `${Math.floor(diff / 30)}m`;
+        return `${Math.floor(diff / 365)}a`;
+    };
 
     return (
         <div className="mt-6">
-            <h3 className="mb-4 text-lg font-semibold">Comentários</h3>
-            <Chat client={streamClient} theme="str-chat__theme-light">
-                <Channel channel={channel}>
-                    <Window>
-                        <ChannelHeader />
-                        {/* MessageList já renderiza reações (curtidas/emojis) por padrão
-                            via o menu de reação em cada mensagem — não é necessário
-                            código extra para habilitar curtir comentários. */}
-                        <MessageList />
-                        <div className="flex gap-2 p-3">
-                            <input
-                                ref={inputRef}
-                                type="text"
-                                placeholder="Escreva um comentário..."
-                                className="flex-1 rounded-lg border border-border bg-card px-4 py-2 text-sm focus:border-primary focus:outline-none"
-                                onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-                            />
-                            <button
-                                onClick={sendMessage}
-                                className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-                            >
-                                Enviar
-                            </button>
+            <h3 className="mb-4 text-lg font-semibold">
+                Comentários ({comments.length})
+            </h3>
+
+            {isSignedIn && (
+                <div className="mb-6 flex gap-3">
+                    <input
+                        type="text"
+                        value={text}
+                        onChange={(e) => setText(e.target.value)}
+                        placeholder="Adicione um comentário..."
+                        maxLength={1000}
+                        className="flex-1 rounded-lg border border-border bg-card px-4 py-2.5 text-sm focus:border-primary focus:outline-none"
+                        onKeyDown={(e) => e.key === "Enter" && sendComment()}
+                    />
+                    <button
+                        onClick={sendComment}
+                        disabled={!text.trim() || sending}
+                        className="rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                    >
+                        {sending ? "Enviando..." : "Enviar"}
+                    </button>
+                </div>
+            )}
+
+            {loading ? (
+                <div className="flex justify-center py-8">
+                    <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
+                </div>
+            ) : comments.length === 0 ? (
+                <p className="py-8 text-center text-sm text-muted-foreground">
+                    Nenhum comentário ainda. Seja o primeiro!
+                </p>
+            ) : (
+                <div className="space-y-4">
+                    {comments.map((comment) => (
+                        <div key={comment.id} className="flex gap-3">
+                            <div className="h-8 w-8 flex-shrink-0 overflow-hidden rounded-full bg-secondary">
+                                {comment.userAvatar ? (
+                                    <img
+                                        src={comment.userAvatar}
+                                        alt=""
+                                        className="h-full w-full object-cover"
+                                    />
+                                ) : (
+                                    <div className="flex h-full w-full items-center justify-center text-xs font-medium text-muted-foreground">
+                                        {comment.userName?.charAt(0)?.toUpperCase() || "?"}
+                                    </div>
+                                )}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium">
+                    {comment.userName}
+                  </span>
+                                    <span className="text-xs text-muted-foreground">
+                    {timeAgo(comment.createdAt)}
+                  </span>
+                                </div>
+                                <p className="mt-0.5 text-sm text-foreground whitespace-pre-wrap">
+                                    {comment.text}
+                                </p>
+                            </div>
                         </div>
-                    </Window>
-                </Channel>
-            </Chat>
+                    ))}
+                </div>
+            )}
         </div>
     );
 }
