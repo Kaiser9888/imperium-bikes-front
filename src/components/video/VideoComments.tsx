@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@clerk/nextjs";
 
 interface Comment {
@@ -11,6 +11,19 @@ interface Comment {
     createdAt: string;
 }
 
+function timeAgo(date: string) {
+    const now = new Date();
+    const past = new Date(date);
+    const diffMs = now.getTime() - past.getTime();
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    if (diffDays === 0) return "Hoje";
+    if (diffDays === 1) return "Ontem";
+    if (diffDays < 7) return `${diffDays}d`;
+    if (diffDays < 30) return `${Math.floor(diffDays / 7)}sem`;
+    if (diffDays < 365) return `${Math.floor(diffDays / 30)}m`;
+    return `${Math.floor(diffDays / 365)}a`;
+}
+
 export function VideoComments({ videoId }: { videoId: string }) {
     const { isSignedIn, getToken } = useAuth();
     const [comments, setComments] = useState<Comment[]>([]);
@@ -18,23 +31,33 @@ export function VideoComments({ videoId }: { videoId: string }) {
     const [text, setText] = useState("");
     const [sending, setSending] = useState(false);
 
-    const fetchComments = useCallback(async () => {
-        try {
-            const res = await fetch(
-                `${process.env.NEXT_PUBLIC_API_URL}/api/videos/${videoId}/comments?limit=20`
-            );
-            const data = await res.json();
-            setComments(data);
-        } catch (error) {
-            console.error("Erro ao buscar comentários:", error);
-        } finally {
-            setLoading(false);
-        }
-    }, [videoId]);
-
     useEffect(() => {
+        let cancelled = false;
+
+        const fetchComments = async () => {
+            try {
+                const res = await fetch(
+                    `${process.env.NEXT_PUBLIC_API_URL}/api/videos/${videoId}/comments?limit=20`
+                );
+                const data = await res.json();
+                if (!cancelled) {
+                    setComments(data);
+                    setLoading(false);
+                }
+            } catch (error) {
+                if (!cancelled) {
+                    console.error("Erro ao buscar comentários:", error);
+                    setLoading(false);
+                }
+            }
+        };
+
         fetchComments();
-    }, [fetchComments]);
+
+        return () => {
+            cancelled = true;
+        };
+    }, [videoId]);
 
     const sendComment = async () => {
         if (!text.trim() || sending) return;
@@ -61,18 +84,6 @@ export function VideoComments({ videoId }: { videoId: string }) {
         } finally {
             setSending(false);
         }
-    };
-
-    const timeAgo = (date: string) => {
-        const diff = Math.floor(
-            (Date.now() - new Date(date).getTime()) / (1000 * 60 * 60 * 24)
-        );
-        if (diff === 0) return "Hoje";
-        if (diff === 1) return "Ontem";
-        if (diff < 7) return `${diff}d`;
-        if (diff < 30) return `${Math.floor(diff / 7)}sem`;
-        if (diff < 365) return `${Math.floor(diff / 30)}m`;
-        return `${Math.floor(diff / 365)}a`;
     };
 
     return (
