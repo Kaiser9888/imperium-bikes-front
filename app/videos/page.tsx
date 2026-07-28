@@ -123,7 +123,7 @@ export default function VideosPage() {
 
                     </span>
                     <h1 className="font-serif text-4xl leading-tight text-foreground sm:text-5xl">
-                         &amp;
+                        
                     </h1>
                     <p className="mx-auto mt-4 max-w-xl text-pretty leading-relaxed text-muted-foreground">
 
