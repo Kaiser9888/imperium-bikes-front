@@ -9,13 +9,15 @@ import {
     Window,
 } from "stream-chat-react";
 import { streamClient, connectUser, disconnectUser } from "@/lib/stream-chat";
-import { useAuth } from "@clerk/nextjs";
+import { useAuth, useUser } from "@clerk/nextjs";
 import type { Channel as StreamChannel } from "stream-chat";
 
 export function VideoComments({ videoId }: { videoId: string }) {
-    const { userId, isLoaded } = useAuth();
+    const { isLoaded, isSignedIn, getToken } = useAuth();
+    const { user: clerkUser } = useUser();
     const [channel, setChannel] = useState<StreamChannel | null>(null);
     const [ready, setReady] = useState(false);
+    const [error, setError] = useState<string | null>(null);
     const initialized = useRef(false);
     const inputRef = useRef<HTMLInputElement>(null);
 
@@ -25,34 +27,41 @@ export function VideoComments({ videoId }: { videoId: string }) {
         initialized.current = true;
 
         const init = async () => {
-            if (!userId) {
+            if (!isSignedIn) {
                 setReady(true);
                 return;
             }
 
             try {
-                // Buscar o UUID do backend em vez de usar o ID do Clerk
-                const userRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/sync`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                });
-                const userData = await userRes.json();
-                const backendUserId = userData.id || userId;
+                const userName = clerkUser?.fullName || clerkUser?.username || "Usuário";
+                const userImage = clerkUser?.imageUrl || "";
 
-                await connectUser(backendUserId, backendUserId, "");
-                const chatChannel = streamClient.channel("messaging", `video-${videoId}`, {});
+                // connectUser busca o token direto do backend, autenticado pelo
+                // Clerk. O backend é quem resolve o userId — o front não decide
+                // por qual usuário se conectar.
+                await connectUser(userName, userImage, getToken);
+
+                const chatChannel = streamClient.channel("messaging", `video-${videoId}`, {
+                    // members opcional: se quiser restringir quem pode ver o canal,
+                    // adicione os membros aqui em vez de deixar o canal público.
+                });
                 await chatChannel.watch();
                 setChannel(chatChannel);
                 setReady(true);
-            } catch (error) {
-                console.error("[DEBUG] Erro ao conectar:", error);
+            } catch (err) {
+                console.error("[VideoComments] Erro ao conectar:", err);
+                setError(err instanceof Error ? err.message : "Erro ao conectar ao chat");
                 setReady(true);
             }
         };
 
         init();
-        return () => { disconnectUser(); };
-    }, [videoId, userId, isLoaded]);
+
+        return () => {
+            disconnectUser();
+            initialized.current = false;
+        };
+    }, [videoId, isSignedIn, isLoaded, getToken, clerkUser]);
 
     const sendMessage = async () => {
         if (!channel || !inputRef.current?.value.trim()) return;
@@ -68,10 +77,20 @@ export function VideoComments({ videoId }: { videoId: string }) {
         );
     }
 
-    if (!channel) {
+    if (!isSignedIn) {
         return (
             <div className="py-8 text-center">
                 <p className="text-sm text-muted-foreground">Faça login para comentar</p>
+            </div>
+        );
+    }
+
+    if (error || !channel) {
+        return (
+            <div className="py-8 text-center">
+                <p className="text-sm text-destructive">
+                    {error || "Não foi possível carregar os comentários"}
+                </p>
             </div>
         );
     }
@@ -83,6 +102,9 @@ export function VideoComments({ videoId }: { videoId: string }) {
                 <Channel channel={channel}>
                     <Window>
                         <ChannelHeader />
+                        {/* MessageList já renderiza reações (curtidas/emojis) por padrão
+                            via o menu de reação em cada mensagem — não é necessário
+                            código extra para habilitar curtir comentários. */}
                         <MessageList />
                         <div className="flex gap-2 p-3">
                             <input
