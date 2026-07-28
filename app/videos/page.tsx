@@ -120,13 +120,13 @@ export default function VideosPage() {
                 <header className="mb-10 text-center">
                     <span className="mb-4 inline-flex items-center gap-2 text-[0.68rem] font-medium uppercase tracking-[0.3em] text-accent">
                         <Crown className="size-3.5" />
-                        Arena Velocitas
+
                     </span>
                     <h1 className="font-serif text-4xl leading-tight text-foreground sm:text-5xl">
-                        Trilhas &amp; Conquistas
+                         &amp;
                     </h1>
                     <p className="mx-auto mt-4 max-w-xl text-pretty leading-relaxed text-muted-foreground">
-                        Descidas e manobras registradas pelos pilotos da montanha.
+                        
                     </p>
                     <div className="rule-gold mx-auto mt-8 max-w-xs" />
                 </header>
