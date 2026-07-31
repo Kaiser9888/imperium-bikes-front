@@ -2,9 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@clerk/nextjs";
-import Link from "next/link";
 import { VideoComments } from "@/components/video/VideoComments";
-import { Home, Search, Plus, Play, Video, User } from "lucide-react";
 
 const API_URL = "https://imperium-bikes.onrender.com";
 
@@ -134,111 +132,121 @@ export default function MementoPage() {
                 <div className="flex h-full items-center justify-center px-4">
                     <div className="text-center">
                         <p className="text-lg text-white/60">Nenhum Memento ainda</p>
-                        <Link href="/videos/memento/upload" className="mt-4 inline-block rounded-full bg-white px-6 py-2 text-sm font-medium text-black">
-                            Publicar Memento
-                        </Link>
                     </div>
                 </div>
             ) : (
-                <div className="flex h-full">
-                    {/* Sidebar esquerda - navegação */}
-                    <div className="flex w-14 flex-col items-center justify-center gap-6 border-r border-white/10">
-                        <Link href="/videos" className="flex flex-col items-center gap-1 text-white/60 hover:text-white transition-colors">
-                            <Home className="h-5 w-5" />
-                            <span className="text-[0.55rem]">Início</span>
-                        </Link>
-                        <Link href="/buscar" className="flex flex-col items-center gap-1 text-white/60 hover:text-white transition-colors">
-                            <Search className="h-5 w-5" />
-                            <span className="text-[0.55rem]">Buscar</span>
-                        </Link>
-                        <Link href="/videos/memento/upload" className="flex flex-col items-center gap-1 text-white/60 hover:text-white transition-colors">
-                            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground">
-                                <Plus className="h-4 w-4" />
-                            </div>
-                            <span className="text-[0.55rem]">Postar</span>
-                        </Link>
-                        <div className="flex flex-col items-center gap-1 text-primary">
-                            <Play className="h-5 w-5 fill-primary" />
-                            <span className="text-[0.55rem] font-medium">Memento</span>
-                        </div>
-                        <Link href="/videos/meus-videos" className="flex flex-col items-center gap-1 text-white/60 hover:text-white transition-colors">
-                            <Video className="h-5 w-5" />
-                            <span className="text-[0.55rem]">Gestão</span>
-                        </Link>
-                        <Link href="/perfil" className="flex flex-col items-center gap-1 text-white/60 hover:text-white transition-colors">
-                            <User className="h-5 w-5" />
-                            <span className="text-[0.55rem]">Perfil</span>
-                        </Link>
-                    </div>
-
-                    {/* Área do vídeo */}
-                    <div
-                        className="flex-1 overflow-hidden"
-                        onWheel={handleWheel}
-                        onTouchStart={handleTouchStart}
-                        onTouchEnd={handleTouchEnd}
-                    >
-                        <div className="relative h-full">
-                            {momentos.map((video, index) => (
-                                <div
-                                    key={video.id}
-                                    className="absolute inset-0 flex items-center justify-center"
-                                    style={{
-                                        transform: `translateY(${(index - currentIndex) * 100}%)`,
-                                        transition: "transform 0.25s ease-out"
+                <div
+                    className="relative h-full overflow-hidden"
+                    onWheel={handleWheel}
+                    onTouchStart={handleTouchStart}
+                    onTouchEnd={handleTouchEnd}
+                >
+                    {momentos.map((video, index) => (
+                        <div
+                            key={video.id}
+                            className="absolute inset-0 flex items-center justify-center"
+                            style={{
+                                transform: `translateY(${(index - currentIndex) * 100}%)`,
+                                transition: "transform 0.3s ease-out",
+                            }}
+                        >
+                            <div className="flex h-full w-full max-w-lg flex-col items-center justify-center px-4 pt-12 pb-24">
+                                <video
+                                    ref={(el) => {
+                                        if (el) videoRefs.current.set(video.id, el);
+                                        else videoRefs.current.delete(video.id);
                                     }}
-                                >
-                                    <video
-                                        ref={(el) => {
-                                            if (el) videoRefs.current.set(video.id, el);
-                                            else videoRefs.current.delete(video.id);
-                                        }}
-                                        src={video.videoUrl}
-                                        poster={video.thumbnailUrl}
-                                        className="h-full w-full object-contain"
-                                        loop
-                                        playsInline
-                                        muted={false}
-                                        onClick={() => togglePlayPause(video.id)}
-                                    />
+                                    src={video.videoUrl}
+                                    poster={video.thumbnailUrl}
+                                    className="max-h-[78vh] w-full rounded-xl object-contain"
+                                    loop
+                                    playsInline
+                                    muted={false}
+                                    onClick={() => togglePlayPause(video.id)}
+                                />
+
+                                {/* Info e ações */}
+                                <div className="mt-4 w-full">
+                                    <div className="flex items-end justify-between">
+                                        <div className="mr-3 min-w-0 flex-1">
+                                            <div className="mb-2 flex items-center gap-3">
+                                                <img
+                                                    src={video.userAvatarUrl || ""}
+                                                    alt=""
+                                                    className="h-9 w-9 rounded-full border-2 border-white/30 bg-secondary"
+                                                />
+                                                <div className="min-w-0">
+                                                    <p className="text-sm font-semibold text-white">{video.userName}</p>
+                                                    {video.description && (
+                                                        <p className="mt-0.5 line-clamp-1 text-xs text-white/70">{video.description}</p>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            <h2 className="line-clamp-2 text-sm font-bold text-white">{video.title}</h2>
+                                            <div className="mt-1 flex items-center gap-2 text-xs text-white/40">
+                                                <span>{formatViews(video.viewCount)} views</span>
+                                                <span>&middot;</span>
+                                                <span>{likeCounts[video.id] ?? video.likesCount} likes</span>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex items-center gap-4">
+                                            <button onClick={() => toggleLike(video.id)} className="flex flex-col items-center gap-1">
+                                                <svg width="24" height="24" viewBox="0 0 24 24"
+                                                     fill={liked[video.id] ? "#ef4444" : "none"}
+                                                     stroke={liked[video.id] ? "#ef4444" : "white"} strokeWidth="2">
+                                                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                                                </svg>
+                                                <span className="text-xs text-white/70">{likeCounts[video.id] ?? video.likesCount}</span>
+                                            </button>
+
+                                            <button onClick={() => setShowComments(true)} className="flex flex-col items-center gap-1">
+                                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+                                                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                                                </svg>
+                                                <span className="text-xs text-white/70">{video.commentsCount}</span>
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
-                            ))}
+                            </div>
                         </div>
+                    ))}
+
+                    {/* Indicador de progresso */}
+                    <div className="absolute right-3 top-4 z-10 flex flex-col gap-1">
+                        {momentos.map((_, i) => (
+                            <div
+                                key={i}
+                                className={`h-5 w-0.5 rounded-full transition-all duration-300 ${
+                                    i === currentIndex ? "bg-white" : i < currentIndex ? "bg-white/40" : "bg-white/15"
+                                }`}
+                            />
+                        ))}
                     </div>
-
-                    {/* Sidebar direita - like + comentários */}
-                    {momentos[currentIndex] && (
-                        <div className="flex w-14 flex-col items-center justify-end gap-5 pb-6">
-                            <button onClick={() => toggleLike(momentos[currentIndex].id)} className="flex flex-col items-center gap-1">
-                                <div className={`flex h-10 w-10 items-center justify-center rounded-full ${liked[momentos[currentIndex].id] ? "bg-red-500/20" : "bg-white/10"} transition-colors hover:bg-white/20`}>
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill={liked[momentos[currentIndex].id] ? "#ef4444" : "none"} stroke={liked[momentos[currentIndex].id] ? "#ef4444" : "white"} strokeWidth="2">
-                                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-                                    </svg>
-                                </div>
-                                <span className="text-[0.6rem] text-white/70">{likeCounts[momentos[currentIndex].id] ?? momentos[currentIndex].likesCount}</span>
-                            </button>
-
-                            <button onClick={() => setShowComments(true)} className="flex flex-col items-center gap-1">
-                                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 transition-colors hover:bg-white/20">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
-                                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-                                    </svg>
-                                </div>
-                                <span className="text-[0.6rem] text-white/70">{momentos[currentIndex].commentsCount}</span>
-                            </button>
-                        </div>
-                    )}
                 </div>
             )}
 
             {/* Modal de comentários */}
             {showComments && momentos[currentIndex] && (
-                <div className="absolute inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm" onClick={() => setShowComments(false)}>
-                    <div className="relative max-h-[80vh] w-full max-w-lg overflow-y-auto rounded-t-2xl bg-card px-4 pb-6 pt-4" onClick={(e) => e.stopPropagation()}>
+                <div
+                    className="absolute inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm"
+                    onClick={() => setShowComments(false)}
+                >
+                    <div
+                        className="relative max-h-[80vh] w-full max-w-lg overflow-y-auto rounded-t-2xl bg-card px-4 pb-6 pt-4"
+                        onClick={(e) => e.stopPropagation()}
+                    >
                         <div className="mb-4 flex items-center justify-between">
                             <h2 className="text-lg font-semibold text-foreground">Comentários</h2>
-                            <button onClick={() => setShowComments(false)} className="rounded-full p-2 text-muted-foreground hover:bg-secondary">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                            <button
+                                onClick={() => setShowComments(false)}
+                                className="rounded-full p-2 text-muted-foreground hover:bg-secondary"
+                            >
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <line x1="18" y1="6" x2="6" y2="18" />
+                                    <line x1="6" y1="6" x2="18" y2="18" />
+                                </svg>
                             </button>
                         </div>
                         <VideoComments videoId={momentos[currentIndex].id} />
