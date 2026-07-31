@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@clerk/nextjs";
+import Link from "next/link";
 import { VideoComments } from "@/components/video/VideoComments";
 
 const API_URL = "https://imperium-bikes.onrender.com";
@@ -41,11 +42,8 @@ export default function MementoPage() {
                 if (!cancelled) {
                     const items = data.content || [];
                     setMomentos(items);
-                    // Inicializar contadores
                     const counts: Record<string, number> = {};
-                    items.forEach((v: MementoItem) => {
-                        counts[v.id] = v.likesCount;
-                    });
+                    items.forEach((v: MementoItem) => { counts[v.id] = v.likesCount; });
                     setLikeCounts(counts);
                     setLoading(false);
                 }
@@ -132,17 +130,25 @@ export default function MementoPage() {
 
     if (loading) {
         return (
-            <div className="flex h-screen items-center justify-center bg-black">
-                <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+            <div className="flex h-screen items-center justify-center bg-background">
+                <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
             </div>
         );
     }
 
     return (
-        <div className="fixed inset-0 bg-black">
+        <div className="fixed inset-0 bg-background">
             {momentos.length === 0 ? (
                 <div className="flex h-full items-center justify-center px-4">
-                    <p className="text-lg text-white/60">Nenhum Memento ainda</p>
+                    <div className="text-center">
+                        <p className="text-lg text-muted-foreground">Nenhum Memento ainda</p>
+                        <Link
+                            href="/videos/memento/upload"
+                            className="mt-4 inline-block rounded-full bg-primary px-6 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+                        >
+                            Publicar Memento
+                        </Link>
+                    </div>
                 </div>
             ) : (
                 <div
@@ -160,7 +166,6 @@ export default function MementoPage() {
                                 transition: "transform 0.3s ease-out",
                             }}
                         >
-                            {/* Vídeo com borda arredondada estilo TikTok/Shorts */}
                             <div className="relative mx-auto h-full w-full max-w-[420px] px-2 py-4">
                                 <video
                                     ref={(el) => {
@@ -175,6 +180,23 @@ export default function MementoPage() {
                                     muted={false}
                                     onClick={() => togglePlayPause(video.id)}
                                 />
+
+                                {/* Logo Imperium no topo */}
+                                <div className="absolute left-4 top-4">
+                                    <Link href="/videos" className="font-blackletter text-lg text-white/80 hover:text-white">
+                                        Imperium
+                                    </Link>
+                                </div>
+
+                                {/* Botão Publicar */}
+                                <div className="absolute right-4 top-4">
+                                    <Link
+                                        href="/videos/memento/upload"
+                                        className="rounded-full bg-white/10 px-3 py-1.5 text-xs font-medium text-white backdrop-blur hover:bg-white/20 transition-colors"
+                                    >
+                                        + Publicar
+                                    </Link>
+                                </div>
 
                                 {/* Overlay inferior */}
                                 <div className="absolute bottom-6 left-0 right-0 px-4">
@@ -201,7 +223,6 @@ export default function MementoPage() {
                                             </div>
                                         </div>
 
-                                        {/* Ações à direita */}
                                         <div className="flex flex-col items-center gap-5">
                                             <button onClick={() => toggleLike(video.id)} className="flex flex-col items-center gap-1">
                                                 <div className={`flex h-12 w-12 items-center justify-center rounded-full ${liked[video.id] ? "bg-red-500/20" : "bg-white/10"} backdrop-blur transition-colors hover:bg-white/20`}>
@@ -229,7 +250,7 @@ export default function MementoPage() {
                         </div>
                     ))}
 
-                    {/* Indicador de progresso na direita */}
+                    {/* Indicador de progresso */}
                     <div className="absolute right-3 top-1/2 z-10 flex -translate-y-1/2 flex-col gap-1.5">
                         {momentos.map((_, i) => (
                             <div
