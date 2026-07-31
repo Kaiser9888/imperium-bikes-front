@@ -38,7 +38,17 @@ export default function MementoPage() {
             try {
                 const res = await fetch(`${API_URL}/api/videos?page=0&size=20&isShort=true`);
                 const data = await res.json();
-                if (!cancelled) { setMomentos(data.content || []); setLoading(false); }
+                if (!cancelled) {
+                    const items = data.content || [];
+                    setMomentos(items);
+                    // Inicializar contadores
+                    const counts: Record<string, number> = {};
+                    items.forEach((v: MementoItem) => {
+                        counts[v.id] = v.likesCount;
+                    });
+                    setLikeCounts(counts);
+                    setLoading(false);
+                }
             } catch { if (!cancelled) setLoading(false); }
         };
         fetchMomentos();
@@ -106,9 +116,11 @@ export default function MementoPage() {
             const res = await fetch(`${API_URL}/api/videos/${videoId}/like`, {
                 method: "POST", headers: { Authorization: `Bearer ${token}` },
             });
-            const data = await res.json();
-            setLiked((p) => ({ ...p, [videoId]: data.liked }));
-            setLikeCounts((p) => ({ ...p, [videoId]: data.count }));
+            if (res.ok) {
+                const data = await res.json();
+                setLiked((p) => ({ ...p, [videoId]: data.liked }));
+                setLikeCounts((p) => ({ ...p, [videoId]: data.count }));
+            }
         } catch { /* silencioso */ }
     };
 
@@ -130,9 +142,7 @@ export default function MementoPage() {
         <div className="fixed inset-0 bg-black">
             {momentos.length === 0 ? (
                 <div className="flex h-full items-center justify-center px-4">
-                    <div className="text-center">
-                        <p className="text-lg text-white/60">Nenhum Memento ainda</p>
-                    </div>
+                    <p className="text-lg text-white/60">Nenhum Memento ainda</p>
                 </div>
             ) : (
                 <div
@@ -150,7 +160,8 @@ export default function MementoPage() {
                                 transition: "transform 0.3s ease-out",
                             }}
                         >
-                            <div className="flex h-full w-full max-w-lg flex-col items-center justify-center px-4 pt-12 pb-24">
+                            {/* Vídeo com borda arredondada estilo TikTok/Shorts */}
+                            <div className="relative mx-auto h-full w-full max-w-[420px] px-2 py-4">
                                 <video
                                     ref={(el) => {
                                         if (el) videoRefs.current.set(video.id, el);
@@ -158,53 +169,58 @@ export default function MementoPage() {
                                     }}
                                     src={video.videoUrl}
                                     poster={video.thumbnailUrl}
-                                    className="max-h-[78vh] w-full rounded-xl object-contain"
+                                    className="h-full w-full rounded-2xl object-cover"
                                     loop
                                     playsInline
                                     muted={false}
                                     onClick={() => togglePlayPause(video.id)}
                                 />
 
-                                {/* Info e ações */}
-                                <div className="mt-4 w-full">
+                                {/* Overlay inferior */}
+                                <div className="absolute bottom-6 left-0 right-0 px-4">
                                     <div className="flex items-end justify-between">
                                         <div className="mr-3 min-w-0 flex-1">
-                                            <div className="mb-2 flex items-center gap-3">
+                                            <div className="mb-3 flex items-center gap-3">
                                                 <img
                                                     src={video.userAvatarUrl || ""}
                                                     alt=""
-                                                    className="h-9 w-9 rounded-full border-2 border-white/30 bg-secondary"
+                                                    className="h-10 w-10 rounded-full border-2 border-white/30 bg-secondary"
                                                 />
                                                 <div className="min-w-0">
-                                                    <p className="text-sm font-semibold text-white">{video.userName}</p>
+                                                    <p className="text-sm font-semibold text-white">@{video.userName}</p>
                                                     {video.description && (
-                                                        <p className="mt-0.5 line-clamp-1 text-xs text-white/70">{video.description}</p>
+                                                        <p className="mt-0.5 line-clamp-1 text-xs text-white/80">{video.description}</p>
                                                     )}
                                                 </div>
                                             </div>
-                                            <h2 className="line-clamp-2 text-sm font-bold text-white">{video.title}</h2>
-                                            <div className="mt-1 flex items-center gap-2 text-xs text-white/40">
+                                            <h2 className="mb-1 line-clamp-2 text-sm font-bold text-white">{video.title}</h2>
+                                            <div className="flex items-center gap-2 text-xs text-white/50">
                                                 <span>{formatViews(video.viewCount)} views</span>
                                                 <span>&middot;</span>
                                                 <span>{likeCounts[video.id] ?? video.likesCount} likes</span>
                                             </div>
                                         </div>
 
-                                        <div className="flex items-center gap-4">
+                                        {/* Ações à direita */}
+                                        <div className="flex flex-col items-center gap-5">
                                             <button onClick={() => toggleLike(video.id)} className="flex flex-col items-center gap-1">
-                                                <svg width="24" height="24" viewBox="0 0 24 24"
-                                                     fill={liked[video.id] ? "#ef4444" : "none"}
-                                                     stroke={liked[video.id] ? "#ef4444" : "white"} strokeWidth="2">
-                                                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-                                                </svg>
-                                                <span className="text-xs text-white/70">{likeCounts[video.id] ?? video.likesCount}</span>
+                                                <div className={`flex h-12 w-12 items-center justify-center rounded-full ${liked[video.id] ? "bg-red-500/20" : "bg-white/10"} backdrop-blur transition-colors hover:bg-white/20`}>
+                                                    <svg width="24" height="24" viewBox="0 0 24 24"
+                                                         fill={liked[video.id] ? "#ef4444" : "none"}
+                                                         stroke={liked[video.id] ? "#ef4444" : "white"} strokeWidth="2">
+                                                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                                                    </svg>
+                                                </div>
+                                                <span className="text-xs font-medium text-white">{likeCounts[video.id] ?? video.likesCount}</span>
                                             </button>
 
                                             <button onClick={() => setShowComments(true)} className="flex flex-col items-center gap-1">
-                                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
-                                                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-                                                </svg>
-                                                <span className="text-xs text-white/70">{video.commentsCount}</span>
+                                                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/10 backdrop-blur transition-colors hover:bg-white/20">
+                                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+                                                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                                                    </svg>
+                                                </div>
+                                                <span className="text-xs font-medium text-white">{video.commentsCount}</span>
                                             </button>
                                         </div>
                                     </div>
@@ -213,13 +229,13 @@ export default function MementoPage() {
                         </div>
                     ))}
 
-                    {/* Indicador de progresso */}
-                    <div className="absolute right-3 top-4 z-10 flex flex-col gap-1">
+                    {/* Indicador de progresso na direita */}
+                    <div className="absolute right-3 top-1/2 z-10 flex -translate-y-1/2 flex-col gap-1.5">
                         {momentos.map((_, i) => (
                             <div
                                 key={i}
-                                className={`h-5 w-0.5 rounded-full transition-all duration-300 ${
-                                    i === currentIndex ? "bg-white" : i < currentIndex ? "bg-white/40" : "bg-white/15"
+                                className={`h-6 w-0.5 rounded-full transition-all duration-300 ${
+                                    i === currentIndex ? "bg-white" : i < currentIndex ? "bg-white/40" : "bg-white/20"
                                 }`}
                             />
                         ))}
