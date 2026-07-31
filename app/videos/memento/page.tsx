@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@clerk/nextjs";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { VideoComments } from "@/components/video/VideoComments";
 import { Home, Search, Plus, Play, Video, User } from "lucide-react";
 
@@ -26,7 +25,6 @@ interface MementoItem {
 
 export default function MementoPage() {
     const { getToken, userId: currentUserId } = useAuth();
-    const router = useRouter();
     const [momentos, setMomentos] = useState<MementoItem[]>([]);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [loading, setLoading] = useState(true);
@@ -35,7 +33,6 @@ export default function MementoPage() {
     const [showComments, setShowComments] = useState(false);
     const touchStartY = useRef(0);
     const videoRefs = useRef<Map<string, HTMLVideoElement>>(new Map());
-    const containerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         let cancelled = false;
@@ -74,7 +71,6 @@ export default function MementoPage() {
         return () => window.removeEventListener("keydown", handleKey);
     }, [currentIndex, momentos.length, showComments]);
 
-    // Bloquear scroll da página
     useEffect(() => {
         document.body.style.overflow = "hidden";
         return () => { document.body.style.overflow = ""; };
@@ -82,11 +78,8 @@ export default function MementoPage() {
 
     const handleWheel = (e: React.WheelEvent) => {
         if (showComments) return;
-        if (e.deltaY > 30 && currentIndex < momentos.length - 1) {
-            setCurrentIndex((p) => p + 1);
-        } else if (e.deltaY < -30 && currentIndex > 0) {
-            setCurrentIndex((p) => p - 1);
-        }
+        if (e.deltaY > 30 && currentIndex < momentos.length - 1) setCurrentIndex((p) => p + 1);
+        else if (e.deltaY < -30 && currentIndex > 0) setCurrentIndex((p) => p - 1);
     };
 
     const handleTouchStart = (e: React.TouchEvent) => {
@@ -148,60 +141,38 @@ export default function MementoPage() {
                 </div>
             ) : (
                 <div className="flex h-full">
-                    {/* Sidebar esquerda - navegação + ações */}
-                    <div className="flex w-16 flex-col items-center justify-between border-r border-white/10 py-4">
-                        {/* Topo: Voltar */}
-                        <button onClick={() => router.back()} className="flex flex-col items-center gap-1 text-white/60 hover:text-white">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 12H5M12 19l-7-7 7-7" /></svg>
-                            <span className="text-[0.55rem]">Voltar</span>
-                        </button>
-
-                        {/* Meio: ações */}
-                        <div className="flex flex-col items-center gap-5">
-                            {/* Perfil */}
-                            <Link href="/perfil" className="flex flex-col items-center gap-1 text-white/60 hover:text-white">
-                                <User className="h-5 w-5" />
-                                <span className="text-[0.55rem]">Perfil</span>
-                            </Link>
-
-                            {/* Fórum */}
-                            <Link href="/forum" className="flex flex-col items-center gap-1 text-white/60 hover:text-white">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>
-                                <span className="text-[0.55rem]">Fórum</span>
-                            </Link>
-
-                            {/* Buscar */}
-                            <Link href="/buscar" className="flex flex-col items-center gap-1 text-white/60 hover:text-white">
-                                <Search className="h-5 w-5" />
-                                <span className="text-[0.55rem]">Buscar</span>
-                            </Link>
-
-                            {/* Postar */}
-                            <Link href="/videos/upload" className="flex flex-col items-center gap-1 text-white/60 hover:text-white">
-                                <Plus className="h-5 w-5" />
-                                <span className="text-[0.55rem]">Postar</span>
-                            </Link>
-
-                            {/* Memento (ativo) */}
-                            <div className="flex flex-col items-center gap-1 text-primary">
-                                <Play className="h-5 w-5 fill-primary" />
-                                <span className="text-[0.55rem] font-medium">Memento</span>
+                    {/* Sidebar esquerda - navegação */}
+                    <div className="flex w-14 flex-col items-center justify-center gap-6 border-r border-white/10">
+                        <Link href="/videos" className="flex flex-col items-center gap-1 text-white/60 hover:text-white transition-colors">
+                            <Home className="h-5 w-5" />
+                            <span className="text-[0.55rem]">Início</span>
+                        </Link>
+                        <Link href="/buscar" className="flex flex-col items-center gap-1 text-white/60 hover:text-white transition-colors">
+                            <Search className="h-5 w-5" />
+                            <span className="text-[0.55rem]">Buscar</span>
+                        </Link>
+                        <Link href="/videos/memento/upload" className="flex flex-col items-center gap-1 text-white/60 hover:text-white transition-colors">
+                            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                                <Plus className="h-4 w-4" />
                             </div>
-
-                            {/* Gestão */}
-                            <Link href="/videos/meus-videos" className="flex flex-col items-center gap-1 text-white/60 hover:text-white">
-                                <Video className="h-5 w-5" />
-                                <span className="text-[0.55rem]">Gestão</span>
-                            </Link>
+                            <span className="text-[0.55rem]">Postar</span>
+                        </Link>
+                        <div className="flex flex-col items-center gap-1 text-primary">
+                            <Play className="h-5 w-5 fill-primary" />
+                            <span className="text-[0.55rem] font-medium">Memento</span>
                         </div>
-
-                        {/* Base: vazio */}
-                        <div />
+                        <Link href="/videos/meus-videos" className="flex flex-col items-center gap-1 text-white/60 hover:text-white transition-colors">
+                            <Video className="h-5 w-5" />
+                            <span className="text-[0.55rem]">Gestão</span>
+                        </Link>
+                        <Link href="/perfil" className="flex flex-col items-center gap-1 text-white/60 hover:text-white transition-colors">
+                            <User className="h-5 w-5" />
+                            <span className="text-[0.55rem]">Perfil</span>
+                        </Link>
                     </div>
 
                     {/* Área do vídeo */}
                     <div
-                        ref={containerRef}
                         className="flex-1 overflow-hidden"
                         onWheel={handleWheel}
                         onTouchStart={handleTouchStart}
@@ -235,7 +206,7 @@ export default function MementoPage() {
                         </div>
                     </div>
 
-                    {/* Sidebar direita - ações do vídeo atual */}
+                    {/* Sidebar direita - like + comentários */}
                     {momentos[currentIndex] && (
                         <div className="flex w-14 flex-col items-center justify-end gap-5 pb-6">
                             <button onClick={() => toggleLike(momentos[currentIndex].id)} className="flex flex-col items-center gap-1">
