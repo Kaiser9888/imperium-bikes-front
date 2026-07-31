@@ -18,15 +18,8 @@ export default function VideosLayout({ children }: { children: React.ReactNode }
 
     return (
         <div className="flex min-h-screen bg-background">
-            {/* Sidebar esquerda - navegação fixa */}
-            <aside className="fixed left-0 top-0 z-40 flex h-screen w-14 flex-col items-center border-r border-border bg-card py-4">
-                <Link
-                    href="/videos"
-                    className="mb-6 font-blackletter text-lg leading-none text-primary"
-                >
-                    I
-                </Link>
-
+            {/* Sidebar esquerda - navegação fixa sem aspecto de barra */}
+            <aside className="fixed left-0 top-0 z-40 flex h-screen w-14 flex-col items-center py-4">
                 <nav className="flex flex-1 flex-col items-center justify-center gap-5">
                     {navItems.map((item) => {
                         const isActive = pathname === item.href;
@@ -52,14 +45,13 @@ export default function VideosLayout({ children }: { children: React.ReactNode }
                                 href={item.href}
                                 aria-current={isActive ? "page" : undefined}
                                 className={`flex flex-col items-center gap-1 transition-colors ${
-                                    isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
+                                    isActive
+                                        ? "text-primary"
+                                        : "text-muted-foreground hover:text-foreground"
                                 }`}
                                 title={item.label}
                             >
-                                <item.icon
-                                    className="h-5 w-5"
-                                    strokeWidth={isActive ? 2.25 : 1.75}
-                                />
+                                <item.icon className="h-5 w-5" strokeWidth={isActive ? 2.25 : 1.75} />
                                 <span className="text-[0.55rem] font-medium uppercase tracking-wider">
                   {item.label}
                 </span>
