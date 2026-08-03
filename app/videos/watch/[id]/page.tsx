@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import { useAuth } from "@clerk/nextjs";
 import MuxPlayer from "@mux/mux-player-react";
 import Link from "next/link";
-import { VideoComments } from "@/components/video/VideoComments";
+import { VideoComments } from "@/components/videos/VideoComments";
 import { Heart, ChevronDown } from "lucide-react";
 
 const API_URL = "https://imperium-bikes.onrender.com";

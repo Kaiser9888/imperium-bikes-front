@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@clerk/nextjs";
 import Link from "next/link";
-import { VideoComments } from "@/components/video/VideoComments";
+import { VideoComments } from "@/components/videos/VideoComments";
 
 const API_URL = "https://imperium-bikes.onrender.com";
 
