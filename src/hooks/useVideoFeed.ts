@@ -1,49 +1,78 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { fetchVideoPage } from "@/lib/videos/api";
-import type { VideoItem } from "@/lib/videos/types";
+"use client";
 
-export function useVideoFeed(isShort = false) {
+import { useState, useEffect, useCallback } from "react";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://imperium-bikes.onrender.com";
+
+interface VideoItem {
+    id: string;
+    title: string;
+    thumbnailUrl: string;
+    durationSeconds: number;
+    formattedDuration: string;
+    viewCount: number;
+    likesCount: number;
+    commentsCount: number;
+    userName: string;
+    userAvatarUrl: string;
+    createdAt: string;
+    isShort: boolean;
+}
+
+interface VideoPage {
+    content: VideoItem[];
+    last: boolean;
+}
+
+export function useVideoFeed(isShort: boolean) {
     const [videos, setVideos] = useState<VideoItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [loadingMore, setLoadingMore] = useState(false);
     const [hasMore, setHasMore] = useState(true);
     const [error, setError] = useState(false);
-    const pageRef = useRef(0);
+    const [page, setPage] = useState(0);
 
-    const load = useCallback(async () => {
-        setLoading(true);
-        setError(false);
-        pageRef.current = 0;
-        try {
-            const data = await fetchVideoPage(0, isShort);
-            setVideos(data.content);
-            setHasMore(!data.last);
-        } catch {
-            setError(true);
-        } finally {
-            setLoading(false);
-        }
+    const fetchPage = useCallback(async (pageNum: number) => {
+        const res = await fetch(
+          `${API_URL}/api/videos?page=${pageNum}&size=12&isShort=${isShort}`
+        );
+        if (!res.ok) throw new Error(`Status ${res.status}`);
+        return res.json() as Promise<VideoPage>;
     }, [isShort]);
-
-    useEffect(() => {
-        void load();
-    }, [load]);
 
     const loadMore = useCallback(async () => {
         if (loadingMore || !hasMore) return;
         setLoadingMore(true);
         try {
-            const next = pageRef.current + 1;
-            const data = await fetchVideoPage(next, isShort);
-            pageRef.current = next;
+            const data = await fetchPage(page + 1);
             setVideos((prev) => [...prev, ...data.content]);
             setHasMore(!data.last);
+            setPage((p) => p + 1);
         } catch {
-            /* silencioso */
+            // silencioso
         } finally {
             setLoadingMore(false);
         }
-    }, [hasMore, isShort, loadingMore]);
+    }, [loadingMore, hasMore, page, fetchPage]);
 
-    return { videos, loading, loadingMore, hasMore, error, loadMore, reload: load };
+    const reload = useCallback(async () => {
+        setLoading(true);
+        setError(false);
+        try {
+            const data = await fetchPage(0);
+            setVideos(data.content);
+            setHasMore(!data.last);
+            setPage(0);
+        } catch {
+            setError(true);
+        } finally {
+            setLoading(false);
+        }
+    }, [fetchPage]);
+
+    useEffect(() => {
+        reload();
+    }, [reload]);
+
+    return { videos, loading, loadingMore, hasMore, error, loadMore, reload };
 }
