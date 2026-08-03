@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import Link from "next/link";
 import { RotateCcw, ArrowRight } from "lucide-react";
 
 export function ErrorState({ onRetry }: { onRetry: () => void }) {
@@ -29,7 +29,7 @@ export function EmptyState({
             <p className="text-lg font-semibold text-foreground">{title}</p>
             <p className="mt-2 text-sm text-muted-foreground">{description}</p>
             <Link
-                to="/videos/upload"
+                href="/videos/upload"
                 className="mt-6 inline-flex items-center gap-2 rounded-md bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
             >
                 Publicar vídeo

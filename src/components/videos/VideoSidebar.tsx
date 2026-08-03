@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import Link from "next/link";
 import { Play } from "lucide-react";
 import type { VideoItem } from "@/lib/videos/types";
 import { formatViews, timeAgo } from "@/lib/videos/format";
@@ -18,8 +18,7 @@ export function VideoSidebar({ videos }: VideoSidebarProps) {
                     {videos.map((v) => (
                         <li key={v.id}>
                             <Link
-                                to="/videos/watch/$id"
-                                params={{ id: v.id }}
+                                href={`/videos/watch/${v.id}`}
                                 className="group flex gap-3 rounded-lg border border-border bg-card p-2 transition-colors hover:border-primary/40"
                             >
                                 <div className="relative aspect-video w-32 shrink-0 overflow-hidden rounded-md bg-secondary">
@@ -27,12 +26,12 @@ export function VideoSidebar({ videos }: VideoSidebarProps) {
                                         <img src={v.thumbnailUrl} alt="" loading="lazy" className="size-full object-cover" />
                                     ) : (
                                         <span className="flex size-full items-center justify-center">
-                      <Play className="size-4 text-muted-foreground" aria-hidden="true" />
-                    </span>
+                                            <Play className="size-4 text-muted-foreground" aria-hidden="true" />
+                                        </span>
                                     )}
                                     <span className="absolute bottom-1 right-1 rounded bg-background/90 px-1 text-[10px] tabular-nums">
-                    {v.formattedDuration || "00:00"}
-                  </span>
+                                        {v.formattedDuration || "00:00"}
+                                    </span>
                                 </div>
                                 <div className="min-w-0 py-0.5">
                                     <p className="line-clamp-2 text-sm font-medium leading-snug text-foreground group-hover:text-primary">

@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from "react";
-import { useNavigate } from "@tanstack/react-router";
+import { useRouter } from "next/navigation";
 import { UploadCloud, X, Loader2, CheckCircle2, AlertTriangle, ArrowRight, Film } from "lucide-react";
 import { formatBytes, formatDuration } from "@/lib/videos/format";
 import { uploadVideo } from "@/lib/videos/upload";
@@ -11,7 +11,7 @@ const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
 type Status = "idle" | "uploading" | "processing" | "done";
 
 export function UploadForm({ mode }: { mode: UploadMode }) {
-    const navigate = useNavigate();
+    const router = useRouter();
     const isMemento = mode === "memento";
 
     const [file, setFile] = useState<File | null>(null);
@@ -87,7 +87,7 @@ export function UploadForm({ mode }: { mode: UploadMode }) {
                 { onProgress: setProgress, onProcessing: () => setStatus("processing") },
             );
             setStatus("done");
-            void navigate({ to: "/videos/watch/$id", params: { id: saved.id } });
+            router.push(`/videos/watch/${saved.id}`);
         } catch (e) {
             setError(e instanceof Error ? e.message : "Erro no upload. Tente novamente.");
             setStatus("idle");
@@ -127,9 +127,9 @@ export function UploadForm({ mode }: { mode: UploadMode }) {
                         isDragging ? "border-primary bg-secondary" : "border-border bg-card hover:border-primary/50"
                     }`}
                 >
-          <span className="flex size-12 items-center justify-center rounded-full border border-border bg-secondary">
-            <UploadCloud className="size-5 text-primary" aria-hidden="true" />
-          </span>
+                    <span className="flex size-12 items-center justify-center rounded-full border border-border bg-secondary">
+                        <UploadCloud className="size-5 text-primary" aria-hidden="true" />
+                    </span>
                     <p className="mt-4 text-sm font-medium text-foreground">
                         {isDragging ? "Solte o vídeo" : "Selecione um vídeo"}
                     </p>
@@ -168,9 +168,9 @@ export function UploadForm({ mode }: { mode: UploadMode }) {
                         {status === "uploading" && (
                             <div className="rounded-lg border border-border bg-card p-3">
                                 <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  <span className="flex items-center gap-2">
-                    <Loader2 className="size-3.5 animate-spin" /> Enviando…
-                  </span>
+                                    <span className="flex items-center gap-2">
+                                        <Loader2 className="size-3.5 animate-spin" /> Enviando…
+                                    </span>
                                     <span className="tabular-nums">{progress}%</span>
                                 </div>
                                 <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-secondary">
