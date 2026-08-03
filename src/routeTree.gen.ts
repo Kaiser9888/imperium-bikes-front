@@ -20,229 +20,219 @@ import { Route as VideosUploadRouteImport } from './routes/videos.upload'
 import { Route as VideosWatchIdRouteImport } from './routes/videos.watch.$id'
 
 const IndexRoute = IndexRouteImport.update({
-    id: '/',
-    path: '/',
-    getParentRoute: () => rootRouteImport,
+  id: '/',
+  path: '/',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const VideosRoute = VideosRouteImport.update({
-    id: '/videos',
-    path: '/videos',
-    getParentRoute: () => rootRouteImport,
+  id: '/videos',
+  path: '/videos',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const VideosIndexRoute = VideosIndexRouteImport.update({
-    id: '/',
-    path: '/',
-    getParentRoute: () => VideosRoute,
+  id: '/',
+  path: '/',
+  getParentRoute: () => VideosRoute,
 } as any)
 const VideosBuscarRoute = VideosBuscarRouteImport.update({
-    id: '/buscar',
-    path: '/buscar',
-    getParentRoute: () => VideosRoute,
+  id: '/buscar',
+  path: '/buscar',
+  getParentRoute: () => VideosRoute,
 } as any)
 const VideosLongosRoute = VideosLongosRouteImport.update({
-    id: '/longos',
-    path: '/longos',
-    getParentRoute: () => VideosRoute,
+  id: '/longos',
+  path: '/longos',
+  getParentRoute: () => VideosRoute,
 } as any)
 const VideosMementoRoute = VideosMementoRouteImport.update({
-    id: '/memento',
-    path: '/memento',
-    getParentRoute: () => VideosRoute,
+  id: '/memento',
+  path: '/memento',
+  getParentRoute: () => VideosRoute,
 } as any)
 const VideosPerfilRoute = VideosPerfilRouteImport.update({
-    id: '/perfil',
-    path: '/perfil',
-    getParentRoute: () => VideosRoute,
+  id: '/perfil',
+  path: '/perfil',
+  getParentRoute: () => VideosRoute,
 } as any)
 const VideosUploadRoute = VideosUploadRouteImport.update({
-    id: '/upload',
-    path: '/upload',
-    getParentRoute: () => VideosRoute,
+  id: '/upload',
+  path: '/upload',
+  getParentRoute: () => VideosRoute,
 } as any)
 const VideosWatchIdRoute = VideosWatchIdRouteImport.update({
-    id: '/watch/$id',
-    path: '/watch/$id',
-    getParentRoute: () => VideosRoute,
+  id: '/watch/$id',
+  path: '/watch/$id',
+  getParentRoute: () => VideosRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
-    '/': typeof IndexRoute
-    '/videos': typeof VideosRouteWithChildren
-    '/videos/buscar': typeof VideosBuscarRoute
-    '/videos/longos': typeof VideosLongosRoute
-    '/videos/memento': typeof VideosMementoRoute
-    '/videos/perfil': typeof VideosPerfilRoute
-    '/videos/upload': typeof VideosUploadRoute
-    '/videos/': typeof VideosIndexRoute
-    '/videos/watch/$id': typeof VideosWatchIdRoute
+  '/': typeof IndexRoute
+  '/videos': typeof VideosRouteWithChildren
+  '/videos/buscar': typeof VideosBuscarRoute
+  '/videos/longos': typeof VideosLongosRoute
+  '/videos/memento': typeof VideosMementoRoute
+  '/videos/perfil': typeof VideosPerfilRoute
+  '/videos/upload': typeof VideosUploadRoute
+  '/videos/': typeof VideosIndexRoute
+  '/videos/watch/$id': typeof VideosWatchIdRoute
 }
 export interface FileRoutesByTo {
-    '/': typeof IndexRoute
-    '/videos/buscar': typeof VideosBuscarRoute
-    '/videos/longos': typeof VideosLongosRoute
-    '/videos/memento': typeof VideosMementoRoute
-    '/videos/perfil': typeof VideosPerfilRoute
-    '/videos/upload': typeof VideosUploadRoute
-    '/videos': typeof VideosIndexRoute
-    '/videos/watch/$id': typeof VideosWatchIdRoute
+  '/': typeof IndexRoute
+  '/videos/buscar': typeof VideosBuscarRoute
+  '/videos/longos': typeof VideosLongosRoute
+  '/videos/memento': typeof VideosMementoRoute
+  '/videos/perfil': typeof VideosPerfilRoute
+  '/videos/upload': typeof VideosUploadRoute
+  '/videos': typeof VideosIndexRoute
+  '/videos/watch/$id': typeof VideosWatchIdRoute
 }
 export interface FileRoutesById {
-    __root__: typeof rootRouteImport
-    '/': typeof IndexRoute
-    '/videos': typeof VideosRouteWithChildren
-    '/videos/buscar': typeof VideosBuscarRoute
-    '/videos/longos': typeof VideosLongosRoute
-    '/videos/memento': typeof VideosMementoRoute
-    '/videos/perfil': typeof VideosPerfilRoute
-    '/videos/upload': typeof VideosUploadRoute
-    '/videos/': typeof VideosIndexRoute
-    '/videos/watch/$id': typeof VideosWatchIdRoute
+  __root__: typeof rootRouteImport
+  '/': typeof IndexRoute
+  '/videos': typeof VideosRouteWithChildren
+  '/videos/buscar': typeof VideosBuscarRoute
+  '/videos/longos': typeof VideosLongosRoute
+  '/videos/memento': typeof VideosMementoRoute
+  '/videos/perfil': typeof VideosPerfilRoute
+  '/videos/upload': typeof VideosUploadRoute
+  '/videos/': typeof VideosIndexRoute
+  '/videos/watch/$id': typeof VideosWatchIdRoute
 }
 export interface FileRouteTypes {
-    fileRoutesByFullPath: FileRoutesByFullPath
-    fullPaths:
-        | '/'
-        | '/videos'
-        | '/videos/buscar'
-        | '/videos/longos'
-        | '/videos/memento'
-        | '/videos/perfil'
-        | '/videos/upload'
-        | '/videos/'
-        | '/videos/watch/$id'
-    fileRoutesByTo: FileRoutesByTo
-    to:
-        | '/'
-        | '/videos/buscar'
-        | '/videos/longos'
-        | '/videos/memento'
-        | '/videos/perfil'
-        | '/videos/upload'
-        | '/videos'
-        | '/videos/watch/$id'
-    id:
-        | '__root__'
-        | '/'
-        | '/videos'
-        | '/videos/buscar'
-        | '/videos/longos'
-        | '/videos/memento'
-        | '/videos/perfil'
-        | '/videos/upload'
-        | '/videos/'
-        | '/videos/watch/$id'
-    fileRoutesById: FileRoutesById
+  fileRoutesByFullPath: FileRoutesByFullPath
+  fullPaths:
+    | '/'
+    | '/videos'
+    | '/videos/buscar'
+    | '/videos/longos'
+    | '/videos/memento'
+    | '/videos/perfil'
+    | '/videos/upload'
+    | '/videos/'
+    | '/videos/watch/$id'
+  fileRoutesByTo: FileRoutesByTo
+  to:
+    | '/'
+    | '/videos/buscar'
+    | '/videos/longos'
+    | '/videos/memento'
+    | '/videos/perfil'
+    | '/videos/upload'
+    | '/videos'
+    | '/videos/watch/$id'
+  id:
+    | '__root__'
+    | '/'
+    | '/videos'
+    | '/videos/buscar'
+    | '/videos/longos'
+    | '/videos/memento'
+    | '/videos/perfil'
+    | '/videos/upload'
+    | '/videos/'
+    | '/videos/watch/$id'
+  fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-    IndexRoute: typeof IndexRoute
-    VideosRoute: typeof VideosRouteWithChildren
+  IndexRoute: typeof IndexRoute
+  VideosRoute: typeof VideosRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
-    interface FileRoutesByPath {
-        '/': {
-            id: '/'
-            path: '/'
-            fullPath: '/'
-            preLoaderRoute: typeof IndexRouteImport
-            parentRoute: typeof rootRouteImport
-        }
-        '/videos': {
-            id: '/videos'
-            path: '/videos'
-            fullPath: '/videos'
-            preLoaderRoute: typeof VideosRouteImport
-            parentRoute: typeof rootRouteImport
-        }
-        '/videos/': {
-            id: '/videos/'
-            path: '/'
-            fullPath: '/videos/'
-            preLoaderRoute: typeof VideosIndexRouteImport
-            parentRoute: typeof VideosRoute
-        }
-        '/videos/buscar': {
-            id: '/videos/buscar'
-            path: '/buscar'
-            fullPath: '/videos/buscar'
-            preLoaderRoute: typeof VideosBuscarRouteImport
-            parentRoute: typeof VideosRoute
-        }
-        '/videos/longos': {
-            id: '/videos/longos'
-            path: '/longos'
-            fullPath: '/videos/longos'
-            preLoaderRoute: typeof VideosLongosRouteImport
-            parentRoute: typeof VideosRoute
-        }
-        '/videos/memento': {
-            id: '/videos/memento'
-            path: '/memento'
-            fullPath: '/videos/memento'
-            preLoaderRoute: typeof VideosMementoRouteImport
-            parentRoute: typeof VideosRoute
-        }
-        '/videos/perfil': {
-            id: '/videos/perfil'
-            path: '/perfil'
-            fullPath: '/videos/perfil'
-            preLoaderRoute: typeof VideosPerfilRouteImport
-            parentRoute: typeof VideosRoute
-        }
-        '/videos/upload': {
-            id: '/videos/upload'
-            path: '/upload'
-            fullPath: '/videos/upload'
-            preLoaderRoute: typeof VideosUploadRouteImport
-            parentRoute: typeof VideosRoute
-        }
-        '/videos/watch/$id': {
-            id: '/videos/watch/$id'
-            path: '/watch/$id'
-            fullPath: '/videos/watch/$id'
-            preLoaderRoute: typeof VideosWatchIdRouteImport
-            parentRoute: typeof VideosRoute
-        }
+  interface FileRoutesByPath {
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
     }
+    '/videos': {
+      id: '/videos'
+      path: '/videos'
+      fullPath: '/videos'
+      preLoaderRoute: typeof VideosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/videos/': {
+      id: '/videos/'
+      path: '/'
+      fullPath: '/videos/'
+      preLoaderRoute: typeof VideosIndexRouteImport
+      parentRoute: typeof VideosRoute
+    }
+    '/videos/buscar': {
+      id: '/videos/buscar'
+      path: '/buscar'
+      fullPath: '/videos/buscar'
+      preLoaderRoute: typeof VideosBuscarRouteImport
+      parentRoute: typeof VideosRoute
+    }
+    '/videos/longos': {
+      id: '/videos/longos'
+      path: '/longos'
+      fullPath: '/videos/longos'
+      preLoaderRoute: typeof VideosLongosRouteImport
+      parentRoute: typeof VideosRoute
+    }
+    '/videos/memento': {
+      id: '/videos/memento'
+      path: '/memento'
+      fullPath: '/videos/memento'
+      preLoaderRoute: typeof VideosMementoRouteImport
+      parentRoute: typeof VideosRoute
+    }
+    '/videos/perfil': {
+      id: '/videos/perfil'
+      path: '/perfil'
+      fullPath: '/videos/perfil'
+      preLoaderRoute: typeof VideosPerfilRouteImport
+      parentRoute: typeof VideosRoute
+    }
+    '/videos/upload': {
+      id: '/videos/upload'
+      path: '/upload'
+      fullPath: '/videos/upload'
+      preLoaderRoute: typeof VideosUploadRouteImport
+      parentRoute: typeof VideosRoute
+    }
+    '/videos/watch/$id': {
+      id: '/videos/watch/$id'
+      path: '/watch/$id'
+      fullPath: '/videos/watch/$id'
+      preLoaderRoute: typeof VideosWatchIdRouteImport
+      parentRoute: typeof VideosRoute
+    }
+  }
 }
 
 interface VideosRouteChildren {
-    VideosBuscarRoute: typeof VideosBuscarRoute
-    VideosLongosRoute: typeof VideosLongosRoute
-    VideosMementoRoute: typeof VideosMementoRoute
-    VideosPerfilRoute: typeof VideosPerfilRoute
-    VideosUploadRoute: typeof VideosUploadRoute
-    VideosIndexRoute: typeof VideosIndexRoute
-    VideosWatchIdRoute: typeof VideosWatchIdRoute
+  VideosBuscarRoute: typeof VideosBuscarRoute
+  VideosLongosRoute: typeof VideosLongosRoute
+  VideosMementoRoute: typeof VideosMementoRoute
+  VideosPerfilRoute: typeof VideosPerfilRoute
+  VideosUploadRoute: typeof VideosUploadRoute
+  VideosIndexRoute: typeof VideosIndexRoute
+  VideosWatchIdRoute: typeof VideosWatchIdRoute
 }
 
 const VideosRouteChildren: VideosRouteChildren = {
-    VideosBuscarRoute: VideosBuscarRoute,
-    VideosLongosRoute: VideosLongosRoute,
-    VideosMementoRoute: VideosMementoRoute,
-    VideosPerfilRoute: VideosPerfilRoute,
-    VideosUploadRoute: VideosUploadRoute,
-    VideosIndexRoute: VideosIndexRoute,
-    VideosWatchIdRoute: VideosWatchIdRoute,
+  VideosBuscarRoute: VideosBuscarRoute,
+  VideosLongosRoute: VideosLongosRoute,
+  VideosMementoRoute: VideosMementoRoute,
+  VideosPerfilRoute: VideosPerfilRoute,
+  VideosUploadRoute: VideosUploadRoute,
+  VideosIndexRoute: VideosIndexRoute,
+  VideosWatchIdRoute: VideosWatchIdRoute,
 }
 
 const VideosRouteWithChildren =
-    VideosRoute._addFileChildren(VideosRouteChildren)
+  VideosRoute._addFileChildren(VideosRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
-    IndexRoute: IndexRoute,
-    VideosRoute: VideosRouteWithChildren,
+  IndexRoute: IndexRoute,
+  VideosRoute: VideosRouteWithChildren,
 }
 export const routeTree = rootRouteImport
-    ._addFileChildren(rootRouteChildren)
-    ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-    interface Register {
-        ssr: true
-        router: Awaited<ReturnType<typeof getRouter>>
-        config: Awaited<ReturnType<typeof startInstance.getOptions>>
-    }
-}
+  ._addFileChildren(rootRouteChildren)
+  ._addFileTypes<FileRouteTypes>()
