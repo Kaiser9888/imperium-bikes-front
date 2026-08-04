@@ -39,7 +39,9 @@ export default function WatchPage() {
             setLoading(false);
         })();
         fetchRelated(id).then((r) => !cancelled && setRelated(r));
-        return () => { cancelled = true; };
+        return () => {
+            cancelled = true;
+        };
     }, [id]);
 
     async function handleToggleLike() {
@@ -108,11 +110,7 @@ export default function WatchPage() {
     }
 
     if (!video) {
-        return (
-          <p className="px-6 py-20 text-center text-muted-foreground">
-              Vídeo não encontrado
-          </p>
-        );
+        return <p className="px-6 py-20 text-center text-muted-foreground">Vídeo não encontrado</p>;
     }
 
     return (
@@ -163,7 +161,10 @@ export default function WatchPage() {
                         </button>
                         {showMore && (
                           <div className="border-t border-border px-4 py-4">
-                              <VideoDescription description={video.description} hashtags={video.hashtags} />
+                              <VideoDescription
+                                description={video.description}
+                                hashtags={video.hashtags}
+                              />
                           </div>
                         )}
                     </div>
