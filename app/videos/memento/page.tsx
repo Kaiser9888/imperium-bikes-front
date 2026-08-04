@@ -165,225 +165,219 @@ export default function MementoPage() {
 
     if (loading) {
         return (
-          <div className="flex h-screen items-center justify-center bg-[#0F0C09]">
-              <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#C9A227]/25 border-t-[#C9A227]" />
+          <div className="flex h-screen items-center justify-center bg-background">
+              <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
           </div>
         );
     }
 
     return (
-      <div className="fixed inset-0 bg-[#0F0C09]">
-          <style jsx global>{`
-                @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=EB+Garamond:ital,wght@0,400;0,500;1,400&display=swap');
-                .font-imperial-display { font-family: 'Cinzel', serif; }
-                .font-imperial-body { font-family: 'EB Garamond', serif; }
-            `}</style>
+      <div className="fixed inset-0 flex flex-col bg-background">
+          {/* Barra superior: agora ocupa espaço real no layout, não fica por cima do vídeo */}
+          <div className="z-30 flex shrink-0 items-center gap-2.5 border-b border-primary/15 bg-background/95 px-4 py-3 backdrop-blur-sm">
+              <Link
+                href="/videos"
+                className="font-blackletter shrink-0 text-lg tracking-wide text-primary"
+              >
+                  Imperium
+              </Link>
 
-          {/* Barra superior fixa: logo + busca + publicar */}
-          <div className="pointer-events-none absolute inset-x-0 top-0 z-30 bg-gradient-to-b from-black/80 via-black/40 to-transparent px-4 pb-6 pt-4">
-              <div className="pointer-events-auto mx-auto flex max-w-[420px] items-center gap-2.5">
-                  <Link
-                    href="/videos"
-                    className="font-blackletter shrink-0 text-lg tracking-wide text-[#C9A227] drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]"
+              <div className="relative flex-1">
+                  <svg
+                    className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-primary/70"
+                    width="14" height="14" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" strokeWidth="2"
                   >
-                      Imperium
-                  </Link>
-
-                  <div className="relative flex-1">
-                      <svg
-                        className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2"
-                        width="14" height="14" viewBox="0 0 24 24" fill="none"
-                        stroke="#C9A227" strokeWidth="2"
-                      >
-                          <circle cx="11" cy="11" r="7" />
-                          <line x1="21" y1="21" x2="16.65" y2="16.65" />
-                      </svg>
-                      <input
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder="Buscar no império..."
-                        className="font-imperial-body w-full rounded-full border border-[#C9A227]/30 bg-black/50 py-2 pl-8 pr-3 text-sm text-[#EDE3CF] placeholder:text-[#8A7A5C] backdrop-blur-sm outline-none transition-colors focus:border-[#C9A227]/70"
-                      />
-                  </div>
-
-                  <Link
-                    href="/videos/memento/upload"
-                    className="font-imperial-display shrink-0 rounded-full border border-[#C9A227]/40 bg-[#C9A227]/10 px-3 py-1.5 text-[11px] tracking-wider text-[#C9A227] backdrop-blur-sm transition-colors hover:bg-[#C9A227]/20"
-                  >
-                      + PUBLICAR
-                  </Link>
+                      <circle cx="11" cy="11" r="7" />
+                      <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                  </svg>
+                  <input
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Buscar no império..."
+                    className="w-full rounded-full border border-primary/25 bg-secondary py-2 pl-8 pr-3 text-sm text-foreground placeholder:text-muted-foreground outline-none transition-colors focus:border-primary/60"
+                  />
               </div>
+
+              <Link
+                href="/videos/memento/upload"
+                className="shrink-0 rounded-full bg-primary px-3 py-1.5 text-xs font-medium tracking-wide text-primary-foreground hover:bg-primary/90"
+              >
+                  + Publicar
+              </Link>
           </div>
 
-          {momentos.length === 0 ? (
-            <div className="flex h-full items-center justify-center px-4">
-                <div className="text-center">
-                    <p className="font-imperial-display text-sm tracking-[0.2em] text-[#8A7A5C]">A ARENA ESTÁ VAZIA</p>
-                    <p className="font-imperial-body mt-2 text-lg text-[#EDE3CF]">Nenhum Memento publicado ainda</p>
-                    <Link
-                      href="/videos/memento/upload"
-                      className="font-imperial-display mt-5 inline-block rounded-full bg-[#C9A227] px-6 py-2 text-xs tracking-wider text-[#0F0C09] hover:bg-[#E0B93C]"
-                    >
-                        PUBLICAR MEMENTO
-                    </Link>
+          {/* Área de vídeos: ocupa o espaço restante abaixo da barra, nunca sobreposta por ela */}
+          <div className="relative flex-1 overflow-hidden">
+              {momentos.length === 0 ? (
+                <div className="flex h-full items-center justify-center px-4">
+                    <div className="text-center">
+                        <p className="text-lg text-muted-foreground">Nenhum Memento ainda</p>
+                        <Link
+                          href="/videos/memento/upload"
+                          className="mt-4 inline-block rounded-full bg-primary px-6 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+                        >
+                            Publicar Memento
+                        </Link>
+                    </div>
                 </div>
-            </div>
-          ) : feed.length === 0 ? (
-            <div className="flex h-full items-center justify-center px-4">
-                <div className="text-center">
-                    <p className="font-imperial-body text-lg text-[#EDE3CF]">Nenhum Memento encontrado para &ldquo;{searchQuery}&rdquo;</p>
-                    <button
-                      onClick={() => setSearchQuery("")}
-                      className="font-imperial-display mt-4 rounded-full border border-[#C9A227]/40 px-5 py-2 text-xs tracking-wider text-[#C9A227] hover:bg-[#C9A227]/10"
-                    >
-                        LIMPAR BUSCA
-                    </button>
+              ) : feed.length === 0 ? (
+                <div className="flex h-full items-center justify-center px-4">
+                    <div className="text-center">
+                        <p className="text-lg text-muted-foreground">Nenhum Memento encontrado para &ldquo;{searchQuery}&rdquo;</p>
+                        <button
+                          onClick={() => setSearchQuery("")}
+                          className="mt-4 rounded-full border border-primary/40 px-5 py-2 text-sm font-medium text-primary hover:bg-primary/10"
+                        >
+                            Limpar busca
+                        </button>
+                    </div>
                 </div>
-            </div>
-          ) : (
-            <div
-              className="relative h-full overflow-hidden"
-              onWheel={handleWheel}
-              onTouchStart={handleTouchStart}
-              onTouchEnd={handleTouchEnd}
-            >
-                {feed.map((video, index) => (
-                  <div
-                    key={video.id}
-                    className="absolute inset-0 flex items-center justify-center"
-                    style={{
-                        transform: `translateY(${(index - currentIndex) * 100}%)`,
-                        transition: "transform 0.3s ease-out",
-                    }}
-                  >
-                      <div className="relative mx-auto h-full w-full max-w-[420px] px-2 py-4">
-                          <video
-                            ref={(el) => {
-                                if (el) videoRefs.current.set(video.id, el);
-                                else videoRefs.current.delete(video.id);
-                            }}
-                            src={video.videoUrl}
-                            poster={video.thumbnailUrl}
-                            className="h-full w-full rounded-2xl border border-[#C9A227]/20 object-cover"
-                            loop
-                            playsInline
-                            muted={false}
-                            onClick={() => togglePlayPause(video.id)}
-                          />
+              ) : (
+                <div
+                  className="relative h-full overflow-hidden"
+                  onWheel={handleWheel}
+                  onTouchStart={handleTouchStart}
+                  onTouchEnd={handleTouchEnd}
+                >
+                    {feed.map((video, index) => (
+                      <div
+                        key={video.id}
+                        className="absolute inset-0 flex items-center justify-center"
+                        style={{
+                            transform: `translateY(${(index - currentIndex) * 100}%)`,
+                            transition: "transform 0.3s ease-out",
+                        }}
+                      >
+                          <div className="relative mx-auto h-full w-full max-w-[420px] px-2 py-4">
+                              <video
+                                ref={(el) => {
+                                    if (el) videoRefs.current.set(video.id, el);
+                                    else videoRefs.current.delete(video.id);
+                                }}
+                                src={video.videoUrl}
+                                poster={video.thumbnailUrl}
+                                className="h-full w-full rounded-2xl border border-primary/15 object-cover"
+                                loop
+                                playsInline
+                                muted={false}
+                                onClick={() => togglePlayPause(video.id)}
+                              />
 
-                          {/* Véu para legibilidade do texto inferior */}
-                          <div className="pointer-events-none absolute inset-x-2 bottom-4 top-1/2 rounded-b-2xl bg-gradient-to-t from-black/85 via-black/25 to-transparent" />
+                              {/* Véu apenas atrás do texto inferior, não cobre o vídeo inteiro */}
+                              <div className="pointer-events-none absolute inset-x-2 bottom-4 top-1/2 rounded-b-2xl bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
 
-                          {/* Overlay inferior */}
-                          <div className="absolute bottom-6 left-0 right-0 px-4">
-                              <div className="flex items-end justify-between">
-                                  <div className="mr-3 min-w-0 flex-1">
-                                      <div className="mb-3 flex items-center gap-3">
-                                          <img
-                                            src={video.userAvatarUrl || ""}
-                                            alt=""
-                                            className="h-10 w-10 rounded-full border-2 border-[#C9A227]/50 bg-[#1A140D]"
-                                          />
-                                          <div className="min-w-0">
-                                              <p className="font-imperial-display text-sm tracking-wide text-[#EDE3CF]">@{video.userName}</p>
-                                              {video.description && (
-                                                <p className="font-imperial-body mt-0.5 line-clamp-1 text-xs italic text-[#C9BBA0]">{video.description}</p>
-                                              )}
+                              {/* Overlay inferior */}
+                              <div className="absolute bottom-6 left-0 right-0 px-4">
+                                  <div className="flex items-end justify-between">
+                                      <div className="mr-3 min-w-0 flex-1">
+                                          <div className="mb-3 flex items-center gap-3">
+                                              <img
+                                                src={video.userAvatarUrl || ""}
+                                                alt=""
+                                                className="h-10 w-10 rounded-full border-2 border-primary/50 bg-secondary"
+                                              />
+                                              <div className="min-w-0">
+                                                  <p className="text-sm font-semibold text-white">@{video.userName}</p>
+                                                  {video.description && (
+                                                    <p className="mt-0.5 line-clamp-1 text-xs text-white/80">{video.description}</p>
+                                                  )}
+                                              </div>
+                                          </div>
+                                          <h2 className="mb-1 line-clamp-2 text-sm font-bold text-white">{video.title}</h2>
+                                          <div className="flex items-center gap-2 text-xs text-white/60">
+                                              <span>{formatViews(video.viewCount)} views</span>
+                                              <span>&middot;</span>
+                                              <span>{likeCounts[video.id] ?? video.likesCount} likes</span>
                                           </div>
                                       </div>
-                                      <h2 className="font-imperial-body mb-1 line-clamp-2 text-sm font-semibold text-[#EDE3CF]">{video.title}</h2>
-                                      <div className="flex items-center gap-2 text-xs text-[#8A7A5C]">
-                                          <span>{formatViews(video.viewCount)} visualizações</span>
-                                          <span>&middot;</span>
-                                          <span>{likeCounts[video.id] ?? video.likesCount} curtidas</span>
-                                      </div>
-                                  </div>
 
-                                  {/* Trilho de ações: curtir, comentar, compartilhar */}
-                                  <div className="flex flex-col items-center gap-4">
-                                      <button onClick={() => toggleLike(video.id)} className="flex flex-col items-center gap-1">
-                                          <div
-                                            className={`flex h-12 w-12 items-center justify-center rounded-full border backdrop-blur transition-all duration-300 ${
-                                              liked[video.id]
-                                                ? "border-[#C9A227]/60 bg-[#C9A227]/15 shadow-[0_0_14px_rgba(201,162,39,0.35)]"
-                                                : "border-white/10 bg-black/30 hover:border-[#C9A227]/30"
-                                            }`}
-                                          >
-                                              {/* Polegar do veredito — pollice verso: para cima ao curtir */}
-                                              <svg
-                                                width="20" height="20" viewBox="0 0 24 24"
-                                                className={`transition-transform duration-300 ${liked[video.id] ? "rotate-0" : "rotate-180"}`}
-                                                fill={liked[video.id] ? "#C9A227" : "none"}
-                                                stroke={liked[video.id] ? "#C9A227" : "#EDE3CF"}
-                                                strokeWidth="1.7"
+                                      {/* Trilho de ações: curtir, comentar, compartilhar */}
+                                      <div className="flex flex-col items-center gap-4">
+                                          <button onClick={() => toggleLike(video.id)} className="flex flex-col items-center gap-1">
+                                              <div
+                                                className={`flex h-12 w-12 items-center justify-center rounded-full border backdrop-blur transition-all duration-300 ${
+                                                  liked[video.id]
+                                                    ? "border-primary bg-primary/20 shadow-lg shadow-primary/30"
+                                                    : "border-white/20 bg-black/30 hover:border-primary/40"
+                                                }`}
                                               >
-                                                  <path d="M7 11v9H4a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1h3zm3.6-7.4L9 11v9h8.6a2 2 0 0 0 1.98-1.7l1.2-8A2 2 0 0 0 18.8 8H14l.9-4.3a1.5 1.5 0 0 0-2.8-1.1z" />
-                                              </svg>
-                                          </div>
-                                          <span className="font-imperial-body text-xs font-medium text-[#EDE3CF]">{likeCounts[video.id] ?? video.likesCount}</span>
-                                      </button>
+                                                  {/* Polegar do veredito — pollice verso: para cima ao curtir */}
+                                                  <svg
+                                                    width="20" height="20" viewBox="0 0 24 24"
+                                                    className={`transition-transform duration-300 ${liked[video.id] ? "rotate-0 text-primary" : "rotate-180 text-white"}`}
+                                                    fill={liked[video.id] ? "currentColor" : "none"}
+                                                    stroke="currentColor"
+                                                    strokeWidth="1.7"
+                                                  >
+                                                      <path d="M7 11v9H4a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1h3zm3.6-7.4L9 11v9h8.6a2 2 0 0 0 1.98-1.7l1.2-8A2 2 0 0 0 18.8 8H14l.9-4.3a1.5 1.5 0 0 0-2.8-1.1z" />
+                                                  </svg>
+                                              </div>
+                                              <span className="text-xs font-medium text-white">{likeCounts[video.id] ?? video.likesCount}</span>
+                                          </button>
 
-                                      <button onClick={() => setShowComments(true)} className="flex flex-col items-center gap-1">
-                                          <div className="flex h-12 w-12 items-center justify-center rounded-full border border-white/10 bg-black/30 backdrop-blur transition-colors hover:border-[#C9A227]/30">
-                                              {/* Pergaminho — os comentários como um rolo a ser desenrolado */}
-                                              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#EDE3CF" strokeWidth="1.6">
-                                                  <path d="M7 4.5h10a2 2 0 0 1 2 2v12.5a1 1 0 0 1-1.53.85L15 18.2l-2.47 1.65a1 1 0 0 1-1.06 0L9 18.2l-2.47 1.65A1 1 0 0 1 5 19V6.5a2 2 0 0 1 2-2z" />
-                                                  <ellipse cx="7" cy="4.5" rx="2" ry="1.4" />
-                                              </svg>
-                                          </div>
-                                          <span className="font-imperial-body text-xs font-medium text-[#EDE3CF]">{video.commentsCount}</span>
-                                      </button>
+                                          <button onClick={() => setShowComments(true)} className="flex flex-col items-center gap-1">
+                                              <div className="flex h-12 w-12 items-center justify-center rounded-full border border-white/20 bg-black/30 backdrop-blur transition-colors hover:border-primary/40">
+                                                  {/* Pergaminho — os comentários como um rolo a ser desenrolado */}
+                                                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.6">
+                                                      <path d="M7 4.5h10a2 2 0 0 1 2 2v12.5a1 1 0 0 1-1.53.85L15 18.2l-2.47 1.65a1 1 0 0 1-1.06 0L9 18.2l-2.47 1.65A1 1 0 0 1 5 19V6.5a2 2 0 0 1 2-2z" />
+                                                      <ellipse cx="7" cy="4.5" rx="2" ry="1.4" />
+                                                  </svg>
+                                              </div>
+                                              <span className="text-xs font-medium text-white">{video.commentsCount}</span>
+                                          </button>
 
-                                      <button onClick={() => handleShare(video)} className="flex flex-col items-center gap-1">
-                                          <div className="flex h-12 w-12 items-center justify-center rounded-full border border-white/10 bg-black/30 backdrop-blur transition-colors hover:border-[#C9A227]/30">
-                                              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#EDE3CF" strokeWidth="1.6">
-                                                  <circle cx="18" cy="5" r="2.4" />
-                                                  <circle cx="6" cy="12" r="2.4" />
-                                                  <circle cx="18" cy="19" r="2.4" />
-                                                  <line x1="8.2" y1="10.8" x2="15.8" y2="6.2" />
-                                                  <line x1="8.2" y1="13.2" x2="15.8" y2="17.8" />
-                                              </svg>
-                                          </div>
-                                          <span className="font-imperial-body text-xs font-medium text-[#EDE3CF]">
-                                                    {shareFeedback === video.id ? "Copiado" : "Compartilhar"}
-                                                </span>
-                                      </button>
+                                          <button onClick={() => handleShare(video)} className="flex flex-col items-center gap-1">
+                                              <div className="flex h-12 w-12 items-center justify-center rounded-full border border-white/20 bg-black/30 backdrop-blur transition-colors hover:border-primary/40">
+                                                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.6">
+                                                      <circle cx="18" cy="5" r="2.4" />
+                                                      <circle cx="6" cy="12" r="2.4" />
+                                                      <circle cx="18" cy="19" r="2.4" />
+                                                      <line x1="8.2" y1="10.8" x2="15.8" y2="6.2" />
+                                                      <line x1="8.2" y1="13.2" x2="15.8" y2="17.8" />
+                                                  </svg>
+                                              </div>
+                                              <span className="text-xs font-medium text-white">
+                                                        {shareFeedback === video.id ? "Copiado" : "Compartilhar"}
+                                                    </span>
+                                          </button>
+                                      </div>
                                   </div>
                               </div>
                           </div>
                       </div>
-                  </div>
-                ))}
-
-                {/* Indicador de progresso */}
-                <div className="absolute right-3 top-1/2 z-10 flex -translate-y-1/2 flex-col gap-1.5">
-                    {feed.map((_, i) => (
-                      <div
-                        key={i}
-                        className={`h-6 w-0.5 rounded-full transition-all duration-300 ${
-                          i === currentIndex ? "bg-[#C9A227]" : i < currentIndex ? "bg-[#C9A227]/40" : "bg-[#C9A227]/15"
-                        }`}
-                      />
                     ))}
+
+                    {/* Indicador de progresso */}
+                    <div className="absolute right-3 top-1/2 z-10 flex -translate-y-1/2 flex-col gap-1.5">
+                        {feed.map((_, i) => (
+                          <div
+                            key={i}
+                            className={`h-6 w-0.5 rounded-full transition-all duration-300 ${
+                              i === currentIndex ? "bg-primary" : i < currentIndex ? "bg-primary/40" : "bg-primary/15"
+                            }`}
+                          />
+                        ))}
+                    </div>
                 </div>
-            </div>
-          )}
+              )}
+          </div>
 
           {/* Modal de comentários */}
           {showComments && feed[currentIndex] && (
             <div
-              className="absolute inset-0 z-50 flex items-end justify-center bg-black/70 backdrop-blur-sm"
+              className="absolute inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm"
               onClick={() => setShowComments(false)}
             >
                 <div
-                  className="relative max-h-[80vh] w-full max-w-lg overflow-y-auto rounded-t-2xl border-t border-[#C9A227]/20 bg-[#15110C] px-4 pb-6 pt-4"
+                  className="relative max-h-[80vh] w-full max-w-lg overflow-y-auto rounded-t-2xl bg-card px-4 pb-6 pt-4"
                   onClick={(e) => e.stopPropagation()}
                 >
                     <div className="mb-4 flex items-center justify-between">
-                        <h2 className="font-imperial-display text-sm tracking-[0.15em] text-[#C9A227]">COMENTÁRIOS</h2>
+                        <h2 className="text-lg font-semibold text-foreground">Comentários</h2>
                         <button
                           onClick={() => setShowComments(false)}
-                          className="rounded-full p-2 text-[#8A7A5C] hover:bg-[#C9A227]/10 hover:text-[#EDE3CF]"
+                          className="rounded-full p-2 text-muted-foreground hover:bg-secondary"
                         >
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                 <line x1="18" y1="6" x2="6" y2="18" />
