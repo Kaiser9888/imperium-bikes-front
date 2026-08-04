@@ -1,3 +1,4 @@
+// src/hooks/useVideoFeed.ts
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
@@ -7,6 +8,8 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://imperium-bikes.onren
 interface VideoItem {
     id: string;
     title: string;
+    description?: string;       // ← ADICIONADO
+    hashtags?: string[];         // ← ADICIONADO
     thumbnailUrl: string;
     durationSeconds: number;
     formattedDuration: string;

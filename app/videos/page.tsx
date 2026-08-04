@@ -1,4 +1,5 @@
-﻿"use client";
+﻿// app/videos/page.tsx
+"use client";
 
 import { useMemo, useState } from "react";
 import { useVideoFeed } from "@/hooks/useVideoFeed";
@@ -17,13 +18,40 @@ export default function VideosPage() {
   const [query, setQuery] = useState("");
 
   const visible = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    let filtered = q
-      ? videos.filter((v) => `${v.title} ${v.userName}`.toLowerCase().includes(q))
-      : videos;
-    if (category === "vistos") return [...filtered].sort((a, b) => b.viewCount - a.viewCount);
-    if (category === "recentes")
-      return [...filtered].sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt));
+    let filtered = videos;
+
+    // Filtro por busca textual
+    if (query.trim()) {
+      const q = query.toLowerCase();
+      filtered = filtered.filter(
+        (v) =>
+          v.title.toLowerCase().includes(q) ||
+          v.userName.toLowerCase().includes(q) ||
+          v.description?.toLowerCase().includes(q)
+      );
+    }
+
+    // Filtro por categoria/tag
+    if (category && category !== "recomendados") {
+      if (category === "recentes") {
+        filtered = [...filtered].sort(
+          (a, b) => +new Date(b.createdAt) - +new Date(a.createdAt)
+        );
+      } else if (category === "vistos") {
+        filtered = [...filtered].sort((a, b) => b.viewCount - a.viewCount);
+      } else {
+        // Filtro por hashtag (busca no título, descrição e hashtags)
+        const tagLower = category.toLowerCase();
+        filtered = filtered.filter(
+          (v) =>
+            v.title.toLowerCase().includes(tagLower) ||
+            v.description?.toLowerCase().includes(`#${tagLower}`) ||
+            v.description?.toLowerCase().includes(tagLower) ||
+            v.hashtags?.some((tag: string) => tag.toLowerCase() === tagLower)
+        );
+      }
+    }
+
     return filtered;
   }, [videos, query, category]);
 
@@ -42,7 +70,11 @@ export default function VideosPage() {
         ) : visible.length === 0 ? (
           <EmptyState
             title={query ? "Nada encontrado" : "Nenhum vídeo publicado"}
-            description={query ? "Tente outros termos ou remova os filtros." : "Seja o primeiro a publicar."}
+            description={
+              query
+                ? "Tente outros termos ou remova os filtros."
+                : "Seja o primeiro a publicar."
+            }
           />
         ) : (
           <>

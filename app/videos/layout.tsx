@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Search, Plus, Play, Video } from "lucide-react";
+import { Home, Search, Plus, Play, Video, ArrowLeft, Store } from "lucide-react";
 
 export default function VideosLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
@@ -20,11 +20,22 @@ export default function VideosLayout({ children }: { children: React.ReactNode }
           {/* ===== TOP BAR - DESKTOP ===== */}
           <header className="sticky top-0 z-40 hidden border-b border-border bg-background/95 backdrop-blur-lg lg:block">
               <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-                  {/* Logo */}
-                  <Link href="/videos" className="flex items-center gap-2 font-bold text-lg">
-                      <Video className="h-6 w-6 text-primary" />
-                      <span>Imperium</span>
-                  </Link>
+                  <div className="flex items-center gap-4">
+                      {/* Logo */}
+                      <Link href="/videos" className="flex items-center gap-2 font-bold text-lg">
+                          <Video className="h-6 w-6 text-primary" />
+                          <span>Imperium</span>
+                      </Link>
+
+                      {/* Botão voltar ao Marketplace */}
+                      <Link
+                        href="/"
+                        className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors border-l border-border pl-4"
+                      >
+                          <Store className="h-4 w-4" />
+                          <span>Marketplace</span>
+                      </Link>
+                  </div>
 
                   {/* Links de navegação */}
                   <nav className="flex items-center gap-1">
@@ -58,6 +69,23 @@ export default function VideosLayout({ children }: { children: React.ReactNode }
                           );
                       })}
                   </nav>
+              </div>
+          </header>
+
+          {/* ===== MOBILE TOP BAR ===== */}
+          <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur-lg lg:hidden">
+              <div className="flex h-12 items-center justify-between px-4">
+                  <Link href="/" className="flex items-center gap-2 text-muted-foreground hover:text-foreground">
+                      <ArrowLeft className="h-5 w-5" />
+                      <span className="text-sm font-medium">Marketplace</span>
+                  </Link>
+                  <Link href="/videos" className="flex items-center gap-2 font-bold">
+                      <Video className="h-5 w-5 text-primary" />
+                      <span>Imperium</span>
+                  </Link>
+                  <Link href="/videos/upload" className="text-primary">
+                      <Plus className="h-5 w-5" />
+                  </Link>
               </div>
           </header>
 

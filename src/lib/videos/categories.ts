@@ -12,7 +12,6 @@ export const CATEGORY_GROUPS: CategoryGroup[] = [
         options: [
             { id: "todos", label: "Todos" },
             { id: "recomendados", label: "Recomendados" },
-            { id: "seguindo", label: "Seguindo" },
         ],
     },
     {
@@ -39,3 +38,4 @@ export const CATEGORY_GROUPS: CategoryGroup[] = [
 ];
 
 export const DEFAULT_CATEGORY = "todos";
+
