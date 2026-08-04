@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Search, Plus, Play, Video, ArrowLeft, Store } from "lucide-react";
+import { Home, Search, Plus, Play, Video } from "lucide-react";
 
 export default function VideosLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
@@ -17,85 +17,13 @@ export default function VideosLayout({ children }: { children: React.ReactNode }
 
     return (
       <div className="min-h-screen bg-background">
-          {/* ===== TOP BAR - DESKTOP ===== */}
-          <header className="sticky top-0 z-40 hidden border-b border-border bg-background/95 backdrop-blur-lg lg:block">
-              <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-                  <div className="flex items-center gap-4">
-                      {/* Logo */}
-                      <Link href="/videos" className="flex items-center gap-2 font-bold text-lg">
-                          <Video className="h-6 w-6 text-primary" />
-                          <span>Imperium</span>
-                      </Link>
-
-                      {/* Botão voltar ao Marketplace */}
-                      <Link
-                        href="/"
-                        className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors border-l border-border pl-4"
-                      >
-                          <Store className="h-4 w-4" />
-                          <span>Marketplace</span>
-                      </Link>
-                  </div>
-
-                  {/* Links de navegação */}
-                  <nav className="flex items-center gap-1">
-                      {navItems.map((item) => {
-                          const isActive = pathname === item.href;
-                          if (item.highlight) {
-                              return (
-                                <Link
-                                  key={item.label}
-                                  href={item.href}
-                                  className="flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-md transition-transform hover:scale-105 active:scale-95"
-                                >
-                                    <item.icon className="h-4 w-4" />
-                                    <span>{item.label}</span>
-                                </Link>
-                              );
-                          }
-                          return (
-                            <Link
-                              key={item.label}
-                              href={item.href}
-                              className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-                                isActive
-                                  ? "bg-muted text-primary"
-                                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                              }`}
-                            >
-                                <item.icon className="h-4 w-4" strokeWidth={isActive ? 2.25 : 1.75} />
-                                <span>{item.label}</span>
-                            </Link>
-                          );
-                      })}
-                  </nav>
-              </div>
-          </header>
-
-          {/* ===== MOBILE TOP BAR ===== */}
-          <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur-lg lg:hidden">
-              <div className="flex h-12 items-center justify-between px-4">
-                  <Link href="/" className="flex items-center gap-2 text-muted-foreground hover:text-foreground">
-                      <ArrowLeft className="h-5 w-5" />
-                      <span className="text-sm font-medium">Marketplace</span>
-                  </Link>
-                  <Link href="/videos" className="flex items-center gap-2 font-bold">
-                      <Video className="h-5 w-5 text-primary" />
-                      <span>Imperium</span>
-                  </Link>
-                  <Link href="/videos/upload" className="text-primary">
-                      <Plus className="h-5 w-5" />
-                  </Link>
-              </div>
-          </header>
-
-          {/* Conteúdo principal */}
-          <main className="pb-16 lg:pb-0">
+          {/* Conteúdo principal - ocupa tudo */}
+          <main className="pb-16">
               {children}
           </main>
 
-          {/* ===== BOTTOM NAVIGATION - MOBILE ===== */}
-          <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-background/95 backdrop-blur-lg lg:hidden">
+          {/* ===== BOTTOM NAVIGATION ===== */}
+          <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-background/95 backdrop-blur-lg">
               <div className="flex items-center justify-around px-2">
                   {navItems.map((item) => {
                       const isActive = pathname === item.href;
