@@ -45,17 +45,20 @@ export default function MementoPage() {
                     const items = data.content || [];
                     setMomentos(items);
                     const counts: Record<string, number> = {};
-                    items.forEach((v: MementoItem) => { counts[v.id] = v.likesCount; });
+                    items.forEach((v: MementoItem) => {
+                        counts[v.id] = v.likesCount;
+                    });
                     setLikeCounts(counts);
                     setLoading(false);
                 }
-            } catch { if (!cancelled) setLoading(false); }
+            } catch {
+                if (!cancelled) setLoading(false);
+            }
         };
         fetchMomentos();
         return () => { cancelled = true; };
     }, []);
 
-    // Feed exibido: aplica o filtro de busca sobre a lista carregada
     const feed = searchQuery.trim()
       ? momentos.filter((v) => {
           const q = searchQuery.trim().toLowerCase();
@@ -78,7 +81,9 @@ export default function MementoPage() {
         if (cv) {
             cv.currentTime = 0;
             cv.play().catch(() => {});
-            videoRefs.current.forEach((v, id) => { if (id !== current.id) v.pause(); });
+            videoRefs.current.forEach((v, id) => {
+                if (id !== current.id) v.pause();
+            });
         }
     }, [currentIndex, feed]);
 
@@ -86,9 +91,11 @@ export default function MementoPage() {
         const handleKey = (e: KeyboardEvent) => {
             if (showComments) return;
             if (e.key === "ArrowDown" && currentIndex < feed.length - 1) {
-                e.preventDefault(); setCurrentIndex((p) => p + 1);
+                e.preventDefault();
+                setCurrentIndex((p) => p + 1);
             } else if (e.key === "ArrowUp" && currentIndex > 0) {
-                e.preventDefault(); setCurrentIndex((p) => p - 1);
+                e.preventDefault();
+                setCurrentIndex((p) => p - 1);
             }
         };
         window.addEventListener("keydown", handleKey);
@@ -97,7 +104,9 @@ export default function MementoPage() {
 
     useEffect(() => {
         document.body.style.overflow = "hidden";
-        return () => { document.body.style.overflow = ""; };
+        return () => {
+            document.body.style.overflow = "";
+        };
     }, []);
 
     const handleWheel = (e: React.WheelEvent) => {
@@ -130,20 +139,24 @@ export default function MementoPage() {
         try {
             const token = await getToken();
             const res = await fetch(`${API_URL}/api/videos/${videoId}/like`, {
-                method: "POST", headers: { Authorization: `Bearer ${token}` },
+                method: "POST",
+                headers: { Authorization: `Bearer ${token}` },
             });
             if (res.ok) {
                 const data = await res.json();
                 setLiked((p) => ({ ...p, [videoId]: data.liked }));
                 setLikeCounts((p) => ({ ...p, [videoId]: data.count }));
             }
-        } catch { /* silencioso */ }
+        } catch {
+            /* silencioso */
+        }
     };
 
     const handleShare = async (video: MementoItem) => {
-        const url = typeof window !== "undefined"
-          ? `${window.location.origin}/videos/memento?v=${video.id}`
-          : "";
+        const url =
+          typeof window !== "undefined"
+            ? `${window.location.origin}/videos/memento?v=${video.id}`
+            : "";
         try {
             if (typeof navigator !== "undefined" && navigator.share) {
                 await navigator.share({ title: video.title, text: video.description, url });
@@ -154,7 +167,9 @@ export default function MementoPage() {
                 setShareFeedback(video.id);
                 setTimeout(() => setShareFeedback(null), 2000);
             }
-        } catch { /* usuário cancelou o compartilhamento */ }
+        } catch {
+            /* usuário cancelou */
+        }
     };
 
     const formatViews = (v: number) => {
@@ -173,7 +188,7 @@ export default function MementoPage() {
 
     return (
       <div className="fixed inset-0 flex flex-col bg-background">
-          {/* Barra superior: agora ocupa espaço real no layout, não fica por cima do vídeo */}
+          {/* Barra superior */}
           <div className="z-30 flex shrink-0 items-center gap-2.5 border-b border-primary/15 bg-background/95 px-4 py-3 backdrop-blur-sm">
               <Link
                 href="/videos"
@@ -185,8 +200,12 @@ export default function MementoPage() {
               <div className="relative flex-1">
                   <svg
                     className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-primary/70"
-                    width="14" height="14" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" strokeWidth="2"
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
                   >
                       <circle cx="11" cy="11" r="7" />
                       <line x1="21" y1="21" x2="16.65" y2="16.65" />
@@ -207,7 +226,7 @@ export default function MementoPage() {
               </Link>
           </div>
 
-          {/* Área de vídeos: ocupa o espaço restante abaixo da barra, nunca sobreposta por ela */}
+          {/* Área de vídeos */}
           <div className="relative flex-1 overflow-hidden">
               {momentos.length === 0 ? (
                 <div className="flex h-full items-center justify-center px-4">
@@ -224,7 +243,9 @@ export default function MementoPage() {
               ) : feed.length === 0 ? (
                 <div className="flex h-full items-center justify-center px-4">
                     <div className="text-center">
-                        <p className="text-lg text-muted-foreground">Nenhum Memento encontrado para &ldquo;{searchQuery}&rdquo;</p>
+                        <p className="text-lg text-muted-foreground">
+                            Nenhum Memento encontrado para &ldquo;{searchQuery}&rdquo;
+                        </p>
                         <button
                           onClick={() => setSearchQuery("")}
                           className="mt-4 rounded-full border border-primary/40 px-5 py-2 text-sm font-medium text-primary hover:bg-primary/10"
@@ -264,7 +285,7 @@ export default function MementoPage() {
                                 onClick={() => togglePlayPause(video.id)}
                               />
 
-                              {/* Véu apenas atrás do texto inferior, não cobre o vídeo inteiro */}
+                              {/* Gradiente inferior */}
                               <div className="pointer-events-none absolute inset-x-2 bottom-4 top-1/2 rounded-b-2xl bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
 
                               {/* Overlay inferior */}
@@ -278,58 +299,94 @@ export default function MementoPage() {
                                                 className="h-10 w-10 rounded-full border-2 border-primary/50 bg-secondary"
                                               />
                                               <div className="min-w-0">
-                                                  <p className="text-sm font-semibold text-white">@{video.userName}</p>
+                                                  <p className="text-sm font-semibold text-white">
+                                                      @{video.userName}
+                                                  </p>
                                                   {video.description && (
-                                                    <p className="mt-0.5 line-clamp-1 text-xs text-white/80">{video.description}</p>
+                                                    <p className="mt-0.5 line-clamp-1 text-xs text-white/80">
+                                                        {video.description}
+                                                    </p>
                                                   )}
                                               </div>
                                           </div>
-                                          <h2 className="mb-1 line-clamp-2 text-sm font-bold text-white">{video.title}</h2>
+                                          <h2 className="mb-1 line-clamp-2 text-sm font-bold text-white">
+                                              {video.title}
+                                          </h2>
                                           <div className="flex items-center gap-2 text-xs text-white/60">
                                               <span>{formatViews(video.viewCount)} views</span>
                                               <span>&middot;</span>
-                                              <span>{likeCounts[video.id] ?? video.likesCount} likes</span>
+                                              <span>
+                            {likeCounts[video.id] ?? video.likesCount} likes
+                          </span>
                                           </div>
                                       </div>
 
-                                      {/* Trilho de ações: curtir, comentar, compartilhar */}
+                                      {/* Ações */}
                                       <div className="flex flex-col items-center gap-4">
-                                          <button onClick={() => toggleLike(video.id)} className="flex flex-col items-center gap-1">
+                                          {/* Like (coração) */}
+                                          <button
+                                            onClick={() => toggleLike(video.id)}
+                                            className="flex flex-col items-center gap-1"
+                                          >
                                               <div
                                                 className={`flex h-12 w-12 items-center justify-center rounded-full border backdrop-blur transition-all duration-300 ${
                                                   liked[video.id]
-                                                    ? "border-primary bg-primary/20 shadow-lg shadow-primary/30"
-                                                    : "border-white/20 bg-black/30 hover:border-primary/40"
+                                                    ? "border-red-500 bg-red-500/20 shadow-lg shadow-red-500/30"
+                                                    : "border-white/20 bg-black/30 hover:border-red-400"
                                                 }`}
                                               >
-                                                  {/* Polegar do veredito — pollice verso: para cima ao curtir */}
                                                   <svg
-                                                    width="20" height="20" viewBox="0 0 24 24"
-                                                    className={`transition-transform duration-300 ${liked[video.id] ? "rotate-0 text-primary" : "rotate-180 text-white"}`}
-                                                    fill={liked[video.id] ? "currentColor" : "none"}
-                                                    stroke="currentColor"
-                                                    strokeWidth="1.7"
+                                                    width="22"
+                                                    height="22"
+                                                    viewBox="0 0 24 24"
+                                                    fill={liked[video.id] ? "#ef4444" : "none"}
+                                                    stroke={liked[video.id] ? "#ef4444" : "white"}
+                                                    strokeWidth="2"
                                                   >
-                                                      <path d="M7 11v9H4a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1h3zm3.6-7.4L9 11v9h8.6a2 2 0 0 0 1.98-1.7l1.2-8A2 2 0 0 0 18.8 8H14l.9-4.3a1.5 1.5 0 0 0-2.8-1.1z" />
+                                                      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
                                                   </svg>
                                               </div>
-                                              <span className="text-xs font-medium text-white">{likeCounts[video.id] ?? video.likesCount}</span>
+                                              <span className="text-xs font-medium text-white">
+                            {likeCounts[video.id] ?? video.likesCount}
+                          </span>
                                           </button>
 
-                                          <button onClick={() => setShowComments(true)} className="flex flex-col items-center gap-1">
+                                          {/* Comentários (balão) */}
+                                          <button
+                                            onClick={() => setShowComments(true)}
+                                            className="flex flex-col items-center gap-1"
+                                          >
                                               <div className="flex h-12 w-12 items-center justify-center rounded-full border border-white/20 bg-black/30 backdrop-blur transition-colors hover:border-primary/40">
-                                                  {/* Pergaminho — os comentários como um rolo a ser desenrolado */}
-                                                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.6">
-                                                      <path d="M7 4.5h10a2 2 0 0 1 2 2v12.5a1 1 0 0 1-1.53.85L15 18.2l-2.47 1.65a1 1 0 0 1-1.06 0L9 18.2l-2.47 1.65A1 1 0 0 1 5 19V6.5a2 2 0 0 1 2-2z" />
-                                                      <ellipse cx="7" cy="4.5" rx="2" ry="1.4" />
+                                                  <svg
+                                                    width="20"
+                                                    height="20"
+                                                    viewBox="0 0 24 24"
+                                                    fill="none"
+                                                    stroke="white"
+                                                    strokeWidth="1.6"
+                                                  >
+                                                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
                                                   </svg>
                                               </div>
-                                              <span className="text-xs font-medium text-white">{video.commentsCount}</span>
+                                              <span className="text-xs font-medium text-white">
+                            {video.commentsCount}
+                          </span>
                                           </button>
 
-                                          <button onClick={() => handleShare(video)} className="flex flex-col items-center gap-1">
+                                          {/* Compartilhar */}
+                                          <button
+                                            onClick={() => handleShare(video)}
+                                            className="flex flex-col items-center gap-1"
+                                          >
                                               <div className="flex h-12 w-12 items-center justify-center rounded-full border border-white/20 bg-black/30 backdrop-blur transition-colors hover:border-primary/40">
-                                                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.6">
+                                                  <svg
+                                                    width="20"
+                                                    height="20"
+                                                    viewBox="0 0 24 24"
+                                                    fill="none"
+                                                    stroke="white"
+                                                    strokeWidth="1.6"
+                                                  >
                                                       <circle cx="18" cy="5" r="2.4" />
                                                       <circle cx="6" cy="12" r="2.4" />
                                                       <circle cx="18" cy="19" r="2.4" />
@@ -338,8 +395,8 @@ export default function MementoPage() {
                                                   </svg>
                                               </div>
                                               <span className="text-xs font-medium text-white">
-                                                        {shareFeedback === video.id ? "Copiado" : "Compartilhar"}
-                                                    </span>
+                            {shareFeedback === video.id ? "Copiado" : "Compartilhar"}
+                          </span>
                                           </button>
                                       </div>
                                   </div>
@@ -354,7 +411,11 @@ export default function MementoPage() {
                           <div
                             key={i}
                             className={`h-6 w-0.5 rounded-full transition-all duration-300 ${
-                              i === currentIndex ? "bg-primary" : i < currentIndex ? "bg-primary/40" : "bg-primary/15"
+                              i === currentIndex
+                                ? "bg-primary"
+                                : i < currentIndex
+                                  ? "bg-primary/40"
+                                  : "bg-primary/15"
                             }`}
                           />
                         ))}
@@ -379,7 +440,14 @@ export default function MementoPage() {
                           onClick={() => setShowComments(false)}
                           className="rounded-full p-2 text-muted-foreground hover:bg-secondary"
                         >
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <svg
+                              width="20"
+                              height="20"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                            >
                                 <line x1="18" y1="6" x2="6" y2="18" />
                                 <line x1="6" y1="6" x2="18" y2="18" />
                             </svg>

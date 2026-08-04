@@ -1,38 +1,31 @@
-import { Play } from "lucide-react";
+"use client";
+
+import MuxPlayer from "@mux/mux-player-react";
 
 interface VideoPlayerProps {
-    playbackId: string;
-    title?: string;
-    vertical?: boolean;
+  playbackId: string;
+  title: string;
+  poster?: string;
 }
 
-/**
- * Player desacoplado: recebe apenas o playbackId (Mux) e renderiza o stream.
- * A lógica de origem do vídeo permanece nos serviços.
- */
-export function VideoPlayer({ playbackId, title, vertical = false }: VideoPlayerProps) {
-    const ratio = vertical ? "aspect-[9/16]" : "aspect-video";
-
-    if (!playbackId) {
-        return (
-            <div className={`flex ${ratio} w-full items-center justify-center rounded-lg border border-border bg-card`}>
-                <p className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Play className="size-4" aria-hidden="true" />
-                    Processando vídeo…
-                </p>
-            </div>
-        );
-    }
-
+export function VideoPlayer({ playbackId, title, poster }: VideoPlayerProps) {
+  if (!playbackId) {
     return (
-        <div className={`${ratio} w-full overflow-hidden rounded-lg border border-border bg-black`}>
-            <iframe
-                title={title ?? "Player de vídeo"}
-                src={`https://stream.mux.com/${playbackId}`}
-                allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
-                allowFullScreen
-                className="size-full"
-            />
-        </div>
+      <div className="aspect-video w-full flex items-center justify-center bg-black rounded-lg text-muted-foreground">
+        Vídeo indisponível
+      </div>
     );
+  }
+
+  return (
+    <div className="overflow-hidden rounded-lg bg-black">
+      <MuxPlayer
+        playbackId={playbackId}
+        metadata={{ video_title: title }}
+        accentColor="#9e2b25"
+        poster={poster}
+        className="w-full aspect-video"
+      />
+    </div>
+  );
 }
