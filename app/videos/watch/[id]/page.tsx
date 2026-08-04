@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { ChevronDown } from "lucide-react";
-import { fetchRelated, fetchVideo, playbackIdFrom } from "@/lib/videos/api";
+import { fetchRelated, fetchVideo, playbackIdFrom, likeVideo, dislikeVideo } from "@/lib/videos/api";
 import type { VideoItem } from "@/lib/videos/types";
 import { VideoPlayer } from "@/components/videos/VideoPlayer";
 import { VideoActions } from "@/components/videos/VideoActions";
@@ -11,6 +11,7 @@ import { VideoStats } from "@/components/videos/VideoStats";
 import { VideoComments } from "@/components/videos/VideoComments";
 import { VideoSidebar } from "@/components/videos/VideoSidebar";
 import { VideoAvatar } from "@/components/videos/VideoAvatar";
+import { VideoDescription } from "@/components/videos/VideoDescription";
 
 export default function WatchPage() {
     const { id } = useParams<{ id: string }>();
@@ -18,8 +19,11 @@ export default function WatchPage() {
     const [related, setRelated] = useState<VideoItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [showMore, setShowMore] = useState(false);
+
     const [liked, setLiked] = useState(false);
+    const [disliked, setDisliked] = useState(false);
     const [likesCount, setLikesCount] = useState(0);
+    const [dislikesCount, setDislikesCount] = useState(0);
 
     useEffect(() => {
         let cancelled = false;
@@ -29,11 +33,70 @@ export default function WatchPage() {
             if (cancelled) return;
             setVideo(data);
             setLikesCount(data?.likesCount ?? 0);
+            setDislikesCount(data?.dislikesCount ?? 0);
+            setLiked(data?.liked ?? false);
+            setDisliked(data?.disliked ?? false);
             setLoading(false);
         })();
         fetchRelated(id).then((r) => !cancelled && setRelated(r));
         return () => { cancelled = true; };
     }, [id]);
+
+    async function handleToggleLike() {
+        if (!video) return;
+        const prevLiked = liked;
+        const prevDisliked = disliked;
+        const prevLikesCount = likesCount;
+        const prevDislikesCount = dislikesCount;
+
+        setLiked(!prevLiked);
+        setLikesCount((c) => c + (prevLiked ? -1 : 1));
+        if (prevDisliked) {
+            setDisliked(false);
+            setDislikesCount((c) => Math.max(0, c - 1));
+        }
+
+        const result = await likeVideo(video.id);
+        if (!result) {
+            setLiked(prevLiked);
+            setDisliked(prevDisliked);
+            setLikesCount(prevLikesCount);
+            setDislikesCount(prevDislikesCount);
+            return;
+        }
+        setLiked(result.liked);
+        setDisliked(result.disliked);
+        setLikesCount(result.likesCount);
+        setDislikesCount(result.dislikesCount);
+    }
+
+    async function handleToggleDislike() {
+        if (!video) return;
+        const prevLiked = liked;
+        const prevDisliked = disliked;
+        const prevLikesCount = likesCount;
+        const prevDislikesCount = dislikesCount;
+
+        setDisliked(!prevDisliked);
+        setDislikesCount((c) => c + (prevDisliked ? -1 : 1));
+        if (prevLiked) {
+            setLiked(false);
+            setLikesCount((c) => Math.max(0, c - 1));
+        }
+
+        const result = await dislikeVideo(video.id);
+        if (!result) {
+            setLiked(prevLiked);
+            setDisliked(prevDisliked);
+            setLikesCount(prevLikesCount);
+            setDislikesCount(prevDislikesCount);
+            return;
+        }
+        setLiked(result.liked);
+        setDisliked(result.disliked);
+        setLikesCount(result.likesCount);
+        setDislikesCount(result.dislikesCount);
+    }
 
     if (loading) {
         return (
@@ -77,11 +140,11 @@ export default function WatchPage() {
                       </div>
                       <VideoActions
                         liked={liked}
+                        disliked={disliked}
                         likesCount={likesCount}
-                        onToggleLike={() => {
-                            setLiked((v) => !v);
-                            setLikesCount((c) => c + (liked ? -1 : 1));
-                        }}
+                        dislikesCount={dislikesCount}
+                        onToggleLike={handleToggleLike}
+                        onToggleDislike={handleToggleDislike}
                       />
                   </div>
 
@@ -99,9 +162,9 @@ export default function WatchPage() {
                             />
                         </button>
                         {showMore && (
-                          <p className="whitespace-pre-wrap border-t border-border px-4 py-4 text-sm leading-relaxed text-muted-foreground">
-                              {video.description}
-                          </p>
+                          <div className="border-t border-border px-4 py-4">
+                              <VideoDescription description={video.description} hashtags={video.hashtags} />
+                          </div>
                         )}
                     </div>
                   )}

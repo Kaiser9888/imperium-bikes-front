@@ -8,6 +8,10 @@ export interface VideoItem {
     formattedDuration: string;
     viewCount: number;
     likesCount?: number;
+    dislikesCount?: number;
+    liked?: boolean;
+    disliked?: boolean;
+    hashtags?: string[];
     userName: string;
     userAvatarUrl?: string;
     createdAt: string;
@@ -25,4 +29,11 @@ export interface CommentItem {
     userAvatarUrl?: string;
     text: string;
     createdAt: string;
+}
+
+export interface ReactionResponse {
+    likesCount: number;
+    dislikesCount: number;
+    liked: boolean;
+    disliked: boolean;
 }
