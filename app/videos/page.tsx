@@ -1,9 +1,7 @@
-﻿// app/videos/page.tsx
-"use client";
+﻿"use client";
 
 import { useMemo, useState } from "react";
 import { useVideoFeed } from "@/hooks/useVideoFeed";
-import { SearchBar } from "@/components/videos/SearchBar";
 import { CategoryFilter } from "@/components/videos/CategoryFilter";
 import { VideoCard } from "@/components/videos/VideoCard";
 import { VideoGridSkeleton } from "@/components/videos/VideoGridSkeleton";
@@ -15,23 +13,10 @@ const DEFAULT_CATEGORY = "recomendados";
 export default function VideosPage() {
   const { videos, loading, loadingMore, hasMore, error, loadMore, reload } = useVideoFeed(false);
   const [category, setCategory] = useState(DEFAULT_CATEGORY);
-  const [query, setQuery] = useState("");
 
   const visible = useMemo(() => {
     let filtered = videos;
 
-    // Filtro por busca textual
-    if (query.trim()) {
-      const q = query.toLowerCase();
-      filtered = filtered.filter(
-        (v) =>
-          v.title.toLowerCase().includes(q) ||
-          v.userName.toLowerCase().includes(q) ||
-          v.description?.toLowerCase().includes(q)
-      );
-    }
-
-    // Filtro por categoria/tag
     if (category && category !== "recomendados") {
       if (category === "recentes") {
         filtered = [...filtered].sort(
@@ -40,7 +25,6 @@ export default function VideosPage() {
       } else if (category === "vistos") {
         filtered = [...filtered].sort((a, b) => b.viewCount - a.viewCount);
       } else {
-        // Filtro por hashtag (busca no título, descrição e hashtags)
         const tagLower = category.toLowerCase();
         filtered = filtered.filter(
           (v) =>
@@ -53,63 +37,58 @@ export default function VideosPage() {
     }
 
     return filtered;
-  }, [videos, query, category]);
+  }, [videos, category]);
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-10">
-      <div className="space-y-4">
-        <SearchBar value={query} onChange={setQuery} />
+    <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
+      {/* Filtros de categoria */}
+      <div className="mb-6">
         <CategoryFilter value={category} onChange={setCategory} />
       </div>
 
-      <div className="mt-8">
-        {loading ? (
-          <VideoGridSkeleton />
-        ) : error ? (
-          <ErrorState onRetry={reload} />
-        ) : visible.length === 0 ? (
-          <EmptyState
-            title={query ? "Nada encontrado" : "Nenhum vídeo publicado"}
-            description={
-              query
-                ? "Tente outros termos ou remova os filtros."
-                : "Seja o primeiro a publicar."
-            }
-          />
-        ) : (
-          <>
-            <ul className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {visible.map((video, i) => (
-                <li key={video.id}>
-                  <VideoCard video={video} priority={i < 4} />
-                </li>
-              ))}
-            </ul>
+      {/* Grid de vídeos */}
+      {loading ? (
+        <VideoGridSkeleton />
+      ) : error ? (
+        <ErrorState onRetry={reload} />
+      ) : visible.length === 0 ? (
+        <EmptyState
+          title="Nenhum vídeo encontrado"
+          description="Tente selecionar outra categoria ou publique o primeiro vídeo."
+        />
+      ) : (
+        <>
+          <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 xl:grid-cols-4">
+            {visible.map((video, i) => (
+              <li key={video.id}>
+                <VideoCard video={video} priority={i < 4} />
+              </li>
+            ))}
+          </ul>
 
-            {hasMore && (
-              <div className="mt-10 flex justify-center">
-                <button
-                  onClick={loadMore}
-                  disabled={loadingMore}
-                  className="inline-flex items-center gap-2 rounded-md border border-border bg-card px-7 py-2.5 text-sm font-medium transition-colors hover:border-primary/60 disabled:opacity-60"
-                >
-                  {loadingMore ? (
-                    <>
-                      <Loader2 className="size-4 animate-spin" />
-                      Carregando…
-                    </>
-                  ) : (
-                    <>
-                      Ver mais vídeos
-                      <ArrowRight className="size-4" />
-                    </>
-                  )}
-                </button>
-              </div>
-            )}
-          </>
-        )}
-      </div>
+          {hasMore && (
+            <div className="mt-8 flex justify-center">
+              <button
+                onClick={loadMore}
+                disabled={loadingMore}
+                className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-6 py-2.5 text-sm font-medium transition-colors hover:border-primary/40 hover:text-primary disabled:opacity-60"
+              >
+                {loadingMore ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span>Carregando...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Ver mais</span>
+                    <ArrowRight className="h-4 w-4" />
+                  </>
+                )}
+              </button>
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }

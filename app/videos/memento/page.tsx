@@ -187,7 +187,7 @@ export default function MementoPage() {
     }
 
     return (
-      <div className="fixed inset-0 flex flex-col bg-background">
+      <div className="fixed inset-0 bottom-16 flex flex-col bg-background">
           {/* Barra superior */}
           <div className="z-30 flex shrink-0 items-center gap-2.5 border-b border-primary/15 bg-background/95 px-4 py-3 backdrop-blur-sm">
               <Link

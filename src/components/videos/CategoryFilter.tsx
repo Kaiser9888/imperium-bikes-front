@@ -1,4 +1,3 @@
-// src/components/videos/CategoryFilter.tsx
 "use client";
 
 interface CategoryFilterProps {
@@ -27,19 +26,24 @@ const TAGS = [
 
 export function CategoryFilter({ value, onChange }: CategoryFilterProps) {
   return (
-    <div className="space-y-3">
+    <nav className="space-y-3" aria-label="Filtros de vídeos">
       {/* Ordenação */}
-      <div className="flex items-center gap-2 overflow-x-auto [scrollbar-width:none]">
+      <div
+        className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none"
+        role="tablist"
+        aria-label="Ordenar por"
+      >
         {CATEGORIES.map((cat) => {
-          const active = value === cat.id;
+          const isActive = value === cat.id;
           return (
             <button
               key={cat.id}
               type="button"
               onClick={() => onChange(cat.id)}
-              aria-pressed={active}
-              className={`shrink-0 rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
-                active
+              role="tab"
+              aria-selected={isActive}
+              className={`shrink-0 rounded-full px-4 py-1.5 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+                isActive
                   ? "bg-primary text-primary-foreground"
                   : "bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground"
               }`}
@@ -51,17 +55,22 @@ export function CategoryFilter({ value, onChange }: CategoryFilterProps) {
       </div>
 
       {/* Tags/Hashtags */}
-      <div className="flex items-center gap-2 overflow-x-auto [scrollbar-width:none]">
+      <div
+        className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none"
+        role="tablist"
+        aria-label="Filtrar por categoria"
+      >
         {TAGS.map((tag) => {
-          const active = value === tag.id;
+          const isActive = value === tag.id;
           return (
             <button
               key={tag.id}
               type="button"
               onClick={() => onChange(tag.id)}
-              aria-pressed={active}
-              className={`shrink-0 rounded-md border px-3 py-1 text-xs font-medium transition-colors ${
-                active
+              role="tab"
+              aria-selected={isActive}
+              className={`shrink-0 rounded-md border px-3 py-1 text-xs font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+                isActive
                   ? "border-primary bg-primary/10 text-primary"
                   : "border-border text-muted-foreground hover:border-primary/40 hover:text-foreground"
               }`}
@@ -71,6 +80,6 @@ export function CategoryFilter({ value, onChange }: CategoryFilterProps) {
           );
         })}
       </div>
-    </div>
+    </nav>
   );
 }
