@@ -1,3 +1,4 @@
+// app/videos/watch/[id]/page.tsx (ajuste na seção dos botões)
 "use client";
 
 import { useEffect, useState } from "react";
@@ -39,9 +40,7 @@ export default function WatchPage() {
             setLoading(false);
         })();
         fetchRelated(id).then((r) => !cancelled && setRelated(r));
-        return () => {
-            cancelled = true;
-        };
+        return () => { cancelled = true; };
     }, [id]);
 
     async function handleToggleLike() {
@@ -114,12 +113,17 @@ export default function WatchPage() {
     }
 
     return (
-      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
-          <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px]">
-              <div className="space-y-5">
-                  <VideoPlayer playbackId={playbackIdFrom(video.videoUrl)} title={video.title} />
+      <div className="mx-auto max-w-7xl px-0 sm:px-6 lg:px-8 lg:py-8">
+          <div className="grid gap-6 lg:gap-8 lg:grid-cols-[minmax(0,1fr)_360px]">
+              {/* Coluna principal */}
+              <div className="space-y-4 lg:space-y-5">
+                  {/* Player ocupa largura total no mobile */}
+                  <div className="lg:rounded-lg overflow-hidden">
+                      <VideoPlayer playbackId={playbackIdFrom(video.videoUrl)} title={video.title} />
+                  </div>
 
-                  <div>
+                  {/* Título + Stats */}
+                  <div className="px-4 sm:px-0">
                       <h1 className="text-lg font-semibold leading-snug text-foreground lg:text-xl">
                           {video.title}
                       </h1>
@@ -128,14 +132,8 @@ export default function WatchPage() {
                       </div>
                   </div>
 
-                  <div className="flex flex-wrap items-center justify-between gap-4 border-y border-border py-4">
-                      <div className="flex items-center gap-3">
-                          <VideoAvatar name={video.userName} url={video.userAvatarUrl} className="size-10" />
-                          <div>
-                              <p className="text-sm font-medium text-foreground">{video.userName}</p>
-                              <p className="text-xs text-muted-foreground">Criador Imperium</p>
-                          </div>
-                      </div>
+                  {/* Barra de ações MOBILE - abaixo do vídeo, largura total */}
+                  <div className="px-4 sm:px-0 lg:hidden">
                       <VideoActions
                         liked={liked}
                         disliked={disliked}
@@ -146,8 +144,40 @@ export default function WatchPage() {
                       />
                   </div>
 
+                  {/* Canal + ações DESKTOP */}
+                  <div className="flex flex-wrap items-center justify-between gap-4 border-y border-border py-4 px-4 sm:px-0">
+                      <div className="flex items-center gap-3">
+                          <VideoAvatar name={video.userName} url={video.userAvatarUrl} className="size-10" />
+                          <div>
+                              <p className="text-sm font-medium text-foreground">{video.userName}</p>
+                              <p className="text-xs text-muted-foreground">Criador Imperium</p>
+                          </div>
+                      </div>
+                      {/* Botões no desktop */}
+                      <div className="hidden lg:block">
+                          <VideoActions
+                            liked={liked}
+                            disliked={disliked}
+                            likesCount={likesCount}
+                            dislikesCount={dislikesCount}
+                            onToggleLike={handleToggleLike}
+                            onToggleDislike={handleToggleDislike}
+                          />
+                      </div>
+                  </div>
+
+                  {/* No mobile, mostra o criador após os botões de ação */}
+                  <div className="flex items-center gap-3 px-4 sm:px-0 lg:hidden">
+                      <VideoAvatar name={video.userName} url={video.userAvatarUrl} className="size-9" />
+                      <div>
+                          <p className="text-sm font-medium text-foreground">{video.userName}</p>
+                          <p className="text-xs text-muted-foreground">Criador Imperium</p>
+                      </div>
+                  </div>
+
+                  {/* Descrição */}
                   {video.description && (
-                    <div className="rounded-lg border border-border bg-card">
+                    <div className="mx-4 sm:mx-0 rounded-lg border border-border bg-card">
                         <button
                           type="button"
                           onClick={() => setShowMore((v) => !v)}
@@ -161,18 +191,27 @@ export default function WatchPage() {
                         </button>
                         {showMore && (
                           <div className="border-t border-border px-4 py-4">
-                              <VideoDescription
-                                description={video.description}
-                                hashtags={video.hashtags}
-                              />
+                              <VideoDescription description={video.description} hashtags={video.hashtags} />
                           </div>
                         )}
                     </div>
                   )}
 
-                  <VideoComments videoId={video.id} />
+                  {/* Comentários */}
+                  <div className="px-4 sm:px-0">
+                      <VideoComments videoId={video.id} />
+                  </div>
               </div>
 
+              {/* Sidebar - escondida no mobile, visível no desktop */}
+              <div className="hidden lg:block">
+                  <VideoSidebar videos={related} />
+              </div>
+          </div>
+
+          {/* Videos relacionados no mobile (abaixo de tudo) */}
+          <div className="mt-8 lg:hidden px-4 sm:px-0">
+              <h2 className="text-lg font-semibold mb-4">Vídeos relacionados</h2>
               <VideoSidebar videos={related} />
           </div>
       </div>
