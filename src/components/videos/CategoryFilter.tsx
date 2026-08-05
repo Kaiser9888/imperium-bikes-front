@@ -9,6 +9,7 @@ const CATEGORIES = [
   { id: "recomendados", label: "Recomendados" },
   { id: "recentes", label: "Mais recentes" },
   { id: "vistos", label: "Mais vistos" },
+  { id: "live", label: "Live" },
 ];
 
 const TAGS = [
@@ -22,6 +23,7 @@ const TAGS = [
   { id: "trilha", label: "Trilha" },
   { id: "manutencao", label: "Manutenção" },
   { id: "review", label: "Review" },
+  { id: "campeonato", label: "Campeonato" },
 ];
 
 export function CategoryFilter({ value, onChange }: CategoryFilterProps) {
@@ -42,11 +44,12 @@ export function CategoryFilter({ value, onChange }: CategoryFilterProps) {
               onClick={() => onChange(cat.id)}
               role="tab"
               aria-selected={isActive}
-              className={`shrink-0 rounded-full px-4 py-1.5 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+              className={`shrink-0 rounded-full px-4 py-1.5 font-blackletter text-xl tracking-wide transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
                 isActive
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground"
+                  ? "bg-red-700 text-white"
+                  : "bg-red-200 text-white hover:bg-red-700 hover:text-white"
               }`}
+              style={{ fontFamily: 'var(--font-blackletter)' }}
             >
               {cat.label}
             </button>
@@ -69,11 +72,12 @@ export function CategoryFilter({ value, onChange }: CategoryFilterProps) {
               onClick={() => onChange(tag.id)}
               role="tab"
               aria-selected={isActive}
-              className={`shrink-0 rounded-md border px-3 py-1 text-xs font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+              className={`shrink-0 rounded-md border px-3 py-1 font-blackletter text-base tracking-wide transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
                 isActive
                   ? "border-primary bg-primary/10 text-primary"
-                  : "border-border text-muted-foreground hover:border-primary/40 hover:text-foreground"
+                  : "border-border text-muted-foreground hover:border-red-300 hover:text-foreground"
               }`}
+              style={{ fontFamily: 'var(--font-blackletter)' }}
             >
               #{tag.label}
             </button>
