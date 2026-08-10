@@ -18,7 +18,6 @@ export default function VideosLayout({ children }: { children: React.ReactNode }
     { icon: Video, label: "Central", href: "/videos/meus-videos" },
   ];
 
-  // Lógica: se já estou em /videos e clico Home → vai para /
   const getHomeHref = () => {
     return pathname === "/videos" ? "/" : "/videos";
   };
@@ -27,42 +26,40 @@ export default function VideosLayout({ children }: { children: React.ReactNode }
     <div className="flex min-h-screen flex-col bg-background">
       {/* ===== TOP BAR ===== */}
       <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur-lg">
-        <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+        <div className="flex h-14 items-center gap-2 px-3 sm:px-6 lg:px-8">
 
-          {/* Esquerda: Logo */}
-          <div className="flex items-center gap-4">
-            <Link
-              href="/videos"
-              className="flex items-center gap-2"
-              aria-label="Página inicial de vídeos"
+          {/* ===== LOGO (SEMPRE VISÍVEL) ===== */}
+          <Link
+            href="/videos"
+            className="flex items-center gap-2 flex-shrink-0"
+            aria-label="Página inicial de vídeos"
+          >
+            <img
+              src="/logo2.png"
+              alt="Imperium"
+              className="h-7 w-auto sm:h-8"
+            />
+            <span
+              className="font-blackletter text-sm sm:text-2xl tracking-wide"
+              style={{
+                fontFamily: 'var(--font-blackletter)',
+                color: '#ac0202'
+              }}
             >
-              <img
-                src="/logo2.png"
-                alt="Imperium"
-                className="h-8 w-auto"
-              />
-              <span
-                className="font-blackletter text-3xl hidden sm:inline tracking-wide"
-                style={{
-                  fontFamily: 'var(--font-blackletter)',
-                  color: '#ac0202'
-                }}
-              >
-                                Imperium
-                            </span>
-            </Link>
-          </div>
+                            Imperium
+                        </span>
+          </Link>
 
-          {/* Centro: Busca (apenas desktop) */}
+          {/* ===== BARRA DE PESQUISA (CENTRO) ===== */}
           {!isMemento && (
-            <div className="hidden sm:block w-full max-w-md mx-4">
+            <div className="flex-1 max-w-md mx-auto">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
-                <label htmlFor="desktop-search" className="sr-only">
+                <label htmlFor="main-search" className="sr-only">
                   Buscar vídeos
                 </label>
                 <input
-                  id="desktop-search"
+                  id="main-search"
                   type="search"
                   placeholder="Buscar vídeos..."
                   className="w-full rounded-full border border-border bg-muted/50 py-2 pl-10 pr-4 text-sm outline-none transition-colors placeholder:text-muted-foreground focus:border-primary/40 focus:bg-background"
@@ -71,22 +68,20 @@ export default function VideosLayout({ children }: { children: React.ReactNode }
             </div>
           )}
 
-          {/* Direita: Notificação + Login/Perfil + Busca mobile */}
-          <div className="flex items-center gap-2">
-
-            {/* ===== SINO DE NOTIFICAÇÃO ===== */}
+          {/* ===== ÍCONES DIREITA ===== */}
+          <div className="flex items-center gap-1 flex-shrink-0">
+            {/* Notificação */}
             <button
-              className="relative rounded-md p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
               aria-label="Notificações"
             >
               <Bell className="h-5 w-5" />
             </button>
 
-            {/* Se logado → mostra avatar */}
+            {/* Login/Perfil */}
             {isSignedIn ? (
               <UserButton />
             ) : (
-              /* Se NÃO logado → mostra ícone de pessoa */
               <SignInButton mode="modal">
                 <button
                   className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary"
@@ -108,16 +103,6 @@ export default function VideosLayout({ children }: { children: React.ReactNode }
                 </button>
               </SignInButton>
             )}
-
-            {/* Busca mobile */}
-            <Link
-              href="/videos/buscar"
-              className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:hidden"
-              aria-label="Buscar vídeos"
-            >
-              <Search className="h-5 w-5" />
-            </Link>
-
           </div>
 
         </div>
@@ -138,7 +123,6 @@ export default function VideosLayout({ children }: { children: React.ReactNode }
           {navItems.map((item) => {
             const isActive = pathname === item.href;
 
-            // Botão Postar destacado
             if (item.highlight) {
               return (
                 <Link
@@ -155,7 +139,6 @@ export default function VideosLayout({ children }: { children: React.ReactNode }
               );
             }
 
-            // Botão Home com lógica de 2 níveis
             const href = item.label === "Início" ? getHomeHref() : item.href;
 
             return (
