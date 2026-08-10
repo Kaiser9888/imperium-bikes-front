@@ -13,12 +13,13 @@ import { PricingStep } from "@/components/publish/PricingStep"
 import { ReviewStep } from "@/components/publish/ReviewStep"
 import { PublishNavigation } from "@/components/publish/PublishNavigation"
 import { SaveDraftIndicator } from "@/components/publish/SaveDraftIndicator"
+import { ProductImage, ProductFormData } from "@/types/publish/product"
 
 export default function PublicarPage() {
   const { isSignedIn, isLoaded } = useUser()
   const {
     step, formData, totalSteps, isSaving, lastSaved, conditionalFields,
-    updateField, updateMultipleFields,
+    updateMultipleFields,
     addImage, removeImage, setMainImage, reorderImages,
     nextStep, prevStep, goToStep, clearDraft
   } = usePublishForm()
@@ -28,6 +29,53 @@ export default function PublicarPage() {
       <p className="text-muted-foreground">Carregando...</p>
     </div>
   )
+
+  // Converte ImageItem[] para ProductImage[]
+  const productImages: ProductImage[] = formData.images.map((img, index) => ({
+    url: img.preview,
+    isMain: img.isMain,
+    displayOrder: index,
+    file: img.file,
+  }))
+
+  // Handlers adaptados para PhotosStep
+  const handleAddImage = (image: ProductImage) => {
+    if (image.file) addImage(image.file)
+  }
+  const handleRemoveImage = (index: number) => {
+    const img = formData.images[index]
+    if (img) removeImage(img.id)
+  }
+  const handleSetMainImage = (index: number) => {
+    const img = formData.images[index]
+    if (img) setMainImage(img.id)
+  }
+  const handleReorderImages = (from: number, to: number) => {
+    const newImages = [...formData.images]
+    const [moved] = newImages.splice(from, 1)
+    newImages.splice(to, 0, moved)
+    reorderImages(newImages)
+  }
+
+  // Converte PublishFormData para ProductFormData
+  const productFormData: ProductFormData = {
+    title: formData.title,
+    brand: "",
+    model: "",
+    description: formData.description,
+    price: parseFloat(formData.price) || 0,
+    condition: formData.condition === "new" ? "NEW" : formData.condition === "used" ? "USED" : "NEW",
+    categoryId: formData.categoryId,
+    subcategoryId: formData.subcategoryId,
+    stock: parseInt(formData.stock || "1"),
+    images: productImages,
+    negotiable: false,
+    shippingType: "",
+    city: "",
+    state: "",
+    hasSecurePayment: false,
+    featured: false,
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -61,28 +109,28 @@ export default function PublicarPage() {
         )}
         {step === 2 && (
           <PhotosStep
-            images={formData.images}
-            onAdd={addImage}
-            onRemove={removeImage}
-            onSetMain={setMainImage}
-            onReorder={reorderImages}
+            images={productImages}
+            onAdd={handleAddImage}
+            onRemove={handleRemoveImage}
+            onSetMain={handleSetMainImage}
+            onReorder={handleReorderImages}
           />
         )}
         {step === 3 && (
           <PricingStep
-            price={formData.price}
-            negotiable={formData.negotiable}
-            shippingType={formData.shippingType}
-            city={formData.city}
-            state={formData.state}
-            hasSecurePayment={formData.hasSecurePayment}
-            featured={formData.featured}
+            price={parseFloat(formData.price) || 0}
+            negotiable={false}
+            shippingType=""
+            city=""
+            state=""
+            hasSecurePayment={false}
+            featured={false}
             onChange={updateMultipleFields}
           />
         )}
         {step === 4 && (
           <ReviewStep
-            formData={formData}
+            formData={productFormData}
             onEdit={goToStep}
           />
         )}
