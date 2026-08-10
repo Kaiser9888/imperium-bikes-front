@@ -17,7 +17,7 @@ export interface PublishFormData {
     // Bloco Fixo
     title: string
     categoryId: string
-    subcategoryId: string  // JSON string
+    subcategoryId: string
     price: string
     description: string
     images: ImageItem[]
@@ -59,7 +59,7 @@ export function usePublishForm() {
         }
     })
     const [isSaving, setIsSaving] = useState(false)
-    const [lastSaved, setLastSaved] = useState<string | null>(null)
+    const [lastSaved, setLastSaved] = useState<Date | null>(null)
 
     const totalSteps = 5
 
@@ -67,7 +67,7 @@ export function usePublishForm() {
     const saveDraft = useCallback(() => {
         setIsSaving(true)
         localStorage.setItem(STORAGE_KEY, JSON.stringify(formData))
-        setLastSaved(new Date().toLocaleTimeString("pt-BR"))
+        setLastSaved(new Date())
         setTimeout(() => setIsSaving(false), 500)
     }, [formData])
 
@@ -147,7 +147,7 @@ export function usePublishForm() {
         }
     }, [])
 
-    // Determinar campos condicionais
+    // Determinar campos condicionais baseado na categoria
     const getConditionalFields = useCallback(() => {
         let parsed: { categoryId?: string; modalities?: string[]; attributes?: string[] } = {}
         try {
@@ -155,8 +155,6 @@ export function usePublishForm() {
         } catch {}
 
         const categoryId = parsed.categoryId || ""
-        const hasModalities = (parsed.modalities || []).length > 0
-        const modalityIds = parsed.modalities || []
         const attributeIds = parsed.attributes || []
 
         const fields = {
@@ -169,7 +167,7 @@ export function usePublishForm() {
             showEstimatedTime: false,
         }
 
-        // Serviços
+        // Serviços (ferramentas/manutenção): sem estoque, sem condição
         if (categoryId === "ferramentas") {
             fields.showEstimatedTime = true
             return fields
@@ -181,18 +179,24 @@ export function usePublishForm() {
             fields.showStock = true
         }
 
-        // Tamanho do Quadro
+        // Equipamentos e Vestuário: têm condição e estoque
+        if (["equipamentos", "vestuario"].includes(categoryId)) {
+            fields.showCondition = true
+            fields.showStock = true
+        }
+
+        // Tamanho do Quadro (Bikes e Quadros)
         if (["bicicletas", "quadros"].includes(categoryId)) {
             fields.showFrameSize = true
         }
 
-        // Tamanho do Aro
+        // Tamanho do Aro (Bikes, Quadros, Rodas/Pneus)
         if (["bicicletas", "quadros", "rodas-pneus"].includes(categoryId) ||
           attributeIds.some(a => a.includes("aro"))) {
             fields.showWheelSize = true
         }
 
-        // Vestuário: tamanho P/M/G
+        // Tamanho P/M/G (Vestuário, Equipamentos)
         if (categoryId === "vestuario" || categoryId === "equipamentos") {
             fields.showSize = true
         }
