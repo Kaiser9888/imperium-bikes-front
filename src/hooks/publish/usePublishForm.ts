@@ -1,160 +1,222 @@
-/* eslint-disable react-hooks/set-state-in-effect */
-// hooks/publish/usePublishForm.ts
 "use client"
 
-import { useState, useCallback, useEffect, useRef } from 'react'
-import { ProductFormData, ProductImage } from '@/types/publish/product'
+import { useState, useCallback, useEffect } from "react"
 
-const STORAGE_KEY = 'imperium_publish_draft'
+// ============================================================
+// TIPOS
+// ============================================================
 
-const initialFormData: ProductFormData = {
-    categoryId: '',
-    subcategoryId: '',
-    title: '',
-    brand: '',
-    model: '',
-    description: '',
-    condition: '',
-    stock: 1,
-    images: [],
-    price: 0,
-    negotiable: false,
-    shippingType: '',
-    city: '',
-    state: '',
-    hasSecurePayment: false,
-    featured: false,
+export interface ImageItem {
+    id: string
+    file: File
+    preview: string
+    isMain: boolean
 }
+
+export interface PublishFormData {
+    // Bloco Fixo
+    title: string
+    categoryId: string
+    subcategoryId: string  // JSON string
+    price: string
+    description: string
+    images: ImageItem[]
+
+    // Condicionais
+    condition?: "new" | "used"
+    stock?: string
+    frameSize?: string
+    wheelSize?: string
+    tireWidth?: string
+    size?: string
+    estimatedTime?: string
+}
+
+const STORAGE_KEY = "publish_draft"
+
+const DEFAULT_FORM_DATA: PublishFormData = {
+    title: "",
+    categoryId: "",
+    subcategoryId: "",
+    price: "",
+    description: "",
+    images: [],
+}
+
+// ============================================================
+// HOOK PRINCIPAL
+// ============================================================
 
 export function usePublishForm() {
     const [step, setStep] = useState(0)
-    const [formData, setFormData] = useState<ProductFormData>(initialFormData)
-    const [isDirty, setIsDirty] = useState(false)
-    const [lastSaved, setLastSaved] = useState<Date | null>(null)
-    const [isSaving, setIsSaving] = useState(false)
-    const loadedRef = useRef(false)
-
-    // Carregar rascunho do localStorage (apenas uma vez)
-    useEffect(() => {
-        if (loadedRef.current) return
-        loadedRef.current = true
-        const saved = localStorage.getItem(STORAGE_KEY)
-        if (saved) {
-            try {
-                const parsed = JSON.parse(saved)
-                setFormData(prev => ({ ...prev, ...parsed }))
-            } catch {
-                // ignorar erro de parse
-            }
+    const [formData, setFormData] = useState<PublishFormData>(() => {
+        if (typeof window === "undefined") return DEFAULT_FORM_DATA
+        try {
+            const saved = localStorage.getItem(STORAGE_KEY)
+            return saved ? { ...DEFAULT_FORM_DATA, ...JSON.parse(saved) } : DEFAULT_FORM_DATA
+        } catch {
+            return DEFAULT_FORM_DATA
         }
-    }, [])
+    })
+    const [isSaving, setIsSaving] = useState(false)
+    const [lastSaved, setLastSaved] = useState<string | null>(null)
 
-    // Salvar rascunho no localStorage quando houver mudancas
+    const totalSteps = 5
+
+    // Salvar rascunho no localStorage
+    const saveDraft = useCallback(() => {
+        setIsSaving(true)
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(formData))
+        setLastSaved(new Date().toLocaleTimeString("pt-BR"))
+        setTimeout(() => setIsSaving(false), 500)
+    }, [formData])
+
+    // Auto-save a cada 30s
     useEffect(() => {
-        if (!isDirty) return
-        const timer = setTimeout(() => {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(formData))
-            setLastSaved(new Date())
-            setIsDirty(false)
-            setIsSaving(false)
-        }, 2000)
-        return () => clearTimeout(timer)
-    }, [formData, isDirty])
+        const timer = setInterval(saveDraft, 30000)
+        return () => clearInterval(timer)
+    }, [saveDraft])
 
-    const updateField = useCallback(<K extends keyof ProductFormData>(field: K, value: ProductFormData[K]) => {
+    const updateField = useCallback(<K extends keyof PublishFormData>(
+      field: K,
+      value: PublishFormData[K]
+    ) => {
         setFormData(prev => ({ ...prev, [field]: value }))
-        setIsDirty(true)
-        setIsSaving(true)
     }, [])
 
-    const updateMultipleFields = useCallback((fields: Partial<ProductFormData>) => {
+    const updateMultipleFields = useCallback((fields: Partial<PublishFormData>) => {
         setFormData(prev => ({ ...prev, ...fields }))
-        setIsDirty(true)
-        setIsSaving(true)
     }, [])
 
-    const addImage = useCallback((image: ProductImage) => {
+    const addImage = useCallback((file: File) => {
+        const newImage: ImageItem = {
+            id: `img-${Date.now()}`,
+            file,
+            preview: URL.createObjectURL(file),
+            isMain: false,
+        }
         setFormData(prev => ({
             ...prev,
-            images: [...prev.images, image].map((img, i) => ({ ...img, displayOrder: i }))
+            images: prev.images.length === 0
+              ? [{ ...newImage, isMain: true }]
+              : [...prev.images, newImage]
         }))
-        setIsDirty(true)
     }, [])
 
-    const removeImage = useCallback((index: number) => {
-        setFormData(prev => ({
-            ...prev,
-            images: prev.images.filter((_, i) => i !== index).map((img, i) => ({ ...img, displayOrder: i }))
-        }))
-        setIsDirty(true)
-    }, [])
-
-    const setMainImage = useCallback((index: number) => {
-        setFormData(prev => ({
-            ...prev,
-            images: prev.images.map((img, i) => ({ ...img, isMain: i === index }))
-        }))
-        setIsDirty(true)
-    }, [])
-
-    const reorderImages = useCallback((fromIndex: number, toIndex: number) => {
+    const removeImage = useCallback((id: string) => {
         setFormData(prev => {
-            const newImages = [...prev.images]
-            const [removed] = newImages.splice(fromIndex, 1)
-            newImages.splice(toIndex, 0, removed)
-            return { ...prev, images: newImages.map((img, i) => ({ ...img, displayOrder: i })) }
+            const filtered = prev.images.filter(img => img.id !== id)
+            if (filtered.length > 0 && !filtered.some(img => img.isMain)) {
+                filtered[0].isMain = true
+            }
+            return { ...prev, images: filtered }
         })
-        setIsDirty(true)
     }, [])
 
-    const clearDraft = useCallback(() => {
-        localStorage.removeItem(STORAGE_KEY)
-        setFormData(initialFormData)
-        setStep(0)
-        setIsDirty(false)
+    const setMainImage = useCallback((id: string) => {
+        setFormData(prev => ({
+            ...prev,
+            images: prev.images.map(img => ({
+                ...img,
+                isMain: img.id === id,
+            }))
+        }))
     }, [])
 
-    // Validar etapa atual antes de avancar
+    const reorderImages = useCallback((images: ImageItem[]) => {
+        setFormData(prev => ({ ...prev, images }))
+    }, [])
+
     const nextStep = useCallback(() => {
-        if (step === 0 && (!formData.categoryId || !formData.subcategoryId)) return
-        if (step === 1 && (!formData.title || formData.title.length < 10 || !formData.condition || !formData.description || formData.description.length < 40)) return
-        if (step === 2 && formData.images.length < 3) return
-        if (step === 3 && (!formData.price || formData.price <= 0 || !formData.shippingType)) return
-        setStep(prev => Math.min(prev + 1, 4))
-    }, [step, formData])
+        setStep(prev => Math.min(prev + 1, totalSteps - 1))
+    }, [totalSteps])
 
     const prevStep = useCallback(() => {
         setStep(prev => Math.max(prev - 1, 0))
     }, [])
 
-    const goToStep = useCallback((s: number) => {
-        // Permitir voltar para etapas ja preenchidas
-        if (s < step) {
-            setStep(s)
-            return
+    const goToStep = useCallback((stepIndex: number) => {
+        setStep(Math.max(0, Math.min(stepIndex, totalSteps - 1)))
+    }, [totalSteps])
+
+    const clearDraft = useCallback(() => {
+        if (confirm("Tem certeza que deseja limpar todo o rascunho?")) {
+            setFormData(DEFAULT_FORM_DATA)
+            setStep(0)
+            localStorage.removeItem(STORAGE_KEY)
         }
-        // So avancar se a etapa atual for valida
-        if (s === step + 1) {
-            nextStep()
+    }, [])
+
+    // Determinar campos condicionais
+    const getConditionalFields = useCallback(() => {
+        let parsed: { categoryId?: string; modalities?: string[]; attributes?: string[] } = {}
+        try {
+            parsed = JSON.parse(formData.subcategoryId || "{}")
+        } catch {}
+
+        const categoryId = parsed.categoryId || ""
+        const hasModalities = (parsed.modalities || []).length > 0
+        const modalityIds = parsed.modalities || []
+        const attributeIds = parsed.attributes || []
+
+        const fields = {
+            showCondition: false,
+            showStock: false,
+            showFrameSize: false,
+            showWheelSize: false,
+            showTireWidth: false,
+            showSize: false,
+            showEstimatedTime: false,
         }
-    }, [step, nextStep])
+
+        // Serviços
+        if (categoryId === "ferramentas") {
+            fields.showEstimatedTime = true
+            return fields
+        }
+
+        // Bikes, Quadros, Peças: têm condição e estoque
+        if (["bicicletas", "quadros", "garfos-suspensoes", "transmissao", "freios", "rodas-pneus", "cockpit", "pedais"].includes(categoryId)) {
+            fields.showCondition = true
+            fields.showStock = true
+        }
+
+        // Tamanho do Quadro
+        if (["bicicletas", "quadros"].includes(categoryId)) {
+            fields.showFrameSize = true
+        }
+
+        // Tamanho do Aro
+        if (["bicicletas", "quadros", "rodas-pneus"].includes(categoryId) ||
+          attributeIds.some(a => a.includes("aro"))) {
+            fields.showWheelSize = true
+        }
+
+        // Vestuário: tamanho P/M/G
+        if (categoryId === "vestuario" || categoryId === "equipamentos") {
+            fields.showSize = true
+        }
+
+        return fields
+    }, [formData.subcategoryId])
 
     return {
         step,
         formData,
-        isDirty,
-        lastSaved,
+        totalSteps,
         isSaving,
+        lastSaved,
+        conditionalFields: getConditionalFields(),
         updateField,
         updateMultipleFields,
         addImage,
         removeImage,
         setMainImage,
         reorderImages,
-        clearDraft,
         nextStep,
         prevStep,
         goToStep,
-        totalSteps: 5,
+        clearDraft,
+        saveDraft,
     }
 }
