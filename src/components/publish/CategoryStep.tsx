@@ -26,7 +26,7 @@ const MAIN_CATEGORIES = [
         id: "servicos",
         label: "Serviços",
         description: "Mão de obra especializada",
-        image: "/images/categories/servicos.jpg",
+        image: "/images/categories/servico.jpg",
         icon: "🛠️",
     },
     {
