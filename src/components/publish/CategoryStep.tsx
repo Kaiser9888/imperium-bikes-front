@@ -12,28 +12,28 @@ const MAIN_CATEGORIES = [
         id: "bikes",
         label: "Bikes",
         description: "Bicicletas completas montadas",
-        image: "/images/categories/bikes.jpg",  // ← Coloque sua imagem aqui
+        image: "public/images/categories/bikes.jpg",  // ← Coloque sua imagem aqui
         icon: "🚲",
     },
     {
         id: "pecas",
         label: "Peças",
         description: "Componentes e reposição",
-        image: "/images/categories/pecas.jpg",
+        image: "public/images/categories/pecas.jpg",
         icon: "⚙️",
     },
     {
         id: "servicos",
         label: "Serviços",
         description: "Mão de obra especializada",
-        image: "/images/categories/servico.jpg",
+        image: "public/images/categories/servico.jpg",
         icon: "🛠️",
     },
     {
         id: "produtos",
         label: "Produtos",
         description: "Acessórios e lifestyle",
-        image: "/images/categories/produtos.jpg",
+        image: "public/images/categories/produtos.jpg",
         icon: "📦",
     },
 ]
