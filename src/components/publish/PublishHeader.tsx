@@ -1,34 +1,34 @@
 ﻿"use client"
 
-import { ArrowLeft, Trash2 } from "lucide-react"
+import { ArrowLeft } from "lucide-react"
 import Link from "next/link"
 
 interface Props {
-    onClear: () => void
+  onClear: () => void
 }
 
 export function PublishHeader({ onClear }: Props) {
-    return (
-      <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur-lg">
-          <div className="flex h-14 items-center justify-between px-4">
-              <Link
-                href="/videos"
-                className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-              >
-                  <ArrowLeft className="size-4" />
-                  <span className="hidden sm:inline">Voltar</span>
-              </Link>
+  return (
+    <header
+      className="sticky top-0 z-40 border-b border-border/60 bg-marble bg-cover bg-center shadow-sm"
+      style={{ backgroundImage: "url(/images/marble-light.png)" }}
+    >
+      <div className="bg-white/60 backdrop-blur-[2px]">
+        <div className="flex h-14 items-center justify-between px-4">
+          {/* Botão Voltar */}
+          <Link
+            href="/"
+            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ArrowLeft className="size-4" />
+            <span>Voltar</span>
+          </Link>
 
-              <h1 className="text-sm font-semibold sm:text-base">Publicar anúncio</h1>
 
-              <button
-                onClick={onClear}
-                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-red-500 transition-colors"
-              >
-                  <Trash2 className="size-3" />
-                  <span className="hidden sm:inline">Limpar</span>
-              </button>
-          </div>
-      </header>
-    )
+          {/* Espaço vazio para centralizar o título */}
+          <div className="w-16" />
+        </div>
+      </div>
+    </header>
+  )
 }
