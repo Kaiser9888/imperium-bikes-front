@@ -14,7 +14,6 @@ export default function VideosLayout({ children }: { children: React.ReactNode }
 
   const [showNav, setShowNav] = useState(true);
   const lastScrollY = useRef(0);
-  const scrollTimeout = useRef<NodeJS.Timeout | null>(null);
 
   const navItems = [
     { icon: Home, label: "Início", href: "/videos" },
@@ -42,19 +41,10 @@ export default function VideosLayout({ children }: { children: React.ReactNode }
       }
 
       lastScrollY.current = currentScrollY;
-
-      // Resetar timeout
-      if (scrollTimeout.current) clearTimeout(scrollTimeout.current);
-      scrollTimeout.current = setTimeout(() => {
-        setShowNav(true);  // Mostra quando para de rolar
-      }, 500);
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
-      if (scrollTimeout.current) clearTimeout(scrollTimeout.current);
-    };
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   // Se for watch page, sem nav
@@ -66,7 +56,7 @@ export default function VideosLayout({ children }: { children: React.ReactNode }
     <div className="flex min-h-screen flex-col bg-background">
       {/* ===== TOP BAR ===== */}
       <header
-        className={`sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur-lg transition-transform duration-300 ${
+        className={`fixed top-0 left-0 right-0 z-40 border-b border-border bg-background/95 backdrop-blur-lg transition-transform duration-300 ${
           showNav ? "translate-y-0" : "-translate-y-full"
         }`}
       >
@@ -112,8 +102,8 @@ export default function VideosLayout({ children }: { children: React.ReactNode }
         </div>
       </header>
 
-      {/* Conteúdo */}
-      <main className="flex-1">{children}</main>
+      {/* Conteúdo - pt-14 compensa o header fixo */}
+      <main className="flex-1 pt-14">{children}</main>
 
       {/* ===== BOTTOM NAVIGATION ===== */}
       <nav
