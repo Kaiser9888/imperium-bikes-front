@@ -55,7 +55,7 @@ export function UploadForm({ mode }: { mode: UploadMode }) {
 
   const tagList = hashtags.split(/\s+/).filter(Boolean);
   const busy = status === "uploading" || status === "processing";
-  const canPublish = !!file && (isMemento ? true : !!title.trim()) && !busy;
+  const canPublish = !!file && (isMemento ? !!description.trim() : !!title.trim()) && !busy;
 
   const reset = () => {
     if (previewUrl) URL.revokeObjectURL(previewUrl);
@@ -73,6 +73,10 @@ export function UploadForm({ mode }: { mode: UploadMode }) {
     if (!file) return;
     if (!isMemento && !title.trim()) {
       setError("Título obrigatório");
+      return;
+    }
+    if (isMemento && !description.trim()) {
+      setError("Escreva uma descrição — ela também é usada como título do Memento");
       return;
     }
     setError("");
@@ -226,7 +230,7 @@ export function UploadForm({ mode }: { mode: UploadMode }) {
             <div>
               <div className="mb-2 flex items-center justify-between text-xs">
                 <label htmlFor="description" className="font-medium text-foreground">
-                  Descrição
+                  {isMemento ? "Descrição *" : "Descrição"}
                 </label>
                 <span className="text-muted-foreground">{description.length}/500</span>
               </div>
@@ -237,7 +241,7 @@ export function UploadForm({ mode }: { mode: UploadMode }) {
                 disabled={busy}
                 rows={isMemento ? 5 : 4}
                 maxLength={500}
-                placeholder="Conte mais sobre o vídeo…"
+                placeholder={isMemento ? "Essa descrição também vira o título do Memento…" : "Conte mais sobre o vídeo…"}
                 className={`${fieldClass} resize-none`}
               />
             </div>
