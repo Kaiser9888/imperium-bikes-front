@@ -3,7 +3,7 @@
 
 import { ThumbsUp, ThumbsDown, Share2 } from "lucide-react";
 import { formatViews } from "@/lib/videos/format";
-import { toast } from "sonner"; // ou seu sistema de toast, se não tiver posso adaptar
+import { toast } from "sonner";
 
 interface VideoActionsProps {
   liked: boolean;
@@ -25,7 +25,6 @@ export function VideoActions({
   async function handleShare() {
     const url = typeof window !== "undefined" ? window.location.href : "";
 
-    // Tenta share nativo (mobile)
     if (typeof navigator !== "undefined" && navigator.share) {
       try {
         await navigator.share({ url });
@@ -35,7 +34,6 @@ export function VideoActions({
       }
     }
 
-    // Fallback: copia o link
     if (typeof navigator !== "undefined" && navigator.clipboard) {
       await navigator.clipboard.writeText(url);
       toast?.("Link copiado!", { description: "Compartilhe com seus amigos" });
@@ -44,7 +42,6 @@ export function VideoActions({
 
   return (
     <div className="flex items-center gap-2 w-full sm:w-auto">
-      {/* Grupo Like + Dislike */}
       <div className="flex items-center rounded-full bg-muted/50 border border-border overflow-hidden">
         <button
           type="button"
@@ -83,7 +80,6 @@ export function VideoActions({
         </button>
       </div>
 
-      {/* Botão Compartilhar */}
       <button
         type="button"
         onClick={handleShare}

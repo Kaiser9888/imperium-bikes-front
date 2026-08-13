@@ -79,12 +79,12 @@ export function playbackIdFrom(videoUrl?: string): string {
     return videoUrl?.split("/").pop()?.replace(".m3u8", "") ?? "";
 }
 
-/** Curte o vídeo (alterna). Se o usuário tinha descurtido, o backend deve desfazer o dislike. */
-export async function likeVideo(id: string): Promise<ReactionResponse | null> {
+/** Curte o vídeo (alterna). Exige token do Clerk — o backend é stateless e valida via Authorization header. */
+export async function likeVideo(id: string, token: string): Promise<ReactionResponse | null> {
     try {
         const res = await fetch(`${API_URL}/api/videos/${id}/like`, {
             method: "POST",
-            credentials: "include",
+            headers: { Authorization: `Bearer ${token}` },
             signal: AbortSignal.timeout(4000),
         });
         if (!res.ok) throw new Error(String(res.status));
@@ -94,12 +94,12 @@ export async function likeVideo(id: string): Promise<ReactionResponse | null> {
     }
 }
 
-/** Descurte o vídeo (alterna). Se o usuário tinha curtido, o backend deve desfazer o like. */
-export async function dislikeVideo(id: string): Promise<ReactionResponse | null> {
+/** Descurte o vídeo (alterna). Exige token do Clerk — o backend é stateless e valida via Authorization header. */
+export async function dislikeVideo(id: string, token: string): Promise<ReactionResponse | null> {
     try {
         const res = await fetch(`${API_URL}/api/videos/${id}/dislike`, {
             method: "POST",
-            credentials: "include",
+            headers: { Authorization: `Bearer ${token}` },
             signal: AbortSignal.timeout(4000),
         });
         if (!res.ok) throw new Error(String(res.status));

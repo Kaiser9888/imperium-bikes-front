@@ -1,8 +1,9 @@
-// app/videos/watch/[id]/page.tsx (ajuste na seção dos botões)
+// app/videos/watch/[id]/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import { useAuth } from "@clerk/nextjs";
 import { ChevronDown } from "lucide-react";
 import { fetchRelated, fetchVideo, playbackIdFrom, likeVideo, dislikeVideo } from "@/lib/videos/api";
 import type { VideoItem } from "@/lib/videos/types";
@@ -16,6 +17,8 @@ import { VideoDescription } from "@/components/videos/VideoDescription";
 
 export default function WatchPage() {
     const { id } = useParams<{ id: string }>();
+    const { getToken } = useAuth();
+
     const [video, setVideo] = useState<VideoItem | null>(null);
     const [related, setRelated] = useState<VideoItem[]>([]);
     const [loading, setLoading] = useState(true);
@@ -40,7 +43,9 @@ export default function WatchPage() {
             setLoading(false);
         })();
         fetchRelated(id).then((r) => !cancelled && setRelated(r));
-        return () => { cancelled = true; };
+        return () => {
+            cancelled = true;
+        };
     }, [id]);
 
     async function handleToggleLike() {
@@ -57,7 +62,16 @@ export default function WatchPage() {
             setDislikesCount((c) => Math.max(0, c - 1));
         }
 
-        const result = await likeVideo(video.id);
+        const token = await getToken();
+        if (!token) {
+            setLiked(prevLiked);
+            setDisliked(prevDisliked);
+            setLikesCount(prevLikesCount);
+            setDislikesCount(prevDislikesCount);
+            return;
+        }
+
+        const result = await likeVideo(video.id, token);
         if (!result) {
             setLiked(prevLiked);
             setDisliked(prevDisliked);
@@ -85,7 +99,16 @@ export default function WatchPage() {
             setLikesCount((c) => Math.max(0, c - 1));
         }
 
-        const result = await dislikeVideo(video.id);
+        const token = await getToken();
+        if (!token) {
+            setLiked(prevLiked);
+            setDisliked(prevDisliked);
+            setLikesCount(prevLikesCount);
+            setDislikesCount(prevDislikesCount);
+            return;
+        }
+
+        const result = await dislikeVideo(video.id, token);
         if (!result) {
             setLiked(prevLiked);
             setDisliked(prevDisliked);
@@ -115,14 +138,11 @@ export default function WatchPage() {
     return (
       <div className="mx-auto max-w-7xl px-0 sm:px-6 lg:px-8 lg:py-8">
           <div className="grid gap-6 lg:gap-8 lg:grid-cols-[minmax(0,1fr)_360px]">
-              {/* Coluna principal */}
               <div className="space-y-4 lg:space-y-5">
-                  {/* Player ocupa largura total no mobile */}
                   <div className="lg:rounded-lg overflow-hidden">
                       <VideoPlayer playbackId={playbackIdFrom(video.videoUrl)} title={video.title} />
                   </div>
 
-                  {/* Título + Stats */}
                   <div className="px-4 sm:px-0">
                       <h1 className="text-lg font-semibold leading-snug text-foreground lg:text-xl">
                           {video.title}
@@ -132,7 +152,6 @@ export default function WatchPage() {
                       </div>
                   </div>
 
-                  {/* Barra de ações MOBILE - abaixo do vídeo, largura total */}
                   <div className="px-4 sm:px-0 lg:hidden">
                       <VideoActions
                         liked={liked}
@@ -144,7 +163,6 @@ export default function WatchPage() {
                       />
                   </div>
 
-                  {/* Canal + ações DESKTOP */}
                   <div className="flex flex-wrap items-center justify-between gap-4 border-y border-border py-4 px-4 sm:px-0">
                       <div className="flex items-center gap-3">
                           <VideoAvatar name={video.userName} url={video.userAvatarUrl} className="size-10" />
@@ -153,7 +171,6 @@ export default function WatchPage() {
                               <p className="text-xs text-muted-foreground">Criador Imperium</p>
                           </div>
                       </div>
-                      {/* Botões no desktop */}
                       <div className="hidden lg:block">
                           <VideoActions
                             liked={liked}
@@ -166,7 +183,6 @@ export default function WatchPage() {
                       </div>
                   </div>
 
-                  {/* No mobile, mostra o criador após os botões de ação */}
                   <div className="flex items-center gap-3 px-4 sm:px-0 lg:hidden">
                       <VideoAvatar name={video.userName} url={video.userAvatarUrl} className="size-9" />
                       <div>
@@ -175,7 +191,6 @@ export default function WatchPage() {
                       </div>
                   </div>
 
-                  {/* Descrição */}
                   {video.description && (
                     <div className="mx-4 sm:mx-0 rounded-lg border border-border bg-card">
                         <button
@@ -197,19 +212,16 @@ export default function WatchPage() {
                     </div>
                   )}
 
-                  {/* Comentários */}
                   <div className="px-4 sm:px-0">
                       <VideoComments videoId={video.id} />
                   </div>
               </div>
 
-              {/* Sidebar - escondida no mobile, visível no desktop */}
               <div className="hidden lg:block">
                   <VideoSidebar videos={related} />
               </div>
           </div>
 
-          {/* Videos relacionados no mobile (abaixo de tudo) */}
           <div className="mt-8 lg:hidden px-4 sm:px-0">
               <h2 className="text-lg font-semibold mb-4">Vídeos relacionados</h2>
               <VideoSidebar videos={related} />
