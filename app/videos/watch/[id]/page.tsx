@@ -208,13 +208,15 @@ export default function WatchPage() {
                     </div>
                   )}
 
-                  {/* ===== BOTÃO COMENTÁRIOS (RETÂNGULO LIMPO) ===== */}
-                  <button
-                    onClick={() => setShowComments((v) => !v)}
-                    className="mx-4 sm:mx-0 flex w-full items-center rounded-lg border border-border bg-card px-1 py-4 text-sm font-medium text-muted-foreground hover:text-foreground hover:border-primary/30 transition-colors"
-                  >
-                      Comentários
-                  </button>
+                  {/* ===== BOTÃO COMENTÁRIOS (SEM ESTOURAR) ===== */}
+                  <div className="px-4 sm:px-0">
+                      <button
+                        onClick={() => setShowComments((v) => !v)}
+                        className="flex w-full items-center rounded-lg border border-border bg-card px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:border-primary/30 transition-colors"
+                      >
+                          Comentários
+                      </button>
+                  </div>
 
                   {/* ===== ÁREA DE COMENTÁRIOS ===== */}
                   {showComments && (
