@@ -164,11 +164,23 @@ export default function WatchPage() {
                   </div>
 
                   <div className="flex flex-wrap items-center justify-between gap-4 border-y border-border py-4 px-4 sm:px-0">
-                      <div className="flex items-center gap-3">
-                          <VideoAvatar name={video.userName} url={video.userAvatarUrl} className="size-10" />
-                          <div>
-                              <p className="text-sm font-medium text-foreground">{video.userName}</p>
-                              <p className="text-xs text-muted-foreground">Criador Imperium</p>
+                      <div className="flex flex-wrap items-center justify-between gap-4 border-y border-border py-4 px-4 sm:px-0">
+                          <div className="flex items-center gap-3">
+                              <VideoAvatar name={video.userName} url={video.userAvatarUrl} className="size-10" />
+                              <div>
+                                  <p className="text-sm font-medium text-foreground">{video.userName}</p>
+                                  <p className="text-xs text-muted-foreground">Criador Imperium</p>
+                              </div>
+                          </div>
+                          <div className="hidden lg:block">
+                              <VideoActions
+                                liked={liked}
+                                disliked={disliked}
+                                likesCount={likesCount}
+                                dislikesCount={dislikesCount}
+                                onToggleLike={handleToggleLike}
+                                onToggleDislike={handleToggleDislike}
+                              />
                           </div>
                       </div>
                       <div className="hidden lg:block">
@@ -229,3 +241,4 @@ export default function WatchPage() {
       </div>
     );
 }
+
