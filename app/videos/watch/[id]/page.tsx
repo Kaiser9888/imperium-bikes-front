@@ -152,6 +152,7 @@ export default function WatchPage() {
                       </div>
                   </div>
 
+                  {/* Ações mobile (like/dislike abaixo do título) */}
                   <div className="px-4 sm:px-0 lg:hidden">
                       <VideoActions
                         liked={liked}
@@ -163,24 +164,13 @@ export default function WatchPage() {
                       />
                   </div>
 
-                  <div className="flex flex-wrap items-center justify-between gap-4 border-y border-border py-4 px-4 sm:px-0">
-                      <div className="flex flex-wrap items-center justify-between gap-4 border-y border-border py-4 px-4 sm:px-0">
-                          <div className="flex items-center gap-3">
-                              <VideoAvatar name={video.userName} url={video.userAvatarUrl} className="size-10" />
-                              <div>
-                                  <p className="text-sm font-medium text-foreground">{video.userName}</p>
-                                  <p className="text-xs text-muted-foreground">Criador Imperium</p>
-                              </div>
-                          </div>
-                          <div className="hidden lg:block">
-                              <VideoActions
-                                liked={liked}
-                                disliked={disliked}
-                                likesCount={likesCount}
-                                dislikesCount={dislikesCount}
-                                onToggleLike={handleToggleLike}
-                                onToggleDislike={handleToggleDislike}
-                              />
+                  {/* Canal + Ações desktop */}
+                  <div className="flex items-center justify-between gap-4 border-y border-border py-3 px-4 sm:px-0">
+                      <div className="flex items-center gap-3">
+                          <VideoAvatar name={video.userName} url={video.userAvatarUrl} className="size-10" />
+                          <div>
+                              <p className="text-sm font-medium text-foreground">{video.userName}</p>
+                              <p className="text-xs text-muted-foreground">Criador Imperium</p>
                           </div>
                       </div>
                       <div className="hidden lg:block">
@@ -195,35 +185,29 @@ export default function WatchPage() {
                       </div>
                   </div>
 
-                  <div className="flex items-center gap-3 px-4 sm:px-0 lg:hidden">
-                      <VideoAvatar name={video.userName} url={video.userAvatarUrl} className="size-9" />
-                      <div>
-                          <p className="text-sm font-medium text-foreground">{video.userName}</p>
-                          <p className="text-xs text-muted-foreground">Criador Imperium</p>
-                      </div>
-                  </div>
-
+                  {/* Descrição */}
                   {video.description && (
                     <div className="mx-4 sm:mx-0 rounded-lg border border-border bg-card">
                         <button
                           type="button"
                           onClick={() => setShowMore((v) => !v)}
                           aria-expanded={showMore}
-                          className="flex w-full items-center justify-between px-4 py-3 text-sm font-medium text-foreground"
+                          className="flex w-full items-center justify-between px-4 py-2.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
                         >
-                            Descrição
+                            <span>Descrição</span>
                             <ChevronDown
                               className={`size-4 transition-transform ${showMore ? "rotate-180" : ""}`}
                             />
                         </button>
                         {showMore && (
-                          <div className="border-t border-border px-4 py-4">
+                          <div className="border-t border-border px-4 py-3">
                               <VideoDescription description={video.description} hashtags={video.hashtags} />
                           </div>
                         )}
                     </div>
                   )}
 
+                  {/* Comentários - discreto */}
                   <div className="px-4 sm:px-0">
                       <VideoComments videoId={video.id} />
                   </div>
@@ -241,4 +225,3 @@ export default function WatchPage() {
       </div>
     );
 }
-
