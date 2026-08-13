@@ -31,12 +31,12 @@ export default function VideosLayout({ children }: { children: React.ReactNode }
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
 
-      // Descendo → esconde
-      if (currentScrollY > lastScrollY.current && currentScrollY > 80) {
+      // Qualquer movimento para baixo (10px) → esconde
+      if (currentScrollY > lastScrollY.current && currentScrollY > 10) {
         setShowNav(false);
       }
-      // Subindo → mostra
-      else if (currentScrollY < lastScrollY.current) {
+      // Qualquer movimento para cima (5px) → mostra
+      else if (currentScrollY < lastScrollY.current - 5) {
         setShowNav(true);
       }
 
