@@ -20,7 +20,7 @@ export default function BuscarPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Barra de pesquisa (sticky no topo) */}
+      {/* Barra de pesquisa */}
       <div className="sticky top-0 z-40 bg-background/95 backdrop-blur-lg px-4 py-3">
         <div className="relative max-w-md mx-auto">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -34,7 +34,7 @@ export default function BuscarPage() {
           />
         </div>
 
-        {/* Texto abaixo da barra */}
+        {/* Texto abaixo */}
         <p className="text-center text-xs text-muted-foreground mt-2">
           Encontre vídeos, criadores e conteúdos
         </p>
