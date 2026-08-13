@@ -211,14 +211,14 @@ export default function WatchPage() {
                   {/* ===== BOTÃO COMENTÁRIOS (RETÂNGULO LIMPO) ===== */}
                   <button
                     onClick={() => setShowComments((v) => !v)}
-                    className="mx-4 sm:mx-0 flex w-full items-center rounded-lg border border-border bg-card px-4 py-2.5 text-sm font-medium text-foreground hover:border-primary/30 hover:bg-muted/50 transition-colors"
+                    className="mx-4 sm:mx-0 flex w-full items-center rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:border-primary/30 transition-colors"
                   >
-                      💬 Comentários
+                      Comentários
                   </button>
 
-                  {/* ===== ÁREA DE COMENTÁRIOS (ABRE AO CLICAR) ===== */}
+                  {/* ===== ÁREA DE COMENTÁRIOS ===== */}
                   {showComments && (
-                    <div className="mx-4 sm:mx-0 rounded-lg border border-border bg-card p-4">
+                    <div className="mx-4 sm:mx-0 rounded-lg border border-border bg-card p-3">
                         <VideoComments videoId={video.id} />
                     </div>
                   )}
