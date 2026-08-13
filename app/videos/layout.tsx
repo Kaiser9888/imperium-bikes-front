@@ -32,7 +32,6 @@ export default function VideosLayout({
 
   const isWatchPage = pathname.startsWith("/videos/watch/");
 
-  // A página de busca não terá o TOP BAR
   const isSearchPage = pathname === "/videos/buscar";
 
   const { isSignedIn } = useAuth();
@@ -95,7 +94,7 @@ export default function VideosLayout({
       const currentScrollY = window.scrollY;
 
       // Movimento para baixo
-      // Depois de 10px, esconde a navegação
+      // Esconde a navegação
       if (
         currentScrollY > lastScrollY.current &&
         currentScrollY > 10
@@ -104,7 +103,7 @@ export default function VideosLayout({
       }
 
         // Movimento para cima
-      // Mostra novamente a navegação
+      // Mostra a navegação novamente
       else if (
         currentScrollY < lastScrollY.current - 5
       ) {
@@ -127,7 +126,7 @@ export default function VideosLayout({
   // WATCH PAGE
   // ============================================================
   //
-  // Página de reprodução de vídeo:
+  // Página de reprodução:
   // - sem TOP BAR
   // - sem BOTTOM NAVIGATION
   //
@@ -142,7 +141,7 @@ export default function VideosLayout({
   }
 
   // ============================================================
-  // LAYOUT NORMAL
+  // LAYOUT PRINCIPAL
   // ============================================================
 
   return (
@@ -152,11 +151,13 @@ export default function VideosLayout({
           TOP BAR
           ======================================================
 
-          IMPORTANTE:
+          A página /videos/buscar não recebe esse TOP BAR.
 
-          A página /videos/buscar não recebe esse header.
+          A página MEMENTO recebe uma versão simplificada:
+          somente logo + nome Imperium.
 
-          Todas as outras páginas continuam recebendo.
+          As demais páginas recebem:
+          logo + lupa + notificações + usuário.
       ====================================================== */}
 
       {!isSearchPage && (
@@ -181,19 +182,23 @@ export default function VideosLayout({
           `}
         >
           <div
-            className="
+            className={`
               flex
               h-14
               items-center
-              gap-2
               px-3
               sm:px-6
               lg:px-8
-            "
+              ${
+              isMemento
+                ? "justify-start"
+                : "gap-2"
+            }
+            `}
           >
 
             {/* ==================================================
-                LOGO
+                LOGO IMPERIUM
             ================================================== */}
 
             <Link
@@ -220,7 +225,8 @@ export default function VideosLayout({
                   sm:text-2xl
                 "
                 style={{
-                  fontFamily: "var(--font-blackletter)",
+                  fontFamily:
+                    "var(--font-blackletter)",
                   color: "#ac0202",
                 }}
               >
@@ -229,152 +235,122 @@ export default function VideosLayout({
             </Link>
 
             {/* ==================================================
-                BUSCA DO TOP BAR
+                ÁREA DIREITA DO TOP BAR
             ================================================== */}
 
             {!isMemento && (
-              <div className="mx-auto flex max-w-md flex-1">
-                <div className="relative w-full">
+              <div
+                className="
+                  ml-auto
+                  flex
+                  flex-shrink-0
+                  items-center
+                  gap-1
+                "
+              >
 
+                {/* ==================================================
+                    LUPA — REDIRECIONA PARA BUSCAR
+                ================================================== */}
+
+                <Link
+                  href="/videos/buscar"
+                  className="
+                    rounded-full
+                    p-2
+                    text-muted-foreground
+                    transition-colors
+                    hover:bg-muted
+                    hover:text-foreground
+                    active:scale-95
+                  "
+                  aria-label="Buscar vídeos"
+                  title="Buscar vídeos"
+                >
                   <Search
-                    className="
-                      absolute
-                      left-3
-                      top-1/2
-                      h-4
-                      w-4
-                      -translate-y-1/2
-                      text-muted-foreground
-                    "
+                    className="h-5 w-5"
                     aria-hidden="true"
                   />
+                </Link>
 
-                  <label
-                    htmlFor="main-search"
-                    className="sr-only"
-                  >
-                    Buscar vídeos
-                  </label>
+                {/* ==================================================
+                    NOTIFICAÇÕES
+                ================================================== */}
 
-                  <input
-                    id="main-search"
-                    type="search"
-                    placeholder="Buscar vídeos..."
-                    className="
-                      w-full
-                      rounded-full
-                      border
-                      border-border
-                      bg-muted/50
-                      py-2
-                      pl-10
-                      pr-4
-                      text-sm
-                      outline-none
-                      transition-colors
-                      placeholder:text-muted-foreground
-                      focus:border-primary/40
-                      focus:bg-background
-                    "
+                <button
+                  type="button"
+                  className="
+                    rounded-md
+                    p-2
+                    text-muted-foreground
+                    transition-colors
+                    hover:bg-muted
+                    hover:text-foreground
+                  "
+                  aria-label="Notificações"
+                >
+                  <Bell
+                    className="h-5 w-5"
+                    aria-hidden="true"
                   />
-                </div>
+                </button>
+
+                {/* ==================================================
+                    USUÁRIO / LOGIN
+                ================================================== */}
+
+                {isSignedIn ? (
+                  <UserButton />
+                ) : (
+                  <SignInButton mode="modal">
+                    <button
+                      type="button"
+                      className="
+                        flex
+                        h-8
+                        w-8
+                        items-center
+                        justify-center
+                        rounded-full
+                        bg-muted
+                        text-muted-foreground
+                        transition-colors
+                        hover:bg-primary/10
+                        hover:text-primary
+                      "
+                      aria-label="Entrar"
+                    >
+                      <svg
+                        width="18"
+                        height="18"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        aria-hidden="true"
+                      >
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+
+                        <circle
+                          cx="12"
+                          cy="7"
+                          r="4"
+                        />
+                      </svg>
+                    </button>
+                  </SignInButton>
+                )}
               </div>
             )}
-
-            {/* ==================================================
-                ÍCONES DO TOP BAR
-            ================================================== */}
-
-            <div
-              className="
-                flex
-                flex-shrink-0
-                items-center
-                gap-1
-              "
-            >
-
-              {/* Notificações */}
-
-              <button
-                type="button"
-                className="
-                  rounded-md
-                  p-2
-                  text-muted-foreground
-                  transition-colors
-                  hover:bg-muted
-                  hover:text-foreground
-                "
-                aria-label="Notificações"
-              >
-                <Bell className="h-5 w-5" />
-              </button>
-
-              {/* Usuário */}
-
-              {isSignedIn ? (
-                <UserButton />
-              ) : (
-                <SignInButton mode="modal">
-                  <button
-                    type="button"
-                    className="
-                      flex
-                      h-8
-                      w-8
-                      items-center
-                      justify-center
-                      rounded-full
-                      bg-muted
-                      text-muted-foreground
-                      transition-colors
-                      hover:bg-primary/10
-                      hover:text-primary
-                    "
-                    aria-label="Entrar"
-                  >
-                    <svg
-                      width="18"
-                      height="18"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      aria-hidden="true"
-                    >
-                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-
-                      <circle
-                        cx="12"
-                        cy="7"
-                        r="4"
-                      />
-                    </svg>
-                  </button>
-                </SignInButton>
-              )}
-            </div>
           </div>
         </header>
       )}
 
       {/* ======================================================
           CONTEÚDO PRINCIPAL
-          ======================================================
-
-          O pt-14 existe somente quando existe TOP BAR.
-
-          Na página /videos/buscar:
-
-              pt-14 = NÃO
-
-          Nas outras:
-
-              pt-14 = SIM
-      ====================================================== */}
+          ====================================================== */}
 
       <main
         className={`
@@ -422,8 +398,9 @@ export default function VideosLayout({
           "
         >
           {navItems.map((item) => {
+
             // ==================================================
-            // VERIFICA SE A PÁGINA ESTÁ ATIVA
+            // PÁGINA ATIVA
             // ==================================================
 
             const isActive =
