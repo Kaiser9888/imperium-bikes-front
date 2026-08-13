@@ -23,6 +23,7 @@ export default function WatchPage() {
     const [related, setRelated] = useState<VideoItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [showMore, setShowMore] = useState(false);
+    const [showComments, setShowComments] = useState(false);
 
     const [liked, setLiked] = useState(false);
     const [disliked, setDisliked] = useState(false);
@@ -152,7 +153,7 @@ export default function WatchPage() {
                       </div>
                   </div>
 
-                  {/* Ações mobile (like/dislike abaixo do título) */}
+                  {/* Ações mobile */}
                   <div className="px-4 sm:px-0 lg:hidden">
                       <VideoActions
                         liked={liked}
@@ -207,10 +208,20 @@ export default function WatchPage() {
                     </div>
                   )}
 
-                  {/* Comentários - discreto */}
-                  <div className="px-4 sm:px-0">
-                      <VideoComments videoId={video.id} />
-                  </div>
+                  {/* ===== BOTÃO COMENTÁRIOS (RETÂNGULO LIMPO) ===== */}
+                  <button
+                    onClick={() => setShowComments((v) => !v)}
+                    className="mx-4 sm:mx-0 flex w-full items-center rounded-lg border border-border bg-card px-4 py-2.5 text-sm font-medium text-foreground hover:border-primary/30 hover:bg-muted/50 transition-colors"
+                  >
+                      💬 Comentários
+                  </button>
+
+                  {/* ===== ÁREA DE COMENTÁRIOS (ABRE AO CLICAR) ===== */}
+                  {showComments && (
+                    <div className="mx-4 sm:mx-0 rounded-lg border border-border bg-card p-4">
+                        <VideoComments videoId={video.id} />
+                    </div>
+                  )}
               </div>
 
               <div className="hidden lg:block">
