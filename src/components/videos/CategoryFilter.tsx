@@ -5,59 +5,48 @@ interface CategoryFilterProps {
   onChange: (id: string) => void;
 }
 
-const CATEGORIES = [
-  { id: "recomendados", label: "Recomendados" },
-  { id: "recentes", label: "Mais recentes" },
-  { id: "vistos", label: "Mais vistos" },
-  { id: "live", label: "Live" },
-];
-
 const TAGS = [
+  { id: "recomendados", label: "Recomendados" },
+  { id: "recentes", label: "Recentes" },
+  { id: "vistos", label: "Mais vistos" },
+  { id: "downhill", label: "Downhill" },
   { id: "mtb", label: "MTB" },
   { id: "speed", label: "Speed" },
   { id: "gravel", label: "Gravel" },
   { id: "bmx", label: "BMX" },
   { id: "eletrica", label: "Elétrica" },
-  { id: "downhill", label: "Downhill" },
   { id: "urban", label: "Urban" },
   { id: "trilha", label: "Trilha" },
   { id: "manutencao", label: "Manutenção" },
   { id: "review", label: "Review" },
   { id: "campeonato", label: "Campeonato" },
+  { id: "dicas", label: "Dicas" },
+  { id: "upgrade", label: "Upgrade" },
+  { id: "custom", label: "Custom" },
+  { id: "freestyle", label: "Freestyle" },
+  { id: "novidade", label: "Novidade" },
+  { id: "evento", label: "Evento" },
+  { id: "historia", label: "História" },
+  { id: "entrevista", label: "Entrevista" },
+  { id: "curiosidade", label: "Curiosidade" },
+  { id: "tecnica", label: "Técnica" },
+  { id: "treino", label: "Treino" },
+  { id: "equipamento", label: "Equipamento" },
+  { id: "acessorio", label: "Acessório" },
+  { id: "comunidade", label: "Comunidade" },
+  { id: "viagem", label: "Viagem" },
+  { id: "aventura", label: "Aventura" },
+  { id: "alimentacao", label: "Alimentação" },
+  { id: "saude", label: "Saúde" },
+  { id: "seguranca", label: "Segurança" },
+  { id: "sustentabilidade", label: "Sustentabilidade" },
+  { id: "tecnologia", label: "Tecnologia" },
+  { id: "inovacao", label: "Inovação" },
 ];
 
 export function CategoryFilter({ value, onChange }: CategoryFilterProps) {
   return (
     <nav className="space-y-3" aria-label="Filtros de vídeos">
-      {/* Ordenação */}
-      <div
-        className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none"
-        role="tablist"
-        aria-label="Ordenar por"
-      >
-        {CATEGORIES.map((cat) => {
-          const isActive = value === cat.id;
-          return (
-            <button
-              key={cat.id}
-              type="button"
-              onClick={() => onChange(cat.id)}
-              role="tab"
-              aria-selected={isActive}
-              className={`shrink-0 rounded-full px-4 py-1.5 font-blackletter text-xl tracking-wide transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
-                isActive
-                  ? "bg-red-700 text-white"
-                  : "bg-red-200 text-white hover:bg-red-700 hover:text-white"
-              }`}
-              style={{ fontFamily: 'var(--font-blackletter)' }}
-            >
-              {cat.label}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Tags/Hashtags */}
       <div
         className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none"
         role="tablist"
@@ -72,14 +61,14 @@ export function CategoryFilter({ value, onChange }: CategoryFilterProps) {
               onClick={() => onChange(tag.id)}
               role="tab"
               aria-selected={isActive}
-              className={`shrink-0 rounded-md border px-3 py-1 font-blackletter text-base tracking-wide transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+              className={`shrink-0 rounded-md border px-3 py-1 font-caesar text-base tracking-wide transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
                 isActive
                   ? "border-primary bg-primary/10 text-primary"
-                  : "border-border text-muted-foreground hover:border-red-300 hover:text-foreground"
+                  : "border-border text-muted-foreground hover:border-primary/40 hover:text-foreground"
               }`}
-              style={{ fontFamily: 'var(--font-blackletter)' }}
+              style={{ fontFamily: 'var(--font-caesar)' }}
             >
-              #{tag.label}
+              {tag.label}
             </button>
           );
         })}

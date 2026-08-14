@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@clerk/nextjs";
 import Link from "next/link";
-import { Trash2, Eye, Heart, Clock, Plus, Film, Edit, Settings, BarChart3, Copy, Share2 } from "lucide-react";
+import { Trash2, Eye, Heart, Clock, Plus, Film, BarChart3, Copy } from "lucide-react";
 
 const API_URL = "https://imperium-bikes.onrender.com";
 
@@ -102,17 +102,20 @@ export default function MeusVideosPage() {
     <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:py-10">
 
-        {/* ===== CABEÇALHO ===== */}
+        {/* CABEÇALHO */}
         <div className="mb-8">
-          <h1 className="font-blackletter text-3xl tracking-wide" style={{ fontFamily: 'var(--font-blackletter)', color: '#ac0202' }}>
+          <h1
+            className="text-3xl tracking-wide"
+            style={{ fontFamily: 'var(--font-caesar)', color: '#212529' }}
+          >
             Central de Vídeos
           </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="mt-1 text-start text-muted-foreground">
             Gerencie todos os seus vídeos em um só lugar
           </p>
         </div>
 
-        {/* ===== CARDS DE ESTATÍSTICAS ===== */}
+        {/* CARDS DE ESTATÍSTICAS */}
         {!loading && videos.length > 0 && (
           <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
             <div className="rounded-xl border border-border bg-card p-4">
@@ -135,12 +138,12 @@ export default function MeusVideosPage() {
               <p className="mt-2 text-2xl font-bold">
                 {videos.length > 0 ? Math.round(totalViews / videos.length) : 0}
               </p>
-              <p className="text-xs text-muted-foreground">Média views</p>
+              <p className="text-xs text-muted-foreground">Média de views</p>
             </div>
           </div>
         )}
 
-        {/* ===== BOTÃO NOVO VÍDEO ===== */}
+        {/* BOTÃO NOVO VÍDEO */}
         {videos.length > 0 && (
           <div className="mb-6">
             <Link
@@ -153,7 +156,7 @@ export default function MeusVideosPage() {
           </div>
         )}
 
-        {/* ===== LOADING ===== */}
+        {/* LOADING */}
         {loading ? (
           <div className="space-y-4">
             {Array.from({ length: 3 }).map((_, i) => (
@@ -170,10 +173,13 @@ export default function MeusVideosPage() {
             ))}
           </div>
         ) : videos.length === 0 ? (
-          /* ===== VAZIO ===== */
+          /* VAZIO */
           <div className="rounded-xl border border-border bg-card px-8 py-20 text-center">
             <Film className="mx-auto size-12 text-muted-foreground/40" />
-            <h2 className="mt-4 font-blackletter text-xl" style={{ fontFamily: 'var(--font-blackletter)' }}>
+            <h2
+              className="mt-4 text-xl"
+              style={{ fontFamily: 'var(--font-caesar)' }}
+            >
               Nenhum vídeo publicado
             </h2>
             <p className="mt-2 text-sm text-muted-foreground">
@@ -188,7 +194,7 @@ export default function MeusVideosPage() {
             </Link>
           </div>
         ) : (
-          /* ===== LISTA DE VÍDEOS ===== */
+          /* LISTA DE VÍDEOS */
           <div className="space-y-4">
             {videos.map((video) => (
               <div
@@ -256,27 +262,11 @@ export default function MeusVideosPage() {
                           {timeAgo(video.createdAt)}
                                                 </span>
                       )}
-                      {video.status && (
-                        <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${
-                          video.status === "PUBLIC"
-                            ? "bg-green-100 text-green-700"
-                            : "bg-yellow-100 text-yellow-700"
-                        }`}>
-                                                    {video.status === "PUBLIC" ? "Público" : "Privado"}
-                                                </span>
-                      )}
                     </div>
                   </div>
 
                   {/* Ações */}
                   <div className="flex items-center gap-1 sm:flex-col">
-                    <Link
-                      href={`/videos/edit/${video.id}`}
-                      className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary"
-                      title="Editar vídeo"
-                    >
-                      <Edit className="size-4" />
-                    </Link>
                     <button
                       onClick={() => copyLink(video.id)}
                       className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary"

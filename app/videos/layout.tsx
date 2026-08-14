@@ -56,12 +56,12 @@ export default function VideosLayout({
     },
     {
       icon: Search,
-      label: "Buscar",
+      label: "Pesquisar",
       href: "/videos/buscar",
     },
     {
       icon: Plus,
-      label: "Postar",
+      label: "Upload",
       href: "/videos/upload",
       highlight: true,
     },
@@ -225,29 +225,22 @@ export default function VideosLayout({
                   sm:text-2xl
                 "
                 style={{
-                  fontFamily:
-                    "var(--font-blackletter)",
-                  color: "#ac0202",
+                  fontFamily: "var(--font-caesar)",
+                  color: "#0b0F19", //Preto profundo (dorso da orca)
+                  textShadow: "0 0 1px #FFF, 1px 1px 0px #FFF, 2px 2px 4px rgba(11, 15, 25, 0.3)", // Contraste com branco (barriga da orca) e sombra fluida
+                  letterSpacing: "0.05em",
                 }}
               >
                 Imperium
               </span>
             </Link>
 
-            {/* ==================================================
+              {/* ==================================================
                 ÁREA DIREITA DO TOP BAR
             ================================================== */}
 
             {!isMemento && (
-              <div
-                className="
-                  ml-auto
-                  flex
-                  flex-shrink-0
-                  items-center
-                  gap-1
-                "
-              >
+              <div className="ml-auto flex flex-shrink-0 items-center gap-1">
 
                 {/* ==================================================
                     LUPA — REDIRECIONA PARA BUSCAR
@@ -255,22 +248,11 @@ export default function VideosLayout({
 
                 <Link
                   href="/videos/buscar"
-                  className="
-                    rounded-full
-                    p-2
-                    text-muted-foreground
-                    transition-colors
-                    hover:bg-muted
-                    hover:text-foreground
-                    active:scale-95
-                  "
+                  className="rounded-full p-2 text-foreground transition-colors hover:bg-muted hover:text-primary active:scale-95"
                   aria-label="Buscar vídeos"
                   title="Buscar vídeos"
                 >
-                  <Search
-                    className="h-5 w-5"
-                    aria-hidden="true"
-                  />
+                  <Search className="h-5 w-5" aria-hidden="true" />
                 </Link>
 
                 {/* ==================================================

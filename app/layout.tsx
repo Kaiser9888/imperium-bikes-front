@@ -2,7 +2,7 @@ import { Analytics } from '@vercel/analytics/next'
 import { ClerkProvider } from '@clerk/nextjs'
 import { ptBR } from '@clerk/localizations'
 import type { Metadata } from 'next'
-import { Geist, Cinzel, UnifrakturCook } from 'next/font/google'
+import { Geist, Cinzel, UnifrakturCook, Caesar_Dressing } from 'next/font/google'
 import AutoSync from '@/components/auth/AutoSync'
 import './globals.css'
 
@@ -16,6 +16,11 @@ const blackletter = UnifrakturCook({
     variable: '--font-blackletter',
     subsets: ['latin'],
     weight: ['700'],
+})
+const caesar = Caesar_Dressing({
+    variable: '--font-caesar',
+    subsets: ['latin'],
+    weight: '400',
 })
 
 export const metadata: Metadata = {
@@ -43,7 +48,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             },
         }}
       >
-          <html lang="pt-BR" className={`${geistSans.variable} ${cinzel.variable} ${blackletter.variable} bg-background`}>
+          <html lang="pt-BR" className={`${geistSans.variable} ${cinzel.variable} ${blackletter.variable} ${caesar.variable} bg-background`}>
           <body className="font-sans antialiased">
           <AutoSync />
           {children}
