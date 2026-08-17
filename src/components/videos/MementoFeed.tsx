@@ -40,13 +40,20 @@ function MementoSlide({ video }: { video: VideoItem }) {
   const playbackId = video.videoUrl?.split("/").pop()?.replace(".m3u8", "") ?? "";
   const streamUrl = playbackId ? `https://stream.mux.com/${playbackId}.m3u8` : "";
 
+  // ===== DEBUG =====
+  console.log("🎥 playbackId:", playbackId);
+  console.log("🎥 videoUrl completo:", video.videoUrl);
+  console.log("🎥 streamUrl:", streamUrl);
+
   // Autoplay forçado
   useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current.play().catch(() => {
-        // Se falhar, tenta de novo
+    if (videoRef.current && streamUrl) {
+      videoRef.current.play().catch((err) => {
+        console.log("❌ Erro ao dar play:", err.message);
         setTimeout(() => {
-          videoRef.current?.play().catch(() => {});
+          videoRef.current?.play().catch((err2) => {
+            console.log("❌ Erro 2ª tentativa:", err2.message);
+          });
         }, 500);
       });
     }
@@ -66,6 +73,7 @@ function MementoSlide({ video }: { video: VideoItem }) {
             muted
             loop
             playsInline
+            controls
             className="h-full w-full object-cover"
           />
         ) : video.thumbnailUrl ? (
