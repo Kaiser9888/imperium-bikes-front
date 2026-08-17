@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import MuxPlayer from "@mux/mux-player-react";
 import { Heart, MessageSquare, Share2, Play } from "lucide-react";
 import type { VideoItem } from "@/lib/videos/types";
 import { formatViews } from "@/lib/videos/format";
@@ -37,18 +36,31 @@ export function MementoFeed({ videos, onEndReached }: MementoFeedProps) {
 
 function MementoSlide({ video }: { video: VideoItem }) {
   const [liked, setLiked] = useState(false);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
   const playbackId = video.videoUrl?.split("/").pop()?.replace(".m3u8", "") ?? "";
+  const streamUrl = playbackId ? `https://stream.mux.com/${playbackId}.m3u8` : "";
+
+  // Autoplay forçado
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.play().catch(() => {
+        // Se falhar, tenta de novo
+        setTimeout(() => {
+          videoRef.current?.play().catch(() => {});
+        }, 500);
+      });
+    }
+  }, [streamUrl]);
 
   return (
     <section className="flex h-full snap-start items-center justify-center px-0 py-0 lg:px-6 lg:py-6">
       <div className="relative h-full w-full overflow-hidden bg-secondary lg:h-full lg:w-auto lg:aspect-[9/16] lg:rounded-xl lg:border lg:border-border">
 
-        {/* ===== MUX PLAYER ===== */}
-        {playbackId ? (
-          <MuxPlayer
-            playbackId={playbackId}
-            metadata={{ video_title: video.title }}
-            accentColor="#9e2b25"
+        {/* ===== PLAYER DE VÍDEO ===== */}
+        {streamUrl ? (
+          <video
+            ref={videoRef}
+            src={streamUrl}
             poster={video.thumbnailUrl}
             autoPlay
             muted
