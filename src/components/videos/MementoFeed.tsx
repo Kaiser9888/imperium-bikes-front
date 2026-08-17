@@ -36,44 +36,20 @@ export function MementoFeed({ videos, onEndReached }: MementoFeedProps) {
 
 function MementoSlide({ video }: { video: VideoItem }) {
   const [liked, setLiked] = useState(false);
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const playbackId = video.videoUrl?.split("/").pop()?.replace(".m3u8", "") ?? "";
-  const streamUrl = playbackId ? `https://stream.mux.com/${playbackId}.m3u8` : "";
-
-  // ===== DEBUG =====
-  console.log("🎥 playbackId:", playbackId);
-  console.log("🎥 videoUrl completo:", video.videoUrl);
-  console.log("🎥 streamUrl:", streamUrl);
-
-  // Autoplay forçado
-  useEffect(() => {
-    if (videoRef.current && streamUrl) {
-      videoRef.current.play().catch((err) => {
-        console.log("❌ Erro ao dar play:", err.message);
-        setTimeout(() => {
-          videoRef.current?.play().catch((err2) => {
-            console.log("❌ Erro 2ª tentativa:", err2.message);
-          });
-        }, 500);
-      });
-    }
-  }, [streamUrl]);
 
   return (
     <section className="flex h-full snap-start items-center justify-center px-0 py-0 lg:px-6 lg:py-6">
       <div className="relative h-full w-full overflow-hidden bg-secondary lg:h-full lg:w-auto lg:aspect-[9/16] lg:rounded-xl lg:border lg:border-border">
 
-        {/* ===== PLAYER DE VÍDEO ===== */}
-        {streamUrl ? (
+        {/* ===== PLAYER CORRIGIDO ===== */}
+        {video.videoUrl ? (
           <video
-            ref={videoRef}
-            src={streamUrl}
+            src={video.videoUrl}
             poster={video.thumbnailUrl}
             autoPlay
             muted
             loop
             playsInline
-            controls
             className="h-full w-full object-cover"
           />
         ) : video.thumbnailUrl ? (
