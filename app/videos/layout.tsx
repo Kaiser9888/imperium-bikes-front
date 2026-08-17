@@ -77,6 +77,12 @@ export default function VideosLayout({
     },
   ];
 
+  {process.env.NODE_ENV !== "production" || true /* remover depois de debugar */ && (
+    <>
+      <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
+      <script dangerouslySetInnerHTML={{ __html: `eruda.init();` }} />
+    </>
+  )}
   // ============================================================
   // LINK DO BOTÃO INÍCIO
   // ============================================================
