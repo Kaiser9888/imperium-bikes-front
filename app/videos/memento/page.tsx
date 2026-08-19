@@ -1,705 +1,482 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import { useAuth } from "@clerk/nextjs";
+import {
+    useCallback,
+    useEffect,
+    useRef,
+    useState,
+} from "react";
+
 import Link from "next/link";
+import { useAuth } from "@clerk/nextjs";
 import {
     ChevronLeft,
     ChevronRight,
     Heart,
-    MessageCircle,
-    Play,
+    MessageSquare,
     Search,
     Share2,
     Volume2,
     VolumeX,
     X,
+    Play,
 } from "lucide-react";
+
 import MuxPlayer from "@mux/mux-player-react";
+import type MuxPlayerElement from "@mux/mux-player";
 
 import { VideoComments } from "@/components/videos/VideoComments";
+import {
+    fetchVideoPage,
+    likeVideo,
+    playbackIdFrom,
+    PAGE_SIZE,
+} from "@/lib/videos/api";
 
-const API_URL = "https://imperium-bikes.onrender.com";
-
-interface MementoItem {
-    id: string;
-    title: string;
-    description?: string | null;
-    videoUrl: string;
-    thumbnailUrl?: string | null;
-    durationSeconds?: number;
-    viewCount: number;
-    likesCount: number;
-    commentsCount: number;
-    userName: string;
-    userAvatarUrl?: string | null;
-    userId: string;
-    liked?: boolean;
-}
-
-/* ================================================================
- * UTILITÁRIOS
- * ================================================================ */
-
-function formatViews(value: number) {
-    if (value >= 1_000_000) {
-        return `${(value / 1_000_000).toFixed(1)}M`;
-    }
-
-    if (value >= 1_000) {
-        return `${(value / 1_000).toFixed(1)}K`;
-    }
-
-    return String(value);
-}
-
-function isHlsUrl(url: string) {
-    const value = url.toLowerCase();
-
-    return (
-      value.includes(".m3u8") ||
-      value.includes("stream.mux.com") ||
-      value.includes("mux.com")
-    );
-}
-
-/*
- * Se o backend eventualmente retornar um playback ID do Mux
- * em vez da URL completa, conseguimos usar também.
- */
-function extractMuxPlaybackId(url: string) {
-    if (!url) {
-        return null;
-    }
-
-    if (url.includes("stream.mux.com/")) {
-        const match = url.match(
-          /stream\.mux\.com\/([^/?#]+)/
-        );
-
-        return match?.[1] ?? null;
-    }
-
-    return null;
-}
-
-/* ================================================================
- * PÁGINA
- * ================================================================ */
+import type { VideoItem } from "@/lib/videos/types";
 
 export default function MementoPage() {
     const {
         getToken,
-        userId: currentUserId,
         isSignedIn,
     } = useAuth();
 
-    const [momentos, setMomentos] =
-      useState<MementoItem[]>([]);
+    const [videos, setVideos] = useState<VideoItem[]>([]);
+    const [currentIndex, setCurrentIndex] = useState(0);
 
-    const [currentIndex, setCurrentIndex] =
-      useState(0);
+    const [loading, setLoading] = useState(true);
+    const [loadingMore, setLoadingMore] = useState(false);
 
-    const [loading, setLoading] =
-      useState(true);
-
-    const [liked, setLiked] =
-      useState<Record<string, boolean>>({});
-
+    const [liked, setLiked] = useState<Record<string, boolean>>({});
     const [likeCounts, setLikeCounts] =
       useState<Record<string, number>>({});
 
     const [showComments, setShowComments] =
       useState(false);
 
-    const [isPlaying, setIsPlaying] =
-      useState(false);
+    const [isMuted, setIsMuted] = useState(true);
+    const [isPlaying, setIsPlaying] = useState(false);
 
-    const [isMuted, setIsMuted] =
-      useState(true);
+    const [page, setPage] = useState(0);
+    const [lastPage, setLastPage] = useState(false);
 
-    const [videoError, setVideoError] =
-      useState(false);
+    const playerRef =
+      useRef<MuxPlayerElement | null>(null);
 
-    const videoRef =
-      useRef<HTMLVideoElement | null>(null);
-
-    const muxPlayerRef =
-      useRef<any>(null);
-
-    const currentVideo =
-      momentos[currentIndex];
-
-    /* ============================================================
-     * BUSCAR VÍDEOS
-     * ============================================================ */
+    /*
+     * ============================================================
+     * CARREGAR PRIMEIRA PÁGINA
+     * ============================================================
+     */
 
     useEffect(() => {
         let cancelled = false;
 
-        async function fetchMomentos() {
+        const load = async () => {
             try {
                 setLoading(true);
 
-                const response = await fetch(
-                  `${API_URL}/api/videos?page=0&size=20&isShort=true`,
-                  {
-                      cache: "no-store",
-                      signal: AbortSignal.timeout(10000),
-                  }
+                const data = await fetchVideoPage(
+                  0,
+                  true
                 );
-
-                if (!response.ok) {
-                    throw new Error(
-                      `Erro HTTP ${response.status}`
-                    );
-                }
-
-                const data =
-                  await response.json();
 
                 if (cancelled) {
                     return;
                 }
 
-                const items =
-                  Array.isArray(data)
-                    ? data
-                    : data.content ?? [];
+                const items = data.content ?? [];
 
-                const validItems =
-                  items.filter(
-                    (item: MementoItem) =>
-                      item &&
-                      item.id &&
-                      item.videoUrl
-                  );
+                setVideos(items);
+                setLastPage(data.last ?? true);
+                setPage(0);
 
-                setMomentos(validItems);
+                const counts: Record<string, number> = {};
+                const states: Record<string, boolean> = {};
 
-                const counts: Record<
-                  string,
-                  number
-                > = {};
+                for (const video of items) {
+                    counts[video.id] =
+                      video.likesCount ?? 0;
 
-                const initialLikes: Record<
-                  string,
-                  boolean
-                > = {};
-
-                validItems.forEach(
-                  (video: MementoItem) => {
-                      counts[video.id] =
-                        video.likesCount ?? 0;
-
-                      initialLikes[video.id] =
-                        video.liked ?? false;
-                  }
-                );
+                    states[video.id] =
+                      video.liked ?? false;
+                }
 
                 setLikeCounts(counts);
-                setLiked(initialLikes);
-            } catch (error) {
-                if (!cancelled) {
-                    console.error(
-                      "Erro ao carregar Mementos:",
-                      error
-                    );
-                }
+                setLiked(states);
             } finally {
                 if (!cancelled) {
                     setLoading(false);
                 }
             }
-        }
+        };
 
-        void fetchMomentos();
+        void load();
 
         return () => {
             cancelled = true;
         };
     }, []);
 
-    /* ============================================================
-     * RESET DO PLAYER QUANDO TROCA DE VÍDEO
-     * ============================================================ */
+    /*
+     * ============================================================
+     * CARREGAR MAIS VÍDEOS
+     * ============================================================
+     */
 
-    useEffect(() => {
-        setIsPlaying(false);
-        setIsMuted(true);
-        setVideoError(false);
-
-        /*
-         * Player nativo
-         */
-        const video =
-          videoRef.current;
-
-        if (video) {
-            video.pause();
-            video.currentTime = 0;
-            video.muted = true;
+    const loadMore = useCallback(async () => {
+        if (loadingMore || lastPage) {
+            return;
         }
 
-        /*
-         * Mux
-         */
-        const mux =
-          muxPlayerRef.current;
+        const nextPage = page + 1;
 
-        if (mux) {
-            try {
-                mux.pause();
-                mux.currentTime = 0;
-                mux.muted = true;
-            } catch {
-                // Ignora limpeza do player.
-            }
+        try {
+            setLoadingMore(true);
+
+            const data = await fetchVideoPage(
+              nextPage,
+              true
+            );
+
+            const newVideos = data.content ?? [];
+
+            setVideos((current) => {
+                const existingIds = new Set(
+                  current.map((video) => video.id)
+                );
+
+                const unique = newVideos.filter(
+                  (video) =>
+                    !existingIds.has(video.id)
+                );
+
+                return [...current, ...unique];
+            });
+
+            setPage(nextPage);
+            setLastPage(data.last ?? true);
+
+            setLikeCounts((current) => {
+                const next = { ...current };
+
+                for (const video of newVideos) {
+                    if (
+                      next[video.id] === undefined
+                    ) {
+                        next[video.id] =
+                          video.likesCount ?? 0;
+                    }
+                }
+
+                return next;
+            });
+
+            setLiked((current) => {
+                const next = { ...current };
+
+                for (const video of newVideos) {
+                    if (
+                      next[video.id] === undefined
+                    ) {
+                        next[video.id] =
+                          video.liked ?? false;
+                    }
+                }
+
+                return next;
+            });
+        } finally {
+            setLoadingMore(false);
         }
-    }, [currentIndex]);
+    }, [
+        lastPage,
+        loadingMore,
+        page,
+    ]);
 
-    /* ============================================================
-     * AUTOPLAY DO VÍDEO
+    /*
+     * ============================================================
+     * VÍDEO ATUAL
+     * ============================================================
+     */
+
+    const currentVideo =
+      videos[currentIndex];
+
+    /*
+     * ============================================================
+     * PLAYBACK ID
      *
-     * Começamos SEM SOM porque o navegador bloqueia
-     * autoplay com áudio.
-     * O usuário pode ativar o som pelo botão.
-     * ============================================================ */
+     * O backend pode retornar:
+     *
+     * D56....Js
+     *
+     * ou:
+     *
+     * https://stream.mux.com/D56....Js.m3u8
+     *
+     * playbackIdFrom() normaliza os dois.
+     * ============================================================
+     */
+
+    const currentPlaybackId =
+      playbackIdFrom(
+        currentVideo?.videoUrl
+      );
+
+    /*
+     * ============================================================
+     * REPRODUÇÃO DO MUX
+     * ============================================================
+     */
 
     useEffect(() => {
-        if (!currentVideo) {
+        const player = playerRef.current;
+
+        if (!player || !currentVideo) {
             return;
         }
 
         let cancelled = false;
 
-        async function startPlayback() {
+        const startPlayback = async () => {
             if (cancelled) {
                 return;
             }
 
             try {
                 /*
-                 * Mux / HLS
+                 * Autoplay sempre começa mutado.
+                 * Isso evita bloqueio do navegador.
                  */
-                if (
-                  isHlsUrl(
-                    currentVideo.videoUrl
-                  )
-                ) {
-                    const player =
-                      muxPlayerRef.current;
+                player.muted = true;
+                setIsMuted(true);
 
-                    if (!player) {
-                        return;
-                    }
-
-                    player.muted = true;
-
-                    await player.play();
-
-                    if (!cancelled) {
-                        setIsPlaying(true);
-                    }
-
-                    return;
-                }
-
-                /*
-                 * MP4 / vídeo tradicional
-                 */
-                const video =
-                  videoRef.current;
-
-                if (!video) {
-                    return;
-                }
-
-                video.muted = true;
-
-                await video.play();
+                await player.play();
 
                 if (!cancelled) {
                     setIsPlaying(true);
                 }
-            } catch (error) {
+            } catch {
                 if (!cancelled) {
-                    console.warn(
-                      "Autoplay bloqueado ou vídeo ainda carregando:",
-                      error
-                    );
+                    setIsPlaying(false);
                 }
             }
-        }
+        };
 
-        const timer =
-          window.setTimeout(
-            () => {
-                void startPlayback();
-            },
-            150
-          );
+        const handleCanPlay = () => {
+            void startPlayback();
+        };
+
+        player.addEventListener(
+          "canplay",
+          handleCanPlay
+        );
+
+        /*
+         * O elemento pode já estar pronto.
+         */
+        void startPlayback();
 
         return () => {
             cancelled = true;
-            window.clearTimeout(timer);
+
+            player.removeEventListener(
+              "canplay",
+              handleCanPlay
+            );
+
+            try {
+                player.pause();
+            } catch {
+                // Mux ainda pode estar desmontando.
+            }
         };
-    }, [currentIndex, currentVideo]);
+    }, [currentIndex, currentVideo?.id]);
 
-    /* ============================================================
-     * PLAY / PAUSE
-     * ============================================================ */
+    /*
+     * ============================================================
+     * EVENTOS DO PLAYER
+     * ============================================================
+     */
 
-    const togglePlay = useCallback(
-      async () => {
-          if (!currentVideo) {
-              return;
-          }
+    useEffect(() => {
+        const player = playerRef.current;
 
-          try {
-              if (
-                isHlsUrl(
-                  currentVideo.videoUrl
-                )
-              ) {
-                  const player =
-                    muxPlayerRef.current;
-
-                  if (!player) {
-                      return;
-                  }
-
-                  if (player.paused) {
-                      await player.play();
-                  } else {
-                      player.pause();
-                  }
-
-                  return;
-              }
-
-              const video =
-                videoRef.current;
-
-              if (!video) {
-                  return;
-              }
-
-              if (video.paused) {
-                  await video.play();
-              } else {
-                  video.pause();
-              }
-          } catch (error) {
-              console.error(
-                "Erro ao reproduzir vídeo:",
-                error
-              );
-          }
-      },
-      [currentVideo]
-    );
-
-    /* ============================================================
-     * SOM
-     * ============================================================ */
-
-    const toggleSound = useCallback(
-      async (
-        event: React.MouseEvent
-      ) => {
-          event.stopPropagation();
-
-          try {
-              const newMuted =
-                !isMuted;
-
-              /*
-               * Mux
-               */
-              if (
-                currentVideo &&
-                isHlsUrl(
-                  currentVideo.videoUrl
-                )
-              ) {
-                  const player =
-                    muxPlayerRef.current;
-
-                  if (!player) {
-                      return;
-                  }
-
-                  player.muted =
-                    newMuted;
-
-                  setIsMuted(newMuted);
-
-                  /*
-                   * Se ativou o som e estava pausado,
-                   * tenta reproduzir.
-                   */
-                  if (
-                    !newMuted &&
-                    player.paused
-                  ) {
-                      await player.play();
-                  }
-
-                  return;
-              }
-
-              /*
-               * Vídeo normal
-               */
-              const video =
-                videoRef.current;
-
-              if (!video) {
-                  return;
-              }
-
-              video.muted =
-                newMuted;
-
-              setIsMuted(newMuted);
-
-              if (
-                !newMuted &&
-                video.paused
-              ) {
-                  await video.play();
-              }
-          } catch (error) {
-              console.error(
-                "Erro ao alterar som:",
-                error
-              );
-          }
-      },
-      [
-          currentVideo,
-          isMuted,
-      ]
-    );
-
-    /* ============================================================
-     * LIKE
-     * ============================================================ */
-
-    const toggleLike = async (
-      videoId: string
-    ) => {
-        if (
-          !isSignedIn ||
-          !currentUserId
-        ) {
+        if (!player) {
             return;
         }
 
-        const previousLiked =
-          liked[videoId] ?? false;
+        const handlePlay = () => {
+            setIsPlaying(true);
+        };
 
-        const previousCount =
-          likeCounts[videoId] ??
-          0;
+        const handlePause = () => {
+            setIsPlaying(false);
+        };
 
-        /*
-         * Atualização otimista
-         */
-        setLiked((previous) => ({
-            ...previous,
-            [videoId]:
-              !previousLiked,
-        }));
-
-        setLikeCounts(
-          (previous) => ({
-              ...previous,
-              [videoId]:
-                previousCount +
-                (previousLiked
-                  ? -1
-                  : 1),
-          })
+        player.addEventListener(
+          "play",
+          handlePlay
         );
 
-        try {
-            const token =
-              await getToken();
+        player.addEventListener(
+          "pause",
+          handlePause
+        );
 
-            if (!token) {
-                throw new Error(
-                  "Token de autenticação não disponível."
-                );
-            }
-
-            const response =
-              await fetch(
-                `${API_URL}/api/videos/${videoId}/like`,
-                {
-                    method: "POST",
-                    headers: {
-                        Authorization:
-                          `Bearer ${token}`,
-                        "Content-Type":
-                          "application/json",
-                    },
-                }
-              );
-
-            if (!response.ok) {
-                throw new Error(
-                  `Erro HTTP ${response.status}`
-                );
-            }
-
-            const data =
-              await response.json();
-
-            setLiked((previous) => ({
-                ...previous,
-                [videoId]:
-                  Boolean(
-                    data.liked
-                  ),
-            }));
-
-            setLikeCounts(
-              (previous) => ({
-                  ...previous,
-                  [videoId]:
-                    data.likesCount ??
-                    data.count ??
-                    previousCount,
-              })
-            );
-        } catch (error) {
-            console.error(
-              "Erro ao curtir vídeo:",
-              error
+        return () => {
+            player.removeEventListener(
+              "play",
+              handlePlay
             );
 
-            /*
-             * Rollback
-             */
-            setLiked((previous) => ({
-                ...previous,
-                [videoId]:
-                previousLiked,
-            }));
-
-            setLikeCounts(
-              (previous) => ({
-                  ...previous,
-                  [videoId]:
-                  previousCount,
-              })
+            player.removeEventListener(
+              "pause",
+              handlePause
             );
-        }
-    };
+        };
+    }, [currentVideo?.id]);
 
-    /* ============================================================
-     * PRÓXIMO
-     * ============================================================ */
+    /*
+     * ============================================================
+     * PLAY / PAUSE
+     * ============================================================
+     */
 
-    const nextVideo = () => {
-        if (
-          currentIndex <
-          momentos.length - 1
-        ) {
-            setCurrentIndex(
-              (previous) =>
-                previous + 1
-            );
-        }
-    };
+    const togglePlay = useCallback(() => {
+        const player = playerRef.current;
 
-    /* ============================================================
-     * ANTERIOR
-     * ============================================================ */
-
-    const previousVideo = () => {
-        if (currentIndex > 0) {
-            setCurrentIndex(
-              (previous) =>
-                previous - 1
-            );
-        }
-    };
-
-    /* ============================================================
-     * COMPARTILHAR
-     * ============================================================ */
-
-    const shareVideo = async () => {
-        if (!currentVideo) {
+        if (!player) {
             return;
         }
 
-        const url =
-          `${window.location.origin}/videos/memento`;
-
-        try {
-            if (
-              navigator.share
-            ) {
-                await navigator.share({
-                    title:
-                    currentVideo.title,
-                    text:
-                      currentVideo.description ??
-                      currentVideo.title,
-                    url,
-                });
-
-                return;
-            }
-
-            await navigator.clipboard.writeText(
-              url
-            );
-        } catch {
-            /*
-             * Usuário cancelou o compartilhamento.
-             */
+        if (player.paused) {
+            player
+              .play()
+              .then(() => {
+                  setIsPlaying(true);
+              })
+              .catch(() => {
+                  setIsPlaying(false);
+              });
+        } else {
+            player.pause();
+            setIsPlaying(false);
         }
-    };
+    }, []);
 
-    /* ============================================================
+    /*
+     * ============================================================
+     * SOM
+     * ============================================================
+     */
+
+    const toggleSound = useCallback(() => {
+        const player = playerRef.current;
+
+        if (!player) {
+            return;
+        }
+
+        const newMuted = !player.muted;
+
+        player.muted = newMuted;
+        setIsMuted(newMuted);
+
+        /*
+         * Se o usuário ativou o som enquanto o vídeo
+         * estava parado, tenta reproduzir.
+         */
+        if (!newMuted && player.paused) {
+            player
+              .play()
+              .then(() => {
+                  setIsPlaying(true);
+              })
+              .catch(() => {
+                  setIsPlaying(false);
+              });
+        }
+    }, []);
+
+    /*
+     * ============================================================
+     * PRÓXIMO
+     * ============================================================
+     */
+
+    const nextVideo = useCallback(() => {
+        if (
+          currentIndex <
+          videos.length - 1
+        ) {
+            setCurrentIndex(
+              (value) => value + 1
+            );
+            return;
+        }
+
+        if (!lastPage) {
+            void loadMore();
+        }
+    }, [
+        currentIndex,
+        videos.length,
+        lastPage,
+        loadMore,
+    ]);
+
+    /*
+     * ============================================================
+     * ANTERIOR
+     * ============================================================
+     */
+
+    const previousVideo = useCallback(() => {
+        if (currentIndex > 0) {
+            setCurrentIndex(
+              (value) => value - 1
+            );
+        }
+    }, [currentIndex]);
+
+    /*
+     * ============================================================
      * TECLADO
-     * ============================================================ */
+     * ============================================================
+     */
 
     useEffect(() => {
         const handleKeyDown = (
           event: KeyboardEvent
         ) => {
             if (showComments) {
+                if (event.key === "Escape") {
+                    setShowComments(false);
+                }
+
                 return;
             }
 
-            if (
-              event.key ===
-              "ArrowDown"
-            ) {
+            if (event.key === "ArrowDown") {
                 event.preventDefault();
                 nextVideo();
             }
 
-            if (
-              event.key ===
-              "ArrowUp"
-            ) {
+            if (event.key === "ArrowUp") {
                 event.preventDefault();
                 previousVideo();
             }
 
-            if (
-              event.key ===
-              " "
-            ) {
+            if (event.key === " ") {
                 event.preventDefault();
-                void togglePlay();
+                togglePlay();
+            }
+
+            if (event.key === "m") {
+                toggleSound();
             }
         };
 
@@ -715,41 +492,227 @@ export default function MementoPage() {
             );
         };
     }, [
-        currentIndex,
-        momentos.length,
-        showComments,
+        nextVideo,
+        previousVideo,
         togglePlay,
+        toggleSound,
+        showComments,
     ]);
 
-    /* ============================================================
+    /*
+     * ============================================================
+     * LIKE
+     * ============================================================
+     */
+
+    const handleLike = useCallback(
+      async (video: VideoItem) => {
+          if (!isSignedIn) {
+              return;
+          }
+
+          const videoId = video.id;
+
+          const previousLiked =
+            liked[videoId] ??
+            video.liked ??
+            false;
+
+          const previousCount =
+            likeCounts[videoId] ??
+            video.likesCount ??
+            0;
+
+          /*
+           * Atualização otimista.
+           */
+          setLiked((current) => ({
+              ...current,
+              [videoId]:
+                !previousLiked,
+          }));
+
+          setLikeCounts((current) => ({
+              ...current,
+              [videoId]:
+                previousCount +
+                (previousLiked
+                  ? -1
+                  : 1),
+          }));
+
+          try {
+              const token =
+                await getToken();
+
+              if (!token) {
+                  throw new Error(
+                    "Token não disponível"
+                  );
+              }
+
+              const result =
+                await likeVideo(
+                  videoId,
+                  token
+                );
+
+              if (!result) {
+                  throw new Error(
+                    "Não foi possível atualizar a curtida"
+                  );
+              }
+
+              setLiked((current) => ({
+                  ...current,
+                  [videoId]:
+                  result.liked,
+              }));
+
+              setLikeCounts(
+                (current) => ({
+                    ...current,
+                    [videoId]:
+                    result.likesCount,
+                })
+              );
+          } catch {
+              /*
+               * Reverte caso a API falhe.
+               */
+              setLiked((current) => ({
+                  ...current,
+                  [videoId]:
+                  previousLiked,
+              }));
+
+              setLikeCounts(
+                (current) => ({
+                    ...current,
+                    [videoId]:
+                    previousCount,
+                })
+              );
+          }
+      },
+      [
+          getToken,
+          isSignedIn,
+          liked,
+          likeCounts,
+      ]
+    );
+
+    /*
+     * ============================================================
+     * COMPARTILHAR
+     * ============================================================
+     */
+
+    const handleShare = useCallback(
+      async () => {
+          if (!currentVideo) {
+              return;
+          }
+
+          const url =
+            typeof window !==
+            "undefined"
+              ? `${window.location.origin}/videos/memento?video=${currentVideo.id}`
+              : "";
+
+          if (!url) {
+              return;
+          }
+
+          try {
+              if (
+                navigator.share
+              ) {
+                  await navigator.share(
+                    {
+                        title:
+                        currentVideo.title,
+                        text:
+                          currentVideo.description ??
+                          currentVideo.title,
+                        url,
+                    }
+                  );
+
+                  return;
+              }
+
+              await navigator.clipboard.writeText(
+                url
+              );
+          } catch {
+              /*
+               * Compartilhamento cancelado
+               * pelo usuário.
+               */
+          }
+      },
+      [currentVideo]
+    );
+
+    /*
+     * ============================================================
+     * FORMATAÇÃO
+     * ============================================================
+     */
+
+    const formatNumber = (
+      value: number
+    ) => {
+        if (value >= 1_000_000) {
+            return `${(
+              value / 1_000_000
+            ).toFixed(1)}M`;
+        }
+
+        if (value >= 1_000) {
+            return `${(
+              value / 1_000
+            ).toFixed(1)}K`;
+        }
+
+        return String(value);
+    };
+
+    /*
+     * ============================================================
      * LOADING
-     * ============================================================ */
+     * ============================================================
+     */
 
     if (loading) {
         return (
-          <div className="flex h-dvh w-full items-center justify-center bg-background">
+          <main className="fixed inset-0 flex items-center justify-center bg-background">
               <div
                 className="
-                        h-8
-                        w-8
+                        h-9
+                        w-9
                         animate-spin
                         rounded-full
                         border-2
-                        border-primary/30
+                        border-primary/20
                         border-t-primary
                     "
               />
-          </div>
+          </main>
         );
     }
 
-    /* ============================================================
-     * VAZIO
-     * ============================================================ */
+    /*
+     * ============================================================
+     * SEM VÍDEOS
+     * ============================================================
+     */
 
-    if (!momentos.length) {
+    if (!videos.length) {
         return (
-          <div className="flex h-dvh w-full items-center justify-center bg-background px-6">
+          <main className="fixed inset-0 flex items-center justify-center bg-background px-6">
               <div className="text-center">
                   <p className="text-lg text-muted-foreground">
                       Nenhum Memento ainda
@@ -774,67 +737,71 @@ export default function MementoPage() {
                       Publicar Memento
                   </Link>
               </div>
-          </div>
+          </main>
         );
     }
 
-    /* ============================================================
+    /*
+     * ============================================================
      * RENDER
-     * ============================================================ */
+     * ============================================================
+     */
 
     return (
-      <div className="fixed inset-0 z-50 flex h-dvh w-full flex-col overflow-hidden bg-black">
+      <main
+        className="
+                fixed
+                inset-0
+                flex
+                flex-col
+                overflow-hidden
+                bg-background
+            "
+      >
           {/* ====================================================
-                HEADER
+                TOPO
             ==================================================== */}
 
           <header
             className="
-                    absolute
-                    left-0
-                    right-0
-                    top-0
-                    z-40
+                    relative
+                    z-50
                     flex
                     h-14
+                    shrink-0
                     items-center
                     border-b
-                    border-white/10
-                    bg-black/35
+                    border-primary/10
+                    bg-background/90
                     px-4
-                    backdrop-blur-md
+                    backdrop-blur-xl
                 "
           >
               <Link
                 href="/videos"
                 className="
-                        shrink-0
                         text-lg
                         tracking-wide
                     "
                 style={{
                     fontFamily:
                       "var(--font-caesar)",
-                    color:
-                      "#ac0202",
+                    color: "#ac0202",
                 }}
               >
                   Imperium
               </Link>
 
-              <div className="ml-auto flex items-center gap-2">
+              <div className="ml-auto flex items-center gap-1">
                   <Link
                     href="/videos/buscar"
                     aria-label="Buscar vídeos"
                     className="
-                            flex
-                            size-10
-                            items-center
-                            justify-center
                             rounded-full
-                            text-white
+                            p-2
+                            text-foreground
                             transition
-                            hover:bg-white/10
+                            hover:bg-secondary
                         "
                   >
                       <Search className="size-5" />
@@ -843,6 +810,7 @@ export default function MementoPage() {
                   <Link
                     href="/videos/memento/upload"
                     className="
+                            ml-1
                             rounded-full
                             bg-primary
                             px-3
@@ -860,693 +828,688 @@ export default function MementoPage() {
           </header>
 
           {/* ====================================================
-                ÁREA PRINCIPAL
+                ÁREA DO MEMENTO
             ==================================================== */}
 
-          <main className="flex min-h-0 flex-1 items-center justify-center overflow-hidden bg-black">
-              <div
-                className="
-                        relative
-                        h-full
-                        w-full
-                        overflow-hidden
-                        bg-black
+          <section
+            className="
+                    relative
+                    min-h-0
+                    flex-1
+                    overflow-hidden
+                    bg-black
+                "
+          >
+              {currentVideo && (
+                <div
+                  className="
+                            absolute
+                            inset-0
+                            flex
+                            items-center
+                            justify-center
+                            bg-black
+                        "
+                >
+                    {/* =================================================
+                            CONTAINER RESPONSIVO
 
-                        sm:h-full
-                        sm:w-full
+                            Mobile:
+                            largura total / altura disponível
 
-                        lg:h-[calc(100dvh-24px)]
-                        lg:w-auto
-                        lg:aspect-[9/16]
-                        lg:max-w-[calc(100vw-260px)]
-                        lg:rounded-2xl
-                    "
-              >
-                  {/* =================================================
-                        PLAYER
-                    ================================================= */}
+                            Desktop:
+                            proporção 9:16
+                        ================================================= */}
 
-                  {currentVideo &&
-                  isHlsUrl(
-                    currentVideo.videoUrl
-                  ) ? (
-                    <MuxPlayer
-                      key={
-                          currentVideo.id
-                      }
-                      ref={
-                          muxPlayerRef
-                      }
-                      src={
-                          currentVideo.videoUrl
-                      }
-                      playbackId={
-                        extractMuxPlaybackId(
-                          currentVideo.videoUrl
-                        ) ??
-                        undefined
-                      }
-                      metadata={{
-                          video_title:
-                          currentVideo.title,
-                      }}
-                      poster={
-                        currentVideo.thumbnailUrl ??
-                        undefined
-                      }
-                      autoPlay="muted"
-                      muted
-                      loop
-                      playsInline
-                      preload="auto"
-                      onPlay={() => {
-                          setIsPlaying(
-                            true
-                          );
-                          setVideoError(
-                            false
-                          );
-                      }}
-                      onPause={() => {
-                          setIsPlaying(
-                            false
-                          );
-                      }}
-                      onError={() => {
-                          console.error(
-                            "Mux não conseguiu reproduzir:",
-                            currentVideo.videoUrl
-                          );
-
-                          setVideoError(
-                            true
-                          );
-                          setIsPlaying(
-                            false
-                          );
-                      }}
-                      className="
-                                absolute
-                                inset-0
-                                h-full
-                                w-full
-                            "
-                      style={{
-                          objectFit:
-                            "cover",
-                      }}
-                    />
-                  ) : (
-                    <video
-                      key={
-                          currentVideo.id
-                      }
-                      ref={
-                          videoRef
-                      }
-                      src={
-                          currentVideo.videoUrl
-                      }
-                      poster={
-                        currentVideo.thumbnailUrl ??
-                        undefined
-                      }
-                      autoPlay
-                      muted
-                      loop
-                      playsInline
-                      preload="auto"
-                      className="
-                                absolute
-                                inset-0
-                                h-full
-                                w-full
-                                bg-black
-                                object-cover
-                            "
-                      onPlay={() => {
-                          setIsPlaying(
-                            true
-                          );
-                          setVideoError(
-                            false
-                          );
-                      }}
-                      onPause={() => {
-                          setIsPlaying(
-                            false
-                          );
-                      }}
-                      onError={() => {
-                          console.error(
-                            "Vídeo não conseguiu carregar:",
-                            currentVideo.videoUrl
-                          );
-
-                          setVideoError(
-                            true
-                          );
-                          setIsPlaying(
-                            false
-                          );
-                      }}
-                      onClick={() => {
-                          void togglePlay();
-                      }}
-                    />
-                  )}
-
-                  {/* =================================================
-                        ERRO
-                    ================================================= */}
-
-                  {videoError && (
                     <div
                       className="
-                                absolute
-                                inset-0
-                                z-30
-                                flex
-                                items-center
-                                justify-center
-                                bg-black/70
-                                px-6
-                                text-center
-                                backdrop-blur-sm
+                                relative
+                                h-full
+                                w-full
+                                overflow-hidden
+                                bg-black
+
+                                lg:h-full
+                                lg:w-auto
+                                lg:aspect-[9/16]
+                                lg:max-w-[calc(100vw-2rem)]
+                                lg:rounded-xl
+                                lg:border
+                                lg:border-white/10
                             "
                     >
-                        <div className="max-w-xs">
-                            <p className="text-sm font-semibold text-white">
-                                Não foi possível reproduzir este vídeo.
-                            </p>
+                        {/* =================================================
+                                MUX PLAYER
 
-                            <button
-                              type="button"
-                              onClick={() => {
-                                  setVideoError(
-                                    false
-                                  );
+                                IMPORTANTE:
+                                usamos playbackId e NÃO src.
 
-                                  if (
-                                    videoRef.current
-                                  ) {
-                                      videoRef.current.load();
+                                Isso evita:
+                                .m3u8.m3u8
+                            ================================================= */}
 
-                                      void videoRef.current.play();
-                                  }
-
-                                  if (
-                                    muxPlayerRef.current
-                                  ) {
-                                      try {
-                                          muxPlayerRef.current.load();
-                                          void muxPlayerRef.current.play();
-                                      } catch {
-                                          // Ignora tentativa de recuperação.
-                                      }
-                                  }
-                              }}
-                              className="
-                                        mt-4
-                                        rounded-full
-                                        bg-white
-                                        px-5
-                                        py-2
-                                        text-sm
-                                        font-medium
-                                        text-black
-                                        transition
-                                        hover:bg-white/90
+                        {currentPlaybackId ? (
+                          <MuxPlayer
+                            key={currentVideo.id}
+                            ref={playerRef}
+                            playbackId={
+                                currentPlaybackId
+                            }
+                            metadata={{
+                                video_title:
+                                currentVideo.title,
+                            }}
+                            poster={
+                              currentVideo.thumbnailUrl ||
+                              undefined
+                            }
+                            autoPlay="muted"
+                            muted
+                            loop
+                            playsInline
+                            preload="auto"
+                            className="
+                                        h-full
+                                        w-full
                                     "
-                            >
-                                Tentar novamente
-                            </button>
-                        </div>
-                    </div>
-                  )}
-
-                  {/* =================================================
-                        PLAY CENTRAL
-                    ================================================= */}
-
-                  {!isPlaying &&
-                    !videoError && (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          void togglePlay()
-                        }
-                        aria-label="Reproduzir vídeo"
-                        className="
-                                    absolute
-                                    inset-0
-                                    z-20
-                                    flex
-                                    items-center
-                                    justify-center
-                                "
-                      >
-                                <span
-                                  className="
+                          />
+                        ) : currentVideo.videoUrl ? (
+                          <div
+                            className="
                                         flex
-                                        size-16
+                                        h-full
+                                        w-full
+                                        items-center
+                                        justify-center
+                                        bg-black
+                                        px-6
+                                        text-center
+                                        text-white
+                                    "
+                          >
+                              <div>
+                                  <p className="text-sm font-medium">
+                                      Não foi possível identificar o vídeo.
+                                  </p>
+                              </div>
+                          </div>
+                        ) : (
+                          <div
+                            className="
+                                        flex
+                                        h-full
+                                        w-full
+                                        items-center
+                                        justify-center
+                                        bg-black
+                                    "
+                          >
+                              <Play className="size-12 text-white/40" />
+                          </div>
+                        )}
+
+                        {/* =================================================
+                                GRADIENTE
+                            ================================================= */}
+
+                        <div
+                          className="
+                                    pointer-events-none
+                                    absolute
+                                    inset-x-0
+                                    bottom-0
+                                    z-20
+                                    h-72
+                                    bg-gradient-to-t
+                                    from-black/95
+                                    via-black/50
+                                    to-transparent
+                                "
+                        />
+
+                        {/* =================================================
+                                SOM
+                            ================================================= */}
+
+                        {currentPlaybackId && (
+                          <button
+                            type="button"
+                            onClick={
+                                toggleSound
+                            }
+                            aria-label={
+                                isMuted
+                                  ? "Ativar som"
+                                  : "Desativar som"
+                            }
+                            className="
+                                        absolute
+                                        right-4
+                                        top-4
+                                        z-40
+                                        flex
+                                        size-11
                                         items-center
                                         justify-center
                                         rounded-full
+                                        border
+                                        border-white/20
                                         bg-black/50
                                         text-white
-                                        shadow-xl
+                                        shadow-lg
                                         backdrop-blur-md
+                                        transition
+                                        hover:bg-black/70
+                                        active:scale-95
                                     "
-                                >
-                                    <Play
-                                      className="ml-1 size-8"
-                                      fill="white"
-                                    />
-                                </span>
-                      </button>
-                    )}
+                          >
+                              {isMuted ? (
+                                <VolumeX className="size-5" />
+                              ) : (
+                                <Volume2 className="size-5" />
+                              )}
+                          </button>
+                        )}
 
-                  {/* =================================================
-                        GRADIENTE
-                    ================================================= */}
+                        {/* =================================================
+                                PLAY CENTRAL
 
-                  <div
-                    className="
-                            pointer-events-none
-                            absolute
-                            inset-x-0
-                            bottom-0
-                            z-10
-                            h-72
-                            bg-gradient-to-t
-                            from-black/95
-                            via-black/45
-                            to-transparent
-                        "
-                  />
+                                O clique no vídeo continua funcionando.
+                            ================================================= */}
 
-                  {/* =================================================
-                        SOM
-                    ================================================= */}
-
-                  <button
-                    type="button"
-                    onClick={
-                        toggleSound
-                    }
-                    aria-label={
-                        isMuted
-                          ? "Ativar som"
-                          : "Desativar som"
-                    }
-                    className="
-                            absolute
-                            right-4
-                            top-16
-                            z-40
-                            flex
-                            size-11
-                            items-center
-                            justify-center
-                            rounded-full
-                            border
-                            border-white/20
-                            bg-black/45
-                            text-white
-                            shadow-lg
-                            backdrop-blur-md
-                            transition
-                            hover:bg-black/65
-                            active:scale-95
-                        "
-                  >
-                      {isMuted ? (
-                        <VolumeX className="size-5" />
-                      ) : (
-                        <Volume2 className="size-5" />
-                      )}
-                  </button>
-
-                  {/* =================================================
-                        INFORMAÇÕES
-                    ================================================= */}
-
-                  <div
-                    className="
-                            absolute
-                            bottom-0
-                            left-0
-                            right-0
-                            z-20
-                            px-4
-                            pb-6
-                            pr-20
-                            sm:px-5
-                            sm:pb-7
-                            sm:pr-24
-                        "
-                  >
-                      <div className="mb-2 flex items-center gap-2">
-                          {currentVideo.userAvatarUrl ? (
-                            <img
-                              src={
-                                  currentVideo.userAvatarUrl
+                        {!isPlaying &&
+                          currentPlaybackId && (
+                            <button
+                              type="button"
+                              onClick={
+                                  togglePlay
                               }
-                              alt=""
+                              aria-label="Reproduzir vídeo"
                               className="
-                                        size-9
-                                        shrink-0
-                                        rounded-full
-                                        border-2
-                                        border-white/40
-                                        bg-secondary
-                                        object-cover
-                                    "
-                            />
-                          ) : (
+                                            absolute
+                                            inset-0
+                                            z-30
+                                            flex
+                                            items-center
+                                            justify-center
+                                        "
+                            >
+                                        <span
+                                          className="
+                                                flex
+                                                size-16
+                                                items-center
+                                                justify-center
+                                                rounded-full
+                                                bg-black/50
+                                                text-white
+                                                shadow-xl
+                                                backdrop-blur-md
+                                            "
+                                        >
+                                            <Play
+                                              className="
+                                                    ml-1
+                                                    size-8
+                                                "
+                                              fill="white"
+                                            />
+                                        </span>
+                            </button>
+                          )}
+
+                        {/* =================================================
+                                INFORMAÇÕES
+                            ================================================= */}
+
+                        <div
+                          className="
+                                    absolute
+                                    bottom-0
+                                    left-0
+                                    right-0
+                                    z-30
+                                    p-4
+                                    pb-6
+                                    sm:p-5
+                                    sm:pb-7
+                                "
+                        >
                             <div
                               className="
                                         flex
-                                        size-9
-                                        shrink-0
+                                        items-end
+                                        gap-3
+                                    "
+                            >
+                                <div
+                                  className="
+                                            min-w-0
+                                            flex-1
+                                        "
+                                >
+                                    {/* USUÁRIO */}
+
+                                    <div
+                                      className="
+                                                mb-2
+                                                flex
+                                                items-center
+                                                gap-2
+                                            "
+                                    >
+                                        {currentVideo.userAvatarUrl ? (
+                                          <img
+                                            src={
+                                                currentVideo.userAvatarUrl
+                                            }
+                                            alt=""
+                                            className="
+                                                        size-9
+                                                        shrink-0
+                                                        rounded-full
+                                                        border-2
+                                                        border-white/40
+                                                        bg-secondary
+                                                        object-cover
+                                                    "
+                                          />
+                                        ) : (
+                                          <div
+                                            className="
+                                                        flex
+                                                        size-9
+                                                        shrink-0
+                                                        items-center
+                                                        justify-center
+                                                        rounded-full
+                                                        border-2
+                                                        border-white/40
+                                                        bg-secondary
+                                                        text-sm
+                                                        font-semibold
+                                                        text-white
+                                                    "
+                                          >
+                                              {currentVideo.userName
+                                                  ?.charAt(
+                                                    0
+                                                  )
+                                                  .toUpperCase() ||
+                                                "U"}
+                                          </div>
+                                        )}
+
+                                        <span
+                                          className="
+                                                    max-w-[200px]
+                                                    truncate
+                                                    text-sm
+                                                    font-semibold
+                                                    text-white
+                                                "
+                                        >
+                                                @
+                                            {
+                                                currentVideo.userName
+                                            }
+                                            </span>
+                                    </div>
+
+                                    {/* TÍTULO */}
+
+                                    <h1
+                                      className="
+                                                line-clamp-2
+                                                text-sm
+                                                font-bold
+                                                text-white
+                                                sm:text-base
+                                            "
+                                    >
+                                        {
+                                            currentVideo.title
+                                        }
+                                    </h1>
+
+                                    {/* DESCRIÇÃO */}
+
+                                    {currentVideo.description && (
+                                      <p
+                                        className="
+                                                    mt-1
+                                                    line-clamp-2
+                                                    text-xs
+                                                    text-white/80
+                                                    sm:text-sm
+                                                "
+                                      >
+                                          {
+                                              currentVideo.description
+                                          }
+                                      </p>
+                                    )}
+
+                                    {/* ESTATÍSTICAS */}
+
+                                    <div
+                                      className="
+                                                mt-2
+                                                flex
+                                                flex-wrap
+                                                items-center
+                                                gap-2
+                                                text-xs
+                                                text-white/60
+                                            "
+                                    >
+                                            <span>
+                                                {formatNumber(
+                                                  currentVideo.viewCount
+                                                )}{" "}
+                                                visualizações
+                                            </span>
+
+                                        <span>
+                                                •
+                                            </span>
+
+                                        <span>
+                                                {formatNumber(
+                                                  likeCounts[
+                                                    currentVideo
+                                                      .id
+                                                    ] ??
+                                                  currentVideo.likesCount ??
+                                                  0
+                                                )}{" "}
+                                            curtidas
+                                            </span>
+
+                                        <span>
+                                                •
+                                            </span>
+
+                                        <span>
+                                                {formatNumber(
+                                                  currentVideo.commentsCount ??
+                                                  0
+                                                )}{" "}
+                                            comentários
+                                            </span>
+                                    </div>
+                                </div>
+
+                                {/* =================================================
+                                        AÇÕES
+                                    ================================================= */}
+
+                                <div
+                                  className="
+                                            flex
+                                            shrink-0
+                                            flex-col
+                                            items-center
+                                            gap-3
+                                        "
+                                >
+                                    {/* LIKE */}
+
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        void handleLike(
+                                          currentVideo
+                                        )
+                                      }
+                                      disabled={
+                                          !isSignedIn
+                                      }
+                                      aria-label="Curtir"
+                                      className="
+                                                flex
+                                                flex-col
+                                                items-center
+                                                gap-1
+                                                text-xs
+                                                text-white
+                                            "
+                                    >
+                                            <span
+                                              className={`
+                                                    flex
+                                                    size-11
+                                                    items-center
+                                                    justify-center
+                                                    rounded-full
+                                                    border
+                                                    backdrop-blur-md
+                                                    transition
+                                                    active:scale-95
+                                                    ${
+                                                liked[
+                                                  currentVideo
+                                                    .id
+                                                  ]
+                                                  ? "border-red-500/60 bg-red-500/20"
+                                                  : "border-white/20 bg-black/40"
+                                              }
+                                                `}
+                                            >
+                                                <Heart
+                                                  className={`
+                                                        size-5
+                                                        ${
+                                                    liked[
+                                                      currentVideo
+                                                        .id
+                                                      ]
+                                                      ? "fill-red-500 text-red-500"
+                                                      : "text-white"
+                                                  }
+                                                    `}
+                                                />
+                                            </span>
+
+                                        <span>
+                                                {formatNumber(
+                                                  likeCounts[
+                                                    currentVideo
+                                                      .id
+                                                    ] ??
+                                                  currentVideo.likesCount ??
+                                                  0
+                                                )}
+                                            </span>
+                                    </button>
+
+                                    {/* COMENTÁRIOS */}
+
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        setShowComments(
+                                          true
+                                        )
+                                      }
+                                      aria-label="Comentários"
+                                      className="
+                                                flex
+                                                flex-col
+                                                items-center
+                                                gap-1
+                                                text-xs
+                                                text-white
+                                            "
+                                    >
+                                            <span
+                                              className="
+                                                    flex
+                                                    size-11
+                                                    items-center
+                                                    justify-center
+                                                    rounded-full
+                                                    border
+                                                    border-white/20
+                                                    bg-black/40
+                                                    backdrop-blur-md
+                                                    active:scale-95
+                                                "
+                                            >
+                                                <MessageSquare className="size-5" />
+                                            </span>
+
+                                        <span>
+                                                {formatNumber(
+                                                  currentVideo.commentsCount ??
+                                                  0
+                                                )}
+                                            </span>
+                                    </button>
+
+                                    {/* COMPARTILHAR */}
+
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        void handleShare()
+                                      }
+                                      aria-label="Compartilhar"
+                                      className="
+                                                flex
+                                                flex-col
+                                                items-center
+                                                gap-1
+                                                text-xs
+                                                text-white
+                                            "
+                                    >
+                                            <span
+                                              className="
+                                                    flex
+                                                    size-11
+                                                    items-center
+                                                    justify-center
+                                                    rounded-full
+                                                    border
+                                                    border-white/20
+                                                    bg-black/40
+                                                    backdrop-blur-md
+                                                    active:scale-95
+                                                "
+                                            >
+                                                <Share2 className="size-5" />
+                                            </span>
+
+                                        <span>
+                                                Compartilhar
+                                            </span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* =================================================
+                                NAVEGAÇÃO
+                            ================================================= */}
+
+                        {currentIndex >
+                          0 && (
+                            <button
+                              type="button"
+                              onClick={
+                                  previousVideo
+                              }
+                              aria-label="Vídeo anterior"
+                              className="
+                                        absolute
+                                        left-3
+                                        top-1/2
+                                        z-40
+                                        flex
+                                        size-10
+                                        -translate-y-1/2
                                         items-center
                                         justify-center
                                         rounded-full
-                                        border-2
-                                        border-white/40
-                                        bg-secondary
-                                        text-sm
-                                        font-semibold
+                                        bg-black/40
                                         text-white
+                                        backdrop-blur-md
+                                        transition
+                                        hover:bg-black/60
+                                        active:scale-95
                                     "
                             >
-                                {currentVideo.userName
-                                    ?.charAt(
-                                      0
-                                    )
-                                    .toUpperCase() ??
-                                  "U"}
-                            </div>
+                                <ChevronLeft className="size-6" />
+                            </button>
                           )}
 
-                          <span className="truncate text-sm font-semibold text-white">
-                                @
-                              {
-                                  currentVideo.userName
-                              }
-                            </span>
-                      </div>
-
-                      <h2 className="line-clamp-2 text-sm font-bold text-white sm:text-base">
-                          {
-                              currentVideo.title
-                          }
-                      </h2>
-
-                      {currentVideo.description && (
-                        <p className="mt-1 line-clamp-2 text-xs text-white/80 sm:text-sm">
-                            {
-                                currentVideo.description
+                        {(currentIndex <
+                          videos.length -
+                          1 ||
+                          !lastPage) && (
+                          <button
+                            type="button"
+                            onClick={
+                                nextVideo
                             }
-                        </p>
-                      )}
+                            aria-label="Próximo vídeo"
+                            className="
+                                        absolute
+                                        right-3
+                                        top-1/2
+                                        z-40
+                                        flex
+                                        size-10
+                                        -translate-y-1/2
+                                        items-center
+                                        justify-center
+                                        rounded-full
+                                        bg-black/40
+                                        text-white
+                                        backdrop-blur-md
+                                        transition
+                                        hover:bg-black/60
+                                        active:scale-95
+                                    "
+                          >
+                              <ChevronRight className="size-6" />
+                          </button>
+                        )}
+                    </div>
+                </div>
+              )}
+          </section>
 
-                      <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-white/60">
-                            <span>
-                                {formatViews(
-                                  currentVideo.viewCount
-                                )}{" "}
-                                visualizações
-                            </span>
+          {/* ====================================================
+                LOADING MAIS
+            ==================================================== */}
 
-                          <span>•</span>
+          {loadingMore && (
+            <div
+              className="
+                        pointer-events-none
+                        absolute
+                        bottom-3
+                        left-1/2
+                        z-[60]
+                        -translate-x-1/2
+                        rounded-full
+                        bg-black/60
+                        px-3
+                        py-1.5
+                        text-xs
+                        text-white
+                        backdrop-blur-md
+                    "
+            >
+                Carregando...
+            </div>
+          )}
 
-                          <span>
-                                {formatViews(
-                                  likeCounts[
-                                    currentVideo
-                                      .id
-                                    ] ??
-                                  currentVideo.likesCount ??
-                                  0
-                                )}{" "}
-                              curtidas
-                            </span>
-
-                          <span>•</span>
-
-                          <span>
-                                {formatViews(
-                                  currentVideo.commentsCount ??
-                                  0
-                                )}{" "}
-                              comentários
-                            </span>
-                      </div>
-                  </div>
-
-                  {/* =================================================
-                        AÇÕES
-                    ================================================= */}
-
-                  <div
-                    className="
-                            absolute
-                            bottom-24
-                            right-3
-                            z-30
-                            flex
-                            flex-col
-                            items-center
-                            gap-4
-                            sm:right-4
-                            lg:bottom-8
-                        "
-                  >
-                      {/* LIKE */}
-
-                      <button
-                        type="button"
-                        onClick={() =>
-                          void toggleLike(
-                            currentVideo.id
-                          )
-                        }
-                        aria-label="Curtir"
-                        className="flex flex-col items-center gap-1 text-white"
-                      >
-                            <span
-                              className={`
-                                    flex
-                                    size-11
-                                    items-center
-                                    justify-center
-                                    rounded-full
-                                    border
-                                    backdrop-blur-md
-                                    transition
-                                    active:scale-95
-                                    ${
-                                liked[
-                                  currentVideo
-                                    .id
-                                  ]
-                                  ? "border-red-500/50 bg-red-500/20"
-                                  : "border-white/20 bg-black/40"
-                              }
-                                `}
-                            >
-                                <Heart
-                                  className={`
-                                        size-5
-                                        ${
-                                    liked[
-                                      currentVideo
-                                        .id
-                                      ]
-                                      ? "fill-red-500 text-red-500"
-                                      : "text-white"
-                                  }
-                                    `}
-                                />
-                            </span>
-
-                          <span className="text-xs font-medium">
-                                {formatViews(
-                                  likeCounts[
-                                    currentVideo
-                                      .id
-                                    ] ??
-                                  currentVideo.likesCount ??
-                                  0
-                                )}
-                            </span>
-                      </button>
-
-                      {/* COMENTÁRIOS */}
-
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setShowComments(
-                            true
-                          )
-                        }
-                        aria-label="Comentários"
-                        className="flex flex-col items-center gap-1 text-white"
-                      >
-                            <span
-                              className="
-                                    flex
-                                    size-11
-                                    items-center
-                                    justify-center
-                                    rounded-full
-                                    border
-                                    border-white/20
-                                    bg-black/40
-                                    backdrop-blur-md
-                                    active:scale-95
-                                "
-                            >
-                                <MessageCircle className="size-5" />
-                            </span>
-
-                          <span className="text-xs font-medium">
-                                {formatViews(
-                                  currentVideo.commentsCount ??
-                                  0
-                                )}
-                            </span>
-                      </button>
-
-                      {/* COMPARTILHAR */}
-
-                      <button
-                        type="button"
-                        onClick={() =>
-                          void shareVideo()
-                        }
-                        aria-label="Compartilhar"
-                        className="flex flex-col items-center gap-1 text-white"
-                      >
-                            <span
-                              className="
-                                    flex
-                                    size-11
-                                    items-center
-                                    justify-center
-                                    rounded-full
-                                    border
-                                    border-white/20
-                                    bg-black/40
-                                    backdrop-blur-md
-                                    active:scale-95
-                                "
-                            >
-                                <Share2 className="size-5" />
-                            </span>
-
-                          <span className="text-[10px]">
-                                Compartilhar
-                            </span>
-                      </button>
-                  </div>
-
-                  {/* =================================================
-                        NAVEGAÇÃO
-                    ================================================= */}
-
-                  {currentIndex >
-                    0 && (
-                      <button
-                        type="button"
-                        onClick={
-                            previousVideo
-                        }
-                        aria-label="Vídeo anterior"
-                        className="
-                                absolute
-                                left-3
-                                top-1/2
-                                z-30
-                                hidden
-                                -translate-y-1/2
-                                rounded-full
-                                bg-black/40
-                                p-2
-                                text-white
-                                backdrop-blur-md
-                                transition
-                                hover:bg-black/60
-                                md:flex
-                            "
-                      >
-                          <ChevronLeft className="size-5" />
-                      </button>
-                    )}
-
-                  {currentIndex <
-                    momentos.length -
-                    1 && (
-                      <button
-                        type="button"
-                        onClick={
-                            nextVideo
-                        }
-                        aria-label="Próximo vídeo"
-                        className="
-                                absolute
-                                right-3
-                                top-1/2
-                                z-30
-                                hidden
-                                -translate-y-1/2
-                                rounded-full
-                                bg-black/40
-                                p-2
-                                text-white
-                                backdrop-blur-md
-                                transition
-                                hover:bg-black/60
-                                md:flex
-                            "
-                      >
-                          <ChevronRight className="size-5" />
-                      </button>
-                    )}
-              </div>
-          </main>
-
-          {/* ========================================================
-                INDICADOR
-            ======================================================== */}
-
-          <div
-            className="
-                    pointer-events-none
-                    absolute
-                    bottom-2
-                    left-1/2
-                    z-40
-                    -translate-x-1/2
-                    rounded-full
-                    bg-black/30
-                    px-3
-                    py-1
-                    text-[10px]
-                    text-white/60
-                    backdrop-blur-sm
-                "
-          >
-              {currentIndex + 1} /{" "}
-              {momentos.length}
-          </div>
-
-          {/* ========================================================
+          {/* ====================================================
                 COMENTÁRIOS
-            ======================================================== */}
+            ==================================================== */}
 
           {showComments &&
             currentVideo && (
@@ -1562,15 +1525,13 @@ export default function MementoPage() {
                             backdrop-blur-sm
                         "
                 onClick={() =>
-                  setShowComments(
-                    false
-                  )
+                  setShowComments(false)
                 }
               >
                   <div
                     className="
                                 relative
-                                max-h-[85dvh]
+                                max-h-[80vh]
                                 w-full
                                 max-w-lg
                                 overflow-hidden
@@ -1582,7 +1543,17 @@ export default function MementoPage() {
                       event.stopPropagation()
                     }
                   >
-                      <div className="flex items-center justify-between border-b border-border px-4 py-3">
+                      <div
+                        className="
+                                    flex
+                                    items-center
+                                    justify-between
+                                    border-b
+                                    border-border
+                                    px-4
+                                    py-3
+                                "
+                      >
                           <h2 className="text-lg font-semibold text-foreground">
                               Comentários
                           </h2>
@@ -1596,11 +1567,8 @@ export default function MementoPage() {
                             }
                             aria-label="Fechar comentários"
                             className="
-                                        flex
-                                        size-9
-                                        items-center
-                                        justify-center
                                         rounded-full
+                                        p-2
                                         text-muted-foreground
                                         transition
                                         hover:bg-secondary
@@ -1610,7 +1578,7 @@ export default function MementoPage() {
                           </button>
                       </div>
 
-                      <div className="max-h-[calc(85dvh-60px)] overflow-y-auto px-4 pb-6">
+                      <div className="max-h-[calc(80vh-4rem)] overflow-y-auto px-4 pb-6">
                           <VideoComments
                             videoId={
                                 currentVideo.id
@@ -1620,6 +1588,6 @@ export default function MementoPage() {
                   </div>
               </div>
             )}
-      </div>
+      </main>
     );
 }
