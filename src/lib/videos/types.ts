@@ -8,6 +8,7 @@ export interface VideoItem {
     formattedDuration: string;
     viewCount: number;
     likesCount?: number;
+    commentsCount: number;
     dislikesCount?: number;
     liked?: boolean;
     disliked?: boolean;

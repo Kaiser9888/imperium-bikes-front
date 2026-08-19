@@ -24,29 +24,13 @@ export default function VideosLayout({
 }) {
   const pathname = usePathname();
 
-  // ============================================================
-  // CONTROLE DAS PÁGINAS
-  // ============================================================
-
   const isMemento = pathname.startsWith("/videos/memento");
-
-  const isWatchPage = pathname.startsWith("/videos/watch/");
-
   const isSearchPage = pathname === "/videos/buscar";
 
   const { isSignedIn } = useAuth();
 
-  // ============================================================
-  // CONTROLE DA NAVEGAÇÃO AO ROLAR
-  // ============================================================
-
   const [showNav, setShowNav] = useState(true);
-
   const lastScrollY = useRef(0);
-
-  // ============================================================
-  // ITENS DA NAVEGAÇÃO INFERIOR
-  // ============================================================
 
   const navItems = [
     {
@@ -77,17 +61,9 @@ export default function VideosLayout({
     },
   ];
 
-  // ============================================================
-  // LINK DO BOTÃO INÍCIO
-  // ============================================================
-
   const getHomeHref = () => {
     return pathname === "/videos" ? "/" : "/videos";
   };
-
-  // ============================================================
-  // ESCONDER / MOSTRAR NAVEGAÇÃO AO ROLAR
-  // ============================================================
 
   useEffect(() => {
     const handleScroll = () => {
@@ -116,13 +92,8 @@ export default function VideosLayout({
     };
   }, []);
 
-  // ============================================================
-  // LAYOUT PRINCIPAL (AGORA INCLUI WATCH PAGE)
-  // ============================================================
-
   return (
     <div className="flex min-h-screen flex-col bg-background">
-
       {/* ======================================================
           TOP BAR
       ====================================================== */}
@@ -135,6 +106,7 @@ export default function VideosLayout({
             left-0
             right-0
             z-40
+            h-14
             border-b
             border-border
             bg-background/95
@@ -151,7 +123,7 @@ export default function VideosLayout({
           <div
             className={`
               flex
-              h-14
+              h-full
               items-center
               px-3
               sm:px-6
@@ -163,11 +135,11 @@ export default function VideosLayout({
             }
             `}
           >
-
             {/* LOGO */}
+
             <Link
               href="/videos"
-              className="flex flex-shrink-0 items-center gap-2"
+              className="flex shrink-0 items-center gap-2"
               aria-label="Página inicial de vídeos"
             >
               <img
@@ -181,7 +153,8 @@ export default function VideosLayout({
                 style={{
                   fontFamily: "var(--font-caesar)",
                   color: "#0b0F19",
-                  textShadow: "0 0 1px #FFF, 1px 1px 0px #FFF, 2px 2px 4px rgba(11, 15, 25, 0.3)",
+                  textShadow:
+                    "0 0 1px #FFF, 1px 1px 0px #FFF, 2px 2px 4px rgba(11, 15, 25, 0.3)",
                   letterSpacing: "0.05em",
                 }}
               >
@@ -189,20 +162,25 @@ export default function VideosLayout({
               </span>
             </Link>
 
-            {/* ÁREA DIREITA - SEMPRE VISÍVEL */}
-            <div className="ml-auto flex flex-shrink-0 items-center gap-1">
+            {/* ÁREA DIREITA */}
 
-              {/* LUPA - SEMPRE VISÍVEL */}
+            <div className="ml-auto flex shrink-0 items-center gap-1">
+              {/* BUSCA */}
+
               <Link
                 href="/videos/buscar"
                 className="rounded-full p-2 text-foreground transition-colors hover:bg-muted hover:text-primary active:scale-95"
                 aria-label="Buscar vídeos"
                 title="Buscar vídeos"
               >
-                <Search className="h-5 w-5" aria-hidden="true" />
+                <Search
+                  className="h-5 w-5"
+                  aria-hidden="true"
+                />
               </Link>
 
-              {/* NOTIFICAÇÕES + LOGIN - SÓ SE NÃO FOR MEMENTO */}
+              {/* NOTIFICAÇÕES + LOGIN */}
+
               {!isMemento && (
                 <>
                   <button
@@ -210,7 +188,10 @@ export default function VideosLayout({
                     className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                     aria-label="Notificações"
                   >
-                    <Bell className="h-5 w-5" aria-hidden="true" />
+                    <Bell
+                      className="h-5 w-5"
+                      aria-hidden="true"
+                    />
                   </button>
 
                   {isSignedIn ? (
@@ -222,7 +203,17 @@ export default function VideosLayout({
                         className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary"
                         aria-label="Entrar"
                       >
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <svg
+                          width="18"
+                          height="18"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          aria-hidden="true"
+                        >
                           <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                           <circle cx="12" cy="7" r="4" />
                         </svg>
@@ -243,8 +234,11 @@ export default function VideosLayout({
       <main
         className={`
           flex-1
-          ${!isSearchPage ? "pt-14" : ""}
-          pb-16
+          ${
+          isMemento
+            ? "h-[calc(100dvh-7.5rem)] overflow-hidden pt-14 pb-16"
+            : `${!isSearchPage ? "pt-14" : ""} pb-16`
+        }
         `}
       >
         {children}
@@ -261,6 +255,7 @@ export default function VideosLayout({
           left-0
           right-0
           z-50
+          h-16
           border-t
           border-border
           bg-background/95
@@ -276,7 +271,7 @@ export default function VideosLayout({
         role="navigation"
         aria-label="Navegação principal"
       >
-        <div className="mx-auto flex max-w-7xl items-center justify-around px-2">
+        <div className="mx-auto flex h-full max-w-7xl items-center justify-around px-2">
           {navItems.map((item) => {
             const isActive = pathname === item.href;
 
@@ -285,35 +280,61 @@ export default function VideosLayout({
                 <Link
                   key={item.label}
                   href={item.href}
-                  className="flex flex-col items-center gap-0.5 py-2"
+                  className="flex flex-col items-center justify-center gap-0.5"
                   aria-label={item.label}
-                  aria-current={isActive ? "page" : undefined}
+                  aria-current={
+                    isActive ? "page" : undefined
+                  }
                 >
                   <span className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md transition-transform hover:scale-105 active:scale-95">
-                    <item.icon className="h-5 w-5" aria-hidden="true" />
+                    <item.icon
+                      className="h-5 w-5"
+                      aria-hidden="true"
+                    />
                   </span>
                 </Link>
               );
             }
 
-            const href = item.label === "Início" ? getHomeHref() : item.href;
+            const href =
+              item.label === "Início"
+                ? getHomeHref()
+                : item.href;
 
             return (
               <Link
                 key={item.label}
                 href={href}
-                className={`flex min-w-[64px] flex-col items-center gap-0.5 py-2 transition-colors ${
-                  isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
-                }`}
+                className={`
+                  flex
+                  min-w-[64px]
+                  flex-col
+                  items-center
+                  justify-center
+                  gap-0.5
+                  transition-colors
+                  ${
+                  isActive
+                    ? "text-primary"
+                    : "text-muted-foreground hover:text-foreground"
+                }
+                `}
                 aria-label={item.label}
-                aria-current={isActive ? "page" : undefined}
+                aria-current={
+                  isActive ? "page" : undefined
+                }
               >
                 <item.icon
                   className="h-5 w-5"
-                  strokeWidth={isActive ? 2.25 : 1.5}
+                  strokeWidth={
+                    isActive ? 2.25 : 1.5
+                  }
                   aria-hidden="true"
                 />
-                <span className="text-[0.625rem] font-medium leading-none">{item.label}</span>
+
+                <span className="text-[0.625rem] font-medium leading-none">
+                  {item.label}
+                </span>
               </Link>
             );
           })}
