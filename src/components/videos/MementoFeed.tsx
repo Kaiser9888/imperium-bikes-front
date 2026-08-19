@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Heart, MessageSquare, Share2, Play, Pause } from "lucide-react";
+import { Heart, MessageSquare, Share2, Play } from "lucide-react";
 import type { VideoItem } from "@/lib/videos/types";
 import { formatViews } from "@/lib/videos/format";
 import { VideoAvatar } from "./VideoAvatar";
@@ -39,21 +39,41 @@ function MementoSlide({ video }: { video: VideoItem }) {
   const [isPlaying, setIsPlaying] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
-  // Tenta autoplay
+  // ===== AUTOPLAY FORÇADO =====
   useEffect(() => {
-    if (videoRef.current && video.videoUrl) {
-      videoRef.current.play()
-        .then(() => setIsPlaying(true))
-        .catch(() => setIsPlaying(false));
-    }
+    const tryPlay = async () => {
+      if (!videoRef.current) return;
+      videoRef.current.muted = true;  // SEMPRE mudo para autoplay funcionar
+      try {
+        await videoRef.current.play();
+        setIsPlaying(true);
+        console.log("✅ Play automático OK");
+      } catch (err) {
+        console.log("❌ Primeira tentativa falhou:", err);
+        setTimeout(async () => {
+          try {
+            videoRef.current!.muted = true;
+            await videoRef.current!.play();
+            setIsPlaying(true);
+            console.log("✅ Play na 2ª tentativa OK");
+          } catch (err2) {
+            console.log("❌ Segunda tentativa falhou:", err2);
+          }
+        }, 500);
+      }
+    };
+
+    tryPlay();
   }, [video.videoUrl]);
 
+  // ===== PLAY/PAUSE MANUAL =====
   const togglePlayPause = () => {
     if (!videoRef.current) return;
     if (videoRef.current.paused) {
+      videoRef.current.muted = true;
       videoRef.current.play()
         .then(() => setIsPlaying(true))
-        .catch(() => setIsPlaying(false));
+        .catch((err) => console.log("❌ Erro ao play:", err));
     } else {
       videoRef.current.pause();
       setIsPlaying(false);
@@ -74,15 +94,10 @@ function MementoSlide({ video }: { video: VideoItem }) {
             ref={videoRef}
             src={video.videoUrl}
             poster={video.thumbnailUrl}
-            autoPlay
             muted
             loop
             playsInline
             className="h-full w-full object-cover"
-            onClick={(e) => {
-              e.stopPropagation();
-              togglePlayPause();
-            }}
           />
         ) : video.thumbnailUrl ? (
           <img src={video.thumbnailUrl} alt="" className="size-full object-cover" loading="lazy" />
@@ -92,7 +107,7 @@ function MementoSlide({ video }: { video: VideoItem }) {
           </div>
         )}
 
-        {/* Indicador de play/pause central */}
+        {/* ===== ÍCONE CENTRAL PLAY ===== */}
         {!isPlaying && video.videoUrl && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <div className="flex h-16 w-16 items-center justify-center rounded-full bg-black/50 backdrop-blur">
@@ -101,7 +116,7 @@ function MementoSlide({ video }: { video: VideoItem }) {
           </div>
         )}
 
-        {/* Gradiente */}
+        {/* ===== GRADIENTE ===== */}
         <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-background/95 to-transparent p-5 pb-24 lg:pb-6">
           <div className="flex items-center gap-2">
             <VideoAvatar name={video.userName} url={video.userAvatarUrl} className="size-8" />
@@ -112,7 +127,7 @@ function MementoSlide({ video }: { video: VideoItem }) {
           </p>
         </div>
 
-        {/* Ações */}
+        {/* ===== AÇÕES ===== */}
         <div
           className="absolute bottom-28 right-4 flex flex-col items-center gap-4 lg:bottom-8"
           onClick={(e) => e.stopPropagation()}
