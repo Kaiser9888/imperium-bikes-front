@@ -74,6 +74,7 @@ export function MementoFeed({ videos, onEndReached }: MementoFeedProps) {
 function MementoSlide({ video, isActive }: { video: VideoItem; isActive: boolean }) {
   const [liked, setLiked] = useState(video.liked ?? false);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [debugMsg, setDebugMsg] = useState("aguardando...");
   const playerRef = useRef<MuxPlayerElement>(null);
 
   // Toca somente quando o slide vira o ativo; pausa os demais.
@@ -95,14 +96,35 @@ function MementoSlide({ video, isActive }: { video: VideoItem; isActive: boolean
     const player = playerRef.current;
     if (!player) return;
 
-    const handlePlay = () => setIsPlaying(true);
-    const handlePause = () => setIsPlaying(false);
+    const handlePlay = () => {
+      setIsPlaying(true);
+      setDebugMsg("play disparado ✅");
+    };
+    const handlePause = () => {
+      setIsPlaying(false);
+      setDebugMsg("pause disparado");
+    };
+    const handleWaiting = () => setDebugMsg("waiting (buffering)...");
+    const handleStalled = () => setDebugMsg("stalled ⚠️");
+    const handleCanPlay = () => setDebugMsg((prev) => (prev === "aguardando..." ? "canplay, mas sem play ainda" : prev));
+    const handleError = () => {
+      const err = (player as unknown as { error?: { message?: string; code?: number } }).error;
+      setDebugMsg(`ERRO: ${err?.message ?? "desconhecido"} (code ${err?.code ?? "?"})`);
+    };
 
     player.addEventListener("play", handlePlay);
     player.addEventListener("pause", handlePause);
+    player.addEventListener("waiting", handleWaiting);
+    player.addEventListener("stalled", handleStalled);
+    player.addEventListener("canplay", handleCanPlay);
+    player.addEventListener("error", handleError);
     return () => {
       player.removeEventListener("play", handlePlay);
       player.removeEventListener("pause", handlePause);
+      player.removeEventListener("waiting", handleWaiting);
+      player.removeEventListener("stalled", handleStalled);
+      player.removeEventListener("canplay", handleCanPlay);
+      player.removeEventListener("error", handleError);
     };
   }, []);
 
@@ -154,6 +176,16 @@ function MementoSlide({ video, isActive }: { video: VideoItem; isActive: boolean
             <Play className="size-10 text-muted-foreground" aria-hidden="true" />
           </div>
         )}
+
+        {/* ===== DEBUG TEMPORÁRIO — remover depois de resolver o bug ===== */}
+        <div className="pointer-events-none absolute left-2 top-2 z-50 max-w-[90%] rounded bg-black/80 p-2 font-mono text-[10px] leading-tight text-lime-400">
+          <div>ativo: {String(isActive)}</div>
+          <div>tocando: {String(isPlaying)}</div>
+          <div>status: {debugMsg}</div>
+          <div className="break-all">
+            url: {video.videoUrl ? video.videoUrl.slice(0, 60) + "..." : "❌ VAZIO/UNDEFINED"}
+          </div>
+        </div>
 
         {/* ===== ÍCONE CENTRAL PLAY ===== */}
         {!isPlaying && video.videoUrl && (
