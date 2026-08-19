@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Heart, MessageSquare, Share2, Play } from "lucide-react";
+import { Heart, MessageSquare, Share2, Play, Pause } from "lucide-react";
 import type { VideoItem } from "@/lib/videos/types";
 import { formatViews } from "@/lib/videos/format";
 import { VideoAvatar } from "./VideoAvatar";
@@ -36,14 +36,42 @@ export function MementoFeed({ videos, onEndReached }: MementoFeedProps) {
 
 function MementoSlide({ video }: { video: VideoItem }) {
   const [liked, setLiked] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+
+  // Tenta autoplay
+  useEffect(() => {
+    if (videoRef.current && video.videoUrl) {
+      videoRef.current.play()
+        .then(() => setIsPlaying(true))
+        .catch(() => setIsPlaying(false));
+    }
+  }, [video.videoUrl]);
+
+  const togglePlayPause = () => {
+    if (!videoRef.current) return;
+    if (videoRef.current.paused) {
+      videoRef.current.play()
+        .then(() => setIsPlaying(true))
+        .catch(() => setIsPlaying(false));
+    } else {
+      videoRef.current.pause();
+      setIsPlaying(false);
+    }
+  };
 
   return (
     <section className="flex h-full snap-start items-center justify-center px-0 py-0 lg:px-6 lg:py-6">
-      <div className="relative h-full w-full overflow-hidden bg-secondary lg:h-full lg:w-auto lg:aspect-[9/16] lg:rounded-xl lg:border lg:border-border">
-
-        {/* ===== PLAYER CORRIGIDO ===== */}
+      <div
+        className="relative h-full w-full overflow-hidden bg-secondary lg:h-full lg:w-auto lg:aspect-[9/16] lg:rounded-xl lg:border lg:border-border"
+        onClick={togglePlayPause}
+        role="button"
+        aria-label={isPlaying ? "Pausar vídeo" : "Reproduzir vídeo"}
+      >
+        {/* ===== PLAYER ===== */}
         {video.videoUrl ? (
           <video
+            ref={videoRef}
             src={video.videoUrl}
             poster={video.thumbnailUrl}
             autoPlay
@@ -51,12 +79,25 @@ function MementoSlide({ video }: { video: VideoItem }) {
             loop
             playsInline
             className="h-full w-full object-cover"
+            onClick={(e) => {
+              e.stopPropagation();
+              togglePlayPause();
+            }}
           />
         ) : video.thumbnailUrl ? (
           <img src={video.thumbnailUrl} alt="" className="size-full object-cover" loading="lazy" />
         ) : (
           <div className="flex size-full items-center justify-center">
             <Play className="size-10 text-muted-foreground" aria-hidden="true" />
+          </div>
+        )}
+
+        {/* Indicador de play/pause central */}
+        {!isPlaying && video.videoUrl && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-black/50 backdrop-blur">
+              <Play className="h-8 w-8 text-white" />
+            </div>
           </div>
         )}
 
@@ -72,7 +113,10 @@ function MementoSlide({ video }: { video: VideoItem }) {
         </div>
 
         {/* Ações */}
-        <div className="absolute bottom-28 right-4 flex flex-col items-center gap-4 lg:bottom-8">
+        <div
+          className="absolute bottom-28 right-4 flex flex-col items-center gap-4 lg:bottom-8"
+          onClick={(e) => e.stopPropagation()}
+        >
           <FloatingAction
             label="Curtir"
             active={liked}
