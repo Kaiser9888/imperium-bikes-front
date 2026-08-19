@@ -1,10 +1,17 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Heart, MessageSquare, Share2, Play } from "lucide-react";
+import MuxPlayer from "@mux/mux-player-react";
+import type MuxPlayerElement from "@mux/mux-player";
 import type { VideoItem } from "@/lib/videos/types";
 import { formatViews } from "@/lib/videos/format";
 import { VideoAvatar } from "./VideoAvatar";
+
+// NOTE: as custom properties do player (esconder controles, object-fit)
+// vão via classe CSS "mux-player-cover" (ver comentário no fim do arquivo),
+// e não via prop `style`, porque o tipo MuxCSSProperties do pacote é
+// instável entre versões e quebra o build com facilidade.
 
 interface MementoFeedProps {
   videos: VideoItem[];
@@ -12,8 +19,11 @@ interface MementoFeedProps {
 }
 
 export function MementoFeed({ videos, onEndReached }: MementoFeedProps) {
+  const containerRef = useRef<HTMLDivElement | null>(null);
   const sentinel = useRef<HTMLDivElement | null>(null);
+  const [activeId, setActiveId] = useState<string | null>(videos[0]?.id ?? null);
 
+  // Paginação: dispara onEndReached quando o sentinel entra na tela
   useEffect(() => {
     const el = sentinel.current;
     if (!el || !onEndReached) return;
@@ -24,80 +34,105 @@ export function MementoFeed({ videos, onEndReached }: MementoFeedProps) {
     return () => io.disconnect();
   }, [onEndReached]);
 
+  // Detecta qual slide está realmente visível -> só esse toca.
+  // Evita N vídeos carregando/tocando ao mesmo tempo (causa do travamento).
+  useEffect(() => {
+    const root = containerRef.current;
+    if (!root) return;
+
+    const io = new IntersectionObserver(
+      (entries) => {
+        const mostVisible = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+
+        if (mostVisible?.target instanceof HTMLElement) {
+          setActiveId(mostVisible.target.dataset.videoId ?? null);
+        }
+      },
+      { root, threshold: [0.6] }
+    );
+
+    const slides = root.querySelectorAll<HTMLElement>("[data-video-id]");
+    slides.forEach((slide) => io.observe(slide));
+    return () => io.disconnect();
+  }, [videos]);
+
   return (
-    <div className="h-[calc(100dvh-3.5rem)] snap-y snap-mandatory overflow-y-auto lg:h-[calc(100dvh-4rem)]">
+    <div
+      ref={containerRef}
+      className="h-[calc(100dvh-3.5rem)] snap-y snap-mandatory overflow-y-auto lg:h-[calc(100dvh-4rem)]"
+    >
       {videos.map((video) => (
-        <MementoSlide key={video.id} video={video} />
+        <MementoSlide key={video.id} video={video} isActive={video.id === activeId} />
       ))}
       <div ref={sentinel} className="h-1" />
     </div>
   );
 }
 
-function MementoSlide({ video }: { video: VideoItem }) {
-  const [liked, setLiked] = useState(false);
+function MementoSlide({ video, isActive }: { video: VideoItem; isActive: boolean }) {
+  const [liked, setLiked] = useState(video.liked ?? false);
   const [isPlaying, setIsPlaying] = useState(false);
-  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const playerRef = useRef<MuxPlayerElement>(null);
 
-  // ===== AUTOPLAY FORÇADO =====
+  // Toca somente quando o slide vira o ativo; pausa os demais.
   useEffect(() => {
-    const tryPlay = async () => {
-      if (!videoRef.current) return;
-      videoRef.current.muted = true;  // SEMPRE mudo para autoplay funcionar
-      try {
-        await videoRef.current.play();
-        setIsPlaying(true);
-        console.log("✅ Play automático OK");
-      } catch (err) {
-        console.log("❌ Primeira tentativa falhou:", err);
-        setTimeout(async () => {
-          try {
-            videoRef.current!.muted = true;
-            await videoRef.current!.play();
-            setIsPlaying(true);
-            console.log("✅ Play na 2ª tentativa OK");
-          } catch (err2) {
-            console.log("❌ Segunda tentativa falhou:", err2);
-          }
-        }, 500);
+    const player = playerRef.current;
+    if (!player) return;
+
+    if (isActive) {
+      player.muted = true; // obrigatório para autoplay ser permitido pelo navegador
+      const playPromise = player.play();
+      if (playPromise) {
+        playPromise.then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
       }
-    };
-
-    tryPlay();
-  }, [video.videoUrl]);
-
-  // ===== PLAY/PAUSE MANUAL =====
-  const togglePlayPause = () => {
-    if (!videoRef.current) return;
-    if (videoRef.current.paused) {
-      videoRef.current.muted = true;
-      videoRef.current.play()
-        .then(() => setIsPlaying(true))
-        .catch((err) => console.log("❌ Erro ao play:", err));
     } else {
-      videoRef.current.pause();
+      player.pause();
       setIsPlaying(false);
     }
-  };
+  }, [isActive]);
+
+  const togglePlayPause = useCallback(() => {
+    const player = playerRef.current;
+    if (!player) return;
+
+    if (player.paused) {
+      player.muted = true;
+      player.play()?.then(() => setIsPlaying(true)).catch(() => {
+        // autoplay/gesto bloqueado — mantém estado pausado sem quebrar a UI
+        setIsPlaying(false);
+      });
+    } else {
+      player.pause();
+      setIsPlaying(false);
+    }
+  }, []);
 
   return (
-    <section className="flex h-full snap-start items-center justify-center px-0 py-0 lg:px-6 lg:py-6">
+    <section
+      data-video-id={video.id}
+      className="flex h-full snap-start items-center justify-center px-0 py-0 lg:px-6 lg:py-6"
+    >
       <div
         className="relative h-full w-full overflow-hidden bg-secondary lg:h-full lg:w-auto lg:aspect-[9/16] lg:rounded-xl lg:border lg:border-border"
         onClick={togglePlayPause}
         role="button"
         aria-label={isPlaying ? "Pausar vídeo" : "Reproduzir vídeo"}
       >
-        {/* ===== PLAYER ===== */}
+        {/* ===== PLAYER (Mux) ===== */}
         {video.videoUrl ? (
-          <video
-            ref={videoRef}
+          <MuxPlayer
+            ref={playerRef}
             src={video.videoUrl}
+            metadata={{ video_title: video.title }}
             poster={video.thumbnailUrl}
-            muted
+            streamType="on-demand"
             loop
             playsInline
-            className="h-full w-full object-cover"
+            muted
+            preload={isActive ? "auto" : "metadata"}
+            className="mux-player-cover h-full w-full"
           />
         ) : video.thumbnailUrl ? (
           <img src={video.thumbnailUrl} alt="" className="size-full object-cover" loading="lazy" />
@@ -137,7 +172,7 @@ function MementoSlide({ video }: { video: VideoItem }) {
             active={liked}
             onClick={() => setLiked((v) => !v)}
             icon={<Heart className={`size-5 ${liked ? "fill-primary text-primary" : ""}`} />}
-            value={formatViews((video.likesCount ?? 0) + (liked ? 1 : 0))}
+            value={formatViews((video.likesCount ?? 0) + (liked && !video.liked ? 1 : 0))}
           />
           <FloatingAction label="Comentar" icon={<MessageSquare className="size-5" />} value="" />
           <FloatingAction label="Compartilhar" icon={<Share2 className="size-5" />} value="" />
@@ -168,9 +203,9 @@ function FloatingAction({
       aria-pressed={active}
       className="flex flex-col items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
     >
-            <span className="flex size-11 items-center justify-center rounded-full border border-border bg-background/70 backdrop-blur-sm">
-                {icon}
-            </span>
+      <span className="flex size-11 items-center justify-center rounded-full border border-border bg-background/70 backdrop-blur-sm">
+        {icon}
+      </span>
       {value && <span className="tabular-nums">{value}</span>}
     </button>
   );

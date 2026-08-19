@@ -198,3 +198,9 @@
         scroll-behavior: auto !important;
     }
 }
+
+/* Cole isso no seu globals.css (ou arquivo de estilos global equivalente) */
+mux-player.mux-player-cover {
+    --controls: none;
+    --media-object-fit: cover;
+}
