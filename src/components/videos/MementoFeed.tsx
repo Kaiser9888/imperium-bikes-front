@@ -77,21 +77,34 @@ function MementoSlide({ video, isActive }: { video: VideoItem; isActive: boolean
   const playerRef = useRef<MuxPlayerElement>(null);
 
   // Toca somente quando o slide vira o ativo; pausa os demais.
+  // O play em si é feito pelo atributo nativo autoPlay="muted" do mux-player
+  // (mais confiável que chamar .play() na mão — ele já trata as políticas
+  // de autoplay do navegador internamente). Aqui só garantimos a pausa
+  // dos slides que saíram de foco.
+  useEffect(() => {
+    const player = playerRef.current;
+    if (!player || isActive) return;
+    player.pause();
+    setIsPlaying(false);
+  }, [isActive]);
+
+  // Sincroniza isPlaying com o estado real do player via eventos nativos,
+  // em vez de depender só da promise do .play() (que pode não refletir
+  // pausas/retomadas feitas pelo próprio navegador).
   useEffect(() => {
     const player = playerRef.current;
     if (!player) return;
 
-    if (isActive) {
-      player.muted = true; // obrigatório para autoplay ser permitido pelo navegador
-      const playPromise = player.play();
-      if (playPromise) {
-        playPromise.then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
-      }
-    } else {
-      player.pause();
-      setIsPlaying(false);
-    }
-  }, [isActive]);
+    const handlePlay = () => setIsPlaying(true);
+    const handlePause = () => setIsPlaying(false);
+
+    player.addEventListener("play", handlePlay);
+    player.addEventListener("pause", handlePause);
+    return () => {
+      player.removeEventListener("play", handlePlay);
+      player.removeEventListener("pause", handlePause);
+    };
+  }, []);
 
   const togglePlayPause = useCallback(() => {
     const player = playerRef.current;
@@ -127,10 +140,10 @@ function MementoSlide({ video, isActive }: { video: VideoItem; isActive: boolean
             src={video.videoUrl}
             metadata={{ video_title: video.title }}
             poster={video.thumbnailUrl}
-            streamType="on-demand"
             loop
             playsInline
             muted
+            autoPlay={isActive ? "muted" : false}
             preload={isActive ? "auto" : "metadata"}
             className="mux-player-cover h-full w-full"
           />
