@@ -38,7 +38,6 @@ export default function MementoPage() {
     const touchStartY = useRef(0);
     const videoRefs = useRef<Map<string, HTMLVideoElement>>(new Map());
 
-    // ===== BUSCA =====
     const [searchQuery, setSearchQuery] = useState("");
 
     const feed = useCallback(() => {
@@ -80,18 +79,18 @@ export default function MementoPage() {
         return () => { cancelled = true; };
     }, []);
 
-    // ===== RESET INDEX AO BUSCAR =====
     useEffect(() => {
         setCurrentIndex(0);
     }, [searchQuery]);
 
-    // ===== CONTROLE DE VÍDEOS =====
+    // ===== CONTROLE DE VÍDEOS (MUTED PARA AUTOPLAY) =====
     useEffect(() => {
         const current = feed[currentIndex];
         if (!current) return;
         const cv = videoRefs.current.get(current.id);
         if (cv) {
             cv.currentTime = 0;
+            cv.muted = true;  // ✅ FORÇA MUDO PARA AUTOPLAY FUNCIONAR
             cv.play().catch(() => {});
             videoRefs.current.forEach((v, id) => {
                 if (id !== current.id) v.pause();
@@ -115,7 +114,6 @@ export default function MementoPage() {
         return () => window.removeEventListener("keydown", handleKey);
     }, [currentIndex, feed.length, showComments]);
 
-    // ===== BLOQUEAR SCROLL DO BODY =====
     useEffect(() => {
         document.body.style.overflow = "hidden";
         return () => {
@@ -123,7 +121,6 @@ export default function MementoPage() {
         };
     }, []);
 
-    // ===== WHEEL =====
     const handleWheel = (e: React.WheelEvent) => {
         if (showComments) return;
         if (e.deltaY > WHEEL_THRESHOLD && currentIndex < feed.length - 1) {
@@ -133,7 +130,6 @@ export default function MementoPage() {
         }
     };
 
-    // ===== TOUCH =====
     const handleTouchStart = (e: React.TouchEvent) => {
         if (showComments) return;
         touchStartY.current = e.touches[0].clientY;
@@ -148,10 +144,11 @@ export default function MementoPage() {
         }
     };
 
-    // ===== PLAY/PAUSE =====
+    // ===== PLAY/PAUSE MANUAL =====
     const togglePlayPause = (videoId: string) => {
         const v = videoRefs.current.get(videoId);
         if (!v) return;
+        v.muted = true;
         if (v.paused) {
             v.play().catch(() => {});
         } else {
@@ -166,7 +163,6 @@ export default function MementoPage() {
         const prevLiked = liked[videoId] ?? false;
         const prevCount = likeCounts[videoId] ?? 0;
 
-        // Atualização otimista
         setLiked((p) => ({ ...p, [videoId]: !prevLiked }));
         setLikeCounts((p) => ({ ...p, [videoId]: prevCount + (prevLiked ? -1 : 1) }));
 
@@ -184,7 +180,6 @@ export default function MementoPage() {
             setLiked((p) => ({ ...p, [videoId]: data.liked }));
             setLikeCounts((p) => ({ ...p, [videoId]: data.likesCount ?? data.count ?? prevCount }));
         } catch {
-            // Reverte em caso de erro
             setLiked((p) => ({ ...p, [videoId]: prevLiked }));
             setLikeCounts((p) => ({ ...p, [videoId]: prevCount }));
         }
@@ -208,7 +203,6 @@ export default function MementoPage() {
         }
     };
 
-    // ===== FORMATAR VIEWS =====
     const formatViews = (v: number) => {
         if (v >= 1_000_000) return `${(v / 1_000_000).toFixed(1)}M`;
         if (v >= 1_000) return `${(v / 1_000).toFixed(1)}K`;
@@ -224,7 +218,7 @@ export default function MementoPage() {
     }
 
     return (
-      <div className="fixed inset-0 bottom-16 flex flex-col bg-background">
+      <div className="fixed inset-0 flex flex-col bg-background">
           {/* ===== BARRA SUPERIOR ===== */}
           <div className="z-30 flex shrink-0 items-center gap-2.5 border-b border-primary/15 bg-background/95 px-4 py-3 backdrop-blur-sm">
               <Link
@@ -235,7 +229,6 @@ export default function MementoPage() {
                   Imperium
               </Link>
 
-              {/* Lupa para busca */}
               <Link
                 href="/videos/buscar"
                 className="ml-auto rounded-full p-2 text-muted-foreground hover:text-foreground transition-colors"
@@ -258,10 +251,7 @@ export default function MementoPage() {
                 <div className="flex h-full items-center justify-center px-4">
                     <div className="text-center">
                         <p className="text-lg text-muted-foreground">Nenhum Memento ainda</p>
-                        <Link
-                          href="/videos/memento/upload"
-                          className="mt-4 inline-block rounded-full bg-primary px-6 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-                        >
+                        <Link href="/videos/memento/upload" className="mt-4 inline-block rounded-full bg-primary px-6 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">
                             Publicar Memento
                         </Link>
                     </div>
@@ -271,21 +261,13 @@ export default function MementoPage() {
                     <p className="text-lg text-muted-foreground">Nenhum Memento encontrado</p>
                 </div>
               ) : (
-                <div
-                  className="relative h-full overflow-hidden"
-                  onWheel={handleWheel}
-                  onTouchStart={handleTouchStart}
-                  onTouchEnd={handleTouchEnd}
-                >
+                <div className="relative h-full overflow-hidden" onWheel={handleWheel} onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
                     {feed.map((video, index) => (
-                      <div
-                        key={video.id}
-                        className="absolute inset-0 flex items-center justify-center"
-                        style={{
-                            transform: `translateY(${(index - currentIndex) * 100}%)`,
-                            transition: "transform 0.3s ease-out",
-                        }}
-                      >
+                      <div key={video.id} className="absolute inset-0 flex items-center justify-center"
+                           style={{
+                               transform: `translateY(${(index - currentIndex) * 100}%)`,
+                               transition: "transform 0.3s ease-out",
+                           }}>
                           <div className="relative mx-auto h-full w-full max-w-[420px] px-2 py-4">
                               <video
                                 ref={(el) => {
@@ -297,7 +279,7 @@ export default function MementoPage() {
                                 className="h-full w-full rounded-2xl border border-primary/15 object-cover"
                                 loop
                                 playsInline
-                                muted={false}
+                                muted
                                 onClick={() => togglePlayPause(video.id)}
                               />
 
@@ -307,16 +289,10 @@ export default function MementoPage() {
                                   <div className="flex items-end justify-between">
                                       <div className="mr-3 min-w-0 flex-1">
                                           <div className="mb-3 flex items-center gap-3">
-                                              <img
-                                                src={video.userAvatarUrl || ""}
-                                                alt=""
-                                                className="h-10 w-10 rounded-full border-2 border-primary/50 bg-secondary"
-                                              />
+                                              <img src={video.userAvatarUrl || ""} alt="" className="h-10 w-10 rounded-full border-2 border-primary/50 bg-secondary" />
                                               <div className="min-w-0">
                                                   <p className="text-sm font-semibold text-white">@{video.userName}</p>
-                                                  {video.description && (
-                                                    <p className="mt-0.5 line-clamp-1 text-xs text-white/80">{video.description}</p>
-                                                  )}
+                                                  {video.description && <p className="mt-0.5 line-clamp-1 text-xs text-white/80">{video.description}</p>}
                                               </div>
                                           </div>
                                           <h2 className="mb-1 line-clamp-2 text-sm font-bold text-white">{video.title}</h2>
@@ -328,12 +304,9 @@ export default function MementoPage() {
                                       </div>
 
                                       <div className="flex flex-col items-center gap-4">
-                                          {/* LIKE */}
                                           <button onClick={() => toggleLike(video.id)} className="flex flex-col items-center gap-1">
                                               <div className={`flex h-12 w-12 items-center justify-center rounded-full border backdrop-blur transition-all duration-300 ${
-                                                liked[video.id]
-                                                  ? "border-red-500 bg-red-500/20 shadow-lg shadow-red-500/30"
-                                                  : "border-white/20 bg-black/30 hover:border-red-400"
+                                                liked[video.id] ? "border-red-500 bg-red-500/20 shadow-lg shadow-red-500/30" : "border-white/20 bg-black/30 hover:border-red-400"
                                               }`}>
                                                   <svg width="22" height="22" viewBox="0 0 24 24"
                                                        fill={liked[video.id] ? "#ef4444" : "none"}
@@ -345,7 +318,6 @@ export default function MementoPage() {
                                               <span className="text-xs font-medium text-white">{likeCounts[video.id] ?? video.likesCount}</span>
                                           </button>
 
-                                          {/* COMENTÁRIOS */}
                                           <button onClick={() => setShowComments(true)} className="flex flex-col items-center gap-1">
                                               <div className="flex h-12 w-12 items-center justify-center rounded-full border border-white/20 bg-black/30 backdrop-blur transition-colors hover:border-primary/40">
                                                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.6">
@@ -355,7 +327,6 @@ export default function MementoPage() {
                                               <span className="text-xs font-medium text-white">{video.commentsCount}</span>
                                           </button>
 
-                                          {/* COMPARTILHAR */}
                                           <button onClick={() => handleShare(video)} className="flex flex-col items-center gap-1">
                                               <div className="flex h-12 w-12 items-center justify-center rounded-full border border-white/20 bg-black/30 backdrop-blur transition-colors hover:border-primary/40">
                                                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.6">
@@ -366,9 +337,7 @@ export default function MementoPage() {
                                                       <line x1="8.2" y1="13.2" x2="15.8" y2="17.8" />
                                                   </svg>
                                               </div>
-                                              <span className="text-xs font-medium text-white">
-                                                        {shareFeedback === video.id ? "Copiado" : "Compartilhar"}
-                                                    </span>
+                                              <span className="text-xs font-medium text-white">{shareFeedback === video.id ? "Copiado" : "Compartilhar"}</span>
                                           </button>
                                       </div>
                                   </div>
@@ -377,15 +346,11 @@ export default function MementoPage() {
                       </div>
                     ))}
 
-                    {/* INDICADOR */}
                     <div className="absolute right-3 top-1/2 z-10 flex -translate-y-1/2 flex-col gap-1.5">
                         {feed.map((_, i) => (
-                          <div
-                            key={i}
-                            className={`h-6 w-0.5 rounded-full transition-all duration-300 ${
-                              i === currentIndex ? "bg-primary" : i < currentIndex ? "bg-primary/40" : "bg-primary/15"
-                            }`}
-                          />
+                          <div key={i} className={`h-6 w-0.5 rounded-full transition-all duration-300 ${
+                            i === currentIndex ? "bg-primary" : i < currentIndex ? "bg-primary/40" : "bg-primary/15"
+                          }`} />
                         ))}
                     </div>
                 </div>
@@ -394,21 +359,11 @@ export default function MementoPage() {
 
           {/* ===== MODAL COMENTÁRIOS ===== */}
           {showComments && feed[currentIndex] && (
-            <div
-              className="absolute inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm"
-              onClick={() => setShowComments(false)}
-            >
-                <div
-                  className="relative max-h-[80vh] w-full max-w-lg overflow-y-auto rounded-t-2xl bg-card px-4 pb-6 pt-4"
-                  onClick={(e) => e.stopPropagation()}
-                >
+            <div className="absolute inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm" onClick={() => setShowComments(false)}>
+                <div className="relative max-h-[80vh] w-full max-w-lg overflow-y-auto rounded-t-2xl bg-card px-4 pb-6 pt-4" onClick={(e) => e.stopPropagation()}>
                     <div className="mb-4 flex items-center justify-between">
                         <h2 className="text-lg font-semibold text-foreground">Comentários</h2>
-                        <button
-                          onClick={() => setShowComments(false)}
-                          className="rounded-full p-2 text-muted-foreground hover:bg-secondary"
-                          aria-label="Fechar comentários"
-                        >
+                        <button onClick={() => setShowComments(false)} className="rounded-full p-2 text-muted-foreground hover:bg-secondary" aria-label="Fechar comentários">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                 <line x1="18" y1="6" x2="6" y2="18" />
                                 <line x1="6" y1="6" x2="18" y2="18" />
