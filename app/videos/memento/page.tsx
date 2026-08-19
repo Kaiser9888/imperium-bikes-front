@@ -10,8 +10,8 @@ import {
 import {
     Heart,
     MessageSquare,
-    Share2,
     Play,
+    Share2,
     Volume2,
     VolumeX,
 } from "lucide-react";
@@ -22,22 +22,43 @@ import { formatViews } from "@/lib/videos/format";
 interface MementoFeedProps {
     videos: VideoItem[];
     onEndReached?: () => void;
+    onComment?: (video: VideoItem) => void;
+    onShare?: (video: VideoItem) => void;
 }
 
 export function MementoFeed({
                                 videos,
                                 onEndReached,
+                                onComment,
+                                onShare,
                             }: MementoFeedProps) {
-    const containerRef =
-      useRef<HTMLDivElement | null>(null);
+    const containerRef = useRef<HTMLDivElement | null>(null);
+    const sentinelRef = useRef<HTMLDivElement | null>(null);
 
-    const sentinelRef =
-      useRef<HTMLDivElement | null>(null);
+    const [activeId, setActiveId] = useState<string | null>(
+      videos[0]?.id ?? null
+    );
 
-    const [activeId, setActiveId] =
-      useState<string | null>(
-        videos[0]?.id ?? null
-      );
+    /*
+     * ============================================================
+     * GARANTE QUE O VÍDEO ATIVO EXISTE
+     * ============================================================
+     */
+
+    useEffect(() => {
+        if (videos.length === 0) {
+            setActiveId(null);
+            return;
+        }
+
+        const exists = videos.some(
+          (video) => video.id === activeId
+        );
+
+        if (!exists) {
+            setActiveId(videos[0].id);
+        }
+    }, [videos, activeId]);
 
     /*
      * ============================================================
@@ -49,28 +70,23 @@ export function MementoFeed({
         const container = containerRef.current;
         const sentinel = sentinelRef.current;
 
-        if (
-          !container ||
-          !sentinel ||
-          !onEndReached
-        ) {
+        if (!container || !sentinel || !onEndReached) {
             return;
         }
 
-        const observer =
-          new IntersectionObserver(
-            (entries) => {
-                if (
-                  entries[0]?.isIntersecting
-                ) {
-                    onEndReached();
-                }
-            },
-            {
-                root: container,
-                threshold: 0.1,
-            }
-          );
+        const observer = new IntersectionObserver(
+          (entries) => {
+              const entry = entries[0];
+
+              if (entry?.isIntersecting) {
+                  onEndReached();
+              }
+          },
+          {
+              root: container,
+              threshold: 0.1,
+          }
+        );
 
         observer.observe(sentinel);
 
@@ -81,18 +97,14 @@ export function MementoFeed({
 
     /*
      * ============================================================
-     * DESCOBRE QUAL VÍDEO ESTÁ VISÍVEL
+     * DETECTA O SLIDE VISÍVEL
      * ============================================================
      */
 
     useEffect(() => {
-        const container =
-          containerRef.current;
+        const container = containerRef.current;
 
-        if (
-          !container ||
-          videos.length === 0
-        ) {
+        if (!container || videos.length === 0) {
             return;
         }
 
@@ -101,55 +113,51 @@ export function MementoFeed({
             "[data-video-id]"
           );
 
-        if (!slides.length) {
+        if (slides.length === 0) {
             return;
         }
 
-        const observer =
-          new IntersectionObserver(
-            (entries) => {
-                let bestEntry:
-                  | IntersectionObserverEntry
-                  | null = null;
+        const observer = new IntersectionObserver(
+          (entries) => {
+              let bestEntry: IntersectionObserverEntry | null =
+                null;
 
-                for (const entry of entries) {
-                    if (
-                      !entry.isIntersecting
-                    ) {
-                        continue;
-                    }
+              for (const entry of entries) {
+                  if (!entry.isIntersecting) {
+                      continue;
+                  }
 
-                    if (
-                      !bestEntry ||
-                      entry.intersectionRatio >
-                      bestEntry.intersectionRatio
-                    ) {
-                        bestEntry = entry;
-                    }
-                }
+                  if (
+                    !bestEntry ||
+                    entry.intersectionRatio >
+                    bestEntry.intersectionRatio
+                  ) {
+                      bestEntry = entry;
+                  }
+              }
 
-                if (
-                  bestEntry?.target instanceof
-                  HTMLElement
-                ) {
-                    const id =
-                      bestEntry.target.dataset
-                        .videoId;
+              if (
+                bestEntry &&
+                bestEntry.target instanceof HTMLElement
+              ) {
+                  const id =
+                    bestEntry.target.dataset.videoId;
 
-                    if (id) {
-                        setActiveId(id);
-                    }
-                }
-            },
-            {
-                root: container,
-                threshold: [
-                    0.5,
-                    0.75,
-                    0.9,
-                ],
-            }
-          );
+                  if (id) {
+                      setActiveId(id);
+                  }
+              }
+          },
+          {
+              root: container,
+              threshold: [
+                  0.25,
+                  0.5,
+                  0.75,
+                  0.9,
+              ],
+          }
+        );
 
         slides.forEach((slide) => {
             observer.observe(slide);
@@ -162,44 +170,22 @@ export function MementoFeed({
 
     /*
      * ============================================================
-     * GARANTE QUE O ACTIVE ID CONTINUE VÁLIDO
-     * ============================================================
-     */
-
-    useEffect(() => {
-        if (
-          !activeId ||
-          !videos.some(
-            (video) =>
-              video.id === activeId
-          )
-        ) {
-            setActiveId(
-              videos[0]?.id ?? null
-            );
-        }
-    }, [videos, activeId]);
-
-    /*
-     * ============================================================
      * RENDER
      * ============================================================
      */
 
     return (
-      <div
+      <main
         ref={containerRef}
         className="
                 h-full
                 w-full
-                snap-y
-                snap-mandatory
                 overflow-y-auto
                 overscroll-y-contain
+                snap-y
+                snap-mandatory
                 bg-background
-
                 [scrollbar-width:none]
-
                 [&::-webkit-scrollbar]:hidden
             "
       >
@@ -207,22 +193,18 @@ export function MementoFeed({
             <MementoSlide
               key={video.id}
               video={video}
-              isActive={
-                video.id === activeId
-              }
+              isActive={video.id === activeId}
+              onComment={onComment}
+              onShare={onShare}
             />
           ))}
 
           <div
             ref={sentinelRef}
-            className="
-                    h-1
-                    w-full
-                    shrink-0
-                "
+            className="h-1 w-full shrink-0"
             aria-hidden="true"
           />
-      </div>
+      </main>
     );
 }
 
@@ -232,17 +214,21 @@ export function MementoFeed({
  * ================================================================
  */
 
+interface MementoSlideProps {
+    video: VideoItem;
+    isActive: boolean;
+    onComment?: (video: VideoItem) => void;
+    onShare?: (video: VideoItem) => void;
+}
+
 function MementoSlide({
                           video,
                           isActive,
-                      }: {
-    video: VideoItem;
-    isActive: boolean;
-}) {
+                          onComment,
+                          onShare,
+                      }: MementoSlideProps) {
     const videoRef =
-      useRef<HTMLVideoElement | null>(
-        null
-      );
+      useRef<HTMLVideoElement | null>(null);
 
     const [isPlaying, setIsPlaying] =
       useState(false);
@@ -251,102 +237,75 @@ function MementoSlide({
       useState(true);
 
     const [liked, setLiked] =
-      useState(
-        video.liked ?? false
-      );
+      useState(video.liked ?? false);
 
     /*
      * ============================================================
      * AUTOPLAY
-     *
-     * SOMENTE O VÍDEO ATIVO TOCA.
-     *
-     * Não usamos currentTime = 0.
-     * Não reiniciamos o vídeo repetidamente.
      * ============================================================
      */
 
     useEffect(() => {
-        const videoElement =
-          videoRef.current;
+        const element = videoRef.current;
 
-        if (!videoElement) {
+        if (!element) {
             return;
         }
 
-        /*
-         * Se deixou de ser o vídeo ativo,
-         * pausa.
-         */
-
         if (!isActive) {
-            videoElement.pause();
+            element.pause();
             setIsPlaying(false);
             return;
         }
 
-        /*
-         * Autoplay sempre começa mutado.
-         */
-
-        videoElement.muted = true;
-
+        element.muted = true;
         setIsMuted(true);
 
+        let cancelled = false;
+
         const playVideo = async () => {
+            if (cancelled) {
+                return;
+            }
+
             try {
-                await videoElement.play();
+                await element.play();
 
-                setIsPlaying(true);
+                if (!cancelled) {
+                    setIsPlaying(true);
+                }
             } catch {
-                /*
-                 * Alguns navegadores podem
-                 * bloquear autoplay.
-                 *
-                 * Nesse caso o botão central
-                 * continua disponível.
-                 */
-
-                setIsPlaying(false);
+                if (!cancelled) {
+                    setIsPlaying(false);
+                }
             }
         };
 
-        /*
-         * Se já temos dados suficientes,
-         * tenta tocar imediatamente.
-         */
-
-        if (
-          videoElement.readyState >= 2
-        ) {
+        if (element.readyState >= 2) {
             void playVideo();
+        } else {
+            const handleCanPlay = () => {
+                void playVideo();
+            };
 
-            return;
+            element.addEventListener(
+              "canplay",
+              handleCanPlay,
+              { once: true }
+            );
+
+            return () => {
+                cancelled = true;
+
+                element.removeEventListener(
+                  "canplay",
+                  handleCanPlay
+                );
+            };
         }
 
-        /*
-         * Caso contrário, espera o vídeo
-         * estar pronto.
-         */
-
-        const handleCanPlay =
-          () => {
-              void playVideo();
-          };
-
-        videoElement.addEventListener(
-          "canplay",
-          handleCanPlay,
-          {
-              once: true,
-          }
-        );
-
         return () => {
-            videoElement.removeEventListener(
-              "canplay",
-              handleCanPlay
-            );
+            cancelled = true;
         };
     }, [isActive]);
 
@@ -358,11 +317,10 @@ function MementoSlide({
 
     useEffect(() => {
         return () => {
-            const videoElement =
-              videoRef.current;
+            const element = videoRef.current;
 
-            if (videoElement) {
-                videoElement.pause();
+            if (element) {
+                element.pause();
             }
         };
     }, []);
@@ -373,19 +331,18 @@ function MementoSlide({
      * ============================================================
      */
 
-    const togglePlayPause =
-      useCallback(() => {
-          const videoElement =
-            videoRef.current;
+    const togglePlayPause = useCallback(
+      (event?: React.MouseEvent) => {
+          event?.stopPropagation();
 
-          if (!videoElement) {
+          const element = videoRef.current;
+
+          if (!element) {
               return;
           }
 
-          if (
-            videoElement.paused
-          ) {
-              videoElement
+          if (element.paused) {
+              element
                 .play()
                 .then(() => {
                     setIsPlaying(true);
@@ -394,11 +351,12 @@ function MementoSlide({
                     setIsPlaying(false);
                 });
           } else {
-              videoElement.pause();
-
+              element.pause();
               setIsPlaying(false);
           }
-      }, []);
+      },
+      []
+    );
 
     /*
      * ============================================================
@@ -406,74 +364,124 @@ function MementoSlide({
      * ============================================================
      */
 
-    const toggleSound =
-      useCallback(
-        (
-          event: React.MouseEvent
-        ) => {
-            event.stopPropagation();
+    const toggleSound = useCallback(
+      (event: React.MouseEvent) => {
+          event.stopPropagation();
 
-            const videoElement =
-              videoRef.current;
+          const element = videoRef.current;
 
-            if (!videoElement) {
-                return;
-            }
+          if (!element) {
+              return;
+          }
 
-            const newMuted =
-              !videoElement.muted;
+          const newMuted = !element.muted;
 
-            videoElement.muted =
-              newMuted;
+          element.muted = newMuted;
+          setIsMuted(newMuted);
 
-            setIsMuted(newMuted);
+          /*
+           * Se o usuário ativar o som e o vídeo estiver
+           * pausado, inicia a reprodução.
+           */
 
-            /*
-             * Se o usuário ativou o som
-             * enquanto estava pausado,
-             * inicia o vídeo.
-             */
-
-            if (
-              !newMuted &&
-              videoElement.paused
-            ) {
-                videoElement
-                  .play()
-                  .then(() => {
-                      setIsPlaying(
-                        true
-                      );
-                  })
-                  .catch(() => {});
-            }
-        },
-        []
-      );
+          if (!newMuted && element.paused) {
+              element
+                .play()
+                .then(() => {
+                    setIsPlaying(true);
+                })
+                .catch(() => {
+                    setIsPlaying(false);
+                });
+          }
+      },
+      []
+    );
 
     /*
      * ============================================================
      * LIKE
      *
-     * Aqui é apenas o estado visual.
-     * Sua API de like pode continuar sendo
-     * integrada no page.
+     * Aqui mantém apenas o estado visual.
+     * A API real de like continua podendo ser controlada
+     * pela página.
      * ============================================================
      */
 
-    const handleLike =
-      useCallback(
-        (
-          event: React.MouseEvent
-        ) => {
-            event.stopPropagation();
+    const handleLike = useCallback(
+      (event: React.MouseEvent) => {
+          event.stopPropagation();
 
-            setLiked(
-              (value) => !value
-            );
-        },
-        []
-      );
+          setLiked((current) => !current);
+      },
+      []
+    );
+
+    /*
+     * ============================================================
+     * COMENTÁRIOS
+     * ============================================================
+     */
+
+    const handleComment = useCallback(
+      (event: React.MouseEvent) => {
+          event.stopPropagation();
+
+          onComment?.(video);
+      },
+      [onComment, video]
+    );
+
+    /*
+     * ============================================================
+     * COMPARTILHAR
+     * ============================================================
+     */
+
+    const handleShare = useCallback(
+      async (event: React.MouseEvent) => {
+          event.stopPropagation();
+
+          if (onShare) {
+              onShare(video);
+              return;
+          }
+
+          const url =
+            typeof window !== "undefined"
+              ? `${window.location.origin}/videos/watch/${video.id}`
+              : "";
+
+          if (!url) {
+              return;
+          }
+
+          try {
+              if (navigator.share) {
+                  await navigator.share({
+                      title: video.title,
+                      text:
+                        video.description ??
+                        video.title,
+                      url,
+                  });
+
+                  return;
+              }
+
+              if (navigator.clipboard) {
+                  await navigator.clipboard.writeText(
+                    url
+                  );
+              }
+          } catch {
+              /*
+               * Usuário cancelou o compartilhamento.
+               */
+          }
+      },
+      [onShare, video]
+    );
 
     /*
      * ============================================================
@@ -486,37 +494,26 @@ function MementoSlide({
         data-video-id={video.id}
         className="
                 relative
-                flex
                 h-full
+                min-h-full
                 w-full
                 snap-start
                 snap-always
+                flex
                 items-center
                 justify-center
             "
       >
-          {/*
-             * ==================================================
-             * CONTAINER VERTICAL
-             *
-             * Celular:
-             * ocupa toda a área.
-             *
-             * Desktop:
-             * mantém 9:16.
-             * ==================================================
-             */}
-
           <div
             className="
                     relative
-                    flex
                     h-full
                     w-full
-                    items-center
-                    justify-center
                     overflow-hidden
                     bg-black
+
+                    sm:h-full
+                    sm:w-full
 
                     lg:h-full
                     lg:w-auto
@@ -527,20 +524,18 @@ function MementoSlide({
                     lg:border-border
                 "
           >
-              {/*
-                 * ==================================================
-                 * VÍDEO
-                 * ==================================================
-                 */}
+              {/* =================================================
+                    VÍDEO
+                ================================================= */}
 
               {video.videoUrl ? (
                 <video
                   ref={videoRef}
                   src={video.videoUrl}
-                  poster={
-                      video.thumbnailUrl
-                  }
+                  poster={video.thumbnailUrl}
                   className="
+                            absolute
+                            inset-0
                             h-full
                             w-full
                             bg-black
@@ -558,23 +553,19 @@ function MementoSlide({
                       togglePlayPause
                   }
                   onPlay={() =>
-                    setIsPlaying(
-                      true
-                    )
+                    setIsPlaying(true)
                   }
                   onPause={() =>
-                    setIsPlaying(
-                      false
-                    )
+                    setIsPlaying(false)
                   }
                 />
               ) : video.thumbnailUrl ? (
                 <img
-                  src={
-                      video.thumbnailUrl
-                  }
+                  src={video.thumbnailUrl}
                   alt={video.title}
                   className="
+                            absolute
+                            inset-0
                             h-full
                             w-full
                             object-cover
@@ -583,9 +574,9 @@ function MementoSlide({
               ) : (
                 <div
                   className="
+                            absolute
+                            inset-0
                             flex
-                            h-full
-                            w-full
                             items-center
                             justify-center
                             bg-black
@@ -595,11 +586,9 @@ function MementoSlide({
                 </div>
               )}
 
-              {/*
-                 * ==================================================
-                 * GRADIENTE
-                 * ==================================================
-                 */}
+              {/* =================================================
+                    GRADIENTE
+                ================================================= */}
 
               <div
                 className="
@@ -608,29 +597,22 @@ function MementoSlide({
                         inset-x-0
                         bottom-0
                         z-10
-                        h-64
+                        h-72
                         bg-gradient-to-t
-                        from-black/90
-                        via-black/40
+                        from-black/95
+                        via-black/50
                         to-transparent
                     "
               />
 
-              {/*
-                 * ==================================================
-                 * BOTÃO DE SOM
-                 *
-                 * IMPORTANTE:
-                 * este botão NÃO pausa o vídeo.
-                 * ==================================================
-                 */}
+              {/* =================================================
+                    BOTÃO DE SOM
+                ================================================= */}
 
               {video.videoUrl && (
                 <button
                   type="button"
-                  onClick={
-                      toggleSound
-                  }
+                  onClick={toggleSound}
                   aria-label={
                       isMuted
                         ? "Ativar som"
@@ -640,7 +622,7 @@ function MementoSlide({
                             absolute
                             right-4
                             top-4
-                            z-30
+                            z-40
                             flex
                             size-11
                             items-center
@@ -653,9 +635,7 @@ function MementoSlide({
                             shadow-lg
                             backdrop-blur-md
                             transition
-
                             hover:bg-black/70
-
                             active:scale-95
                         "
                 >
@@ -667,13 +647,9 @@ function MementoSlide({
                 </button>
               )}
 
-              {/*
-                 * ==================================================
-                 * BOTÃO PLAY CENTRAL
-                 *
-                 * Só aparece quando pausado.
-                 * ==================================================
-                 */}
+              {/* =================================================
+                    PLAY CENTRAL
+                ================================================= */}
 
               {!isPlaying &&
                 video.videoUrl && (
@@ -686,7 +662,7 @@ function MementoSlide({
                     className="
                                 absolute
                                 inset-0
-                                z-20
+                                z-30
                                 flex
                                 items-center
                                 justify-center
@@ -701,25 +677,21 @@ function MementoSlide({
                                     rounded-full
                                     bg-black/50
                                     text-white
+                                    shadow-xl
                                     backdrop-blur-md
                                 "
                             >
                                 <Play
-                                  className="
-                                        ml-1
-                                        size-8
-                                    "
+                                  className="ml-1 size-8"
                                   fill="white"
                                 />
                             </span>
                   </button>
                 )}
 
-              {/*
-                 * ==================================================
-                 * CONTEÚDO INFERIOR
-                 * ==================================================
-                 */}
+              {/* =================================================
+                    CONTEÚDO
+                ================================================= */}
 
               <div
                 className="
@@ -733,6 +705,8 @@ function MementoSlide({
 
                         sm:p-5
                         sm:pb-7
+
+                        lg:p-5
                     "
               >
                   <div
@@ -742,11 +716,9 @@ function MementoSlide({
                             gap-3
                         "
                   >
-                      {/*
-                         * ==================================================
-                         * INFORMAÇÕES DO VÍDEO
-                         * ==================================================
-                         */}
+                      {/* =================================================
+                            INFORMAÇÕES
+                        ================================================= */}
 
                       <div
                         className="
@@ -754,9 +726,7 @@ function MementoSlide({
                                 flex-1
                             "
                       >
-                          {/*
-                             * USUÁRIO
-                             */}
+                          {/* USUÁRIO */}
 
                           <div
                             className="
@@ -766,10 +736,6 @@ function MementoSlide({
                                     gap-2
                                 "
                           >
-                              {/*
-                                 * AVATAR SEM COMPONENTE EXTERNO
-                                 */}
-
                               <div
                                 className="
                                         size-9
@@ -818,6 +784,7 @@ function MementoSlide({
 
                               <span
                                 className="
+                                        max-w-[200px]
                                         truncate
                                         text-sm
                                         font-semibold
@@ -825,15 +792,11 @@ function MementoSlide({
                                     "
                               >
                                     @
-                                  {
-                                      video.userName
-                                  }
+                                  {video.userName}
                                 </span>
                           </div>
 
-                          {/*
-                             * TÍTULO
-                             */}
+                          {/* TÍTULO */}
 
                           <h2
                             className="
@@ -848,9 +811,7 @@ function MementoSlide({
                               {video.title}
                           </h2>
 
-                          {/*
-                             * DESCRIÇÃO
-                             */}
+                          {/* DESCRIÇÃO */}
 
                           {video.description && (
                             <p
@@ -863,20 +824,17 @@ function MementoSlide({
                                         sm:text-sm
                                     "
                             >
-                                {
-                                    video.description
-                                }
+                                {video.description}
                             </p>
                           )}
 
-                          {/*
-                             * ESTATÍSTICAS
-                             */}
+                          {/* ESTATÍSTICAS */}
 
                           <div
                             className="
                                     mt-2
                                     flex
+                                    flex-wrap
                                     items-center
                                     gap-2
                                     text-xs
@@ -890,9 +848,7 @@ function MementoSlide({
                                     visualizações
                                 </span>
 
-                              <span>
-                                    •
-                                </span>
+                              <span>•</span>
 
                               <span>
                                     {formatViews(
@@ -901,14 +857,22 @@ function MementoSlide({
                                     )}{" "}
                                   curtidas
                                 </span>
+
+                              <span>•</span>
+
+                              <span>
+                                    {formatViews(
+                                      video.commentsCount ??
+                                      0
+                                    )}{" "}
+                                  comentários
+                                </span>
                           </div>
                       </div>
 
-                      {/*
-                         * ==================================================
-                         * AÇÕES
-                         * ==================================================
-                         */}
+                      {/* =================================================
+                            AÇÕES
+                        ================================================= */}
 
                       <div
                         className="
@@ -918,15 +882,8 @@ function MementoSlide({
                                 items-center
                                 gap-4
                             "
-                        onClick={(
-                          event
-                        ) =>
-                          event.stopPropagation()
-                        }
                       >
-                          {/*
-                             * LIKE
-                             */}
+                          {/* LIKE */}
 
                           <FloatingAction
                             label="Curtir"
@@ -936,15 +893,11 @@ function MementoSlide({
                             }
                             icon={
                                 <Heart
-                                  className={`
-                                            size-5
-
-                                            ${
-                                    liked
-                                      ? "fill-primary text-primary"
-                                      : "text-white"
+                                  className={
+                                      liked
+                                        ? "size-5 fill-primary text-primary"
+                                        : "size-5 text-white"
                                   }
-                                        `}
                                 />
                             }
                             value={formatViews(
@@ -957,19 +910,15 @@ function MementoSlide({
                             )}
                           />
 
-                          {/*
-                             * COMENTÁRIOS
-                             */}
+                          {/* COMENTÁRIOS */}
 
                           <FloatingAction
                             label="Comentar"
+                            onClick={
+                                handleComment
+                            }
                             icon={
-                                <MessageSquare
-                                  className="
-                                            size-5
-                                            text-white
-                                        "
-                                />
+                                <MessageSquare className="size-5 text-white" />
                             }
                             value={formatViews(
                               video.commentsCount ??
@@ -977,19 +926,15 @@ function MementoSlide({
                             )}
                           />
 
-                          {/*
-                             * COMPARTILHAR
-                             */}
+                          {/* COMPARTILHAR */}
 
                           <FloatingAction
                             label="Compartilhar"
+                            onClick={
+                                handleShare
+                            }
                             icon={
-                                <Share2
-                                  className="
-                                            size-5
-                                            text-white
-                                        "
-                                />
+                                <Share2 className="size-5 text-white" />
                             }
                             value=""
                           />
@@ -1007,21 +952,23 @@ function MementoSlide({
  * ================================================================
  */
 
+interface FloatingActionProps {
+    icon: React.ReactNode;
+    label: string;
+    value: string;
+    active?: boolean;
+    onClick?: (
+      event: React.MouseEvent<HTMLButtonElement>
+    ) => void;
+}
+
 function FloatingAction({
                             icon,
                             label,
                             value,
                             active,
                             onClick,
-                        }: {
-    icon: React.ReactNode;
-    label: string;
-    value: string;
-    active?: boolean;
-    onClick?: (
-      event: React.MouseEvent
-    ) => void;
-}) {
+                        }: FloatingActionProps) {
     return (
       <button
         type="button"
@@ -1035,6 +982,7 @@ function FloatingAction({
                 gap-1
                 text-xs
                 text-white
+                transition
             "
       >
             <span
@@ -1049,9 +997,7 @@ function FloatingAction({
                     bg-black/40
                     backdrop-blur-md
                     transition
-
                     hover:bg-black/60
-
                     active:scale-95
                 "
             >
