@@ -36,6 +36,7 @@ function demoPage(page: number, isShort: boolean): VideoPage {
             durationSeconds: mins * 60,
             viewCount: 320 + n * 617,
             likesCount: 12 + n * 7,
+            commentsCount: 0,
             userName: DEMO_AUTHORS[n % DEMO_AUTHORS.length]!,
             createdAt: new Date(Date.now() - n * 86_400_000 * 2).toISOString(),
             isShort,

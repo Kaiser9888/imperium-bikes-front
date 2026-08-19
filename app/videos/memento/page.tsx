@@ -75,7 +75,7 @@ function normalizeVideo(item: ApiMementoItem): VideoItem {
 
         userAvatarUrl: item.userAvatarUrl ?? "",
 
-        
+
 
         liked: Boolean(item.liked),
 
