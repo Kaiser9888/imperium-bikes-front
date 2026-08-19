@@ -50,7 +50,6 @@ export default function MementoPage() {
         );
     }, [momentos, searchQuery])();
 
-    // ===== FETCH =====
     useEffect(() => {
         let cancelled = false;
         const fetchMomentos = async () => {
@@ -83,14 +82,14 @@ export default function MementoPage() {
         setCurrentIndex(0);
     }, [searchQuery]);
 
-    // ===== CONTROLE DE VÍDEOS (MUTED PARA AUTOPLAY) =====
+    // ===== AUTOPLAY COM MUTED =====
     useEffect(() => {
         const current = feed[currentIndex];
         if (!current) return;
         const cv = videoRefs.current.get(current.id);
         if (cv) {
             cv.currentTime = 0;
-            cv.muted = true;  // ✅ FORÇA MUDO PARA AUTOPLAY FUNCIONAR
+            cv.muted = true;
             cv.play().catch(() => {});
             videoRefs.current.forEach((v, id) => {
                 if (id !== current.id) v.pause();
@@ -98,7 +97,6 @@ export default function MementoPage() {
         }
     }, [currentIndex, feed]);
 
-    // ===== TECLADO =====
     useEffect(() => {
         const handleKey = (e: KeyboardEvent) => {
             if (showComments) return;
@@ -144,7 +142,6 @@ export default function MementoPage() {
         }
     };
 
-    // ===== PLAY/PAUSE MANUAL =====
     const togglePlayPause = (videoId: string) => {
         const v = videoRefs.current.get(videoId);
         if (!v) return;
@@ -156,7 +153,6 @@ export default function MementoPage() {
         }
     };
 
-    // ===== LIKE (OTIMISTA) =====
     const toggleLike = async (videoId: string) => {
         if (!isSignedIn || !currentUserId) return;
 
@@ -185,7 +181,6 @@ export default function MementoPage() {
         }
     };
 
-    // ===== COMPARTILHAR =====
     const handleShare = async (video: MementoItem) => {
         const url = `${window.location.origin}/videos/watch/${video.id}`;
         try {
@@ -219,33 +214,24 @@ export default function MementoPage() {
 
     return (
       <div className="fixed inset-0 flex flex-col bg-background">
-          {/* ===== BARRA SUPERIOR ===== */}
-          <div className="z-30 flex shrink-0 items-center gap-2.5 border-b border-primary/15 bg-background/95 px-4 py-3 backdrop-blur-sm">
-              <Link
-                href="/videos"
-                className="shrink-0 text-lg tracking-wide"
-                style={{ fontFamily: 'var(--font-caesar)', color: '#ac0202' }}
-              >
+          {/* BARRA SUPERIOR */}
+          <div className="z-30 flex shrink-0 items-center gap-2.5 border-b border-primary/15 bg-background/95 px-4 py-2 backdrop-blur-sm">
+              <Link href="/videos" className="shrink-0 text-lg tracking-wide"
+                    style={{ fontFamily: 'var(--font-caesar)', color: '#ac0202' }}>
                   Imperium
               </Link>
 
-              <Link
-                href="/videos/buscar"
-                className="ml-auto rounded-full p-2 text-muted-foreground hover:text-foreground transition-colors"
-                aria-label="Buscar vídeos"
-              >
+              <Link href="/videos/buscar" className="ml-auto rounded-full p-2 text-muted-foreground hover:text-foreground transition-colors"
+                    aria-label="Buscar vídeos">
                   <Search className="h-5 w-5 text-foreground" />
               </Link>
 
-              <Link
-                href="/videos/memento/upload"
-                className="shrink-0 rounded-full bg-primary px-3 py-1.5 text-xs font-medium tracking-wide text-primary-foreground hover:bg-primary/90"
-              >
+              <Link href="/videos/memento/upload" className="shrink-0 rounded-full bg-primary px-3 py-1 text-xs font-medium text-primary-foreground hover:bg-primary/90">
                   + Publicar
               </Link>
           </div>
 
-          {/* ===== ÁREA DE VÍDEOS ===== */}
+          {/* ÁREA DE VÍDEOS - SEM PADDING INFERIOR */}
           <div className="relative flex-1 overflow-hidden">
               {momentos.length === 0 ? (
                 <div className="flex h-full items-center justify-center px-4">
@@ -268,7 +254,8 @@ export default function MementoPage() {
                                transform: `translateY(${(index - currentIndex) * 100}%)`,
                                transition: "transform 0.3s ease-out",
                            }}>
-                          <div className="relative mx-auto h-full w-full max-w-[420px] px-2 py-4">
+                          {/* SEM padding inferior - ocupa 100% */}
+                          <div className="relative mx-auto h-full w-full max-w-[420px]">
                               <video
                                 ref={(el) => {
                                     if (el) videoRefs.current.set(video.id, el);
@@ -276,20 +263,20 @@ export default function MementoPage() {
                                 }}
                                 src={video.videoUrl}
                                 poster={video.thumbnailUrl}
-                                className="h-full w-full rounded-2xl border border-primary/15 object-cover"
+                                className="h-full w-full object-cover"
                                 loop
                                 playsInline
                                 muted
                                 onClick={() => togglePlayPause(video.id)}
                               />
 
-                              <div className="pointer-events-none absolute inset-x-2 bottom-4 top-1/2 rounded-b-2xl bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                              <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
 
-                              <div className="absolute bottom-6 left-0 right-0 px-4">
+                              <div className="absolute bottom-4 left-0 right-0 px-4">
                                   <div className="flex items-end justify-between">
                                       <div className="mr-3 min-w-0 flex-1">
-                                          <div className="mb-3 flex items-center gap-3">
-                                              <img src={video.userAvatarUrl || ""} alt="" className="h-10 w-10 rounded-full border-2 border-primary/50 bg-secondary" />
+                                          <div className="mb-2 flex items-center gap-2">
+                                              <img src={video.userAvatarUrl || ""} alt="" className="h-9 w-9 rounded-full border-2 border-primary/50 bg-secondary" />
                                               <div className="min-w-0">
                                                   <p className="text-sm font-semibold text-white">@{video.userName}</p>
                                                   {video.description && <p className="mt-0.5 line-clamp-1 text-xs text-white/80">{video.description}</p>}
@@ -303,15 +290,14 @@ export default function MementoPage() {
                                           </div>
                                       </div>
 
-                                      <div className="flex flex-col items-center gap-4">
+                                      <div className="flex flex-col items-center gap-3">
                                           <button onClick={() => toggleLike(video.id)} className="flex flex-col items-center gap-1">
-                                              <div className={`flex h-12 w-12 items-center justify-center rounded-full border backdrop-blur transition-all duration-300 ${
-                                                liked[video.id] ? "border-red-500 bg-red-500/20 shadow-lg shadow-red-500/30" : "border-white/20 bg-black/30 hover:border-red-400"
+                                              <div className={`flex h-11 w-11 items-center justify-center rounded-full border backdrop-blur transition-all ${
+                                                liked[video.id] ? "border-red-500 bg-red-500/20" : "border-white/20 bg-black/30 hover:border-red-400"
                                               }`}>
-                                                  <svg width="22" height="22" viewBox="0 0 24 24"
+                                                  <svg width="20" height="20" viewBox="0 0 24 24"
                                                        fill={liked[video.id] ? "#ef4444" : "none"}
-                                                       stroke={liked[video.id] ? "#ef4444" : "white"}
-                                                       strokeWidth="2">
+                                                       stroke={liked[video.id] ? "#ef4444" : "white"} strokeWidth="2">
                                                       <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
                                                   </svg>
                                               </div>
@@ -319,8 +305,8 @@ export default function MementoPage() {
                                           </button>
 
                                           <button onClick={() => setShowComments(true)} className="flex flex-col items-center gap-1">
-                                              <div className="flex h-12 w-12 items-center justify-center rounded-full border border-white/20 bg-black/30 backdrop-blur transition-colors hover:border-primary/40">
-                                                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.6">
+                                              <div className="flex h-11 w-11 items-center justify-center rounded-full border border-white/20 bg-black/30 backdrop-blur">
+                                                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.6">
                                                       <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
                                                   </svg>
                                               </div>
@@ -328,8 +314,8 @@ export default function MementoPage() {
                                           </button>
 
                                           <button onClick={() => handleShare(video)} className="flex flex-col items-center gap-1">
-                                              <div className="flex h-12 w-12 items-center justify-center rounded-full border border-white/20 bg-black/30 backdrop-blur transition-colors hover:border-primary/40">
-                                                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.6">
+                                              <div className="flex h-11 w-11 items-center justify-center rounded-full border border-white/20 bg-black/30 backdrop-blur">
+                                                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.6">
                                                       <circle cx="18" cy="5" r="2.4" />
                                                       <circle cx="6" cy="12" r="2.4" />
                                                       <circle cx="18" cy="19" r="2.4" />
@@ -346,9 +332,9 @@ export default function MementoPage() {
                       </div>
                     ))}
 
-                    <div className="absolute right-3 top-1/2 z-10 flex -translate-y-1/2 flex-col gap-1.5">
+                    <div className="absolute right-2 top-1/2 z-10 flex -translate-y-1/2 flex-col gap-1">
                         {feed.map((_, i) => (
-                          <div key={i} className={`h-6 w-0.5 rounded-full transition-all duration-300 ${
+                          <div key={i} className={`h-5 w-0.5 rounded-full ${
                             i === currentIndex ? "bg-primary" : i < currentIndex ? "bg-primary/40" : "bg-primary/15"
                           }`} />
                         ))}
@@ -357,7 +343,7 @@ export default function MementoPage() {
               )}
           </div>
 
-          {/* ===== MODAL COMENTÁRIOS ===== */}
+          {/* MODAL COMENTÁRIOS */}
           {showComments && feed[currentIndex] && (
             <div className="absolute inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm" onClick={() => setShowComments(false)}>
                 <div className="relative max-h-[80vh] w-full max-w-lg overflow-y-auto rounded-t-2xl bg-card px-4 pb-6 pt-4" onClick={(e) => e.stopPropagation()}>
