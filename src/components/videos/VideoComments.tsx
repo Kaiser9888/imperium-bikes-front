@@ -30,9 +30,6 @@ export function VideoComments({ videoId }: VideoCommentsProps) {
     const [sendError, setSendError] = useState<string | null>(null);
     const [deletingId, setDeletingId] = useState<string | null>(null);
 
-    // ============================================================
-    // BUSCAR COMENTÁRIOS
-    // ============================================================
     useEffect(() => {
         const controller = new AbortController();
 
@@ -50,14 +47,15 @@ export function VideoComments({ videoId }: VideoCommentsProps) {
                 }
 
                 const data = await res.json();
-
-                // A API retorna um array diretamente, não { content: [...] }.
-                // Mantemos o fallback defensivo caso o formato mude no futuro.
                 const list: Comment[] = Array.isArray(data)
                   ? data
                   : Array.isArray(data?.content)
                     ? data.content
                     : [];
+
+                // 🔍 DEBUG
+                console.log("🔍 Comentários carregados:", list);
+                console.log("🔍 Seu userId:", userId);
 
                 setComments(list);
             } catch (err) {
@@ -71,13 +69,9 @@ export function VideoComments({ videoId }: VideoCommentsProps) {
         }
 
         void loadComments();
-
         return () => controller.abort();
     }, [videoId]);
 
-    // ============================================================
-    // ENVIAR COMENTÁRIO
-    // ============================================================
     const handleSend = useCallback(async () => {
         const text = newComment.trim();
         if (!text || sending) return;
@@ -121,19 +115,15 @@ export function VideoComments({ videoId }: VideoCommentsProps) {
         }
     }, [newComment, sending, isSignedIn, getToken, videoId]);
 
-    // ============================================================
-    // APAGAR COMENTÁRIO (somente o próprio autor)
-    // ============================================================
     const handleDelete = useCallback(
       async (commentId: string) => {
-          if (deletingId) return; // evita cliques duplicados em exclusões simultâneas
+          if (deletingId) return;
 
           const confirmed = window.confirm("Apagar este comentário?");
           if (!confirmed) return;
 
           const previousComments = comments;
           setDeletingId(commentId);
-          // Atualização otimista: remove da tela antes da resposta do servidor
           setComments((prev) => prev.filter((c) => c.id !== commentId));
 
           try {
@@ -157,7 +147,6 @@ export function VideoComments({ videoId }: VideoCommentsProps) {
               }
           } catch (err) {
               console.error("Erro ao apagar comentário:", err);
-              // Reverte se a exclusão falhar no servidor
               setComments(previousComments);
               setSendError("Não foi possível apagar o comentário. Tente novamente.");
           } finally {
@@ -176,7 +165,6 @@ export function VideoComments({ videoId }: VideoCommentsProps) {
 
     return (
       <div className="space-y-4">
-          {/* ===== CABEÇALHO COM CONTADOR ===== */}
           <div className="flex items-center gap-2 border-b border-border/60 pb-2">
               <MessageCircle className="size-4 text-foreground" />
               <h3 className="text-sm font-semibold text-foreground">
@@ -184,12 +172,8 @@ export function VideoComments({ videoId }: VideoCommentsProps) {
               </h3>
           </div>
 
-          {/* ===== ÁREA DE DIGITAR (DESTACADA) ===== */}
           <div className="space-y-1.5 rounded-xl border border-border/50 bg-muted/10 p-2.5">
-              <label
-                htmlFor="new-comment-input"
-                className="px-1 text-[11px] font-medium text-muted-foreground"
-              >
+              <label htmlFor="new-comment-input" className="px-1 text-[11px] font-medium text-muted-foreground">
                   {isSignedIn ? "Deixe seu comentário" : "Faça login para comentar"}
               </label>
               <div className="flex items-center gap-2">
@@ -222,7 +206,6 @@ export function VideoComments({ videoId }: VideoCommentsProps) {
               )}
           </div>
 
-          {/* ===== LISTA ===== */}
           {loading ? (
             <p className="text-xs text-muted-foreground">Carregando...</p>
           ) : loadError ? (
@@ -261,13 +244,9 @@ interface CommentItemProps {
 
 function CommentItem({ comment, isOwner, isDeleting, onDelete }: CommentItemProps) {
     return (
-      <div className="group flex items-start gap-2.5">
+      <div className="flex items-start gap-2.5">
           {comment.userAvatar ? (
-            <img
-              src={comment.userAvatar}
-              alt=""
-              className="h-6 w-6 shrink-0 rounded-full object-cover"
-            />
+            <img src={comment.userAvatar} alt="" className="h-6 w-6 shrink-0 rounded-full object-cover" />
           ) : (
             <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted text-[10px] font-medium text-muted-foreground">
                 {comment.userName?.charAt(0)?.toUpperCase() ?? "?"}
@@ -287,14 +266,20 @@ function CommentItem({ comment, isOwner, isDeleting, onDelete }: CommentItemProp
               </p>
           </div>
 
+          {/* ===== BOTÃO APAGAR - SEMPRE VISÍVEL ===== */}
           {isOwner && (
             <button
               onClick={onDelete}
               disabled={isDeleting}
               aria-label="Apagar comentário"
-              className="shrink-0 rounded-full p-1.5 text-muted-foreground/40 opacity-0 transition-all hover:bg-red-500/10 hover:text-red-500 disabled:opacity-30 group-hover:opacity-100 focus-visible:opacity-100"
+              title="Apagar comentário"
+              className="shrink-0 rounded-full p-1.5 text-muted-foreground/60 transition-all hover:bg-red-500/10 hover:text-red-500 disabled:opacity-30"
             >
-                <Trash2 className="size-3.5" />
+                {isDeleting ? (
+                  <div className="size-3.5 animate-spin rounded-full border-2 border-red-500 border-t-transparent" />
+                ) : (
+                  <Trash2 className="size-3.5" />
+                )}
             </button>
           )}
       </div>
