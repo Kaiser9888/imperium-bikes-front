@@ -29,6 +29,7 @@ export default function WatchPage() {
     const [disliked, setDisliked] = useState(false);
     const [likesCount, setLikesCount] = useState(0);
     const [dislikesCount, setDislikesCount] = useState(0);
+    const [commentsCount, setCommentsCount] = useState(0);
 
     useEffect(() => {
         let cancelled = false;
@@ -41,6 +42,7 @@ export default function WatchPage() {
             setDislikesCount(data?.dislikesCount ?? 0);
             setLiked(data?.liked ?? false);
             setDisliked(data?.disliked ?? false);
+            setCommentsCount(data?.commentsCount ?? 0);
             setLoading(false);
         })();
         fetchRelated(id).then((r) => !cancelled && setRelated(r));
@@ -208,7 +210,7 @@ export default function WatchPage() {
                     </div>
                   )}
 
-                  {/* ===== BOTÃO COMENTÁRIOS (SEM BALÃO) ===== */}
+                  {/* ===== BOTÃO COMENTÁRIOS ===== */}
                   <div className="px-4 sm:px-0">
                       <button
                         onClick={() => setShowComments((v) => !v)}
@@ -220,8 +222,8 @@ export default function WatchPage() {
                       >
                           <span>Comentários</span>
 
-                          <span className="ml-auto rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
-                                {video.commentsCount ?? 0}
+                          <span className="ml-auto text-sm text-muted-foreground">
+                                {commentsCount}
                             </span>
 
                           <ChevronDown
