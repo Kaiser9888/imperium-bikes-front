@@ -9,6 +9,7 @@ const API_URL = "https://imperium-bikes.onrender.com";
 interface Comment {
     id: string;
     userId: string;
+    clerkUserId?: string;  // ← NOVO
     userName: string;
     userAvatar?: string;
     text: string;
@@ -53,8 +54,7 @@ export function VideoComments({ videoId }: VideoCommentsProps) {
                     ? data.content
                     : [];
 
-                // 🔍 DEBUG
-                console.log("🔍 Comentários carregados:", list);
+                console.log("🔍 Comentários:", list);
                 console.log("🔍 Seu userId:", userId);
 
                 setComments(list);
@@ -128,27 +128,21 @@ export function VideoComments({ videoId }: VideoCommentsProps) {
 
           try {
               const token = await getToken();
-              if (!token) {
-                  throw new Error("Sessão expirada.");
-              }
+              if (!token) throw new Error("Sessão expirada.");
 
               const res = await fetch(
                 `${API_URL}/api/videos/${videoId}/comments/${commentId}`,
                 {
                     method: "DELETE",
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
+                    headers: { Authorization: `Bearer ${token}` },
                 }
               );
 
-              if (!res.ok) {
-                  throw new Error(`Falha ao apagar comentário: ${res.status}`);
-              }
+              if (!res.ok) throw new Error(`Falha ao apagar: ${res.status}`);
           } catch (err) {
-              console.error("Erro ao apagar comentário:", err);
+              console.error("Erro ao apagar:", err);
               setComments(previousComments);
-              setSendError("Não foi possível apagar o comentário. Tente novamente.");
+              setSendError("Não foi possível apagar o comentário.");
           } finally {
               setDeletingId(null);
           }
@@ -224,7 +218,7 @@ export function VideoComments({ videoId }: VideoCommentsProps) {
                   <CommentItem
                     key={comment.id}
                     comment={comment}
-                    isOwner={!!userId && comment.userId === userId}
+                    isOwner={!!userId && (comment.clerkUserId === userId || comment.userId === userId)}
                     isDeleting={deletingId === comment.id}
                     onDelete={() => void handleDelete(comment.id)}
                   />
@@ -266,15 +260,20 @@ function CommentItem({ comment, isOwner, isDeleting, onDelete }: CommentItemProp
               </p>
           </div>
 
-          {/* Troque isOwner por true TEMPORARIAMENTE */}
-          {true && (
+          {/* BOTÃO APAGAR - SÓ DONO */}
+          {isOwner && (
             <button
               onClick={onDelete}
               disabled={isDeleting}
               aria-label="Apagar comentário"
-              className="shrink-0 rounded-full p-1.5 text-red-500 hover:bg-red-500/10"
+              title="Apagar comentário"
+              className="shrink-0 rounded-full p-1.5 text-muted-foreground/60 transition-all hover:bg-red-500/10 hover:text-red-500 disabled:opacity-30"
             >
-                <Trash2 className="size-3.5" />
+                {isDeleting ? (
+                  <div className="size-3.5 animate-spin rounded-full border-2 border-red-500 border-t-transparent" />
+                ) : (
+                  <Trash2 className="size-3.5" />
+                )}
             </button>
           )}
       </div>
