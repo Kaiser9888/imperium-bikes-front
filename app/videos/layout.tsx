@@ -148,7 +148,7 @@ export default function VideosLayout({
           flex-1
           ${
           isMemento
-            ? "h-[calc(100dvh-7.5rem)] overflow-hidden pt-14 pb-16"
+            ? "h-[calc(100dvh-7.5rem)] overflow-hidden pt-14 pb-20"
             : `${!isSearchPage ? "pt-14" : ""} pb-16`
         }
         `}
