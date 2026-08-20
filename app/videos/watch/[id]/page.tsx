@@ -208,13 +208,25 @@ export default function WatchPage() {
                     </div>
                   )}
 
-                  {/* ===== BOTÃO COMENTÁRIOS (SEM ESTOURAR) ===== */}
+                  {/* ===== BOTÃO COMENTÁRIOS (SEM BALÃO) ===== */}
                   <div className="px-4 sm:px-0">
                       <button
                         onClick={() => setShowComments((v) => !v)}
-                        className="flex w-full items-center rounded-lg border border-border bg-card px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:border-primary/30 transition-colors"
+                        className={`flex w-full items-center gap-3 rounded-lg border px-4 py-3 text-sm font-semibold transition-all ${
+                          showComments
+                            ? "border-primary bg-primary/10 text-primary"
+                            : "border-border bg-card text-foreground hover:border-primary/40 hover:bg-muted/50"
+                        }`}
                       >
-                          Comentários
+                          <span>Comentários</span>
+
+                          <span className="ml-auto rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
+                                {video.commentsCount ?? 0}
+                            </span>
+
+                          <ChevronDown
+                            className={`size-4 text-muted-foreground transition-transform ${showComments ? "rotate-180" : ""}`}
+                          />
                       </button>
                   </div>
 
