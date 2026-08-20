@@ -266,20 +266,15 @@ function CommentItem({ comment, isOwner, isDeleting, onDelete }: CommentItemProp
               </p>
           </div>
 
-          {/* ===== BOTÃO APAGAR - SEMPRE VISÍVEL ===== */}
-          {isOwner && (
+          {/* Troque isOwner por true TEMPORARIAMENTE */}
+          {true && (
             <button
               onClick={onDelete}
               disabled={isDeleting}
               aria-label="Apagar comentário"
-              title="Apagar comentário"
-              className="shrink-0 rounded-full p-1.5 text-muted-foreground/60 transition-all hover:bg-red-500/10 hover:text-red-500 disabled:opacity-30"
+              className="shrink-0 rounded-full p-1.5 text-red-500 hover:bg-red-500/10"
             >
-                {isDeleting ? (
-                  <div className="size-3.5 animate-spin rounded-full border-2 border-red-500 border-t-transparent" />
-                ) : (
-                  <Trash2 className="size-3.5" />
-                )}
+                <Trash2 className="size-3.5" />
             </button>
           )}
       </div>
