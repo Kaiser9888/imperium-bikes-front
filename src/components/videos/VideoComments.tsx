@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@clerk/nextjs";
-import { Send, MessageCircle, AlertCircle } from "lucide-react";
+import { Send, MessageCircle, AlertCircle, Trash2 } from "lucide-react";
 
 const API_URL = "https://imperium-bikes.onrender.com";
 
@@ -20,7 +20,7 @@ interface VideoCommentsProps {
 }
 
 export function VideoComments({ videoId }: VideoCommentsProps) {
-    const { getToken, isSignedIn } = useAuth();
+    const { getToken, isSignedIn, userId } = useAuth();
 
     const [comments, setComments] = useState<Comment[]>([]);
     const [newComment, setNewComment] = useState("");
@@ -28,6 +28,7 @@ export function VideoComments({ videoId }: VideoCommentsProps) {
     const [loading, setLoading] = useState(true);
     const [loadError, setLoadError] = useState(false);
     const [sendError, setSendError] = useState<string | null>(null);
+    const [deletingId, setDeletingId] = useState<string | null>(null);
 
     // ============================================================
     // BUSCAR COMENTÁRIOS
@@ -120,6 +121,52 @@ export function VideoComments({ videoId }: VideoCommentsProps) {
         }
     }, [newComment, sending, isSignedIn, getToken, videoId]);
 
+    // ============================================================
+    // APAGAR COMENTÁRIO (somente o próprio autor)
+    // ============================================================
+    const handleDelete = useCallback(
+      async (commentId: string) => {
+          if (deletingId) return; // evita cliques duplicados em exclusões simultâneas
+
+          const confirmed = window.confirm("Apagar este comentário?");
+          if (!confirmed) return;
+
+          const previousComments = comments;
+          setDeletingId(commentId);
+          // Atualização otimista: remove da tela antes da resposta do servidor
+          setComments((prev) => prev.filter((c) => c.id !== commentId));
+
+          try {
+              const token = await getToken();
+              if (!token) {
+                  throw new Error("Sessão expirada.");
+              }
+
+              const res = await fetch(
+                `${API_URL}/api/videos/${videoId}/comments/${commentId}`,
+                {
+                    method: "DELETE",
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+              );
+
+              if (!res.ok) {
+                  throw new Error(`Falha ao apagar comentário: ${res.status}`);
+              }
+          } catch (err) {
+              console.error("Erro ao apagar comentário:", err);
+              // Reverte se a exclusão falhar no servidor
+              setComments(previousComments);
+              setSendError("Não foi possível apagar o comentário. Tente novamente.");
+          } finally {
+              setDeletingId(null);
+          }
+      },
+      [comments, deletingId, getToken, videoId]
+    );
+
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === "Enter" && !e.nativeEvent.isComposing) {
             e.preventDefault();
@@ -129,23 +176,38 @@ export function VideoComments({ videoId }: VideoCommentsProps) {
 
     return (
       <div className="space-y-4">
-          {/* ===== INPUT ===== */}
-          <div className="space-y-1.5">
+          {/* ===== CABEÇALHO COM CONTADOR ===== */}
+          <div className="flex items-center gap-2 border-b border-border/60 pb-2">
+              <MessageCircle className="size-4 text-foreground" />
+              <h3 className="text-sm font-semibold text-foreground">
+                  Comentários{!loading && !loadError ? ` (${comments.length})` : ""}
+              </h3>
+          </div>
+
+          {/* ===== ÁREA DE DIGITAR (DESTACADA) ===== */}
+          <div className="space-y-1.5 rounded-xl border border-border/50 bg-muted/10 p-2.5">
+              <label
+                htmlFor="new-comment-input"
+                className="px-1 text-[11px] font-medium text-muted-foreground"
+              >
+                  {isSignedIn ? "Deixe seu comentário" : "Faça login para comentar"}
+              </label>
               <div className="flex items-center gap-2">
                   <input
+                    id="new-comment-input"
                     type="text"
                     value={newComment}
                     onChange={(e) => setNewComment(e.target.value)}
                     onKeyDown={handleKeyDown}
-                    placeholder={isSignedIn ? "Adicionar comentário..." : "Faça login para comentar"}
+                    placeholder="Adicionar comentário..."
                     disabled={!isSignedIn || sending}
                     maxLength={500}
-                    className="flex-1 rounded-full border border-border/50 bg-muted/20 px-4 py-2 text-xs text-foreground placeholder:text-muted-foreground/50 outline-none transition-all focus:border-primary/30 focus:bg-background disabled:cursor-not-allowed disabled:opacity-50"
+                    className="flex-1 rounded-full border border-border/50 bg-background px-4 py-2 text-xs text-foreground placeholder:text-muted-foreground/50 outline-none transition-all focus:border-primary/30 disabled:cursor-not-allowed disabled:opacity-50"
                   />
                   <button
                     onClick={() => void handleSend()}
                     disabled={!newComment.trim() || sending || !isSignedIn}
-                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary transition-colors hover:bg-primary/20 disabled:opacity-40 disabled:hover:bg-primary/10"
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-40 disabled:hover:bg-primary"
                     aria-label="Enviar comentário"
                   >
                       <Send className="size-3.5" />
@@ -153,7 +215,7 @@ export function VideoComments({ videoId }: VideoCommentsProps) {
               </div>
 
               {sendError && (
-                <p className="flex items-center gap-1 text-[11px] text-red-500">
+                <p className="flex items-center gap-1 px-1 text-[11px] text-red-500">
                     <AlertCircle className="size-3" />
                     {sendError}
                 </p>
@@ -171,12 +233,18 @@ export function VideoComments({ videoId }: VideoCommentsProps) {
           ) : comments.length === 0 ? (
             <div className="flex items-center gap-2 text-xs text-muted-foreground/60 py-2">
                 <MessageCircle className="size-3.5" />
-                Nenhum comentário ainda
+                Nenhum comentário ainda. Seja o primeiro a comentar!
             </div>
           ) : (
             <div className="space-y-3">
                 {comments.map((comment) => (
-                  <CommentItem key={comment.id} comment={comment} />
+                  <CommentItem
+                    key={comment.id}
+                    comment={comment}
+                    isOwner={!!userId && comment.userId === userId}
+                    isDeleting={deletingId === comment.id}
+                    onDelete={() => void handleDelete(comment.id)}
+                  />
                 ))}
             </div>
           )}
@@ -184,9 +252,16 @@ export function VideoComments({ videoId }: VideoCommentsProps) {
     );
 }
 
-function CommentItem({ comment }: { comment: Comment }) {
+interface CommentItemProps {
+    comment: Comment;
+    isOwner: boolean;
+    isDeleting: boolean;
+    onDelete: () => void;
+}
+
+function CommentItem({ comment, isOwner, isDeleting, onDelete }: CommentItemProps) {
     return (
-      <div className="flex items-start gap-2.5">
+      <div className="group flex items-start gap-2.5">
           {comment.userAvatar ? (
             <img
               src={comment.userAvatar}
@@ -211,6 +286,17 @@ function CommentItem({ comment }: { comment: Comment }) {
                   {comment.text}
               </p>
           </div>
+
+          {isOwner && (
+            <button
+              onClick={onDelete}
+              disabled={isDeleting}
+              aria-label="Apagar comentário"
+              className="shrink-0 rounded-full p-1.5 text-muted-foreground/40 opacity-0 transition-all hover:bg-red-500/10 hover:text-red-500 disabled:opacity-30 group-hover:opacity-100 focus-visible:opacity-100"
+            >
+                <Trash2 className="size-3.5" />
+            </button>
+          )}
       </div>
     );
 }
