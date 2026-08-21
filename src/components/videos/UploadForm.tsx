@@ -96,7 +96,6 @@ export function UploadForm({ mode }: { mode: UploadMode }) {
           title: isMemento ? description.slice(0, 60) : title,
           description,
           hashtags: isMemento ? "" : hashtags,
-          durationSeconds: videoDuration,
           isShort: isMemento,
           token,
         },
