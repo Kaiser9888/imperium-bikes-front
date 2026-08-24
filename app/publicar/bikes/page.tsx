@@ -31,7 +31,7 @@ const BIKE_SUBCATEGORIES = [
   { id: "gravel", label: "Gravel", description: "Estrada e terrenos mistos", icon: Route },
   { id: "urbana", label: "Urbana", description: "Mobilidade e passeio", icon: Building2 },
   { id: "bmx", label: "BMX / Dirt", description: "BMX, street e dirt jump", icon: Flame },
-  { id: "downhill", label: "Downhill", description: "Descidas e terrenos extremos", icon: Zap,  image: "/images/categories/modalidades/downhill.jpg" },
+  { id: "downhill", label: "Downhill", description: "Descidas e terrenos extremos", icon: TrendingDown, image: "/images/categories/modalidades/downhill.jpg" },
   { id: "enduro", label: "Enduro", description: "Trilhas e terrenos técnicos", icon: Compass },
   { id: "eletrica", label: "Elétrica", description: "E-Bikes", icon: BatteryCharging },
   { id: "dobravel", label: "Dobrável", description: "Bicicletas dobráveis", icon: Minimize2 },
