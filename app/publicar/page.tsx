@@ -72,20 +72,6 @@ export default function PublicarPage() {
         "
       >
 
-        {/* PROGRESSO */}
-        <div className="mb-8">
-
-          <div className="mb-2 flex items-center justify-between">
-
-            <span className="text-xs font-medium">
-              Etapa 1
-            </span>
-
-            <span className="text-xs text-muted-foreground">
-              1 de 5
-            </span>
-
-          </div>
 
           <div
             className="
@@ -109,8 +95,6 @@ export default function PublicarPage() {
 
         {/* CATEGORIAS */}
         <CategoryStep />
-
-      </div>
 
     </main>
   )
