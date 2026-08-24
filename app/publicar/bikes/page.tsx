@@ -36,7 +36,7 @@ const BIKE_SUBCATEGORIES = [
   { id: "eletrica", label: "Elétrica", description: "E-Bikes", icon: BatteryCharging },
   { id: "dobravel", label: "Dobrável", description: "Bicicletas dobráveis", icon: Minimize2 },
   { id: "infantil", label: "Infantil", description: "Bicicletas infantis e juvenis", icon: Baby },
-] as const
+] 
 
 type BikeSubcategoryId = (typeof BIKE_SUBCATEGORIES)[number]["id"]
 
@@ -303,9 +303,11 @@ export default function PublicarBikesPage() {
             key={selectedSubcategory.id}
             className="bike-icon-pop mb-6 flex items-center gap-3 rounded-xl border border-border bg-muted/30 px-4 py-3"
           >
-            <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
-              <selectedSubcategory.icon className="size-5" />
-            </span>
+            <img
+              src={selectedSubcategory.image}
+              alt={selectedSubcategory.label}
+              className="size-12 shrink-0 rounded-full object-cover border border-primary/20"
+            />
             <div>
               <p className="text-sm font-semibold">{selectedSubcategory.label}</p>
               <p className="text-xs text-muted-foreground">{selectedSubcategory.description}</p>
