@@ -134,7 +134,7 @@ export default function PublicarBikesPage() {
   const steps: Step[] = useMemo(() => {
     const subId = answers.subcategoryId
 
-    return [
+    const rawSteps: Step[] = [
       {
         key: "subcategoryId",
         title: "Modalidade",
@@ -182,7 +182,9 @@ export default function PublicarBikesPage() {
         options: TAMANHO_OPTIONS.map((t) => ({ id: t, label: t })),
         skip: subId === "infantil",
       },
-    ].filter((step) => !step.skip)
+    ]
+
+    return rawSteps.filter((step) => !step.skip)
   }, [answers.subcategoryId, selectedSubcategory])
 
   const stepIndexByKey = useMemo(() => {
