@@ -26,17 +26,15 @@ import { useRouter } from "next/navigation"
 /* ------------------------------------------------------------------ */
 
 const BIKE_SUBCATEGORIES = [
-  { id: "mtb", label: "MTB", description: "Mountain Bike", icon: Mountain },
-  { id: "speed", label: "Speed / Road", description: "Bicicletas para estrada", icon: Zap },
-  { id: "gravel", label: "Gravel", description: "Estrada e terrenos mistos", icon: Route },
-  { id: "urbana", label: "Urbana", description: "Mobilidade e passeio", icon: Building2 },
-  { id: "bmx", label: "BMX / Dirt", description: "BMX, street e dirt jump", icon: Flame },
+  { id: "mtb", label: "MTB", description: "Mountain Bike", icon: Mountain, image: "/images/categories/modalidades/mtb.jpg" },
+  { id: "speed", label: "Speed / Road", description: "Bicicletas para estrada", icon: Zap, image: "/images/categories/modalidades/speed.jpg" },
+  { id: "gravel", label: "Gravel", description: "Estrada e terrenos mistos", icon: Route, image: "/images/categories/modalidades/gravel.jpg" },
+  { id: "urbana", label: "Urbana", description: "Mobilidade e passeio", icon: Building2, image: "/images/categories/modalidades/urbana.jpg" },
+  { id: "bmx", label: "BMX / Dirt", description: "BMX, street e dirt jump", icon: Flame, image: "/images/categories/modalidades/bmx.jpg" },
   { id: "downhill", label: "Downhill", description: "Descidas e terrenos extremos", icon: TrendingDown, image: "/images/categories/modalidades/downhill.jpg" },
-  { id: "enduro", label: "Enduro", description: "Trilhas e terrenos técnicos", icon: Compass },
-  { id: "eletrica", label: "Elétrica", description: "E-Bikes", icon: BatteryCharging },
-  { id: "dobravel", label: "Dobrável", description: "Bicicletas dobráveis", icon: Minimize2 },
-  { id: "infantil", label: "Infantil", description: "Bicicletas infantis e juvenis", icon: Baby },
-] 
+  { id: "enduro", label: "Enduro", description: "Trilhas e terrenos técnicos", icon: Compass, image: "/images/categories/modalidades/enduro.jpg" },
+  { id: "eletrica", label: "Elétrica", description: "E-Bikes", icon: BatteryCharging, image: "/images/categories/modalidades/eletrica.jpg" },
+]
 
 type BikeSubcategoryId = (typeof BIKE_SUBCATEGORIES)[number]["id"]
 
