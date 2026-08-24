@@ -31,7 +31,7 @@ const BIKE_SUBCATEGORIES = [
   { id: "gravel", label: "Gravel", description: "Estrada e terrenos mistos", icon: Route },
   { id: "urbana", label: "Urbana", description: "Mobilidade e passeio", icon: Building2 },
   { id: "bmx", label: "BMX / Dirt", description: "BMX, street e dirt jump", icon: Flame },
-  { id: "downhill", label: "Downhill", description: "Descidas e terrenos extremos", icon: TrendingDown },
+  { id: "downhill", label: "Downhill", description: "Descidas e terrenos extremos", icon: Zap,  image: "/images/categories/modalidades/downhill.jpg" },
   { id: "enduro", label: "Enduro", description: "Trilhas e terrenos técnicos", icon: Compass },
   { id: "eletrica", label: "Elétrica", description: "E-Bikes", icon: BatteryCharging },
   { id: "dobravel", label: "Dobrável", description: "Bicicletas dobráveis", icon: Minimize2 },
@@ -285,16 +285,7 @@ export default function PublicarBikesPage() {
 
       {/* CONTEÚDO */}
       <div className="mx-auto max-w-2xl px-4 pb-32 pt-6">
-        {/* PROGRESSO */}
-        <div className="mb-8">
-          <div className="mb-2 flex items-center justify-between">
-            <span className="text-xs font-medium">Etapa 1</span>
-            <span className="text-xs text-muted-foreground">1 de 5</span>
-          </div>
-          <div className="h-1.5 overflow-hidden rounded-full bg-muted" aria-label="Progresso: etapa 1 de 5">
-            <div className="h-full w-1/5 rounded-full bg-primary" />
-          </div>
-        </div>
+
 
         {/* INTRODUÇÃO */}
         <section className="mb-6">
