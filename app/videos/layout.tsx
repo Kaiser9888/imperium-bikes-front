@@ -80,7 +80,7 @@ export default function VideosLayout({
           <div className={`flex h-full items-center px-3 sm:px-6 lg:px-8 ${isMemento ? "justify-start" : "gap-2"}`}>
             {/* LOGO */}
             <Link href="/videos" className="flex shrink-0 items-center gap-2" aria-label="Página inicial de vídeos">
-              <img src="/logo2.png" alt="Imperium" className="h-7 w-auto sm:h-8" />
+              <img src="/logo.png" alt="Imperium" className="h-7 w-auto sm:h-8" />
               <span
                 className="font-blackletter text-sm tracking-wide sm:text-2xl"
                 style={{

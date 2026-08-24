@@ -33,7 +33,7 @@ const MAIN_CATEGORIES: readonly MainCategory[] = [
     id: "servicos",
     label: "Serviços",
     description: "Serviços especializados",
-    image: "/images/categories/servico.jpg",
+    image: "/images/categories/servicos.jpg",
     route: "/publicar/servicos",
   },
   {
