@@ -39,7 +39,7 @@ export default function FotosPage() {
   }
 
   return (
-    <main className="min-h-screen bg-background text-foreground">
+    <main className="min-h-screen bg-background text-foreground flex flex-col">
       <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur-lg">
         <div className="mx-auto flex h-14 max-w-2xl items-center justify-between px-4">
           <Link href="/publicar/bikes/informacoes" className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
@@ -50,7 +50,7 @@ export default function FotosPage() {
         </div>
       </header>
 
-      <div className="mx-auto max-w-2xl px-4 pb-32 pt-6">
+      <div className="mx-auto max-w-2xl w-full px-4 pb-32 pt-6 flex-1 flex flex-col">
         <section className="mb-6">
           <h1 className="text-2xl font-bold tracking-tight">Fotos do produto</h1>
           <p className="mt-2 text-sm leading-6 text-muted-foreground">Adicione fotos nítidas para mostrar todos os detalhes da sua bicicleta.</p>
@@ -58,24 +58,41 @@ export default function FotosPage() {
 
         <input ref={galleryRef} type="file" accept="image/*" multiple onChange={addPhotos} className="hidden" />
 
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-          {photos.map((photo, index) => (
-            <div key={`${photo.slice(0, 20)}-${index}`} className="group relative aspect-square overflow-hidden rounded-xl border border-border">
-              <img src={photo} alt={`Foto do produto ${index + 1}`} className="size-full object-cover" />
-              <button type="button" onClick={() => removePhoto(index)} aria-label={`Remover foto ${index + 1}`} className="absolute right-2 top-2 flex size-8 items-center justify-center rounded-full bg-background/90 text-destructive shadow-sm">
-                <Trash2 className="size-4" />
+        {photos.length === 0 ? (
+          /* Estado Vazio: Botão totalmente centralizado na vertical e horizontal */
+          <div className="flex-1 flex flex-col items-center justify-center min-h-[250px]">
+            <button
+              type="button"
+              onClick={() => galleryRef.current?.click()}
+              className="flex size-40 flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-primary/50 bg-primary/5 text-primary hover:bg-primary/10 transition-colors"
+            >
+              <ImagePlus className="size-8" />
+              <span className="text-xs font-semibold">Galeria</span>
+            </button>
+            <p className="mt-4 text-center text-xs text-muted-foreground">Adicione pelo menos uma foto para continuar.</p>
+          </div>
+        ) : (
+          /* Estado com Fotos: Renderiza em formato de grelha (Grid) */
+          <div>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+              {photos.map((photo, index) => (
+                <div key={`${photo.slice(0, 20)}-${index}`} className="group relative aspect-square overflow-hidden rounded-xl border border-border">
+                  <img src={photo} alt={`Foto do produto ${index + 1}`} className="size-full object-cover" />
+                  <button type="button" onClick={() => removePhoto(index)} aria-label={`Remover foto ${index + 1}`} className="absolute right-2 top-2 flex size-8 items-center justify-center rounded-full bg-background/90 text-destructive shadow-sm">
+                    <Trash2 className="size-4" />
+                  </button>
+                </div>
+              ))}
+
+              {/* Botão de adicionar mais fotos junto à grelha */}
+              <button type="button" onClick={() => galleryRef.current?.click()} className="flex aspect-square flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-primary/50 bg-primary/5 text-primary hover:bg-primary/10">
+                <ImagePlus className="size-7" />
+                <span className="text-xs font-semibold">Galeria</span>
               </button>
             </div>
-          ))}
-
-          <button type="button" onClick={() => galleryRef.current?.click()} className="flex aspect-square flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-primary/50 bg-primary/5 text-primary hover:bg-primary/10">
-            <ImagePlus className="size-7" />
-            <span className="text-xs font-semibold">Galeria</span>
-          </button>
-        </div>
-
-        {photos.length === 0 && <p className="mt-4 text-center text-xs text-muted-foreground">Adicione pelo menos uma foto para continuar.</p>}
-        {photos.length > 0 && <p className="mt-4 text-xs text-muted-foreground">{photos.length} {photos.length === 1 ? "foto adicionada" : "fotos adicionadas"}</p>}
+            <p className="mt-4 text-xs text-muted-foreground">{photos.length} {photos.length === 1 ? "foto adicionada" : "fotos adicionadas"}</p>
+          </div>
+        )}
       </div>
 
       <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background/95 backdrop-blur-lg">
