@@ -103,6 +103,7 @@ const COMPATIBILIDADE_OPTIONS = [
   "Campagnolo",
   "MicroSHIFT",
   "Universal",
+  "Não se aplica",
 ] as const
 
 /* ------------------------------------------------------------------ */
