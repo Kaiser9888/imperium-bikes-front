@@ -38,7 +38,6 @@ const PRODUTO_CATEGORIES = [
   { id: "hidratacao", label: "Hidratação", description: "Caramanholas, mochilas e suportes", icon: Droplets, image: "/images/categories/produtos/hidratacao.jpg" },
   { id: "bolsas", label: "Bolsas e Mochilas", description: "Bolsas de selim, quadro e guidão", icon: Backpack, image: "/images/categories/produtos/bolsas.jpg" },
   { id: "ferramentas", label: "Ferramentas", description: "Multi-ferramentas e kits", icon: Wrench, image: "/images/categories/produtos/ferramentas.jpg" },
-  { id: "nutricao", label: "Nutrição", description: "Suplementos, géis e isotônicos", icon: Utensils, image: "/images/categories/produtos/nutricao.jpg" },
   { id: "protecao", label: "Proteção Corporal", description: "Joelheiras, cotoveleiras e coletes", icon: Heart, image: "/images/categories/produtos/protecao.jpg" },
 ] as const
 
@@ -55,7 +54,6 @@ const TIPOS_BY_CATEGORY: Record<ProdutoCategoryId, readonly string[]> = {
   hidratacao: ["Caramanhola", "Suporte de Caramanhola", "Mochila de Hidratação", "Reservatório de Água"],
   bolsas: ["Bolsa de Selim", "Bolsa de Quadro", "Bolsa de Guidão", "Alforge", "Bagageiro"],
   ferramentas: ["Multi-ferramenta", "Chave de Corrente", "Chave de Raio", "Bomba de Chão", "Bomba de Mão", "Kit de Reparo"],
-  nutricao: ["Gel de Carboidrato", "Isotônico", "Barrinha", "Suplemento", "Sal de Reposição"],
   protecao: ["Joelheira", "Cotoveleira", "Colete de Proteção", "Protetor de Coluna", "Coxim"],
 }
 
