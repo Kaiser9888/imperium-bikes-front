@@ -59,20 +59,20 @@ export default function FotosPage() {
         <input ref={galleryRef} type="file" accept="image/*" multiple onChange={addPhotos} className="hidden" />
 
         {photos.length === 0 ? (
-          /* Estado Vazio: Botão totalmente centralizado na vertical e horizontal */
-          <div className="flex-1 flex flex-col items-center justify-center min-h-[250px]">
+          /* Estado Vazio: Botão grande, no topo e centralizado horizontalmente */
+          <div className="flex flex-col items-center pt-4 w-full">
             <button
               type="button"
               onClick={() => galleryRef.current?.click()}
-              className="flex size-40 flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-primary/50 bg-primary/5 text-primary hover:bg-primary/10 transition-colors"
+              className="flex w-full max-w-sm h-48 flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-primary/50 bg-primary/5 text-primary hover:bg-primary/10 transition-colors shadow-sm"
             >
-              <ImagePlus className="size-8" />
-              <span className="text-xs font-semibold">Galeria</span>
+              <ImagePlus className="size-10" />
+              <span className="text-sm font-semibold">Selecionar da Galeria</span>
             </button>
             <p className="mt-4 text-center text-xs text-muted-foreground">Adicione pelo menos uma foto para continuar.</p>
           </div>
         ) : (
-          /* Estado com Fotos: Renderiza em formato de grelha (Grid) */
+          /* Estado com Fotos: Grelha padrão */
           <div>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
               {photos.map((photo, index) => (
@@ -84,7 +84,6 @@ export default function FotosPage() {
                 </div>
               ))}
 
-              {/* Botão de adicionar mais fotos junto à grelha */}
               <button type="button" onClick={() => galleryRef.current?.click()} className="flex aspect-square flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-primary/50 bg-primary/5 text-primary hover:bg-primary/10">
                 <ImagePlus className="size-7" />
                 <span className="text-xs font-semibold">Galeria</span>
