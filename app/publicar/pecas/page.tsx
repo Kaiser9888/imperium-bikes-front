@@ -179,12 +179,6 @@ export default function PublicarPecasPage() {
         subtitle: "Condição da peça",
         options: CONDICAO_OPTIONS.map((c) => ({ id: c.id, label: c.label, description: c.description })),
       },
-      {
-        key: "compatibilidade",
-        title: "Compatibilidade",
-        subtitle: "Marca compatível",
-        options: COMPATIBILIDADE_OPTIONS.map((m) => ({ id: m, label: m })),
-      },
     ]
   }, [answers.subcategoryId, selectedCategory])
 
