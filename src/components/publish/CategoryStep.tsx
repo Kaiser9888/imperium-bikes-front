@@ -43,6 +43,13 @@ const MAIN_CATEGORIES: readonly MainCategory[] = [
     image: "/images/categories/produtos.jpg",
     route: "/publicar/produtos",
   },
+  {
+    id: "consumiveis",
+    label: "Consumíveis",
+    description: "Produtos de consumo",
+    image: "/images/categories/consumiveis.jpg",
+    route: "/publicar/consumiveis",
+  },
 ] as const
 
 export function CategoryStep() {
