@@ -37,25 +37,25 @@ const PECA_CATEGORIES = [
   // ============================================================
   // TRANSMISSÃO
   // ============================================================
+
   {
     id: "transmissao-cambios",
-    group: "transmissao",
     label: "Câmbios e Passadores",
-    description: "Câmbios traseiros, dianteiros e trocadores",
+    description: "Câmbios dianteiros, traseiros e passadores",
     icon: Cog,
     image: "/images/categories/pecas/cambios.jpg",
   },
+
   {
     id: "transmissao-desgaste",
-    group: "transmissao",
     label: "Cassetes, Correntes e Coroas",
     description: "Cassetes, correntes e coroas",
     icon: Activity,
     image: "/images/categories/pecas/relacao.jpg",
   },
+
   {
     id: "transmissao-pedivela-central",
-    group: "transmissao",
     label: "Pedivelas e Movimentos Centrais",
     description: "Pedivelas e movimentos centrais",
     icon: RotateCw,
@@ -65,25 +65,25 @@ const PECA_CATEGORIES = [
   // ============================================================
   // FREIOS
   // ============================================================
+
   {
     id: "freio-dianteiro",
-    group: "freios",
     label: "Freio Dianteiro",
-    description: "Componentes e kit completo do freio dianteiro",
+    description: "Componentes e kits do freio dianteiro",
     icon: Disc,
     image: "/images/categories/pecas/freio-dianteiro.jpg",
   },
+
   {
     id: "freio-traseiro",
-    group: "freios",
     label: "Freio Traseiro",
-    description: "Componentes e kit completo do freio traseiro",
+    description: "Componentes e kits do freio traseiro",
     icon: Disc,
     image: "/images/categories/pecas/freio-traseiro.jpg",
   },
+
   {
     id: "discos-rotores",
-    group: "freios",
     label: "Discos, Rotores e Pastilhas",
     description: "Discos, pastilhas e adaptadores",
     icon: Target,
@@ -93,25 +93,25 @@ const PECA_CATEGORIES = [
   // ============================================================
   // SUSPENSÃO
   // ============================================================
+
   {
     id: "suspensao-single-crown",
-    group: "suspensao",
     label: "Single Crown",
     description: "Suspensões dianteiras de uma coroa",
     icon: Wrench,
     image: "/images/categories/pecas/suspensao-single.jpg",
   },
+
   {
     id: "suspensao-double-crown",
-    group: "suspensao",
     label: "Double Crown",
     description: "Suspensões de duas coroas para Downhill",
     icon: Wrench,
     image: "/images/categories/pecas/suspensao-double.jpg",
   },
+
   {
     id: "shock-traseiro",
-    group: "suspensao",
     label: "Shock Traseiro",
     description: "Amortecedores para Full Suspension",
     icon: Activity,
@@ -121,33 +121,33 @@ const PECA_CATEGORIES = [
   // ============================================================
   // RODAS
   // ============================================================
+
   {
     id: "rodas-par",
-    group: "rodas",
     label: "Pares de Rodas",
     description: "Jogos de rodas completos",
     icon: CircleDot,
     image: "/images/categories/pecas/par-rodas.jpg",
   },
+
   {
     id: "rodas-avulsas",
-    group: "rodas",
     label: "Rodas Avulsas",
-    description: "Roda dianteira ou traseira avulsa",
+    description: "Roda dianteira ou traseira",
     icon: Circle,
     image: "/images/categories/pecas/roda-avulsa.jpg",
   },
+
   {
     id: "cubos-avulsos",
-    group: "rodas",
     label: "Cubos",
     description: "Cubos dianteiros e traseiros",
     icon: Box,
     image: "/images/categories/pecas/cubos.jpg",
   },
+
   {
     id: "aros-raios",
-    group: "rodas",
     label: "Aros e Raios",
     description: "Aros e kits de raios",
     icon: Sun,
@@ -157,26 +157,23 @@ const PECA_CATEGORIES = [
   // ============================================================
   // QUADRO E ESTRUTURA
   // ============================================================
+
   {
     id: "quadro",
-    group: "quadro-estrutura",
-    label: "Quadros",
-    description: "Quadros MTB, Speed, Gravel e BMX",
+    label: "Quadro",
+    description: "Quadros e componentes estruturais",
     icon: Bike,
     image: "/images/categories/pecas/quadro.jpg",
   },
 
-  // Mantém o ID original "quadro" para não quebrar páginas existentes.
-  // Gancheira e Link continuam sendo TIPOS dentro desta categoria.
-
   // ============================================================
   // COCKPIT E DIREÇÃO
   // ============================================================
+
   {
     id: "cockpit",
-    group: "cockpit-direcao",
-    label: "Cockpit, Guidão e Direção",
-    description: "Guidões, mesas e caixas de direção",
+    label: "Cockpit",
+    description: "Guidões, mesas, direção e espaçadores",
     icon: Move,
     image: "/images/categories/pecas/cockpit.jpg",
   },
@@ -184,9 +181,9 @@ const PECA_CATEGORIES = [
   // ============================================================
   // SELIM E CANOTE
   // ============================================================
+
   {
     id: "selim-canote",
-    group: "selim-canote",
     label: "Selim e Canote",
     description: "Selins, canotes e abraçadeiras",
     icon: ArrowUpFromLine,
@@ -196,9 +193,9 @@ const PECA_CATEGORIES = [
   // ============================================================
   // PEDAIS
   // ============================================================
+
   {
     id: "pedais",
-    group: "pedais",
     label: "Pedais",
     description: "Pedais de encaixe, plataforma e tacos",
     icon: Footprints,
@@ -208,10 +205,10 @@ const PECA_CATEGORIES = [
   // ============================================================
   // CABOS E CONDUÍTES
   // ============================================================
+
   {
     id: "cabos-conduites",
-    group: "cabos-conduites",
-    label: "Cabos e Conduítes",
+    label: "Cabos, Conduítes e Guias",
     description: "Cabos, conduítes, capas e terminais",
     icon: Cable,
     image: "/images/categories/pecas/cabos.jpg",
@@ -219,37 +216,19 @@ const PECA_CATEGORIES = [
 ] as const
 
 
+// ============================================================
+// TIPO DA CATEGORIA
+// ============================================================
+
 type PecaCategoryId = (typeof PECA_CATEGORIES)[number]["id"]
 
 
 // ============================================================
-// AGRUPAMENTO VISUAL
+// GRUPOS PRINCIPAIS
+//
+// Estes grupos servem SOMENTE para organizar a navegação.
+// NÃO são novas categorias nem novas rotas.
 // ============================================================
-//
-// IMPORTANTE:
-// Estes grupos NÃO são categorias/rotas novas.
-// Eles servem somente para organizar a apresentação.
-//
-// Os IDs usados pelo sistema continuam sendo:
-// transmissao-cambios
-// transmissao-desgaste
-// transmissao-pedivela-central
-// freio-dianteiro
-// freio-traseiro
-// discos-rotores
-// suspensao-single-crown
-// suspensao-double-crown
-// shock-traseiro
-// rodas-par
-// rodas-avulsas
-// cubos-avulsos
-// aros-raios
-// quadro
-// cockpit
-// selim-canote
-// pedais
-// cabos-conduites
-//
 
 const PECA_GROUPS = [
   {
@@ -340,6 +319,7 @@ const PECA_GROUPS = [
 // ============================================================
 
 const TIPOS_BY_CATEGORY: Record<PecaCategoryId, readonly string[]> = {
+
   // ---------------- TRANSMISSÃO ----------------
 
   "transmissao-cambios": [
@@ -363,6 +343,7 @@ const TIPOS_BY_CATEGORY: Record<PecaCategoryId, readonly string[]> = {
     "Kit Pedivela + Central",
   ],
 
+
   // ---------------- FREIOS ----------------
 
   "freio-dianteiro": [
@@ -384,6 +365,7 @@ const TIPOS_BY_CATEGORY: Record<PecaCategoryId, readonly string[]> = {
     "Kit Discos + Pastilhas",
   ],
 
+
   // ---------------- SUSPENSÃO ----------------
 
   "suspensao-single-crown": [
@@ -404,6 +386,7 @@ const TIPOS_BY_CATEGORY: Record<PecaCategoryId, readonly string[]> = {
     "Shock a Mola",
     "Shock Eletrônico",
   ],
+
 
   // ---------------- RODAS ----------------
 
@@ -432,6 +415,7 @@ const TIPOS_BY_CATEGORY: Record<PecaCategoryId, readonly string[]> = {
     "Kit Raios e Niples",
   ],
 
+
   // ---------------- QUADRO E ESTRUTURA ----------------
 
   "quadro": [
@@ -442,6 +426,7 @@ const TIPOS_BY_CATEGORY: Record<PecaCategoryId, readonly string[]> = {
     "Gancheira de Câmbio",
     "Link de Suspensão",
   ],
+
 
   // ---------------- COCKPIT E DIREÇÃO ----------------
 
@@ -454,6 +439,7 @@ const TIPOS_BY_CATEGORY: Record<PecaCategoryId, readonly string[]> = {
     "Espaçadores",
   ],
 
+
   // ---------------- SELIM E CANOTE ----------------
 
   "selim-canote": [
@@ -463,6 +449,7 @@ const TIPOS_BY_CATEGORY: Record<PecaCategoryId, readonly string[]> = {
     "Abraçadeira de Quadro",
   ],
 
+
   // ---------------- PEDAIS ----------------
 
   "pedais": [
@@ -470,6 +457,7 @@ const TIPOS_BY_CATEGORY: Record<PecaCategoryId, readonly string[]> = {
     "Pedal Plataforma",
     "Tacos de Sapatilha",
   ],
+
 
   // ---------------- CABOS E CONDUÍTES ----------------
 
@@ -493,6 +481,7 @@ const CONDICAO_OPTIONS = [
     label: "Novo",
     description: "Nunca usado",
   },
+
   {
     id: "usado",
     label: "Usado",
