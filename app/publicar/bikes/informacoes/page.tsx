@@ -8,7 +8,6 @@ import { useRouter } from "next/navigation"
 const CONDITIONS = [
   { id: "novo", label: "Novo", description: "Nunca usado" },
   { id: "usado", label: "Usado", description: "Já teve uso, mas está em boas condições" },
-  { id: "recondicionado", label: "Recondicionado", description: "Revisado e restaurado para venda" },
 ]
 
 export default function InformacoesPage() {
@@ -34,7 +33,7 @@ export default function InformacoesPage() {
     if (!canContinue) return
     const current = JSON.parse(sessionStorage.getItem("imperium_bikes_publish") || "{}")
     sessionStorage.setItem("imperium_bikes_publish", JSON.stringify({ ...current, title: title.trim(), description: description.trim(), condition }))
-    router.push("/publicar/bikes/fotos")
+    router.push("/publicar/fotos")
   }
 
   return (
