@@ -200,7 +200,7 @@ export default function PublicarServicosPage() {
     }
 
     sessionStorage.setItem("imperium_bikes_publish", JSON.stringify(updatedData))
-    router.push("/publicar/servicos/informacoes/page.tsx")
+    router.push("/publicar/servicos/publicar/informacoes")
   }
 
   return (
