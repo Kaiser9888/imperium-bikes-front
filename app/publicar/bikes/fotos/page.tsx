@@ -35,7 +35,8 @@ export default function FotosPage() {
 
   function continueToShipping() {
     sessionStorage.setItem("imperium_bikes_publish", JSON.stringify({ ...JSON.parse(sessionStorage.getItem("imperium_bikes_publish") || "{}"), photos }));
-    router.push("/publicar/bikes/frete")
+    let categoria = "bikes";
+    router.push(`/publicar/${categoria}/frete`)
   }
 
   return (

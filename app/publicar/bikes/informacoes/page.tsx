@@ -33,7 +33,9 @@ export default function InformacoesPage() {
     if (!canContinue) return
     const current = JSON.parse(sessionStorage.getItem("imperium_bikes_publish") || "{}")
     sessionStorage.setItem("imperium_bikes_publish", JSON.stringify({ ...current, title: title.trim(), description: description.trim(), condition }))
-    router.push("/publicar/fotos")
+    let categoria = "bikes"
+    router.push(`/publicar/${categoria}/fotos`)
+    router.push(`/publicar/${categoria}/caracteristicas`)
   }
 
   return (
@@ -56,3 +58,4 @@ export default function InformacoesPage() {
     </main>
   )
 }
+
