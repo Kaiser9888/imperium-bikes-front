@@ -35,7 +35,6 @@ export default function InformacoesPage() {
     sessionStorage.setItem("imperium_bikes_publish", JSON.stringify({ ...current, title: title.trim(), description: description.trim(), condition }))
     let categoria = "bikes"
     router.push(`/publicar/${categoria}/fotos`)
-    router.push(`/publicar/${categoria}/caracteristicas`)
   }
 
   return (
