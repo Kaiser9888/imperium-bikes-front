@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { ArrowLeft, ArrowRight, Check } from "lucide-react"
-import { useRouter } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 
 const CONDITIONS = [
   { id: "novo", label: "Novo", description: "Nunca usado" },
@@ -11,6 +11,8 @@ const CONDITIONS = [
 ]
 
 export default function InformacoesPage() {
+  const params = useParams<{ categoria: string }>()
+  const categoria = params.categoria
   const router = useRouter()
   const [title, setTitle] = useState("")
   const [description, setDescription] = useState("")
