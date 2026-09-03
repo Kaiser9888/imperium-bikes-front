@@ -4,14 +4,11 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { ArrowLeft, ArrowRight, Check, Loader2, MapPin, Pencil, Truck } from "lucide-react"
 import { useParams, useRouter } from "next/navigation"
+import { useAuth } from "@clerk/nextjs"
 import { getCategoriaConfig } from "@/lib/publicar/categorias"
 import { LocalizacaoFrete, getDraft, saveDraft } from "@/lib/publicar/storage"
 
 const API_URL = "https://imperium-bikes.onrender.com"
-
-function getLocalizacaoDoCadastro(): LocalizacaoFrete {
-  return { endereco: "Rua das Bicicletas, 123", cidade: "Igaporã", estado: "BA", cep: "46550-000" }
-}
 
 interface OpcaoFreteSimulada {
   transportadora: string
@@ -43,9 +40,15 @@ export default function FretePage() {
   const categoria = params.categoria
   const config = getCategoriaConfig(categoria)
   const router = useRouter()
+  const { getToken, isSignedIn } = useAuth()
 
-  const [localizacao, setLocalizacao] = useState<LocalizacaoFrete>(getLocalizacaoDoCadastro())
-  const [editandoLocalizacao, setEditandoLocalizacao] = useState(false)
+  const [localizacao, setLocalizacao] = useState<LocalizacaoFrete>({
+    endereco: "",
+    cidade: "",
+    estado: "",
+    cep: "",
+  })
+  const [editandoLocalizacao, setEditandoLocalizacao] = useState(true)
   const [buscandoCep, setBuscandoCep] = useState(false)
   const [erroCep, setErroCep] = useState<string | null>(null)
 
@@ -62,19 +65,55 @@ export default function FretePage() {
   const [simulando, setSimulando] = useState(false)
   const [erroSimulacao, setErroSimulacao] = useState<string | null>(null)
 
-  // Carrega rascunho salvo, se existir
+  // Carrega rascunho salvo
   useEffect(() => {
     const draft = getDraft(categoria).frete
-    if (!draft) return
-    if (draft.localizacao) setLocalizacao(draft.localizacao)
-    if (draft.peso_g) setPeso(String(draft.peso_g))
-    if (draft.altura_cm) setAltura(String(draft.altura_cm))
-    if (draft.largura_cm) setLargura(String(draft.largura_cm))
-    if (draft.comprimento_cm) setComprimento(String(draft.comprimento_cm))
-    if (draft.pagador) setPagador(draft.pagador)
+    if (draft?.localizacao) {
+      setLocalizacao(draft.localizacao)
+      if (draft.localizacao.cep.length === 8) setEditandoLocalizacao(false)
+    }
+    if (draft?.peso_g) setPeso(String(draft.peso_g))
+    if (draft?.altura_cm) setAltura(String(draft.altura_cm))
+    if (draft?.largura_cm) setLargura(String(draft.largura_cm))
+    if (draft?.comprimento_cm) setComprimento(String(draft.comprimento_cm))
+    if (draft?.pagador) setPagador(draft.pagador)
   }, [categoria])
 
-  // Autopreenche endereço a partir do CEP do vendedor (ViaCEP)
+  // Busca CEP do usuário no backend (quando logado)
+  useEffect(() => {
+    if (!isSignedIn) return
+
+    async function buscarCepDoUsuario() {
+      try {
+        const token = await getToken()
+        if (!token) return
+
+        const res = await fetch(`${API_URL}/api/users/me`, {
+          headers: {
+            "Authorization": `Bearer ${token}`,
+          },
+        })
+        if (!res.ok) return
+
+        const data = await res.json()
+        if (data.cep && data.cep.replace(/\D/g, "").length === 8) {
+          setLocalizacao({
+            endereco: data.endereco || "",
+            cidade: data.cidade || "",
+            estado: data.estado || "",
+            cep: data.cep.replace(/\D/g, ""),
+          })
+          setEditandoLocalizacao(false)
+        }
+      } catch {
+        // Silencioso - o usuário preenche manualmente
+      }
+    }
+
+    void buscarCepDoUsuario()
+  }, [isSignedIn, getToken])
+
+  // Autopreenche endereço a partir do CEP (ViaCEP)
   async function handleCepChange(valorDigitado: string) {
     const cepLimpo = valorDigitado.replace(/\D/g, "").slice(0, 8)
     setLocalizacao((p) => ({ ...p, cep: cepLimpo }))
@@ -114,6 +153,12 @@ export default function FretePage() {
     Number(peso) > 0 && Number(altura) > 0 && Number(largura) > 0 && Number(comprimento) > 0
   )
 
+  const localizacaoPreenchida = Boolean(
+    localizacao.cep.length === 8 &&
+    localizacao.cidade &&
+    localizacao.estado
+  )
+
   async function handleSimularFrete() {
     if (!dimensoesPreenchidas || cepSimulacao.length !== 8) return
     setSimulando(true)
@@ -136,8 +181,16 @@ export default function FretePage() {
       if (!res.ok) throw new Error(`Erro ${res.status}`)
 
       const data = await res.json()
-      setOpcoesSimuladas(data.opcoes || [])
-      if (!data.opcoes?.length) {
+
+      // Valida se data.opcoes existe e é array
+      if (!Array.isArray(data.opcoes)) {
+        setErroSimulacao("Resposta inválida do servidor. Tente novamente.")
+        setOpcoesSimuladas([])
+        return
+      }
+
+      setOpcoesSimuladas(data.opcoes)
+      if (data.opcoes.length === 0) {
         setErroSimulacao("Nenhuma transportadora atende esse CEP. Tente outro CEP de exemplo.")
       }
     } catch {
@@ -149,6 +202,7 @@ export default function FretePage() {
   }
 
   const canContinue = Boolean(
+    localizacaoPreenchida &&
     Number(peso) > 0 &&
     Number(altura) > 0 &&
     Number(largura) > 0 &&
@@ -209,12 +263,12 @@ export default function FretePage() {
         {/* Local de envio */}
         <section className="mb-6">
           <span className="text-sm font-semibold">Local de envio</span>
-          {!editandoLocalizacao ? (
+          {!editandoLocalizacao && localizacaoPreenchida ? (
             <div className="mt-2 flex items-start justify-between gap-3 rounded-xl border border-border px-4 py-3">
               <div className="flex items-start gap-2">
                 <MapPin className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
                 <div className="text-sm">
-                  <p className="font-medium">{localizacao.endereco}</p>
+                  <p className="font-medium">{localizacao.endereco || "Endereço não informado"}</p>
                   <p className="text-muted-foreground">
                     {localizacao.cidade} - {localizacao.estado} · {localizacao.cep}
                   </p>
@@ -275,7 +329,13 @@ export default function FretePage() {
               </div>
               <button
                 type="button"
-                onClick={() => setEditandoLocalizacao(false)}
+                onClick={() => {
+                  if (localizacaoPreenchida) {
+                    setEditandoLocalizacao(false)
+                  } else {
+                    setErroCep("Preencha o CEP corretamente antes de continuar.")
+                  }
+                }}
                 className="text-xs font-semibold text-primary"
               >
                 Confirmar localização
@@ -335,73 +395,7 @@ export default function FretePage() {
           </div>
         </section>
 
-        {/* Simulação de frete (opcional) */}
-        <section className="mb-6">
-          {!mostrarSimulador ? (
-            <button
-              type="button"
-              onClick={() => setMostrarSimulador(true)}
-              disabled={!dimensoesPreenchidas}
-              className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-border px-4 py-3 text-sm font-semibold text-foreground transition hover:bg-muted/50 disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              <Truck className="size-4" />
-              Simular valor do frete
-            </button>
-          ) : (
-            <div className="rounded-xl border border-border p-4">
-              <span className="text-sm font-semibold">Simular valor do frete</span>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Teste um CEP de exemplo (ex.: uma cidade distante) para ter uma ideia do custo. Isso não
-                fixa o frete do anúncio — cada comprador vai pagar o valor calculado com o CEP dele.
-              </p>
 
-              <div className="mt-3 flex gap-2">
-                <input
-                  value={cepSimulacao}
-                  onChange={(e) => setCepSimulacao(e.target.value.replace(/\D/g, "").slice(0, 8))}
-                  inputMode="numeric"
-                  placeholder="CEP de exemplo"
-                  className="flex-1 rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-                />
-                <button
-                  type="button"
-                  onClick={handleSimularFrete}
-                  disabled={cepSimulacao.length !== 8 || simulando}
-                  className="flex shrink-0 items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  {simulando ? <Loader2 className="size-4 animate-spin" /> : "Simular"}
-                </button>
-              </div>
-
-              {erroSimulacao && <p className="mt-2 text-xs text-destructive">{erroSimulacao}</p>}
-
-              {opcoesSimuladas.length > 0 && (
-                <div className="mt-3 space-y-2">
-                  {opcoesSimuladas.map((opcao, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center justify-between rounded-lg border border-border px-3 py-2"
-                    >
-                      <span>
-                        <span className="block text-sm font-medium">{opcao.transportadora}</span>
-                        <span className="mt-0.5 block text-xs text-muted-foreground">
-                          {opcao.servico} · {opcao.prazo_dias} dias úteis
-                        </span>
-                      </span>
-                      <span className="text-sm font-semibold">
-                        {opcao.valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
-                      </span>
-                    </div>
-                  ))}
-                  <p className="text-xs text-muted-foreground">
-                    Leve esses valores em conta ao definir o preço do produto na próxima etapa,
-                    principalmente se for você quem vai arcar com o frete.
-                  </p>
-                </div>
-              )}
-            </div>
-          )}
-        </section>
 
         {/* Quem paga */}
         <fieldset className="mb-4">
@@ -435,7 +429,7 @@ export default function FretePage() {
             <Truck className="mt-0.5 size-4 shrink-0" />
             <p>
               O valor exato do frete é calculado automaticamente quando alguém for comprar, com base no CEP
-              informado pelo comprador. A simulação acima é só uma referência para te ajudar a definir o preço.
+              informado pelo comprador. A simulação acima é só uma referência.
             </p>
           </section>
         )}
