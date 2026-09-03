@@ -1,9 +1,11 @@
+// app/layout.tsx
 import { Analytics } from '@vercel/analytics/next'
 import { ClerkProvider } from '@clerk/nextjs'
 import { ptBR } from '@clerk/localizations'
 import type { Metadata } from 'next'
 import { Geist, Cinzel, UnifrakturCook, Caesar_Dressing } from 'next/font/google'
 import AutoSync from '@/components/auth/AutoSync'
+import { AuthButtons } from '@/components/layout/AuthButtons'
 import './globals.css'
 
 const geistSans = Geist({ variable: '--font-geist-sans', subsets: ['latin'] })
@@ -51,6 +53,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <html lang="pt-BR" className={`${geistSans.variable} ${cinzel.variable} ${blackletter.variable} ${caesar.variable} bg-background`}>
           <body className="font-sans antialiased">
           <AutoSync />
+          <header className="flex justify-end px-4 py-3 border-b border-border">
+              <AuthButtons />
+          </header>
           {children}
           {process.env.NODE_ENV === 'production' && <Analytics />}
           </body>
