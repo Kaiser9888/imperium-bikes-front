@@ -4,6 +4,7 @@
 import { useAuth } from "@clerk/nextjs";
 import { useEffect, useState, useCallback } from "react";
 import { apiFetch } from "@/lib/apiClient";
+import { useUserSync } from "@/lib/UserSyncContext";
 import type { CarteiraResponse, TransacaoResponse, PageResponse } from "@/types/carteira";
 import type { ContaConectadaResponse } from "@/types/contaConectada";
 import SaldoCard from "@/components/carteira/SaldoCard";
@@ -12,6 +13,11 @@ import StripeStatusBanner from "@/components/carteira/StripeStatusBanner";
 
 export default function CarteiraPage() {
   const { getToken, isLoaded, isSignedIn } = useAuth();
+  // Espera o POST /api/users/sync terminar antes de disparar qualquer
+  // chamada autenticada. Isso garante que exista no máximo UMA tentativa
+  // de criar o usuário no banco por login (a do /users/sync), em vez de
+  // quatro requisições concorrentes brigando para criar o mesmo registro.
+  const { isSynced } = useUserSync();
 
   const [carteira, setCarteira] = useState<CarteiraResponse | null>(null);
   const [statusConta, setStatusConta] = useState<ContaConectadaResponse | null>(null);
@@ -41,15 +47,17 @@ export default function CarteiraPage() {
   }, [getToken]);
 
   useEffect(() => {
-    if (!isLoaded || !isSignedIn) return;
+    // Além de logado, agora também esperamos o sync inicial terminar.
+    if (!isLoaded || !isSignedIn || !isSynced) return;
     setLoading(true);
     Promise.all([carregarCarteira(), carregarStatusConta(), carregarExtrato(pagina)])
       .catch(() => setErro("Não foi possível carregar sua carteira."))
       .finally(() => setLoading(false));
-  }, [isLoaded, isSignedIn, pagina, carregarCarteira, carregarStatusConta, carregarExtrato]);
+  }, [isLoaded, isSignedIn, isSynced, pagina, carregarCarteira, carregarStatusConta, carregarExtrato]);
 
   if (!isLoaded) return <StatusMessage>Carregando...</StatusMessage>;
   if (!isSignedIn) return <StatusMessage>Você precisa estar logado.</StatusMessage>;
+  if (!isSynced) return <StatusMessage>Preparando sua conta...</StatusMessage>;
   if (loading) return <StatusMessage>Carregando carteira...</StatusMessage>;
   if (erro) return <StatusMessage error>{erro}</StatusMessage>;
 

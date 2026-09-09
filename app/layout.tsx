@@ -4,7 +4,7 @@ import { ClerkProvider } from '@clerk/nextjs'
 import { ptBR } from '@clerk/localizations'
 import type { Metadata } from 'next'
 import { Geist, Cinzel, UnifrakturCook, Caesar_Dressing } from 'next/font/google'
-import AutoSync from '@/components/auth/AutoSync'
+import { UserSyncProvider } from '@/lib/UserSyncContext'
 import './globals.css'
 
 const geistSans = Geist({ variable: '--font-geist-sans', subsets: ['latin'] })
@@ -51,11 +51,21 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       >
           <html lang="pt-BR" className={`${geistSans.variable} ${cinzel.variable} ${blackletter.variable} ${caesar.variable} bg-background`}>
           <body className="font-sans antialiased">
-          <AutoSync />
-          <header className="flex justify-end px-4 py-3 border-b border-border">
+          {/*
+            UserSyncProvider substitui o antigo <AutoSync /> solto.
+            Ele dispara o POST /api/users/sync uma única vez por login e
+            expõe, via contexto (hook useUserSync), o momento em que esse
+            sync terminou. Páginas como /carteira usam isso para não
+            disparar suas próprias chamadas autenticadas antes do sync
+            inicial concluir — evitando várias requisições concorrentes
+            tentando criar o mesmo usuário no banco ao mesmo tempo.
+          */}
+          <UserSyncProvider>
+              <header className="flex justify-end px-4 py-3 border-b border-border">
 
-          </header>
-          {children}
+              </header>
+              {children}
+          </UserSyncProvider>
           {process.env.NODE_ENV === 'production' && <Analytics />}
           </body>
           </html>
