@@ -458,7 +458,7 @@ export default function PublicarServicosInformacoesPage() {
 
     if (!stored) {
       router.replace(
-        "/publicar/servicos"
+        `/publicar/servicos/fotos`
       )
       return
     }
