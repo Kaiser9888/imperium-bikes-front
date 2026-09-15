@@ -10,7 +10,9 @@ import { apiFetch } from "@/lib/apiClient";
 import type { PedidoResponse } from "@/types/pedido";
 import CheckoutForm from "@/components/checkout/CheckoutForm";
 
-export function ComprarPage() {
+// ✅ MUDE DE: export function ComprarPage()
+// ✅ PARA:    export default function ComprarPage()
+export default function ComprarPage() {
   const { id: produtoId } = useParams<{ id: string }>();
   const { getToken, isLoaded, isSignedIn } = useAuth();
   const router = useRouter();
@@ -36,27 +38,40 @@ export function ComprarPage() {
   }, [isLoaded, isSignedIn, produtoId, getToken, router]);
 
   if (!isLoaded || loading) {
-    return <div className="max-w-md mx-auto px-4 py-16 text-center text-sm text-muted-foreground">Preparando
-      pagamento...</div>;
-  }
-  if (erro) {
-    return <div className="max-w-md mx-auto px-4 py-16 text-center text-sm text-destructive">{erro}</div>;
-  }
-  if (!pedido?.clientSecret) {
-    return <div className="max-w-md mx-auto px-4 py-16 text-center text-sm text-destructive">Não foi possível carregar o
-      pagamento.</div>;
+    return (
+      <div className="max-w-md mx-auto px-4 py-16 text-center text-sm text-muted-foreground">
+        Preparando pagamento...
+      </div>
+    );
   }
 
-  // @ts-ignore
+  if (erro) {
+    return (
+      <div className="max-w-md mx-auto px-4 py-16 text-center text-sm text-destructive">
+        {erro}
+      </div>
+    );
+  }
+
+  if (!pedido?.clientSecret) {
+    return (
+      <div className="max-w-md mx-auto px-4 py-16 text-center text-sm text-destructive">
+        Não foi possível carregar o pagamento.
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-md mx-auto px-4 py-10">
-      <h1 className="font-heading text-2xl text-foreground mb-1">Finalizar compra</h1>
+      <h1 className="font-heading text-2xl text-foreground mb-1">
+        Finalizar compra
+      </h1>
       <p className="text-lg text-muted-foreground mb-6">
         Total: {pedido.valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
       </p>
 
       <Elements stripe={getStripe()} options={{ clientSecret: pedido.clientSecret, locale: "pt-BR" }}>
-        <CheckoutForm   orderId={pedido.id} valorProduto={pedido.valor} />
+        <CheckoutForm orderId={pedido.id} valorProduto={pedido.valor} />
       </Elements>
     </div>
   );
