@@ -2,7 +2,7 @@
 "use client";
 
 import { useAuth } from "@clerk/nextjs";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Elements } from "@stripe/react-stripe-js";
 import { getStripe } from "@/lib/stripe";
@@ -16,7 +16,19 @@ interface CheckoutResponse {
   valorProduto: number;
 }
 
+// useSearchParams() precisa estar dentro de um <Suspense> pro Next.js
+// conseguir pré-renderizar a página sem quebrar o build. Por isso o
+// conteúdo real fica num componente filho, e o export default só monta
+// o Suspense em volta dele.
 export default function CheckoutPage() {
+  return (
+    <Suspense fallback={<StatusMessage>Preparando checkout...</StatusMessage>}>
+      <CheckoutPageContent />
+    </Suspense>
+  );
+}
+
+function CheckoutPageContent() {
   const { getToken, isLoaded, isSignedIn } = useAuth();
   const { isSynced } = useUserSync();
   const searchParams = useSearchParams();
