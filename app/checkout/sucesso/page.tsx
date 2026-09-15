@@ -1,9 +1,18 @@
 // app/checkout/sucesso/page.tsx
 "use client";
 
+import { Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 
 export default function CheckoutSucessoPage() {
+  return (
+    <Suspense fallback={<div className="max-w-md mx-auto px-4 py-20 text-center text-sm text-muted-foreground">Carregando...</div>}>
+      <CheckoutSucessoContent />
+    </Suspense>
+  );
+}
+
+function CheckoutSucessoContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const orderId = searchParams.get("orderId");
