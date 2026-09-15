@@ -10,7 +10,7 @@ import { apiFetch } from "@/lib/apiClient";
 import type { PedidoResponse } from "@/types/pedido";
 import CheckoutForm from "@/components/checkout/CheckoutForm";
 
-export default function ComprarPage() {
+export function ComprarPage() {
   const { id: produtoId } = useParams<{ id: string }>();
   const { getToken, isLoaded, isSignedIn } = useAuth();
   const router = useRouter();
@@ -36,15 +36,18 @@ export default function ComprarPage() {
   }, [isLoaded, isSignedIn, produtoId, getToken, router]);
 
   if (!isLoaded || loading) {
-    return <div className="max-w-md mx-auto px-4 py-16 text-center text-sm text-muted-foreground">Preparando pagamento...</div>;
+    return <div className="max-w-md mx-auto px-4 py-16 text-center text-sm text-muted-foreground">Preparando
+      pagamento...</div>;
   }
   if (erro) {
     return <div className="max-w-md mx-auto px-4 py-16 text-center text-sm text-destructive">{erro}</div>;
   }
   if (!pedido?.clientSecret) {
-    return <div className="max-w-md mx-auto px-4 py-16 text-center text-sm text-destructive">Não foi possível carregar o pagamento.</div>;
+    return <div className="max-w-md mx-auto px-4 py-16 text-center text-sm text-destructive">Não foi possível carregar o
+      pagamento.</div>;
   }
 
+  // @ts-ignore
   return (
     <div className="max-w-md mx-auto px-4 py-10">
       <h1 className="font-heading text-2xl text-foreground mb-1">Finalizar compra</h1>
@@ -53,7 +56,7 @@ export default function ComprarPage() {
       </p>
 
       <Elements stripe={getStripe()} options={{ clientSecret: pedido.clientSecret, locale: "pt-BR" }}>
-        <CheckoutForm pedidoId={pedido.id} />
+        <CheckoutForm   orderId={pedido.id} valorProduto={pedido.valor} />
       </Elements>
     </div>
   );
