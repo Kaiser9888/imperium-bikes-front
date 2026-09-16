@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 
-type BikeType = 'urbana' | 'mountain-bike' | 'estrada' | 'eletrica' | 'fixa'
+type BikeType = 'urbana' | 'mountain-bike' | 'estrada' | 'eletrica' | 'fixa' | ''
 type Material = 'aluminio' | 'carbono' | 'aco' | 'titanio'
 type SaleFormat = 'completa' | 'quadro'
 type WheelSize = '26' | '27-5' | '29' | '700c'
@@ -123,10 +123,10 @@ export default function BikesClassificationPage() {
 
       <div className="classification-layout">
         <section className="classification-intro" aria-labelledby="page-title">
-          <p className="eyebrow">Etapa 1 de 2</p>
+          <p className="eyebrow">Etapa 1 de 5</p>
           <h1 id="page-title">Classifique sua bike</h1>
           <p>Escolha as características principais para que seu anúncio seja encontrado com facilidade.</p>
-          <div className="progress-line" aria-label="Etapa 1 de 2 concluída parcialmente">
+          <div className="progress-line" aria-label="Etapa 1 de 5 concluída parcialmente">
             <span className="progress-active" />
             <span />
           </div>
