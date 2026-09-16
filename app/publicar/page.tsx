@@ -1,5 +1,12 @@
-import Link from "next/link"
-import { CategoryStep } from "@/components/publish/CategoryStep"
+import Link from 'next/link'
+
+const categories = [
+  ['Bicicletas', 'Bicicletas completas', '/publicar/bikes'],
+  ['Peças', 'Componentes e reposição', '/publicar/pecas'],
+  ['Serviços', 'Serviços especializados', '/publicar/servicos'],
+  ['Produtos', 'Acessórios e equipamentos', '/publicar/produtos'],
+  ['Consumíveis', 'Produtos de consumo', '/publicar/consumiveis'],
+] as const
 
 export default function PublicarPage() {
   return (
@@ -17,18 +24,43 @@ export default function PublicarPage() {
         </div>
 
         <div>
-          <p className="eyebrow">
-            Imperium Bikes
-          </p>
-
-          <p className="header-context">
-            Novo anúncio
-          </p>
+          <p className="eyebrow">Imperium Bikes</p>
+          <p className="header-context">Novo anúncio</p>
         </div>
       </header>
 
       <div className="category-shell">
-        <CategoryStep />
+        <section
+          className="category-intro"
+          aria-labelledby="category-title"
+        >
+          <p className="eyebrow">Publicar anúncio</p>
+
+          <h1 id="category-title">
+            O que você está vendendo?
+          </h1>
+
+          <p>
+            Escolha uma categoria para começar. Vamos organizar
+            as informações do seu anúncio por etapas.
+          </p>
+        </section>
+
+        <nav
+          className="category-list"
+          aria-label="Categorias para publicação"
+        >
+          {categories.map(([label, description, href]) => (
+            <Link
+              key={label}
+              className="category-option"
+              href={href}
+            >
+              <strong>{label}</strong>
+              <span>{description}</span>
+            </Link>
+          ))}
+        </nav>
       </div>
     </main>
   )
