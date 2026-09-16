@@ -1,447 +1,198 @@
-// app/publicar/bikes/page.tsx
-"use client"
+'use client'
 
-import { useMemo, useState } from "react"
-import {
-  ArrowLeft,
-  ArrowRight,
-  ChevronDown,
-  Check,
-  Mountain,
-  Zap,
-  Route,
-  Building2,
-  Flame,
-  TrendingDown,
-  Compass,
-  BatteryCharging,
-  Minimize2,
-  Baby,
-} from "lucide-react"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useMemo, useState } from 'react'
+import { useRouter } from 'next/navigation'
 
-/* ------------------------------------------------------------------ */
-/* DADOS                                                               */
-/* ------------------------------------------------------------------ */
+type BikeType = 'urbana' | 'mountain-bike' | 'estrada' | 'eletrica' | 'fixa'
+type Material = 'aluminio' | 'carbono' | 'aco' | 'titanio'
+type SaleFormat = 'completa' | 'quadro'
+type WheelSize = '26' | '27-5' | '29' | '700c'
+type FrameSize = 'pp' | 'p' | 'm' | 'g' | 'gg'
 
-const BIKE_SUBCATEGORIES = [
-  { id: "mtb", label: "MTB", description: "Mountain Bike", icon: Mountain, image: "/images/categories/modalidades/mtb.jpg" },
-  { id: "speed", label: "Speed / Road", description: "Bicicletas para estrada", icon: Zap, image: "/images/categories/modalidades/speed.jpg" },
-  { id: "gravel", label: "Gravel", description: "Estrada e terrenos mistos", icon: Route, image: "/images/categories/modalidades/gravel.jpg" },
-  { id: "urbana", label: "Urbana", description: "Mobilidade e passeio", icon: Building2, image: "/images/categories/modalidades/urbana.jpg" },
-  { id: "bmx", label: "BMX / Dirt", description: "BMX, street e dirt jump", icon: Flame, image: "/images/categories/modalidades/bmx.jpg" },
-  { id: "downhill", label: "Downhill", description: "Descidas e terrenos extremos", icon: TrendingDown, image: "/images/categories/modalidades/downhill.jpg" },
-  { id: "enduro", label: "Enduro", description: "Trilhas e terrenos técnicos", icon: Compass, image: "/images/categories/modalidades/enduro.jpg" },
-  { id: "eletrica", label: "Elétrica", description: "E-Bikes", icon: BatteryCharging, image: "/images/categories/modalidades/eletrica.jpg" },
+type FormData = {
+  bikeType: BikeType | ''
+  saleFormat: SaleFormat | ''
+  material: Material | ''
+  wheelSize: WheelSize | ''
+  frameSize: FrameSize | ''
+}
+
+const initialForm: FormData = {
+  bikeType: '',
+  saleFormat: '',
+  material: '',
+  wheelSize: '',
+  frameSize: '',
+}
+
+const bikeTypes: { id: BikeType; label: string; description: string }[] = [
+  { id: 'urbana', label: 'Urbana', description: 'Para deslocamentos e cidade' },
+  { id: 'mountain-bike', label: 'Mountain bike', description: 'Trilhas e terrenos irregulares' },
+  { id: 'estrada', label: 'Estrada', description: 'Asfalto e longas distâncias' },
+  { id: 'eletrica', label: 'Elétrica', description: 'Com assistência de motor' },
+  { id: 'fixa', label: 'Fixa ou single speed', description: 'Transmissão simples' },
 ]
 
-type BikeSubcategoryId = (typeof BIKE_SUBCATEGORIES)[number]["id"]
+const materials: { id: Material; label: string }[] = [
+  { id: 'aluminio', label: 'Alumínio' },
+  { id: 'carbono', label: 'Carbono' },
+  { id: 'aco', label: 'Aço' },
+  { id: 'titanio', label: 'Titânio' },
+]
 
-const BIKE_TYPES_BY_CATEGORY: Record<BikeSubcategoryId, readonly string[]> = {
-  mtb: ["Rígida", "Full Suspension"],
-  speed: ["Speed", "TT / Triathlon", "Ciclocross"],
-  gravel: ["Gravel", "Adventure", "Bikepacking"],
-  urbana: ["Urbana", "Passeio", "Híbrida"],
-  bmx: ["BMX", "Dirt Jump", "Street"],
-  downhill: ["Full Suspension", "Rigida" ],
-  enduro: ["Enduro", "Trail"],
-  eletrica: ["MTB Elétrica", "Urbana Elétrica", "Speed Elétrica", "Cargo Elétrica"],
-  dobravel: ["Dobrável Urbana", "Dobrável Esportiva"],
-  infantil: ["Infantil", "Juvenil"],
-}
+const wheelSizes: { id: WheelSize; label: string; hint: string }[] = [
+  { id: '26', label: '26”', hint: 'Compacto' },
+  { id: '27-5', label: '27,5”', hint: 'Versátil' },
+  { id: '29', label: '29”', hint: 'Maior alcance' },
+  { id: '700c', label: '700c', hint: 'Estrada e urbana' },
+]
 
-const PECA_OPTIONS = [
-  { id: "completa", label: "Bike completa", description: "Quadro, componentes e rodas" },
-  { id: "quadro", label: "Somente quadro", description: "Vende apenas o quadro" },
-] as const
+const frameSizes: { id: FrameSize; label: string; hint: string }[] = [
+  { id: 'pp', label: 'PP', hint: 'Extra pequeno' },
+  { id: 'p', label: 'P', hint: 'Pequeno' },
+  { id: 'm', label: 'M', hint: 'Médio' },
+  { id: 'g', label: 'G', hint: 'Grande' },
+  { id: 'gg', label: 'GG', hint: 'Extra grande' },
+]
 
-const MATERIAL_OPTIONS = ["Alumínio", "Carbono", "Cromoly", "Aço", "Titânio"] as const
-
-const ARO_OPTIONS_BY_CATEGORY: Record<BikeSubcategoryId, readonly string[]> = {
-  mtb: ['26"', '27.5"', '29"'],
-  speed: ["700c"],
-  gravel: ["700c", "650b"],
-  urbana: ['26"', "700c"],
-  bmx: ['20"'],
-  downhill: ['26"', '27.5"', '29"'],
-  enduro: ['27.5"', '29"'],
-  eletrica: ['26"', '27.5"', '29"', "700c"],
-  dobravel: ['16"', '20"', '24"'],
-  infantil: ['12"', '16"', '20"', '24"'],
-}
-
-const TAMANHO_OPTIONS = ["PP", "P", "M", "G", "GG"] as const
-
-/* ------------------------------------------------------------------ */
-/* MODELO DE RESPOSTAS                                                 */
-/* ------------------------------------------------------------------ */
-
-type Answers = {
-  subcategoryId: BikeSubcategoryId | ""
-  bikeType: string
-  peca: string
-  material: string
-  aro: string
-  tamanho: string
-}
-
-const EMPTY_ANSWERS: Answers = {
-  subcategoryId: "",
-  bikeType: "",
-  peca: "",
-  material: "",
-  aro: "",
-  tamanho: "",
-}
-
-type StepOption = {
-  id: string
+function ChoiceCard({
+                      selected,
+                      label,
+                      description,
+                      onClick,
+                    }: {
+  selected: boolean
   label: string
   description?: string
-}
-
-type Step = {
-  key: keyof Answers
-  title: string
-  subtitle: string
-  options: StepOption[]
-  skip?: boolean
-}
-
-/* ------------------------------------------------------------------ */
-/* PÁGINA                                                              */
-/* ------------------------------------------------------------------ */
-
-export default function PublicarBikesPage() {
-  const router = useRouter()
-
-  const [answers, setAnswers] = useState<Answers>(EMPTY_ANSWERS)
-  const [expandedKey, setExpandedKey] = useState<keyof Answers | null>("subcategoryId")
-
-  const selectedSubcategory = useMemo(
-    () => BIKE_SUBCATEGORIES.find((item) => item.id === answers.subcategoryId),
-    [answers.subcategoryId]
+  onClick: () => void
+}) {
+  return (
+    <button
+      type="button"
+      className={`choice-card ${selected ? 'choice-card-selected' : ''}`}
+      aria-pressed={selected}
+      onClick={onClick}
+    >
+      <span className="choice-card-label">{label}</span>
+      {description ? <span className="choice-card-description">{description}</span> : null}
+    </button>
   )
+}
 
-  /*
-   * Cada passo depende do anterior (ex: tipo específico e aro dependem
-   * da modalidade escolhida). "Tamanho" não se aplica a infantil, que é
-   * dimensionado pelo aro — por isso ele é pulado nesse caso.
-   */
-  const steps: Step[] = useMemo(() => {
-    const subId = answers.subcategoryId
+export default function BikesClassificationPage() {
+  const router = useRouter()
+  const [form, setForm] = useState<FormData>(initialForm)
+  const [activeStep, setActiveStep] = useState(1)
 
-    const rawSteps: Step[] = [
-      {
-        key: "subcategoryId",
-        title: "Modalidade",
-        subtitle: "Qual o tipo de bicicleta?",
-        options: BIKE_SUBCATEGORIES.map((s) => ({
-          id: s.id,
-          label: s.label,
-          description: s.description,
-        })),
-      },
-      {
-        key: "bikeType",
-        title: "Característica principal",
-        subtitle: subId
-          ? `Configuração da ${selectedSubcategory?.label.toLowerCase()}`
-          : "Escolha a modalidade primeiro",
-        options: subId
-          ? BIKE_TYPES_BY_CATEGORY[subId].map((t) => ({ id: t, label: t }))
-          : [],
-      },
-      {
-        key: "peca",
-        title: "Quadro ou bike completa",
-        subtitle: "O que você está anunciando?",
-        options: PECA_OPTIONS.map((p) => ({ id: p.id, label: p.label, description: p.description })),
-      },
-      {
-        key: "material",
-        title: "Material do quadro",
-        subtitle: "Qual o material?",
-        options: MATERIAL_OPTIONS.map((m) => ({ id: m, label: m })),
-      },
-      {
-        key: "aro",
-        title: "Aro",
-        subtitle: "Tamanho do aro",
-        options: subId
-          ? ARO_OPTIONS_BY_CATEGORY[subId].map((a) => ({ id: a, label: a }))
-          : [],
-      },
-      {
-        key: "tamanho",
-        title: "Tamanho",
-        subtitle: "Tamanho do quadro",
-        options: TAMANHO_OPTIONS.map((t) => ({ id: t, label: t })),
-        skip: subId === "infantil",
-      },
-    ]
+  const stepTwoReady = Boolean(form.bikeType)
+  const stepThreeReady = Boolean(form.bikeType && form.saleFormat && form.material)
+  const complete = Boolean(stepThreeReady && form.wheelSize && form.frameSize)
 
-    return rawSteps.filter((step) => !step.skip)
-  }, [answers.subcategoryId, selectedSubcategory])
+  const summary = useMemo(() => {
+    const type = bikeTypes.find((item) => item.id === form.bikeType)?.label
+    const material = materials.find((item) => item.id === form.material)?.label
+    return [type, form.saleFormat === 'quadro' ? 'Quadro' : form.saleFormat === 'completa' ? 'Bike completa' : null, material, form.wheelSize ? `${form.wheelSize}”` : null, form.frameSize?.toUpperCase()].filter(Boolean).join(' · ')
+  }, [form])
 
-  const stepIndexByKey = useMemo(() => {
-    const map: Partial<Record<keyof Answers, number>> = {}
-    steps.forEach((step, index) => {
-      map[step.key] = index
-    })
-    return map
-  }, [steps])
-
-  const firstUnansweredIndex = steps.findIndex((step) => !answers[step.key])
-  const allAnswered = firstUnansweredIndex === -1
-
-  const isStepUnlocked = (index: number) => index <= (firstUnansweredIndex === -1 ? steps.length - 1 : firstUnansweredIndex)
-
-  const handleSelect = (step: Step, optionId: string) => {
-    setAnswers((prev) => {
-      const next = { ...prev, [step.key]: optionId }
-
-      /*
-       * Se a modalidade mudar, os passos seguintes que dependem dela
-       * (tipo específico, aro) deixam de fazer sentido e são resetados.
-       */
-      if (step.key === "subcategoryId") {
-        next.bikeType = ""
-        next.aro = ""
-      }
-
-      return next
-    })
-
-    const currentIndex = stepIndexByKey[step.key] ?? 0
-    const nextStep = steps[currentIndex + 1]
-
-    setExpandedKey(nextStep ? nextStep.key : null)
+  function chooseType(bikeType: BikeType) {
+    setForm((current) => ({ ...current, bikeType, wheelSize: '', frameSize: '' }))
+    setActiveStep(2)
   }
 
-  const toggleStep = (step: Step, index: number) => {
-    if (!isStepUnlocked(index)) return
-    setExpandedKey((prev) => (prev === step.key ? null : step.key))
+  function continueTo(step: number) {
+    setActiveStep(step)
   }
 
-  const handleContinue = () => {
-    if (!allAnswered) return
-
-    const currentData = sessionStorage.getItem("imperium_bikes_publish")
-    let publishData: Record<string, unknown> = {}
-
-    if (currentData) {
-      try {
-        const parsed = JSON.parse(currentData)
-        if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
-          publishData = parsed
-        }
-      } catch {
-        publishData = {}
-      }
-    }
-
-    const updatedData = {
-      ...publishData,
-      categoryId: "bikes",
-      ...answers,
-    }
-
-    sessionStorage.setItem("imperium_bikes_publish", JSON.stringify(updatedData))
-    router.push("/publicar/bikes/informacoes")
+  function handleSubmit() {
+    if (!complete) return
+    sessionStorage.setItem('imperium_bikes_publish', JSON.stringify({ categoryId: 'bikes', ...form }))
+    router.push('/publicar/bikes/informacoes')
   }
 
   return (
-    <main className="min-h-screen bg-background text-foreground">
-      <style>{`
-        @keyframes bikeIconPop {
-          0% { transform: scale(0.6); opacity: 0; }
-          60% { transform: scale(1.08); opacity: 1; }
-          100% { transform: scale(1); opacity: 1; }
-        }
-        .bike-icon-pop { animation: bikeIconPop 0.35s ease-out; }
-        @media (prefers-reduced-motion: reduce) {
-          .bike-icon-pop { animation: none; }
-        }
-      `}</style>
-
-      {/* HEADER */}
-      <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur-lg">
-        <div className="mx-auto flex h-14 max-w-2xl items-center justify-between px-4">
-          <Link
-            href="/publicar"
-            className="flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
-          >
-            <ArrowLeft className="size-4" />
-            Voltar
-          </Link>
-          <span className="text-sm font-semibold">Bicicleta</span>
-          <div className="w-[52px]" />
+    <main className="imperium-page">
+      <header className="imperium-header">
+        <div className="brand-mark" aria-label="Imperium Bikes">IB</div>
+        <div>
+          <p className="eyebrow">Imperium Bikes</p>
+          <p className="header-context">Publicar anúncio</p>
         </div>
+        <span className="header-divider" aria-hidden="true" />
+        <p className="header-category">Bikes</p>
       </header>
 
-      {/* CONTEÚDO */}
-      <div className="mx-auto max-w-2xl px-4 pb-32 pt-6">
-
-
-        {/* INTRODUÇÃO */}
-        <section className="mb-6">
-          <h1 className="font-heading text-2xl font-bold tracking-tight">
-            Caracterize sua bicicleta
-          </h1>
-          <p className="mt-2 max-w-xl text-sm leading-6 text-muted-foreground">
-            Toque em cada campo para preencher, na ordem.
-          </p>
-        </section>
-
-        {/* MASCOTE DA MODALIDADE */}
-        {selectedSubcategory && (
-          <div
-            key={selectedSubcategory.id}
-            className="bike-icon-pop mb-6 flex items-center gap-3 rounded-xl border border-border bg-muted/30 px-4 py-3"
-          >
-            <img
-              src={selectedSubcategory.image}
-              alt={selectedSubcategory.label}
-              className="size-12 shrink-0 rounded-full object-cover border border-primary/20"
-            />
-            <div>
-              <p className="text-sm font-semibold">{selectedSubcategory.label}</p>
-              <p className="text-xs text-muted-foreground">{selectedSubcategory.description}</p>
-            </div>
+      <div className="classification-layout">
+        <section className="classification-intro" aria-labelledby="page-title">
+          <p className="eyebrow">Etapa 1 de 2</p>
+          <h1 id="page-title">Classifique sua bike</h1>
+          <p>Escolha as características principais para que seu anúncio seja encontrado com facilidade.</p>
+          <div className="progress-line" aria-label="Etapa 1 de 2 concluída parcialmente">
+            <span className="progress-active" />
+            <span />
           </div>
-        )}
-
-        {/* ACORDEÃO DE PASSOS */}
-        <section className="space-y-2">
-          {steps.map((step, index) => {
-            const isExpanded = expandedKey === step.key
-            const isUnlocked = isStepUnlocked(index)
-            const isAnswered = Boolean(answers[step.key])
-            const selectedOption = step.options.find((o) => o.id === answers[step.key])
-
-            return (
-              <div
-                key={step.key}
-                className={`
-                  overflow-hidden rounded-xl border transition-colors
-                  ${isAnswered ? "border-primary/40" : "border-border"}
-                  ${!isUnlocked ? "opacity-40" : ""}
-                `}
-              >
-                {/* CABEÇALHO DO PASSO (parte clicável) */}
-                <button
-                  type="button"
-                  onClick={() => toggleStep(step, index)}
-                  disabled={!isUnlocked}
-                  aria-expanded={isExpanded}
-                  className="flex w-full items-center justify-between gap-3 px-4 py-3.5 text-left disabled:cursor-not-allowed"
-                >
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold">{step.title}</p>
-                    <p
-                      className={`mt-0.5 truncate text-xs ${
-                        isAnswered ? "font-medium text-primary" : "text-muted-foreground"
-                      }`}
-                    >
-                      {selectedOption ? selectedOption.label : step.subtitle}
-                    </p>
-                  </div>
-
-                  <span className="flex shrink-0 items-center gap-2">
-                    {isAnswered && (
-                      <span className="flex size-5 items-center justify-center rounded-full bg-primary text-white">
-                        <Check className="size-3" />
-                      </span>
-                    )}
-                    <ChevronDown
-                      className={`size-4 text-muted-foreground transition-transform ${
-                        isExpanded ? "rotate-180" : ""
-                      }`}
-                    />
-                  </span>
-                </button>
-
-                {/* OPÇÕES (texto simples, aparece embaixo) */}
-                {isExpanded && isUnlocked && (
-                  <div className="border-t border-border px-2 pb-2 pt-1">
-                    {step.options.length === 0 ? (
-                      <p className="px-2 py-3 text-xs text-muted-foreground">
-                        Nenhuma opção disponível ainda.
-                      </p>
-                    ) : (
-                      step.options.map((option) => {
-                        const isSelected = answers[step.key] === option.id
-
-                        return (
-                          <button
-                            key={option.id}
-                            type="button"
-                            onClick={() => handleSelect(step, option.id)}
-                            className={`
-                              flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition-colors
-                              ${isSelected ? "bg-primary/10 text-primary font-semibold" : "hover:bg-muted/60"}
-                            `}
-                          >
-                            <span>
-                              {option.label}
-                              {option.description && (
-                                <span className="ml-2 text-xs font-normal text-muted-foreground">
-                                  {option.description}
-                                </span>
-                              )}
-                            </span>
-                            {isSelected && <Check className="size-3.5 shrink-0" />}
-                          </button>
-                        )
-                      })
-                    )}
-                  </div>
-                )}
-              </div>
-            )
-          })}
         </section>
 
-        {/* RESUMO */}
-        {answers.subcategoryId && (
-          <section className="mt-6 rounded-2xl border border-border bg-muted/30 p-4">
-            <p className="text-xs text-muted-foreground">Seu anúncio será classificado como</p>
-            <div className="mt-2 flex flex-wrap items-center gap-2">
-              <span className="rounded-full bg-primary px-3 py-1 text-xs font-medium text-white">
-                Bicicletas
-              </span>
-              {steps
-                .filter((step) => answers[step.key])
-                .map((step) => (
-                  <span key={step.key} className="flex items-center gap-2">
-                    <span className="text-muted-foreground">→</span>
-                    <span className="rounded-full bg-background px-3 py-1 text-xs font-medium ring-1 ring-border">
-                      {step.options.find((o) => o.id === answers[step.key])?.label}
-                    </span>
-                  </span>
-                ))}
-            </div>
-          </section>
-        )}
-      </div>
+        <section className="steps-panel" aria-label="Classificação do produto">
+          <div className={`step-block ${activeStep === 1 ? 'step-block-active' : ''}`}>
+            <button type="button" className="step-heading" onClick={() => setActiveStep(1)} aria-expanded={activeStep === 1}>
+              <span className="step-number">01</span>
+              <span className="step-heading-copy"><strong>Categoria da bike</strong><small>{form.bikeType ? bikeTypes.find((item) => item.id === form.bikeType)?.label : 'Selecione uma modalidade'}</small></span>
+              {form.bikeType ? <span className="step-status">Concluído</span> : null}
+            </button>
+            {activeStep === 1 ? <div className="step-content">
+              <p className="field-label">Modalidade</p>
+              <div className="choice-grid choice-grid-types">
+                {bikeTypes.map((item) => <ChoiceCard key={item.id} selected={form.bikeType === item.id} label={item.label} description={item.description} onClick={() => chooseType(item.id)} />)}
+              </div>
+            </div> : null}
+          </div>
 
-      {/* BOTÃO CONTINUAR */}
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background/95 backdrop-blur-lg">
-        <div className="mx-auto max-w-2xl px-4 py-3">
-          <button
-            type="button"
-            onClick={handleContinue}
-            disabled={!allAnswered}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3.5 text-sm font-semibold text-white transition-all hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            Continuar
-            <ArrowRight className="size-4" />
-          </button>
-        </div>
+          <div className={`step-block ${activeStep === 2 ? 'step-block-active' : ''} ${!stepTwoReady ? 'step-block-locked' : ''}`}>
+            <button type="button" className="step-heading" onClick={() => stepTwoReady && setActiveStep(2)} aria-expanded={activeStep === 2} disabled={!stepTwoReady}>
+              <span className="step-number">02</span>
+              <span className="step-heading-copy"><strong>O que está sendo vendido?</strong><small>{form.saleFormat ? `${form.saleFormat === 'completa' ? 'Bike completa' : 'Quadro'}${form.material ? ` · ${materials.find((item) => item.id === form.material)?.label}` : ''}` : 'Defina o formato e o material'}</small></span>
+              {stepThreeReady ? <span className="step-status">Concluído</span> : null}
+            </button>
+            {activeStep === 2 && stepTwoReady ? <div className="step-content">
+              <p className="field-label">Anúncio</p>
+              <div className="choice-grid choice-grid-format">
+                <ChoiceCard selected={form.saleFormat === 'completa'} label="Bike completa" description="Conjunto pronto para pedalar" onClick={() => setForm((current) => ({ ...current, saleFormat: 'completa' }))} />
+                <ChoiceCard selected={form.saleFormat === 'quadro'} label="Somente quadro" description="Sem componentes montados" onClick={() => setForm((current) => ({ ...current, saleFormat: 'quadro' }))} />
+              </div>
+              <p className="field-label field-label-spaced">Material do quadro</p>
+              <div className="choice-grid choice-grid-materials">
+                {materials.map((item) => <ChoiceCard key={item.id} selected={form.material === item.id} label={item.label} onClick={() => setForm((current) => ({ ...current, material: item.id }))} />)}
+              </div>
+              <button type="button" className="text-action" disabled={!form.saleFormat || !form.material} onClick={() => continueTo(3)}>Continuar para medidas <span aria-hidden="true">→</span></button>
+            </div> : null}
+          </div>
+
+          <div className={`step-block ${activeStep === 3 ? 'step-block-active' : ''} ${!stepThreeReady ? 'step-block-locked' : ''}`}>
+            <button type="button" className="step-heading" onClick={() => stepThreeReady && setActiveStep(3)} aria-expanded={activeStep === 3} disabled={!stepThreeReady}>
+              <span className="step-number">03</span>
+              <span className="step-heading-copy"><strong>Medidas</strong><small>{form.wheelSize && form.frameSize ? `Aro ${form.wheelSize} · Tamanho ${form.frameSize.toUpperCase()}` : 'Aro e tamanho do quadro'}</small></span>
+            </button>
+            {activeStep === 3 && stepThreeReady ? <div className="step-content">
+              <p className="field-label">Aro</p>
+              <div className="choice-grid choice-grid-sizes">
+                {wheelSizes.map((item) => <ChoiceCard key={item.id} selected={form.wheelSize === item.id} label={item.label} description={item.hint} onClick={() => setForm((current) => ({ ...current, wheelSize: item.id }))} />)}
+              </div>
+              <p className="field-label field-label-spaced">Tamanho do quadro</p>
+              <div className="choice-grid choice-grid-sizes">
+                {frameSizes.map((item) => <ChoiceCard key={item.id} selected={form.frameSize === item.id} label={item.label} description={item.hint} onClick={() => setForm((current) => ({ ...current, frameSize: item.id }))} />)}
+              </div>
+            </div> : null}
+          </div>
+        </section>
+
+        <aside className="classification-summary" aria-live="polite">
+          <div>
+            <p className="summary-label">Sua classificação</p>
+            <p className={`summary-value ${summary ? '' : 'summary-placeholder'}`}>{summary || 'As escolhas aparecerão aqui'}</p>
+          </div>
+          <button type="button" className="primary-action" disabled={!complete} onClick={handleSubmit}>Continuar</button>
+        </aside>
       </div>
     </main>
   )
 }
-
