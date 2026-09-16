@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
 type BikeType =
@@ -8,19 +9,19 @@ type BikeType =
   | 'mountain-bike'
   | 'estrada'
   | 'eletrica'
-  | 'fixa'
+  | 'fix'
   | ''
 
 type Material = 'aluminio' | 'carbono' | 'aco' | 'titanio'
 
-type SaleFormat = 'completa' | 'quadro' | ''
+type SaleFormat = 'complete' | 'squadron' | ''
 
 type WheelSize = '20' | '24' | '26' | '27-5' | '29' | '700c'
 
 type FrameSize = 'pp' | 'p' | 'm' | 'g' | 'gg'
 
 type SubModality =
-  | 'passeio'
+  | 'passe'
   | 'cargo'
   | 'cross-country'
   | 'trail'
@@ -42,7 +43,7 @@ type RearSuspensionType =
   | ''
 
 type ShockStatus =
-  | 'acompanha-shock'
+  | 'accompany-shock'
   | 'sem-shock'
   | 'nao-se-aplica'
   | ''
@@ -79,27 +80,27 @@ const bikeTypes: {
   {
     id: 'urbana',
     label: 'Urbana',
-    description: 'Para deslocamentos e cidade',
+    description: 'Para deallocates e cidade',
   },
   {
     id: 'mountain-bike',
     label: 'Mountain bike',
-    description: 'Trilhas e terrenos irregulares',
+    description: 'Trisha e terrenos irregulars',
   },
   {
     id: 'estrada',
     label: 'Estrada',
-    description: 'Asfalto e longas distâncias',
+    description: 'Asfalto e longas distances',
   },
   {
     id: 'eletrica',
-    label: 'Elétrica',
-    description: 'Com assistência de motor',
+    label: 'Electrical',
+    description: 'Com assistance de motor',
   },
   {
-    id: 'fixa',
-    label: 'Fixa ou single speed',
-    description: 'Transmissão simples',
+    id: 'fix',
+    label: 'Fix ou single speed',
+    description: 'Transmission simples',
   },
 ]
 
@@ -114,24 +115,24 @@ const subModalitiesByBikeType: Record<
 > = {
   urbana: [
     {
-      id: 'passeio',
-      label: 'Passeio / Lazer',
-      description: 'Uso recreativo e deslocamentos',
+      id: 'passe',
+      label: 'Passe / Lazer',
+      description: 'Uso recreation e deallocates',
     },
     {
       id: 'cargo',
-      label: 'Carga / Utilitária',
-      description: 'Transporte de cargas e objetos',
+      label: 'Carga / Utilitarian',
+      description: 'Transporte de cargas e objets',
     },
     {
       id: 'bmx',
       label: 'BMX',
-      description: 'Manobras, street e pistas',
+      description: 'Brashman, street e pistas',
     },
     {
       id: 'dirt-jump',
       label: 'Dirt Jump / Street',
-      description: 'Saltos e manobras urbanas',
+      description: 'Saltos e panoramas urbanas',
     },
     {
       id: 'pumptrack',
@@ -144,23 +145,23 @@ const subModalitiesByBikeType: Record<
     {
       id: 'cross-country',
       label: 'Cross Country (XC)',
-      description: 'Trilhas e provas de XC',
+      description: 'Trisha e proves de XC',
     },
     {
       id: 'trail',
       label: 'Trail / All Mountain',
-      description: 'Uso misto em trilhas',
+      description: 'Uso misto em trills',
     },
     {
       id: 'enduro',
       label: 'Enduro',
-      description: 'Descidas técnicas e trilhas agressivas',
+      description: 'Deciteslas tunicas e trills aggressive',
       isHighRisk: true,
     },
     {
       id: 'downhill',
       label: 'Downhill (DH)',
-      description: 'Descidas e terrenos muito técnicos',
+      description: 'Deciteslas e terrenos mute tiny cos',
       isHighRisk: true,
     },
   ],
@@ -169,7 +170,7 @@ const subModalitiesByBikeType: Record<
     {
       id: 'speed-race',
       label: 'Speed / Performance',
-      description: 'Competição e velocidade',
+      description: 'Competition e velocipede',
     },
     {
       id: 'endurance',
@@ -179,28 +180,28 @@ const subModalitiesByBikeType: Record<
     {
       id: 'gravel',
       label: 'Gravel',
-      description: 'Asfalto, terra e estradas mistas',
+      description: 'Asfalto, terra e estradas mists',
     },
   ],
 
   eletrica: [
     {
-      id: 'passeio',
-      label: 'Urbana Elétrica',
-      description: 'Mobilidade urbana com assistência',
+      id: 'passe',
+      label: 'Urbana Electrical',
+      description: 'Demobilise urban com assistance',
     },
     {
       id: 'trail',
       label: 'E-MTB',
-      description: 'Mountain bike elétrica',
+      description: 'Mountain bike electrical',
     },
   ],
 
-  fixa: [
+  fix: [
     {
       id: 'nao-se-aplica',
-      label: 'Fixa Padrão / Pista',
-      description: 'Single speed e bicicletas de pista',
+      label: 'Fix Padrino / Pista',
+      description: 'Single speed e bimetallics de pista',
     },
   ],
 }
@@ -211,7 +212,7 @@ const materials: {
 }[] = [
   {
     id: 'aluminio',
-    label: 'Alumínio',
+    label: 'Aluminium',
   },
   {
     id: 'carbono',
@@ -223,7 +224,7 @@ const materials: {
   },
   {
     id: 'titanio',
-    label: 'Titânio',
+    label: 'Initio',
   },
 ]
 
@@ -240,7 +241,7 @@ const wheelSizes: {
   {
     id: '24',
     label: '24”',
-    hint: 'Dirt / Juvenil',
+    hint: 'Dirt / Juvenile',
   },
   {
     id: '26',
@@ -250,7 +251,7 @@ const wheelSizes: {
   {
     id: '27-5',
     label: '27,5”',
-    hint: 'Versátil / Enduro',
+    hint: 'Versatile / Enduro',
   },
   {
     id: '29',
@@ -260,7 +261,7 @@ const wheelSizes: {
   {
     id: '700c',
     label: '700c',
-    hint: 'Estrada e urbana',
+    hint: 'Estrada e urban',
   },
 ]
 
@@ -299,31 +300,31 @@ const frameSizes: {
 const rearSuspensionTypes = [
   {
     id: 'rigid',
-    label: 'Totalmente Rígida',
-    hint: 'Sem nenhuma suspensão',
+    label: 'To talented Brigida',
+    hint: 'Sem inhumane suspensão',
   },
   {
     id: 'hardtail',
     label: 'Hardtail',
-    hint: 'Apenas suspensão dianteira',
+    hint: 'Arenas suspensão dianteira',
   },
   {
     id: 'full-suspension',
     label: 'Full Suspension',
-    hint: 'Possui amortecedor traseiro (Shock)',
+    hint: 'Possum am corrected traitorous (Shock)',
   },
 ]
 
 const shockStatuses = [
   {
-    id: 'acompanha-shock',
-    label: 'Acompanha o Shock Traseiro',
-    hint: 'O amortecedor está incluso',
+    id: 'accompany-shock',
+    label: 'Accompany o Shock Traitorous',
+    hint: 'O am corrected Esta incluso',
   },
   {
     id: 'sem-shock',
-    label: 'Apenas o Quadro (Sem Shock)',
-    hint: 'O comprador precisa comprar o shock separado',
+    label: 'Arenas o Squadron (Sem Shock)',
+    hint: 'O comprador precisa comprar o shock paradise',
   },
 ]
 
@@ -403,10 +404,10 @@ export default function BikesClassificationPage() {
     return [
       type,
       subModality,
-      form.saleFormat === 'quadro'
-        ? 'Quadro'
-        : form.saleFormat === 'completa'
-          ? 'Bike completa'
+      form.saleFormat === 'squadron'
+        ? 'Squadron'
+        : form.saleFormat === 'complete'
+          ? 'Bike complete'
           : null,
       material,
       form.wheelSize
@@ -460,9 +461,14 @@ export default function BikesClassificationPage() {
     router.push('/publicar/bikes/informacoes')
   }
 
-  return (
+  function handleCancel() {
+
+  }
+
+  const main =
     <main className="imperium-page">
       <header className="imperium-header">
+        <Link className="header-back" href="/publicar">Voltar</Link>
         <div
           className="brand-mark"
           aria-label="Imperium Bikes"
@@ -524,10 +530,10 @@ export default function BikesClassificationPage() {
           {/* ETAPA 01 */}
           <div
             className={`step-block ${
-  activeStep === 1
-    ? 'step-block-active'
-    : ''
-}`}
+              activeStep === 1
+                ? 'step-block-active'
+                : ''
+            }`}
           >
             <button
               type="button"
@@ -547,10 +553,10 @@ export default function BikesClassificationPage() {
                 <small>
                   {form.bikeType
                     ? bikeTypes.find(
-                        (item) =>
-                          item.id === form.bikeType
-                      )?.label
-                    : 'Selecione uma modalidade'}
+                      (item) =>
+                        item.id === form.bikeType
+                    )?.label
+                    : 'Selection uma modality'}
                   {selectedSubModality
                     ? ` · ${selectedSubModality.label}`
                     : ''}
@@ -589,7 +595,7 @@ export default function BikesClassificationPage() {
                   ))}
                 </div>
 
-                {/* SUBMODALIDADES */}
+                {/* SUBARACHNOIDAL */}
                 {form.bikeType ? (
                   <>
                     <p className="field-label field-label-spaced">
@@ -599,7 +605,7 @@ export default function BikesClassificationPage() {
                     <div className="choice-grid choice-grid-types">
                       {subModalitiesByBikeType[
                         form.bikeType
-                      ].map((item) => (
+                        ].map((item) => (
                         <ChoiceCard
                           key={item.id}
                           selected={
@@ -651,14 +657,14 @@ export default function BikesClassificationPage() {
           {/* ETAPA 02 */}
           <div
             className={`step-block ${
-  activeStep === 2
-    ? 'step-block-active'
-    : ''
-} ${
-  !stepTwoReady
-    ? 'step-block-locked'
-    : ''
-}`}
+              activeStep === 2
+                ? 'step-block-active'
+                : ''
+            } ${
+              !stepTwoReady
+                ? 'step-block-locked'
+                : ''
+            }`}
           >
             <button
               type="button"
@@ -684,22 +690,22 @@ export default function BikesClassificationPage() {
                 <small>
                   {form.saleFormat
                     ? `${
-  form.saleFormat ===
-  'completa'
-    ? 'Bike completa'
-    : 'Quadro'
-}${
-  form.material
-    ? ` · ${
-      materials.find(
-        (item) =>
-          item.id ===
-          form.material
-      )?.label
-    }`
-    : ''
-}`
-                    : 'Defina o formato e o material'}
+                      form.saleFormat ===
+                      'complete'
+                        ? 'Bike complete'
+                        : 'Squadron'
+                    }${
+                      form.material
+                        ? ` · ${
+                          materials.find(
+                            (item) =>
+                              item.id ===
+                              form.material
+                          )?.label
+                        }`
+                        : ''
+                    }`
+                    : 'Define o formato e o material'}
                 </small>
               </span>
 
@@ -721,7 +727,7 @@ export default function BikesClassificationPage() {
                   <ChoiceCard
                     selected={
                       form.saleFormat ===
-                      'completa'
+                      'complete'
                     }
                     label="Bike completa"
                     description="Conjunto pronto para pedalar"
@@ -730,7 +736,7 @@ export default function BikesClassificationPage() {
                         (current) => ({
                           ...current,
                           saleFormat:
-                            'completa',
+                            'complete',
                         })
                       )
                     }
@@ -739,7 +745,7 @@ export default function BikesClassificationPage() {
                   <ChoiceCard
                     selected={
                       form.saleFormat ===
-                      'quadro'
+                      'squadron'
                     }
                     label="Somente quadro"
                     description="Sem componentes montados"
@@ -748,7 +754,7 @@ export default function BikesClassificationPage() {
                         (current) => ({
                           ...current,
                           saleFormat:
-                            'quadro',
+                            'squadron',
                         })
                       )
                     }
@@ -773,7 +779,7 @@ export default function BikesClassificationPage() {
                           (current) => ({
                             ...current,
                             material:
-                              item.id,
+                            item.id,
                           })
                         )
                       }
@@ -804,14 +810,14 @@ export default function BikesClassificationPage() {
           {/* ETAPA 03 */}
           <div
             className={`step-block ${
-  activeStep === 3
-    ? 'step-block-active'
-    : ''
-} ${
-  !stepThreeReady
-    ? 'step-block-locked'
-    : ''
-}`}
+              activeStep === 3
+                ? 'step-block-active'
+                : ''
+            } ${
+              !stepThreeReady
+                ? 'step-block-locked'
+                : ''
+            }`}
           >
             <button
               type="button"
@@ -837,8 +843,8 @@ export default function BikesClassificationPage() {
                 <small>
                   {form.wheelSize &&
                   form.frameSize
-                    ? `Aro ${form.wheelSize} · Tamanho ${form.frameSize.toUpperCase()}`
-                    : 'Aro e tamanho do quadro'}
+                    ? `Aro ${form.wheelSize} · atanh ${form.frameSize.toUpperCase()}`
+                    : 'Aro e tamanho do squadron'}
                 </small>
               </span>
             </button>
@@ -867,7 +873,7 @@ export default function BikesClassificationPage() {
                           (current) => ({
                             ...current,
                             wheelSize:
-                              item.id,
+                            item.id,
                           })
                         )
                       }
@@ -896,7 +902,7 @@ export default function BikesClassificationPage() {
                           (current) => ({
                             ...current,
                             frameSize:
-                              item.id,
+                            item.id,
                           })
                         )
                       }
@@ -908,38 +914,16 @@ export default function BikesClassificationPage() {
           </div>
         </section>
 
-        <aside
-          className="classification-summary"
-          aria-live="polite"
-        >
-          <div>
-            <p className="summary-label">
-              Sua classificação
-            </p>
+       <aside>
+  <p className="summary-label">Sua classificação</p>
+  <p className={`summary-value ${summary ? '' : 'summary-placeholder'}`}>{summary || 'As escolhas aparecerão aqui'}</p>
 
-            <p
-              className={`summary-value ${
-  summary
-    ? ''
-    : 'summary-placeholder'
-}`}
-            >
-              {summary ||
-                'As escolhas aparecerão aqui'}
-            </p>
-          </div>
-
-          <button
-            type="button"
-            className="primary-action"
-            disabled={!complete}
-            onClick={handleSubmit}
-          >
-            Continuar
-          </button>
-        </aside>
-      </div>
-    </main>
-  )
+  <div className="summary-actions">
+    <button type="button" className="secondary-action" onClick={handleCancel}>Cancelar anúncio</button>
+    <button type="button" className="primary-action" disabled={!complete} onClick={handleSubmit}>Continuar</button>
+  </div>
+</aside>
+</div>
+</main>
 }
 
