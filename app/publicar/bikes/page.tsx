@@ -9,16 +9,34 @@ type BikeType =
   | 'mountain-bike'
   | 'estrada'
   | 'eletrica'
-  | 'fix'
+  | 'fixa'
   | ''
 
-type Material = 'aluminio' | 'carbono' | 'aco' | 'titanio'
+type Material =
+  | 'aluminio'
+  | 'carbono'
+  | 'aco'
+  | 'titanio'
 
-type SaleFormat = 'complete' | 'squadron' | ''
+type SaleFormat =
+  | 'completa'
+  | 'quadro'
+  | ''
 
-type WheelSize = '20' | '24' | '26' | '27-5' | '29' | '700c'
+type WheelSize =
+  | '20'
+  | '24'
+  | '26'
+  | '27-5'
+  | '29'
+  | '700c'
 
-type FrameSize = 'pp' | 'p' | 'm' | 'g' | 'gg'
+type FrameSize =
+  | 'pp'
+  | 'p'
+  | 'm'
+  | 'g'
+  | 'gg'
 
 type SubModality =
   | 'passe'
@@ -37,13 +55,13 @@ type SubModality =
   | ''
 
 type RearSuspensionType =
+  | 'rigida'
   | 'hardtail'
   | 'full-suspension'
-  | 'rigid'
   | ''
 
 type ShockStatus =
-  | 'accompany-shock'
+  | 'acompanha-shock'
   | 'sem-shock'
   | 'nao-se-aplica'
   | ''
@@ -73,41 +91,41 @@ const initialForm: FormData = {
 }
 
 const bikeTypes: {
-  id: BikeType
+  id: Exclude<BikeType, ''>
   label: string
   description: string
 }[] = [
   {
     id: 'urbana',
     label: 'Urbana',
-    description: 'Para deallocates e cidade',
+    description: 'Para deslocamentos e cidade',
   },
   {
     id: 'mountain-bike',
     label: 'Mountain bike',
-    description: 'Trisha e terrenos irregulars',
+    description: 'Trilhas e terrenos irregulares',
   },
   {
     id: 'estrada',
     label: 'Estrada',
-    description: 'Asfalto e longas distances',
+    description: 'Asfalto e longas distâncias',
   },
   {
     id: 'eletrica',
-    label: 'Electrical',
-    description: 'Com assistance de motor',
+    label: 'Elétrica',
+    description: 'Com assistência de motor',
   },
   {
-    id: 'fix',
-    label: 'Fix ou single speed',
-    description: 'Transmission simples',
+    id: 'fixa',
+    label: 'Fixa ou single speed',
+    description: 'Transmissão simples',
   },
 ]
 
 const subModalitiesByBikeType: Record<
   Exclude<BikeType, ''>,
   {
-    id: SubModality
+    id: Exclude<SubModality, ''>
     label: string
     description?: string
     isHighRisk?: boolean
@@ -116,23 +134,23 @@ const subModalitiesByBikeType: Record<
   urbana: [
     {
       id: 'passe',
-      label: 'Passe / Lazer',
-      description: 'Uso recreation e deallocates',
+      label: 'Passeio / Lazer',
+      description: 'Uso recreativo e deslocamentos',
     },
     {
       id: 'cargo',
-      label: 'Carga / Utilitarian',
-      description: 'Transporte de cargas e objets',
+      label: 'Carga / Utilitária',
+      description: 'Transporte de cargas e objetos',
     },
     {
       id: 'bmx',
       label: 'BMX',
-      description: 'Brashman, street e pistas',
+      description: 'BMX, street e pistas',
     },
     {
       id: 'dirt-jump',
       label: 'Dirt Jump / Street',
-      description: 'Saltos e panoramas urbanas',
+      description: 'Saltos e uso urbano',
     },
     {
       id: 'pumptrack',
@@ -145,23 +163,23 @@ const subModalitiesByBikeType: Record<
     {
       id: 'cross-country',
       label: 'Cross Country (XC)',
-      description: 'Trisha e proves de XC',
+      description: 'Trilhas e provas de XC',
     },
     {
       id: 'trail',
       label: 'Trail / All Mountain',
-      description: 'Uso misto em trills',
+      description: 'Uso misto em trilhas',
     },
     {
       id: 'enduro',
       label: 'Enduro',
-      description: 'Deciteslas tunicas e trills aggressive',
+      description: 'Descidas técnicas e trilhas agressivas',
       isHighRisk: true,
     },
     {
       id: 'downhill',
       label: 'Downhill (DH)',
-      description: 'Deciteslas e terrenos mute tiny cos',
+      description: 'Descidas e terrenos técnicos',
       isHighRisk: true,
     },
   ],
@@ -170,7 +188,7 @@ const subModalitiesByBikeType: Record<
     {
       id: 'speed-race',
       label: 'Speed / Performance',
-      description: 'Competition e velocipede',
+      description: 'Competição e velocidade',
     },
     {
       id: 'endurance',
@@ -180,28 +198,28 @@ const subModalitiesByBikeType: Record<
     {
       id: 'gravel',
       label: 'Gravel',
-      description: 'Asfalto, terra e estradas mists',
+      description: 'Asfalto, terra e estradas mistas',
     },
   ],
 
   eletrica: [
     {
       id: 'passe',
-      label: 'Urbana Electrical',
-      description: 'Demobilise urban com assistance',
+      label: 'Urbana Elétrica',
+      description: 'Mobilidade urbana com assistência',
     },
     {
       id: 'trail',
       label: 'E-MTB',
-      description: 'Mountain bike electrical',
+      description: 'Mountain bike elétrica',
     },
   ],
 
-  fix: [
+  fixa: [
     {
       id: 'nao-se-aplica',
-      label: 'Fix Padrino / Pista',
-      description: 'Single speed e bimetallics de pista',
+      label: 'Fixa / Pista',
+      description: 'Single speed e bicicletas de pista',
     },
   ],
 }
@@ -212,7 +230,7 @@ const materials: {
 }[] = [
   {
     id: 'aluminio',
-    label: 'Aluminium',
+    label: 'Alumínio',
   },
   {
     id: 'carbono',
@@ -224,7 +242,7 @@ const materials: {
   },
   {
     id: 'titanio',
-    label: 'Initio',
+    label: 'Titânio',
   },
 ]
 
@@ -241,17 +259,17 @@ const wheelSizes: {
   {
     id: '24',
     label: '24”',
-    hint: 'Dirt / Juvenile',
+    hint: 'Dirt / Juvenil',
   },
   {
     id: '26',
     label: '26”',
-    hint: 'Compacto / Antigas',
+    hint: 'Compacto / Clássico',
   },
   {
     id: '27-5',
     label: '27,5”',
-    hint: 'Versatile / Enduro',
+    hint: 'Versátil / Trail',
   },
   {
     id: '29',
@@ -261,7 +279,7 @@ const wheelSizes: {
   {
     id: '700c',
     label: '700c',
-    hint: 'Estrada e urban',
+    hint: 'Estrada e urbana',
   },
 ]
 
@@ -297,34 +315,42 @@ const frameSizes: {
   },
 ]
 
-const rearSuspensionTypes = [
+const rearSuspensionTypes: {
+  id: Exclude<RearSuspensionType, ''>
+  label: string
+  hint: string
+}[] = [
   {
-    id: 'rigid',
-    label: 'To talented Brigida',
-    hint: 'Sem inhumane suspensão',
+    id: 'rigida',
+    label: 'Rígida',
+    hint: 'Sem suspensão traseira',
   },
   {
     id: 'hardtail',
     label: 'Hardtail',
-    hint: 'Arenas suspensão dianteira',
+    hint: 'Suspensão dianteira',
   },
   {
     id: 'full-suspension',
     label: 'Full Suspension',
-    hint: 'Possum am corrected traitorous (Shock)',
+    hint: 'Suspensão dianteira e traseira',
   },
 ]
 
-const shockStatuses = [
+const shockStatuses: {
+  id: Exclude<ShockStatus, ''>
+  label: string
+  hint: string
+}[] = [
   {
-    id: 'accompany-shock',
-    label: 'Accompany o Shock Traitorous',
-    hint: 'O am corrected Esta incluso',
+    id: 'acompanha-shock',
+    label: 'Acompanha o shock',
+    hint: 'O amortecedor traseiro está incluso',
   },
   {
     id: 'sem-shock',
-    label: 'Arenas o Squadron (Sem Shock)',
-    hint: 'O comprador precisa comprar o shock paradise',
+    label: 'Sem shock',
+    hint: 'O comprador deverá adquirir o shock',
   },
 ]
 
@@ -342,11 +368,15 @@ function ChoiceCard({
   return (
     <button
       type="button"
-      className={`choice-card ${selected ? 'choice-card-selected' : ''}`}
+      className={`choice-card ${
+  selected ? 'choice-card-selected' : ''
+}`}
       aria-pressed={selected}
       onClick={onClick}
     >
-      <span className="choice-card-label">{label}</span>
+      <span className="choice-card-label">
+        {label}
+      </span>
 
       {description ? (
         <span className="choice-card-description">
@@ -360,11 +390,16 @@ function ChoiceCard({
 export default function BikesClassificationPage() {
   const router = useRouter()
 
-  const [form, setForm] = useState<FormData>(initialForm)
-  const [activeStep, setActiveStep] = useState(1)
+  const [form, setForm] = useState<FormData>(
+    initialForm
+  )
+
+  const [activeStep, setActiveStep] =
+    useState(1)
 
   const stepTwoReady = Boolean(
-    form.bikeType && form.subModality
+    form.bikeType &&
+    form.subModality
   )
 
   const stepThreeReady = Boolean(
@@ -381,47 +416,64 @@ export default function BikesClassificationPage() {
   )
 
   const selectedSubModality = useMemo(() => {
-    if (!form.bikeType || !form.subModality) {
+    if (
+      !form.bikeType ||
+      !form.subModality
+    ) {
       return null
     }
 
-    return subModalitiesByBikeType[form.bikeType].find(
-      (item) => item.id === form.subModality
+    return subModalitiesByBikeType[
+      form.bikeType
+    ].find(
+      (item) =>
+        item.id === form.subModality
     )
-  }, [form.bikeType, form.subModality])
+  }, [
+    form.bikeType,
+    form.subModality,
+  ])
 
   const summary = useMemo(() => {
     const type = bikeTypes.find(
-      (item) => item.id === form.bikeType
+      (item) =>
+        item.id === form.bikeType
     )?.label
 
-    const subModality = selectedSubModality?.label
+    const subModality =
+      selectedSubModality?.label
 
     const material = materials.find(
-      (item) => item.id === form.material
+      (item) =>
+        item.id === form.material
     )?.label
 
     return [
       type,
       subModality,
-      form.saleFormat === 'squadron'
-        ? 'Squadron'
-        : form.saleFormat === 'complete'
-          ? 'Bike complete'
+      form.saleFormat === 'quadro'
+        ? 'Somente quadro'
+        : form.saleFormat === 'completa'
+          ? 'Bike completa'
           : null,
       material,
       form.wheelSize
-        ? `${form.wheelSize}”`
+        ? `Aro ${form.wheelSize}`
         : null,
       form.frameSize
-        ? form.frameSize.toUpperCase()
+        ? `Tamanho ${form.frameSize.toUpperCase()}`
         : null,
     ]
       .filter(Boolean)
       .join(' · ')
-  }, [form, selectedSubModality])
+  }, [
+    form,
+    selectedSubModality,
+  ])
 
-  function chooseType(bikeType: BikeType) {
+  function chooseType(
+    bikeType: Exclude<BikeType, ''>
+  ) {
     setForm((current) => ({
       ...current,
       bikeType,
@@ -436,10 +488,17 @@ export default function BikesClassificationPage() {
     setActiveStep(1)
   }
 
-  function chooseSubModality(subModality: SubModality) {
+  function chooseSubModality(
+    subModality: Exclude<SubModality, ''>
+  ) {
     setForm((current) => ({
       ...current,
       subModality,
+      wheelSize: '',
+      frameSize: '',
+      rearSuspensionType: '',
+      shockStatus: '',
+      shockMeasurementMM: '',
     }))
   }
 
@@ -448,7 +507,9 @@ export default function BikesClassificationPage() {
   }
 
   function handleSubmit() {
-    if (!complete) return
+    if (!complete) {
+      return
+    }
 
     sessionStorage.setItem(
       'imperium_bikes_publish',
@@ -458,17 +519,25 @@ export default function BikesClassificationPage() {
       })
     )
 
-    router.push('/publicar/bikes/informacoes')
+    router.push(
+      '/publicar/bikes/informacoes'
+    )
   }
 
   function handleCancel() {
-
+    router.push('/publicar')
   }
 
-  const main =
+  return (
     <main className="imperium-page">
       <header className="imperium-header">
-        <Link className="header-back" href="/publicar">Voltar</Link>
+        <Link
+          className="header-back"
+          href="/publicar"
+        >
+          Voltar
+        </Link>
+
         <div
           className="brand-mark"
           aria-label="Imperium Bikes"
@@ -510,8 +579,9 @@ export default function BikesClassificationPage() {
           </h1>
 
           <p>
-            Escolha as características principais para que
-            seu anúncio seja encontrado com facilidade.
+            Escolha as características principais
+            para que seu anúncio seja encontrado
+            com facilidade.
           </p>
 
           <div
@@ -528,18 +598,23 @@ export default function BikesClassificationPage() {
           aria-label="Classificação do produto"
         >
           {/* ETAPA 01 */}
+
           <div
             className={`step-block ${
-              activeStep === 1
-                ? 'step-block-active'
-                : ''
-            }`}
+  activeStep === 1
+    ? 'step-block-active'
+    : ''
+}`}
           >
             <button
               type="button"
               className="step-heading"
-              onClick={() => setActiveStep(1)}
-              aria-expanded={activeStep === 1}
+              onClick={() =>
+                setActiveStep(1)
+              }
+              aria-expanded={
+                activeStep === 1
+              }
             >
               <span className="step-number">
                 01
@@ -553,10 +628,12 @@ export default function BikesClassificationPage() {
                 <small>
                   {form.bikeType
                     ? bikeTypes.find(
-                      (item) =>
-                        item.id === form.bikeType
-                    )?.label
-                    : 'Selection uma modality'}
+                        (item) =>
+                          item.id ===
+                          form.bikeType
+                      )?.label
+                    : 'Selecione uma modalidade'}
+
                   {selectedSubModality
                     ? ` · ${selectedSubModality.label}`
                     : ''}
@@ -578,24 +655,28 @@ export default function BikesClassificationPage() {
                 </p>
 
                 <div className="choice-grid choice-grid-types">
-                  {bikeTypes.map((item) => (
-                    <ChoiceCard
-                      key={item.id}
-                      selected={
-                        form.bikeType === item.id
-                      }
-                      label={item.label}
-                      description={
-                        item.description
-                      }
-                      onClick={() =>
-                        chooseType(item.id)
-                      }
-                    />
-                  ))}
+                  {bikeTypes.map(
+                    (item) => (
+                      <ChoiceCard
+                        key={item.id}
+                        selected={
+                          form.bikeType ===
+                          item.id
+                        }
+                        label={item.label}
+                        description={
+                          item.description
+                        }
+                        onClick={() =>
+                          chooseType(
+                            item.id
+                          )
+                        }
+                      />
+                    )
+                  )}
                 </div>
 
-                {/* SUBARACHNOIDAL */}
                 {form.bikeType ? (
                   <>
                     <p className="field-label field-label-spaced">
@@ -605,32 +686,37 @@ export default function BikesClassificationPage() {
                     <div className="choice-grid choice-grid-types">
                       {subModalitiesByBikeType[
                         form.bikeType
-                        ].map((item) => (
-                        <ChoiceCard
-                          key={item.id}
-                          selected={
-                            form.subModality ===
-                            item.id
-                          }
-                          label={item.label}
-                          description={
-                            item.description
-                          }
-                          onClick={() =>
-                            chooseSubModality(
+                      ].map(
+                        (item) => (
+                          <ChoiceCard
+                            key={item.id}
+                            selected={
+                              form.subModality ===
                               item.id
-                            )
-                          }
-                        />
-                      ))}
+                            }
+                            label={
+                              item.label
+                            }
+                            description={
+                              item.description
+                            }
+                            onClick={() =>
+                              chooseSubModality(
+                                item.id
+                              )
+                            }
+                          />
+                        )
+                      )}
                     </div>
 
                     {selectedSubModality?.isHighRisk ? (
                       <p className="field-note">
-                        Esta modalidade exige atenção
-                        especial às características de
-                        suspensão e componentes nas
-                        próximas etapas.
+                        Esta modalidade exige
+                        atenção especial às
+                        características de
+                        suspensão e componentes
+                        nas próximas etapas.
                       </p>
                     ) : null}
                   </>
@@ -655,16 +741,17 @@ export default function BikesClassificationPage() {
           </div>
 
           {/* ETAPA 02 */}
+
           <div
             className={`step-block ${
-              activeStep === 2
-                ? 'step-block-active'
-                : ''
-            } ${
-              !stepTwoReady
-                ? 'step-block-locked'
-                : ''
-            }`}
+  activeStep === 2
+    ? 'step-block-active'
+    : ''
+} ${
+  !stepTwoReady
+    ? 'step-block-locked'
+    : ''
+}`}
           >
             <button
               type="button"
@@ -676,7 +763,9 @@ export default function BikesClassificationPage() {
               aria-expanded={
                 activeStep === 2
               }
-              disabled={!stepTwoReady}
+              disabled={
+                !stepTwoReady
+              }
             >
               <span className="step-number">
                 02
@@ -690,22 +779,22 @@ export default function BikesClassificationPage() {
                 <small>
                   {form.saleFormat
                     ? `${
-                      form.saleFormat ===
-                      'complete'
-                        ? 'Bike complete'
-                        : 'Squadron'
-                    }${
-                      form.material
-                        ? ` · ${
-                          materials.find(
-                            (item) =>
-                              item.id ===
-                              form.material
-                          )?.label
-                        }`
-                        : ''
-                    }`
-                    : 'Define o formato e o material'}
+  form.saleFormat ===
+  'completa'
+    ? 'Bike completa'
+    : 'Somente quadro'
+}${
+  form.material
+    ? ` · ${
+      materials.find(
+        (item) =>
+          item.id ===
+          form.material
+      )?.label
+    }`
+    : ''
+}`
+                    : 'Defina o formato e o material'}
                 </small>
               </span>
 
@@ -727,7 +816,7 @@ export default function BikesClassificationPage() {
                   <ChoiceCard
                     selected={
                       form.saleFormat ===
-                      'complete'
+                      'completa'
                     }
                     label="Bike completa"
                     description="Conjunto pronto para pedalar"
@@ -736,7 +825,7 @@ export default function BikesClassificationPage() {
                         (current) => ({
                           ...current,
                           saleFormat:
-                            'complete',
+                            'completa',
                         })
                       )
                     }
@@ -745,7 +834,7 @@ export default function BikesClassificationPage() {
                   <ChoiceCard
                     selected={
                       form.saleFormat ===
-                      'squadron'
+                      'quadro'
                     }
                     label="Somente quadro"
                     description="Sem componentes montados"
@@ -754,7 +843,7 @@ export default function BikesClassificationPage() {
                         (current) => ({
                           ...current,
                           saleFormat:
-                            'squadron',
+                            'quadro',
                         })
                       )
                     }
@@ -766,25 +855,27 @@ export default function BikesClassificationPage() {
                 </p>
 
                 <div className="choice-grid choice-grid-materials">
-                  {materials.map((item) => (
-                    <ChoiceCard
-                      key={item.id}
-                      selected={
-                        form.material ===
-                        item.id
-                      }
-                      label={item.label}
-                      onClick={() =>
-                        setForm(
-                          (current) => ({
-                            ...current,
-                            material:
-                            item.id,
-                          })
-                        )
-                      }
-                    />
-                  ))}
+                  {materials.map(
+                    (item) => (
+                      <ChoiceCard
+                        key={item.id}
+                        selected={
+                          form.material ===
+                          item.id
+                        }
+                        label={item.label}
+                        onClick={() =>
+                          setForm(
+                            (current) => ({
+                              ...current,
+                              material:
+                                item.id,
+                            })
+                          )
+                        }
+                      />
+                    )
+                  )}
                 </div>
 
                 <button
@@ -808,16 +899,17 @@ export default function BikesClassificationPage() {
           </div>
 
           {/* ETAPA 03 */}
+
           <div
             className={`step-block ${
-              activeStep === 3
-                ? 'step-block-active'
-                : ''
-            } ${
-              !stepThreeReady
-                ? 'step-block-locked'
-                : ''
-            }`}
+  activeStep === 3
+    ? 'step-block-active'
+    : ''
+} ${
+  !stepThreeReady
+    ? 'step-block-locked'
+    : ''
+}`}
           >
             <button
               type="button"
@@ -829,7 +921,9 @@ export default function BikesClassificationPage() {
               aria-expanded={
                 activeStep === 3
               }
-              disabled={!stepThreeReady}
+              disabled={
+                !stepThreeReady
+              }
             >
               <span className="step-number">
                 03
@@ -843,8 +937,8 @@ export default function BikesClassificationPage() {
                 <small>
                   {form.wheelSize &&
                   form.frameSize
-                    ? `Aro ${form.wheelSize} · atanh ${form.frameSize.toUpperCase()}`
-                    : 'Aro e tamanho do squadron'}
+                    ? `Aro ${form.wheelSize} · Tamanho ${form.frameSize.toUpperCase()}`
+                    : 'Aro e tamanho do quadro'}
                 </small>
               </span>
             </button>
@@ -857,28 +951,30 @@ export default function BikesClassificationPage() {
                 </p>
 
                 <div className="choice-grid choice-grid-sizes">
-                  {wheelSizes.map((item) => (
-                    <ChoiceCard
-                      key={item.id}
-                      selected={
-                        form.wheelSize ===
-                        item.id
-                      }
-                      label={item.label}
-                      description={
-                        item.hint
-                      }
-                      onClick={() =>
-                        setForm(
-                          (current) => ({
-                            ...current,
-                            wheelSize:
-                            item.id,
-                          })
-                        )
-                      }
-                    />
-                  ))}
+                  {wheelSizes.map(
+                    (item) => (
+                      <ChoiceCard
+                        key={item.id}
+                        selected={
+                          form.wheelSize ===
+                          item.id
+                        }
+                        label={item.label}
+                        description={
+                          item.hint
+                        }
+                        onClick={() =>
+                          setForm(
+                            (current) => ({
+                              ...current,
+                              wheelSize:
+                                item.id,
+                            })
+                          )
+                        }
+                      />
+                    )
+                  )}
                 </div>
 
                 <p className="field-label field-label-spaced">
@@ -886,44 +982,191 @@ export default function BikesClassificationPage() {
                 </p>
 
                 <div className="choice-grid choice-grid-sizes">
-                  {frameSizes.map((item) => (
-                    <ChoiceCard
-                      key={item.id}
-                      selected={
-                        form.frameSize ===
-                        item.id
-                      }
-                      label={item.label}
-                      description={
-                        item.hint
-                      }
-                      onClick={() =>
-                        setForm(
-                          (current) => ({
-                            ...current,
-                            frameSize:
-                            item.id,
-                          })
-                        )
-                      }
-                    />
-                  ))}
+                  {frameSizes.map(
+                    (item) => (
+                      <ChoiceCard
+                        key={item.id}
+                        selected={
+                          form.frameSize ===
+                          item.id
+                        }
+                        label={item.label}
+                        description={
+                          item.hint
+                        }
+                        onClick={() =>
+                          setForm(
+                            (current) => ({
+                              ...current,
+                              frameSize:
+                                item.id,
+                            })
+                          )
+                        }
+                      />
+                    )
+                  )}
                 </div>
+
+                {selectedSubModality?.isHighRisk ? (
+                  <>
+                    <p className="field-label field-label-spaced">
+                      Suspensão traseira
+                    </p>
+
+                    <div className="choice-grid choice-grid-types">
+                      {rearSuspensionTypes.map(
+                        (item) => (
+                          <ChoiceCard
+                            key={item.id}
+                            selected={
+                              form.rearSuspensionType ===
+                              item.id
+                            }
+                            label={
+                              item.label
+                            }
+                            description={
+                              item.hint
+                            }
+                            onClick={() =>
+                              setForm(
+                                (current) => ({
+                                  ...current,
+                                  rearSuspensionType:
+                                    item.id,
+                                  shockStatus:
+                                    item.id ===
+                                    'full-suspension'
+                                      ? current.shockStatus
+                                      : 'nao-se-aplica',
+                                })
+                              )
+                            }
+                          />
+                        )
+                      )}
+                    </div>
+
+                    {form.rearSuspensionType ===
+                    'full-suspension' ? (
+                      <>
+                        <p className="field-label field-label-spaced">
+                          Shock traseiro
+                        </p>
+
+                        <div className="choice-grid choice-grid-format">
+                          {shockStatuses.map(
+                            (item) => (
+                              <ChoiceCard
+                                key={item.id}
+                                selected={
+                                  form.shockStatus ===
+                                  item.id
+                                }
+                                label={
+                                  item.label
+                                }
+                                description={
+                                  item.hint
+                                }
+                                onClick={() =>
+                                  setForm(
+                                    (current) => ({
+                                      ...current,
+                                      shockStatus:
+                                        item.id,
+                                    })
+                                  )
+                                }
+                              />
+                            )
+                          )}
+                        </div>
+
+                        {form.shockStatus ===
+                        'acompanha-shock' ? (
+                          <div className="field-group">
+                            <label
+                              className="field-label"
+                              htmlFor="shockMeasurementMM"
+                            >
+                              Medida do shock
+                              (mm)
+                            </label>
+
+                            <input
+                              id="shockMeasurementMM"
+                              type="number"
+                              min="1"
+                              inputMode="numeric"
+                              placeholder="Ex.: 210"
+                              value={
+                                form.shockMeasurementMM
+                              }
+                              onChange={(event) =>
+                                setForm(
+                                  (current) => ({
+                                    ...current,
+                                    shockMeasurementMM:
+                                      event.target
+                                        .value,
+                                  })
+                                )
+                              }
+                            />
+                          </div>
+                        ) : null}
+                      </>
+                    ) : null}
+                  </>
+                ) : null}
               </div>
             ) : null}
           </div>
         </section>
 
-       <aside>
-  <p className="summary-label">Sua classificação</p>
-  <p className={`summary-value ${summary ? '' : 'summary-placeholder'}`}>{summary || 'As escolhas aparecerão aqui'}</p>
+        <aside
+          className="classification-summary"
+          aria-live="polite"
+        >
+          <div>
+            <p className="summary-label">
+              Sua classificação
+            </p>
 
-  <div className="summary-actions">
-    <button type="button" className="secondary-action" onClick={handleCancel}>Cancelar anúncio</button>
-    <button type="button" className="primary-action" disabled={!complete} onClick={handleSubmit}>Continuar</button>
-  </div>
-</aside>
-</div>
-</main>
+            <p
+              className={`summary-value ${
+  summary
+    ? ''
+    : 'summary-placeholder'
+}`}
+            >
+              {summary ||
+                'As escolhas aparecerão aqui'}
+            </p>
+          </div>
+
+          <div className="summary-actions">
+            <button
+              type="button"
+              className="secondary-action"
+              onClick={handleCancel}
+            >
+              Cancelar anúncio
+            </button>
+
+            <button
+              type="button"
+              className="primary-action"
+              disabled={!complete}
+              onClick={handleSubmit}
+            >
+              Continuar
+            </button>
+          </div>
+        </aside>
+      </div>
+    </main>
+  )
 }
-
