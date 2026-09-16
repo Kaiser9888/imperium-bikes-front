@@ -1,6 +1,3 @@
-
-// components/publish/CategoryStep.tsx
-
 "use client"
 
 import Image from "next/image"
@@ -61,8 +58,6 @@ export function CategoryStep() {
 
   return (
     <section className="space-y-6">
-
-      {/* TÍTULO */}
       <div>
         <h1
           className="
@@ -87,7 +82,6 @@ export function CategoryStep() {
         </p>
       </div>
 
-      {/* CATEGORIAS 2 × 2 */}
       <div
         className="
           grid
@@ -97,9 +91,7 @@ export function CategoryStep() {
         "
         aria-label="Categorias para publicação"
       >
-
         {MAIN_CATEGORIES.map((category) => (
-
           <button
             key={category.id}
             type="button"
@@ -126,8 +118,6 @@ export function CategoryStep() {
               focus-visible:ring-offset-2
             "
           >
-
-            {/* IMAGEM */}
             <div
               className="
                 relative
@@ -137,7 +127,6 @@ export function CategoryStep() {
                 bg-muted
               "
             >
-
               <Image
                 src={category.image}
                 alt={category.label}
@@ -156,7 +145,6 @@ export function CategoryStep() {
                 "
               />
 
-              {/* GRADIENTE */}
               <div
                 className="
                   absolute
@@ -168,7 +156,6 @@ export function CategoryStep() {
                 "
               />
 
-              {/* TEXTO */}
               <div
                 className="
                   absolute
@@ -178,7 +165,6 @@ export function CategoryStep() {
                   sm:p-4
                 "
               >
-
                 <h2
                   className="
                     text-sm
@@ -201,17 +187,11 @@ export function CategoryStep() {
                 >
                   {category.description}
                 </p>
-
               </div>
-
             </div>
-
           </button>
-
         ))}
-
       </div>
-
     </section>
   )
 }
