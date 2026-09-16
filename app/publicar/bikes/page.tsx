@@ -6,23 +6,44 @@ import { useRouter } from 'next/navigation'
 type BikeType = 'urbana' | 'mountain-bike' | 'estrada' | 'eletrica' | 'fixa' | ''
 type Material = 'aluminio' | 'carbono' | 'aco' | 'titanio'
 type SaleFormat = 'completa' | 'quadro'
-type WheelSize = '26' | '27-5' | '29' | '700c'
+type WheelSize = '20' | '24' | '26' | '27-5' | '29' | '700c' // Adicionados aros de BMX e Dirt
 type FrameSize = 'pp' | 'p' | 'm' | 'g' | 'gg'
 
+//  Novas tipagens para o ecossistema de amortecimento traseiro e segurança
+type SubModality =
+
+  | 'passeio' | 'cargo'
+  | 'cross-country' | 'trail' | 'downhill' | 'enduro'
+  | 'speed-race' | 'endurance' | 'gravel'
+  | 'bmx' | 'dirt-jump' | 'pumptrack'
+  | 'nao-se-aplica'
+  | ''
+
+type RearSuspensionType = 'hardtail' | 'full-suspension' | 'rigid' | ''
+type ShockStatus = 'acompanha-shock' | 'sem-shock' | 'nao-se-aplica' | ''
+
 type FormData = {
-  bikeType: BikeType | ''
+  bikeType: BikeType
+  subModality: SubModality              //  Campo dinâmico de modalidade específica
   saleFormat: SaleFormat | ''
   material: Material | ''
   wheelSize: WheelSize | ''
   frameSize: FrameSize | ''
+  rearSuspensionType: RearSuspensionType //  Tipo de traseira (Rígida ou Full)
+  shockStatus: ShockStatus              //  Se o shock acompanha o quadro
+  shockMeasurementMM: string            //  Tamanho do shock (ex: "216mm", "240mm")
 }
 
 const initialForm: FormData = {
   bikeType: '',
+  subModality: '',
   saleFormat: '',
   material: '',
   wheelSize: '',
   frameSize: '',
+  rearSuspensionType: '',
+  shockStatus: '',
+  shockMeasurementMM: '',
 }
 
 const bikeTypes: { id: BikeType; label: string; description: string }[] = [
@@ -33,6 +54,34 @@ const bikeTypes: { id: BikeType; label: string; description: string }[] = [
   { id: 'fixa', label: 'Fixa ou single speed', description: 'Transmissão simples' },
 ]
 
+//  Mapeamento dinâmico: dita quais submodalidades aparecem na tela após escolher o BikeType
+const subModalitiesByBikeType: Record<Exclude<BikeType, ''>, { id: SubModality; label: string; isHighRisk?: boolean }[]> = {
+  'urbana': [
+    { id: 'passeio', label: 'Passeio / Lazer' },
+    { id: 'cargo', label: 'Carga / Utilitária' },
+    { id: 'bmx', label: 'BMX' },
+    { id: 'dirt-jump', label: 'Dirt Jump / Street' },
+  ],
+  'mountain-bike': [
+    { id: 'cross-country', label: 'Cross Country (XC)' },
+    { id: 'trail', label: 'Trail / All Mountain' },
+    { id: 'enduro', label: 'Enduro', isHighRisk: true },
+    { id: 'downhill', label: 'Downhill (DH)', isHighRisk: true }, // ⚠️ Requer validação estrita de shock >200mm
+  ],
+  'estrada': [
+    { id: 'speed-race', label: 'Speed / Performance' },
+    { id: 'endurance', label: 'Endurance (Conforto)' },
+    { id: 'gravel', label: 'Gravel' },
+  ],
+  'eletrica': [
+    { id: 'passeio', label: 'Urbana Elétrica' },
+    { id: 'trail', label: 'E-MTB (Mountain Bike Elétrica)' },
+  ],
+  'fixa': [
+    { id: 'nao-se-aplica', label: 'Fixa Padrão / Pista' },
+  ]
+}
+
 const materials: { id: Material; label: string }[] = [
   { id: 'aluminio', label: 'Alumínio' },
   { id: 'carbono', label: 'Carbono' },
@@ -41,9 +90,11 @@ const materials: { id: Material; label: string }[] = [
 ]
 
 const wheelSizes: { id: WheelSize; label: string; hint: string }[] = [
-  { id: '26', label: '26”', hint: 'Compacto' },
-  { id: '27-5', label: '27,5”', hint: 'Versátil' },
-  { id: '29', label: '29”', hint: 'Maior alcance' },
+  { id: '20', label: '20”', hint: 'BMX / Infantil' },
+  { id: '24', label: '24”', hint: 'Dirt / Juvenil' },
+  { id: '26', label: '26”', hint: 'Compacto / Antigas' },
+  { id: '27-5', label: '27,5”', hint: 'Versátil / Enduro' },
+  { id: '29', label: '29”', hint: 'Maior alcance / XC' },
   { id: '700c', label: '700c', hint: 'Estrada e urbana' },
 ]
 
@@ -54,6 +105,18 @@ const frameSizes: { id: FrameSize; label: string; hint: string }[] = [
   { id: 'g', label: 'G', hint: 'Grande' },
   { id: 'gg', label: 'GG', hint: 'Extra grande' },
 ]
+
+const rearSuspensionTypes = [
+  { id: 'rigid', label: 'Totalmente Rígida', hint: 'Sem nenhuma suspensão' },
+  { id: 'hardtail', label: 'Hardtail', hint: 'Apenas suspensão dianteira' },
+  { id: 'full-suspension', label: 'Full Suspension', hint: 'Possui amortecedor traseiro (Shock)' },
+]
+
+const shockStatuses = [
+  { id: 'acompanha-shock', label: 'Acompanha o Shock Traseiro', hint: 'O amortecedor está incluso' },
+  { id: 'sem-shock', label: 'Apenas o Quadro (Sem Shock)', hint: 'O comprador precisa comprar o shock separado' },
+]
+
 
 function ChoiceCard({
                       selected,
