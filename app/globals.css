@@ -1,5 +1,9 @@
 @import 'tailwindcss';
 
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
@@ -205,9 +209,6 @@ mux-player.mux-player-cover {
     --media-object-fit: cover;
 }
 
-@import 'tailwindcss';
-@import 'tw-animate-css';
-@import 'shadcn/tailwind.css';
 
 @custom-variant dark (&:is(.dark *));
 
