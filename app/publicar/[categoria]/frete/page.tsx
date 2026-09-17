@@ -28,7 +28,7 @@ const pagadores = [
     description:
       'Combine a retirada diretamente com o comprador.',
   },
-]
+] as const
 
 function parseDimensoes(value: string) {
   const numeros = value
@@ -104,8 +104,11 @@ export default function FretePage() {
   const dimensoesParsed =
     parseDimensoes(dimensoes)
 
+  const cepNumerico =
+    cep.replace(/\D/g, '')
+
   const pronto =
-    cep.replace(/\D/g, '').length === 8 &&
+    cepNumerico.length === 8 &&
     Number(peso) > 0 &&
     dimensoesParsed.altura_cm > 0 &&
     dimensoesParsed.largura_cm > 0 &&
@@ -128,9 +131,8 @@ export default function FretePage() {
       return
     }
 
-    const dimensoes = parseDimensoes(
-      dimensoesInput(),
-    )
+    const dimensoes =
+      parseDimensoes(dimensoesInput())
 
     saveDraft(categoria, {
       frete: {
@@ -138,12 +140,13 @@ export default function FretePage() {
           endereco: '',
           cidade: '',
           estado: '',
-          cep: cep.replace(/\D/g, ''),
+          cep: cepNumerico,
         },
         peso_g: Number(peso),
         altura_cm: dimensoes.altura_cm,
         largura_cm: dimensoes.largura_cm,
-        comprimento_cm: dimensoes.comprimento_cm,
+        comprimento_cm:
+        dimensoes.comprimento_cm,
         pagador:
           pagador === 'retirada_local'
             ? 'retirada_local'
@@ -238,11 +241,12 @@ export default function FretePage() {
                 )
               }
               placeholder="00000-000"
+              maxLength={8}
             />
 
             <small>
-              Usaremos este local para calcular o
-              envio.
+              Usaremos este CEP futuramente para
+              calcular o envio.
             </small>
           </label>
 
@@ -277,6 +281,10 @@ export default function FretePage() {
                 }
                 placeholder="A x L x C"
               />
+
+              <small>
+                Ex.: 80 x 30 x 20
+              </small>
             </label>
           </div>
 
