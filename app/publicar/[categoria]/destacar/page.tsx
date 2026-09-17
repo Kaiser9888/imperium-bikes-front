@@ -143,7 +143,7 @@ export default function DestacarPage() {
       <div className="mx-auto max-w-2xl px-4 pb-32 pt-6">
         <section className="mb-6">
           <p className="mb-2 text-xs font-medium text-muted-foreground">
-            Etapa 5 de 5
+            Etapa 6 de 6
           </p>
 
           <div className="mb-5 h-1.5 overflow-hidden rounded-full bg-muted">

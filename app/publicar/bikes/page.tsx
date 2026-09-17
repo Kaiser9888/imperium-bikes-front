@@ -571,7 +571,7 @@ export default function BikesClassificationPage() {
           aria-labelledby="page-title"
         >
           <p className="eyebrow">
-            Etapa 1 de 5
+            Etapa 1 de 6
           </p>
 
           <h1 id="page-title">

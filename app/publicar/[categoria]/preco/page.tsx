@@ -179,7 +179,7 @@ export default function PrecoPage() {
 
       <div className="publish-shell">
         <p className="publish-kicker">
-          Etapa 4 de 5
+          Etapa 5 de 6
         </p>
 
         <h1>

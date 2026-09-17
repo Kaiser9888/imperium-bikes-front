@@ -104,7 +104,7 @@ export default function InformacoesPage() {
 
       <div className="publish-shell">
         <p className="publish-kicker">
-          Etapa 1 de 5
+          Etapa 2 de 6
         </p>
 
         <h1>

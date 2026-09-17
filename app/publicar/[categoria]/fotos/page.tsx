@@ -153,7 +153,7 @@ export default function FotosPage() {
 
       <div className="publish-shell">
         <p className="publish-kicker">
-          Etapa 2 de 5
+          Etapa 3 de 6
         </p>
 
         <h1>

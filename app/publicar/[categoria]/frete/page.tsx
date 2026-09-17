@@ -206,7 +206,7 @@ export default function FretePage() {
 
       <div className="publish-shell">
         <p className="publish-kicker">
-          Etapa 3 de 5
+          Etapa 4 de 6
         </p>
 
         <h1>
