@@ -94,23 +94,78 @@ export default function DestacarPage() {
     setPublicando(true)
 
     try {
+      // Salva a escolha do destaque antes de montar o anúncio final.
       saveDraft(categoria, {
         destacar: {
           tier_id: tierSelecionado,
         },
       })
 
+      // Recupera o draft completo.
       const draftFinal = getDraft(categoria)
 
-      await new Promise((resolve) => {
-        setTimeout(resolve, 900)
+      const response = await fetch("/api/products", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          title: draftFinal.title,
+          description: draftFinal.description,
+
+          price: (draftFinal.preco?.valor_centavos ?? 0) / 100,
+
+          condition: draftFinal.condition,
+
+          categoriaSlug: categoria,
+
+          weightKg: (draftFinal.frete?.peso_g ?? 0) / 1000,
+
+          heightCm: draftFinal.frete?.altura_cm,
+          widthCm: draftFinal.frete?.largura_cm,
+          lengthCm: draftFinal.frete?.comprimento_cm,
+
+          city: draftFinal.frete?.localizacao?.cidade,
+          state: draftFinal.frete?.localizacao?.estado,
+
+          highlightTierId: tierSelecionado,
+
+          photosBase64: draftFinal.photos ?? [],
+        }),
       })
 
-      console.log("Publicando anúncio:", draftFinal)
+      if (!response.ok) {
+        let mensagem = "Falha ao publicar anúncio"
 
+        try {
+          const erro = await response.json()
+
+          if (erro?.message) {
+            mensagem = erro.message
+          } else if (erro?.error) {
+            mensagem = erro.error
+          }
+        } catch {
+          // Mantém a mensagem padrão caso a API não retorne JSON.
+        }
+
+        throw new Error(mensagem)
+      }
+
+      // Só limpa o rascunho depois que a API confirmar
+      // que o anúncio foi criado.
       clearDraft(categoria)
 
       router.push("/")
+    } catch (erro) {
+      console.error("Erro ao publicar anúncio:", erro)
+
+      const mensagem =
+        erro instanceof Error
+          ? erro.message
+          : "Não foi possível publicar o anúncio."
+
+      window.alert(mensagem)
     } finally {
       setPublicando(false)
     }
