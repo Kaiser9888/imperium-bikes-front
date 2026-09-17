@@ -24,25 +24,25 @@ interface TipoOfertaConfig {
 const TIPOS_OFERTA: TipoOfertaConfig[] = [
   {
     id: "padrao",
-    titulo: "Comprar como está",
+    titular: "Comprar como está",
     descricao: "Você paga o produto no preço anunciado, mais o frete calculado.",
     precisaDesconto: false,
   },
   {
     id: "frete_gratis",
-    titulo: "Pedir frete grátis",
+    titular: "Pedir frete grátis",
     descricao: "Propor que o vendedor arque com o frete, sem mexer no preço do produto.",
     precisaDesconto: false,
   },
   {
     id: "frete_gratis_desconto",
-    titulo: "Frete grátis + desconto",
+    titular: "Frete grátis + desconto",
     descricao: "Propor que o vendedor arque com o frete e ainda dê um desconto no produto.",
     precisaDesconto: true,
   },
   {
     id: "desconto_produto",
-    titulo: "Desconto no produto",
+    titular: "Desconto no produto",
     descricao: "Você paga o frete integral, mas propõe um desconto no valor do produto.",
     precisaDesconto: true,
   },

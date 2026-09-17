@@ -151,3 +151,15 @@ export function getCategoriaConfig(categoria: string): CategoriaConfig | undefin
 export function isCategoriaValida(categoria: string): boolean {
   return Boolean(CATEGORIAS[categoria])
 }
+
+export class previousStep {
+}
+
+export class nextStep {
+}
+
+export class readDraft {
+}
+
+export class writeDraft {
+}
