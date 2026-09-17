@@ -3,6 +3,11 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { ArrowLeft, ArrowRight, Check, X } from 'lucide-react'
+import {
+  clearDraft,
+  getDraft,
+  saveDraft,
+} from '@/lib/publicar/storage'
 
 const pagadores = [
   {
@@ -18,49 +23,26 @@ const pagadores = [
       'O frete é somado ao valor da compra.',
   },
   {
-    id: 'retirada',
+    id: 'retirada_local',
     label: 'Retirada no local',
     description:
       'Combine a retirada diretamente com o comprador.',
   },
 ]
 
-type PublishDraft = {
-  categoryId?: string
+function parseDimensoes(value: string) {
+  const numeros = value
+    .replace(/,/g, '.')
+    .split(/[xX×]/)
+    .map((item) => Number(item.trim()))
+    .filter((item) => Number.isFinite(item))
 
-  bikeType?: string
-  subModality?: string
-  saleFormat?: string
-  material?: string
-  wheelSize?: string
-  frameSize?: string
-  rearSuspensionType?: string
-  shockStatus?: string
-  shockMeasurementMM?: string
-
-  titulo?: string
-  descricao?: string
-  condicao?: string
-
-  title?: string
-  description?: string
-  condition?: string
-
-  fotos?: string[]
-
-  cep?: string
-  peso?: string
-  dimensoes?: string
-  pagador?: string
-
-  preco?: number
-  precoTexto?: string
-  custosTexto?: string
-
-  nivel?: string
+  return {
+    altura_cm: numeros[0] ?? 0,
+    largura_cm: numeros[1] ?? 0,
+    comprimento_cm: numeros[2] ?? 0,
+  }
 }
-
-const STORAGE_KEY = 'imperium_bikes_publish'
 
 export default function FretePage() {
   const { categoria } = useParams<{
@@ -79,52 +61,55 @@ export default function FretePage() {
       return
     }
 
-    try {
-      const saved = sessionStorage.getItem(
-        STORAGE_KEY,
-      )
+    const draft = getDraft(categoria)
+    const frete = draft.frete
 
-      if (!saved) {
-        return
-      }
-
-      const draft = JSON.parse(saved) as PublishDraft
-
-      setCep(
-        typeof draft.cep === 'string'
-          ? draft.cep
-          : '',
-      )
-
-      setPeso(
-        typeof draft.peso === 'string'
-          ? draft.peso
-          : '',
-      )
-
-      setDimensoes(
-        typeof draft.dimensoes === 'string'
-          ? draft.dimensoes
-          : '',
-      )
-
-      setPagador(
-        typeof draft.pagador === 'string'
-          ? draft.pagador
-          : '',
-      )
-    } catch {
-      setCep('')
-      setPeso('')
-      setDimensoes('')
-      setPagador('')
+    if (!frete) {
+      return
     }
+
+    setCep(
+      frete.localizacao?.cep ?? '',
+    )
+
+    setPeso(
+      frete.peso_g
+        ? String(frete.peso_g)
+        : '',
+    )
+
+    const dimensoesSalvas = [
+      frete.altura_cm,
+      frete.largura_cm,
+      frete.comprimento_cm,
+    ]
+
+    if (
+      dimensoesSalvas.every(
+        (valor) =>
+          typeof valor === 'number' &&
+          valor > 0,
+      )
+    ) {
+      setDimensoes(
+        dimensoesSalvas.join(' x '),
+      )
+    }
+
+    setPagador(
+      frete.pagador ?? '',
+    )
   }, [categoria])
+
+  const dimensoesParsed =
+    parseDimensoes(dimensoes)
 
   const pronto =
     cep.replace(/\D/g, '').length === 8 &&
     Number(peso) > 0 &&
-    dimensoes.trim().length > 0 &&
+    dimensoesParsed.altura_cm > 0 &&
+    dimensoesParsed.largura_cm > 0 &&
+    dimensoesParsed.comprimento_cm > 0 &&
     Boolean(pagador)
 
   function voltar() {
@@ -134,7 +119,7 @@ export default function FretePage() {
   }
 
   function cancelar() {
-    sessionStorage.removeItem(STORAGE_KEY)
+    clearDraft(categoria)
     router.push('/publicar')
   }
 
@@ -143,38 +128,38 @@ export default function FretePage() {
       return
     }
 
-    try {
-      const saved = sessionStorage.getItem(
-        STORAGE_KEY,
-      )
+    const dimensoes = parseDimensoes(
+      dimensoesInput(),
+    )
 
-      const current: PublishDraft = saved
-        ? (JSON.parse(saved) as PublishDraft)
-        : {}
+    saveDraft(categoria, {
+      frete: {
+        localizacao: {
+          endereco: '',
+          cidade: '',
+          estado: '',
+          cep: cep.replace(/\D/g, ''),
+        },
+        peso_g: Number(peso),
+        altura_cm: dimensoes.altura_cm,
+        largura_cm: dimensoes.largura_cm,
+        comprimento_cm: dimensoes.comprimento_cm,
+        pagador:
+          pagador === 'retirada_local'
+            ? 'retirada_local'
+            : pagador === 'vendedor'
+              ? 'vendedor'
+              : 'comprador',
+      },
+    })
 
-      const updated: PublishDraft = {
-        ...current,
+    router.push(
+      `/publicar/${categoria}/preco`,
+    )
+  }
 
-        categoryId:
-          current.categoryId ?? categoria,
-
-        cep,
-        peso,
-        dimensoes,
-        pagador,
-      }
-
-      sessionStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify(updated),
-      )
-
-      router.push(
-        `/publicar/${categoria}/preco`,
-      )
-    } catch {
-      return
-    }
+  function dimensoesInput() {
+    return dimensoes.trim()
   }
 
   const nomeCategoria =
@@ -182,11 +167,13 @@ export default function FretePage() {
       ? 'Bicicleta'
       : categoria === 'pecas'
         ? 'Peças'
-        : categoria === 'servicos'
-          ? 'Serviços'
-          : categoria === 'produtos'
-            ? 'Produtos'
-            : categoria ?? 'Anúncio'
+        : categoria === 'consumiveis'
+          ? 'Consumíveis'
+          : categoria === 'servicos'
+            ? 'Serviços'
+            : categoria === 'produtos'
+              ? 'Produtos'
+              : categoria ?? 'Anúncio'
 
   return (
     <main className="publish-page">
@@ -216,7 +203,7 @@ export default function FretePage() {
 
       <div className="publish-shell">
         <p className="publish-kicker">
-          Etapa 4 de 5
+          Etapa 3 de 5
         </p>
 
         <h1>

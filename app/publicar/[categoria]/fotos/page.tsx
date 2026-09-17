@@ -9,32 +9,11 @@ import {
   Trash2,
   X,
 } from 'lucide-react'
-
-type PublishDraft = {
-  categoryId?: string
-
-  bikeType?: string
-  subModality?: string
-  saleFormat?: string
-  material?: string
-  wheelSize?: string
-  frameSize?: string
-  rearSuspensionType?: string
-  shockStatus?: string
-  shockMeasurementMM?: string
-
-  titulo?: string
-  descricao?: string
-  condicao?: string
-
-  title?: string
-  description?: string
-  condition?: string
-
-  fotos?: string[]
-}
-
-const STORAGE_KEY = 'imperium_bikes_publish'
+import {
+  clearDraft,
+  getDraft,
+  saveDraft,
+} from '@/lib/publicar/storage'
 
 export default function FotosPage() {
   const { categoria } = useParams<{
@@ -52,21 +31,13 @@ export default function FotosPage() {
       return
     }
 
-    try {
-      const saved = sessionStorage.getItem(STORAGE_KEY)
+    const draft = getDraft(categoria)
 
-      if (!saved) {
-        return
-      }
-
-      const draft = JSON.parse(saved) as PublishDraft
-
-      if (Array.isArray(draft.fotos)) {
-        setFotos(draft.fotos)
-      }
-    } catch {
-      setFotos([])
-    }
+    setFotos(
+      Array.isArray(draft.photos)
+        ? draft.photos
+        : [],
+    )
   }, [categoria])
 
   function adicionar(
@@ -123,7 +94,7 @@ export default function FotosPage() {
   }
 
   function cancelar() {
-    sessionStorage.removeItem(STORAGE_KEY)
+    clearDraft(categoria)
     router.push('/publicar')
   }
 
@@ -132,33 +103,13 @@ export default function FotosPage() {
       return
     }
 
-    try {
-      const saved = sessionStorage.getItem(
-        STORAGE_KEY,
-      )
+    saveDraft(categoria, {
+      photos: fotos,
+    })
 
-      const current: PublishDraft = saved
-        ? (JSON.parse(saved) as PublishDraft)
-        : {}
-
-      const updated: PublishDraft = {
-        ...current,
-        categoryId:
-          current.categoryId ?? categoria,
-        fotos,
-      }
-
-      sessionStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify(updated),
-      )
-
-      router.push(
-        `/publicar/${categoria}/preco`,
-      )
-    } catch {
-      return
-    }
+    router.push(
+      `/publicar/${categoria}/frete`,
+    )
   }
 
   const nomeCategoria =
@@ -166,11 +117,13 @@ export default function FotosPage() {
       ? 'Bicicleta'
       : categoria === 'pecas'
         ? 'Peças'
-        : categoria === 'servicos'
-          ? 'Serviços'
-          : categoria === 'produtos'
-            ? 'Produtos'
-            : categoria ?? 'Anúncio'
+        : categoria === 'consumiveis'
+          ? 'Consumíveis'
+          : categoria === 'servicos'
+            ? 'Serviços'
+            : categoria === 'produtos'
+              ? 'Produtos'
+              : categoria ?? 'Anúncio'
 
   return (
     <main className="publish-page">
@@ -200,7 +153,7 @@ export default function FotosPage() {
 
       <div className="publish-shell">
         <p className="publish-kicker">
-          Etapa 3 de 5
+          Etapa 2 de 5
         </p>
 
         <h1>
@@ -215,7 +168,7 @@ export default function FotosPage() {
         <div className="publish-progress">
           <span
             style={{
-              width: '60%',
+              width: '40%',
             }}
           />
         </div>

@@ -7,43 +7,11 @@ import {
   ArrowRight,
   X,
 } from 'lucide-react'
-
-type PublishDraft = {
-  categoryId?: string
-
-  bikeType?: string
-  subModality?: string
-  saleFormat?: string
-  material?: string
-  wheelSize?: string
-  frameSize?: string
-  rearSuspensionType?: string
-  shockStatus?: string
-  shockMeasurementMM?: string
-
-  titulo?: string
-  descricao?: string
-  condicao?: string
-
-  title?: string
-  description?: string
-  condition?: string
-
-  fotos?: string[]
-
-  cep?: string
-  peso?: string
-  dimensoes?: string
-  pagador?: string
-
-  preco?: number
-  precoTexto?: string
-  custosTexto?: string
-
-  nivel?: string
-}
-
-const STORAGE_KEY = 'imperium_bikes_publish'
+import {
+  clearDraft,
+  getDraft,
+  saveDraft,
+} from '@/lib/publicar/storage'
 
 function parseMoney(value: string): number {
   const cleaned = value
@@ -54,13 +22,6 @@ function parseMoney(value: string): number {
     return 0
   }
 
-  /*
-   * Aceita formatos como:
-   * 1000
-   * 1000,50
-   * 1.000,50
-   * 1000.50
-   */
   let normalized = cleaned
 
   if (
@@ -115,43 +76,36 @@ export default function PrecoPage() {
       return
     }
 
-    try {
-      const saved = sessionStorage.getItem(
-        STORAGE_KEY,
-      )
+    const draft = getDraft(categoria)
 
-      if (!saved) {
-        return
-      }
-
-      const draft = JSON.parse(saved) as PublishDraft
+    if (draft.preco) {
+      const valorCentavos =
+        draft.preco.valor_centavos
 
       if (
-        typeof draft.precoTexto ===
-        'string'
-      ) {
-        setPreco(draft.precoTexto)
-      } else if (
-        typeof draft.preco === 'number'
+        typeof valorCentavos === 'number' &&
+        valorCentavos > 0
       ) {
         setPreco(
-          (draft.preco / 100)
+          (valorCentavos / 100)
             .toFixed(2)
             .replace('.', ','),
         )
       }
 
-      if (
-        typeof draft.custosTexto ===
-        'string'
-      ) {
-        setCustos(
-          draft.custosTexto,
-        )
+      if (draft.preco.custos?.length) {
+        const custosTexto =
+          draft.preco.custos
+            .map(
+              (item) =>
+                `${item.label}: ${money(
+                  item.valor_centavos,
+                )}`,
+            )
+            .join('\n')
+
+        setCustos(custosTexto)
       }
-    } catch {
-      setPreco('')
-      setCustos('')
     }
   }, [categoria])
 
@@ -164,7 +118,7 @@ export default function PrecoPage() {
   }
 
   function cancelar() {
-    sessionStorage.removeItem(STORAGE_KEY)
+    clearDraft(categoria)
     router.push('/publicar')
   }
 
@@ -173,37 +127,15 @@ export default function PrecoPage() {
       return
     }
 
-    try {
-      const saved = sessionStorage.getItem(
-        STORAGE_KEY,
-      )
+    saveDraft(categoria, {
+      preco: {
+        valor_centavos: valor,
+      },
+    })
 
-      const current: PublishDraft = saved
-        ? (JSON.parse(saved) as PublishDraft)
-        : {}
-
-      const updated: PublishDraft = {
-        ...current,
-
-        categoryId:
-          current.categoryId ?? categoria,
-
-        preco: valor,
-        precoTexto: preco,
-        custosTexto: custos,
-      }
-
-      sessionStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify(updated),
-      )
-
-      router.push(
-        `/publicar/${categoria}/destacar`,
-      )
-    } catch {
-      return
-    }
+    router.push(
+      `/publicar/${categoria}/destacar`,
+    )
   }
 
   const nomeCategoria =
@@ -211,11 +143,13 @@ export default function PrecoPage() {
       ? 'Bicicleta'
       : categoria === 'pecas'
         ? 'Peças'
-        : categoria === 'servicos'
-          ? 'Serviços'
-          : categoria === 'produtos'
-            ? 'Produtos'
-            : categoria ?? 'Anúncio'
+        : categoria === 'consumiveis'
+          ? 'Consumíveis'
+          : categoria === 'servicos'
+            ? 'Serviços'
+            : categoria === 'produtos'
+              ? 'Produtos'
+              : categoria ?? 'Anúncio'
 
   return (
     <main className="publish-page">
@@ -245,7 +179,7 @@ export default function PrecoPage() {
 
       <div className="publish-shell">
         <p className="publish-kicker">
-          Etapa 5 de 5
+          Etapa 4 de 5
         </p>
 
         <h1>

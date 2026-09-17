@@ -4,6 +4,11 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { ArrowLeft, ArrowRight, Check, X } from 'lucide-react'
 import { getCategoriaConfig } from '@/lib/publicar/categorias'
+import {
+  clearDraft,
+  getDraft,
+  saveDraft,
+} from '@/lib/publicar/storage'
 
 const condicoes = [
   {
@@ -17,30 +22,6 @@ const condicoes = [
     description: 'Já teve uso',
   },
 ]
-
-type PublishDraft = {
-  categoryId?: string
-
-  bikeType?: string
-  subModality?: string
-  saleFormat?: string
-  material?: string
-  wheelSize?: string
-  frameSize?: string
-  rearSuspensionType?: string
-  shockStatus?: string
-  shockMeasurementMM?: string
-
-  titulo?: string
-  descricao?: string
-  condicao?: string
-
-  title?: string
-  description?: string
-  condition?: string
-}
-
-const STORAGE_KEY = 'imperium_bikes_publish'
 
 export default function InformacoesPage() {
   const { categoria } = useParams<{
@@ -60,43 +41,11 @@ export default function InformacoesPage() {
       return
     }
 
-    try {
-      const saved = sessionStorage.getItem(STORAGE_KEY)
+    const draft = getDraft(categoria)
 
-      if (!saved) {
-        return
-      }
-
-      const draft = JSON.parse(saved) as PublishDraft
-
-      setTitulo(
-        typeof draft.titulo === 'string'
-          ? draft.titulo
-          : typeof draft.title === 'string'
-            ? draft.title
-            : '',
-      )
-
-      setDescricao(
-        typeof draft.descricao === 'string'
-          ? draft.descricao
-          : typeof draft.description === 'string'
-            ? draft.description
-            : '',
-      )
-
-      setCondicao(
-        typeof draft.condicao === 'string'
-          ? draft.condicao
-          : typeof draft.condition === 'string'
-            ? draft.condition
-            : '',
-      )
-    } catch {
-      setTitulo('')
-      setDescricao('')
-      setCondicao('')
-    }
+    setTitulo(draft.title ?? '')
+    setDescricao(draft.description ?? '')
+    setCondicao(draft.condition ?? '')
   }, [categoria])
 
   const pronto =
@@ -109,7 +58,7 @@ export default function InformacoesPage() {
   }
 
   function cancelar() {
-    sessionStorage.removeItem(STORAGE_KEY)
+    clearDraft(categoria)
     router.push('/publicar')
   }
 
@@ -118,173 +67,148 @@ export default function InformacoesPage() {
       return
     }
 
-    try {
-      const saved = sessionStorage.getItem(STORAGE_KEY)
+    saveDraft(categoria, {
+      title: titulo.trim(),
+      description: descricao.trim(),
+      condition: condicao,
+    })
 
-      const current: PublishDraft = saved
-        ? (JSON.parse(saved) as PublishDraft)
-        : {}
+    router.push(`/publicar/${categoria}/fotos`)
+  }
 
-      const updated: PublishDraft = {
-        ...current,
+  return (
+    <main className="publish-page">
+      <header className="publish-header">
+        <button
+          type="button"
+          onClick={voltar}
+          className="publish-back"
+        >
+          <ArrowLeft />
+          Voltar
+        </button>
 
-        categoryId:
-          current.categoryId ?? categoria,
+        <strong>
+          {config?.label ?? 'Anúncio'}
+        </strong>
 
-        titulo: titulo.trim(),
-        descricao: descricao.trim(),
-        condicao,
+        <button
+          type="button"
+          onClick={cancelar}
+          className="publish-cancel"
+        >
+          <X />
+          Cancelar
+        </button>
+      </header>
 
-        title: titulo.trim(),
-        description: descricao.trim(),
-        condition: condicao,
-      }
+      <div className="publish-shell">
+        <p className="publish-kicker">
+          Etapa 1 de 5
+        </p>
 
-      sessionStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify(updated),
-      )
+        <h1>
+          Informações do anúncio
+        </h1>
 
-      router.push(
-        `/publicar/${categoria}/fotos`,
-)
-} catch {
-  return
-}
-}
+        <p className="publish-lead">
+          Apresente o produto com clareza para
+          ajudar o comprador a decidir.
+        </p>
 
-return (
-  <main className="publish-page">
-    <header className="publish-header">
-      <button
-        type="button"
-        onClick={voltar}
-        className="publish-back"
-      >
-        <ArrowLeft />
-        Voltar
-      </button>
-
-      <strong>
-        {config?.label ?? 'Anúncio'}
-      </strong>
-
-      <button
-        type="button"
-        onClick={cancelar}
-        className="publish-cancel"
-      >
-        <X />
-        Cancelar
-      </button>
-    </header>
-
-    <div className="publish-shell">
-      <p className="publish-kicker">
-        Etapa 2 de 5
-      </p>
-
-      <h1>
-        Informações do anúncio
-      </h1>
-
-      <p className="publish-lead">
-        Apresente o produto com clareza para
-        ajudar o comprador a decidir.
-      </p>
-
-      <div className="publish-progress">
+        <div className="publish-progress">
           <span
             style={{
               width: '20%',
             }}
           />
-      </div>
+        </div>
 
-      <section className="publish-card publish-form">
-        <label>
-          Título do produto
+        <section className="publish-card publish-form">
+          <label>
+            Título do produto
 
-          <input
-            value={titulo}
-            onChange={(event) =>
-              setTitulo(event.target.value)
-            }
-            maxLength={80}
-            placeholder="Ex.: Mountain Bike Caloi Elite"
-          />
+            <input
+              value={titulo}
+              onChange={(event) =>
+                setTitulo(event.target.value)
+              }
+              maxLength={80}
+              placeholder="Ex.: Mountain Bike Caloi Elite"
+            />
 
-          <small>
-            {titulo.length}/80
-          </small>
-        </label>
+            <small>
+              {titulo.length}/80
+            </small>
+          </label>
 
-        <label>
-          Descrição
+          <label>
+            Descrição
 
-          <textarea
-            value={descricao}
-            onChange={(event) =>
-              setDescricao(event.target.value)
-            }
-            maxLength={1000}
-            rows={6}
-            placeholder="Informe detalhes, componentes, tempo de uso e condições."
-          />
+            <textarea
+              value={descricao}
+              onChange={(event) =>
+                setDescricao(event.target.value)
+              }
+              maxLength={1000}
+              rows={6}
+              placeholder="Informe detalhes, componentes, tempo de uso e condições."
+            />
 
-          <small>
-            {descricao.length}/1000
-          </small>
-        </label>
+            <small>
+              {descricao.length}/1000
+            </small>
+          </label>
 
-        <fieldset>
-          <legend>
-            Condição do produto
-          </legend>
+          <fieldset>
+            <legend>
+              Condição do produto
+            </legend>
 
-          <div className="publish-options">
-            {condicoes.map((item) => (
-              <button
-                type="button"
-                key={item.id}
-                className={
-                  condicao === item.id
-                    ? 'is-selected'
-                    : ''
-                }
-                onClick={() =>
-                  setCondicao(item.id)
-                }
-              >
+            <div className="publish-options">
+              {condicoes.map((item) => (
+                <button
+                  type="button"
+                  key={item.id}
+                  className={
+                    condicao === item.id
+                      ? 'is-selected'
+                      : ''
+                  }
+                  onClick={() =>
+                    setCondicao(item.id)
+                  }
+                >
                   <span>
-                    <b>{item.label}</b>
+                    <b>
+                      {item.label}
+                    </b>
 
                     <small>
                       {item.description}
                     </small>
                   </span>
 
-                {condicao === item.id && (
-                  <Check />
-                )}
-              </button>
-            ))}
-          </div>
-        </fieldset>
-      </section>
-    </div>
+                  {condicao === item.id && (
+                    <Check />
+                  )}
+                </button>
+              ))}
+            </div>
+          </fieldset>
+        </section>
+      </div>
 
-    <footer className="publish-footer">
-      <button
-        type="button"
-        disabled={!pronto}
-        onClick={continuar}
-      >
-        Continuar
-        <ArrowRight />
-      </button>
-    </footer>
-  </main>
-)
+      <footer className="publish-footer">
+        <button
+          type="button"
+          disabled={!pronto}
+          onClick={continuar}
+        >
+          Continuar
+          <ArrowRight />
+        </button>
+      </footer>
+    </main>
+  )
 }
-

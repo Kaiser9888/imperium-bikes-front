@@ -1,5 +1,8 @@
+// src/lib/publicar/categorias.ts
+
 // Config central das macro-categorias do fluxo de publicação.
-// Adicionar uma categoria nova = adicionar uma entrada aqui, sem criar página nova.
+// Adicionar uma categoria nova = adicionar uma entrada aqui,
+// sem precisar criar uma página nova.
 
 export type CampoTipo = "text" | "textarea" | "select" | "number"
 
@@ -52,7 +55,13 @@ export const CATEGORIAS: Record<string, CategoriaConfig> = {
           { value: "29", label: "Aro 29" },
         ],
       },
-      { id: "marca", label: "Marca", tipo: "text", placeholder: "Ex.: Caloi, Specialized, Trek", obrigatorio: true },
+      {
+        id: "marca",
+        label: "Marca",
+        tipo: "text",
+        placeholder: "Ex.: Caloi, Specialized, Trek",
+        obrigatorio: true,
+      },
       {
         id: "material_quadro",
         label: "Material do quadro",
@@ -65,6 +74,7 @@ export const CATEGORIAS: Record<string, CategoriaConfig> = {
       },
     ],
   },
+
   pecas: {
     label: "Peça",
     labelPlural: "Peças",
@@ -82,10 +92,22 @@ export const CATEGORIAS: Record<string, CategoriaConfig> = {
           { value: "outros", label: "Outros" },
         ],
       },
-      { id: "marca", label: "Marca", tipo: "text", placeholder: "Ex.: Shimano, SRAM", obrigatorio: true },
-      { id: "compatibilidade", label: "Compatibilidade", tipo: "text", placeholder: "Ex.: Aro 29, quadros MTB" },
+      {
+        id: "marca",
+        label: "Marca",
+        tipo: "text",
+        placeholder: "Ex.: Shimano, SRAM",
+        obrigatorio: true,
+      },
+      {
+        id: "compatibilidade",
+        label: "Compatibilidade",
+        tipo: "text",
+        placeholder: "Ex.: Aro 29, quadros MTB",
+      },
     ],
   },
+
   consumiveis: {
     label: "Consumível",
     labelPlural: "Consumíveis",
@@ -101,10 +123,21 @@ export const CATEGORIAS: Record<string, CategoriaConfig> = {
           { value: "camara_pneu", label: "Câmara de ar" },
         ],
       },
-      { id: "validade", label: "Validade", tipo: "text", placeholder: "Ex.: 12/2027" },
-      { id: "quantidade", label: "Quantidade em estoque", tipo: "number", obrigatorio: true },
+      {
+        id: "validade",
+        label: "Validade",
+        tipo: "text",
+        placeholder: "Ex.: 12/2027",
+      },
+      {
+        id: "quantidade",
+        label: "Quantidade em estoque",
+        tipo: "number",
+        obrigatorio: true,
+      },
     ],
   },
+
   servicos: {
     label: "Serviço",
     labelPlural: "Serviços",
@@ -131,35 +164,40 @@ export const CATEGORIAS: Record<string, CategoriaConfig> = {
           { value: "ambos", label: "Ambos" },
         ],
       },
-      { id: "duracao_estimada", label: "Duração estimada", tipo: "text", placeholder: "Ex.: 2 horas" },
+      {
+        id: "duracao_estimada",
+        label: "Duração estimada",
+        tipo: "text",
+        placeholder: "Ex.: 2 horas",
+      },
     ],
   },
+
   produtos: {
     label: "Produto",
     labelPlural: "Produtos",
     campos: [
-      { id: "marca", label: "Marca", tipo: "text", obrigatorio: true },
-      { id: "modelo", label: "Modelo", tipo: "text" },
+      {
+        id: "marca",
+        label: "Marca",
+        tipo: "text",
+        obrigatorio: true,
+      },
+      {
+        id: "modelo",
+        label: "Modelo",
+        tipo: "text",
+      },
     ],
   },
 }
 
-export function getCategoriaConfig(categoria: string): CategoriaConfig | undefined {
+export function getCategoriaConfig(
+  categoria: string
+): CategoriaConfig | undefined {
   return CATEGORIAS[categoria]
 }
 
 export function isCategoriaValida(categoria: string): boolean {
   return Boolean(CATEGORIAS[categoria])
-}
-
-export class previousStep {
-}
-
-export class nextStep {
-}
-
-export class readDraft {
-}
-
-export class writeDraft {
 }
