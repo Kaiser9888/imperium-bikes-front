@@ -30,18 +30,14 @@ const pagadores = [
   },
 ] as const
 
-function parseDimensoes(value: string) {
-  const numeros = value
-    .replace(/,/g, '.')
-    .split(/[xX×]/)
-    .map((item) => Number(item.trim()))
-    .filter((item) => Number.isFinite(item))
-
-  return {
-    altura_cm: numeros[0] ?? 0,
-    largura_cm: numeros[1] ?? 0,
-    comprimento_cm: numeros[2] ?? 0,
-  }
+interface CepResponse {
+  cep?: string
+  logradouro?: string
+  complemento?: string
+  bairro?: string
+  localidade?: string
+  uf?: string
+  erro?: boolean
 }
 
 export default function FretePage() {
@@ -52,9 +48,19 @@ export default function FretePage() {
   const router = useRouter()
 
   const [cep, setCep] = useState('')
+  const [cidade, setCidade] = useState('')
+  const [estado, setEstado] = useState('')
+  const [endereco, setEndereco] = useState('')
+
   const [peso, setPeso] = useState('')
-  const [dimensoes, setDimensoes] = useState('')
+  const [altura, setAltura] = useState('')
+  const [largura, setLargura] = useState('')
+  const [comprimento, setComprimento] = useState('')
+
   const [pagador, setPagador] = useState('')
+
+  const [consultandoCep, setConsultandoCep] = useState(false)
+  const [erroCep, setErroCep] = useState('')
 
   useEffect(() => {
     if (!categoria) {
@@ -68,9 +74,10 @@ export default function FretePage() {
       return
     }
 
-    setCep(
-      frete.localizacao?.cep ?? '',
-    )
+    setCep(frete.localizacao?.cep ?? '')
+    setCidade(frete.localizacao?.cidade ?? '')
+    setEstado(frete.localizacao?.estado ?? '')
+    setEndereco(frete.localizacao?.endereco ?? '')
 
     setPeso(
       frete.peso_g
@@ -78,41 +85,112 @@ export default function FretePage() {
         : '',
     )
 
-    const dimensoesSalvas = [
-      frete.altura_cm,
-      frete.largura_cm,
-      frete.comprimento_cm,
-    ]
-
-    if (
-      dimensoesSalvas.every(
-        (valor) =>
-          typeof valor === 'number' &&
-          valor > 0,
-      )
-    ) {
-      setDimensoes(
-        dimensoesSalvas.join(' x '),
-      )
-    }
-
-    setPagador(
-      frete.pagador ?? '',
+    setAltura(
+      frete.altura_cm
+        ? String(frete.altura_cm)
+        : '',
     )
+
+    setLargura(
+      frete.largura_cm
+        ? String(frete.largura_cm)
+        : '',
+    )
+
+    setComprimento(
+      frete.comprimento_cm
+        ? String(frete.comprimento_cm)
+        : '',
+    )
+
+    setPagador(frete.pagador ?? '')
   }, [categoria])
 
-  const dimensoesParsed =
-    parseDimensoes(dimensoes)
+  useEffect(() => {
+    const cepNumerico = cep.replace(/\D/g, '')
+
+    if (cepNumerico.length !== 8) {
+      setCidade('')
+      setEstado('')
+      setEndereco('')
+      setErroCep('')
+      return
+    }
+
+    let cancelado = false
+
+    async function consultarCep() {
+      setConsultandoCep(true)
+      setErroCep('')
+
+      try {
+        const response = await fetch(
+          `https://viacep.com.br/ws/${cepNumerico}/json/`,
+        )
+
+        if (!response.ok) {
+          throw new Error(
+            'Não foi possível consultar o CEP.',
+          )
+        }
+
+        const data =
+          (await response.json()) as CepResponse
+
+        if (cancelado) {
+          return
+        }
+
+        if (data.erro) {
+          setCidade('')
+          setEstado('')
+          setEndereco('')
+          setErroCep('CEP não encontrado.')
+          return
+        }
+
+        setEndereco(data.logradouro ?? '')
+        setCidade(data.localidade ?? '')
+        setEstado(data.uf ?? '')
+      } catch {
+        if (!cancelado) {
+          setCidade('')
+          setEstado('')
+          setEndereco('')
+          setErroCep(
+            'Não foi possível consultar o CEP agora.',
+          )
+        }
+      } finally {
+        if (!cancelado) {
+          setConsultandoCep(false)
+        }
+      }
+    }
+
+    consultarCep()
+
+    return () => {
+      cancelado = true
+    }
+  }, [cep])
 
   const cepNumerico =
     cep.replace(/\D/g, '')
 
+  const pesoNumerico = Number(peso)
+  const alturaNumerica = Number(altura)
+  const larguraNumerica = Number(largura)
+  const comprimentoNumerico = Number(comprimento)
+
   const pronto =
     cepNumerico.length === 8 &&
-    Number(peso) > 0 &&
-    dimensoesParsed.altura_cm > 0 &&
-    dimensoesParsed.largura_cm > 0 &&
-    dimensoesParsed.comprimento_cm > 0 &&
+    Boolean(cidade) &&
+    Boolean(estado) &&
+    pesoNumerico > 0 &&
+    alturaNumerica > 0 &&
+    larguraNumerica > 0 &&
+    comprimentoNumerico > 0 &&
     Boolean(pagador)
 
   function voltar() {
@@ -131,22 +209,18 @@ export default function FretePage() {
       return
     }
 
-    const dimensoes =
-      parseDimensoes(dimensoesInput())
-
     saveDraft(categoria, {
       frete: {
         localizacao: {
-          endereco: '',
-          cidade: '',
-          estado: '',
+          endereco,
+          cidade,
+          estado,
           cep: cepNumerico,
         },
-        peso_g: Number(peso),
-        altura_cm: dimensoes.altura_cm,
-        largura_cm: dimensoes.largura_cm,
-        comprimento_cm:
-        dimensoes.comprimento_cm,
+        peso_g: pesoNumerico,
+        altura_cm: alturaNumerica,
+        largura_cm: larguraNumerica,
+        comprimento_cm: comprimentoNumerico,
         pagador:
           pagador === 'retirada_local'
             ? 'retirada_local'
@@ -159,10 +233,6 @@ export default function FretePage() {
     router.push(
       `/publicar/${categoria}/preco`,
     )
-  }
-
-  function dimensoesInput() {
-    return dimensoes.trim()
   }
 
   const nomeCategoria =
@@ -233,60 +303,139 @@ export default function FretePage() {
             <input
               inputMode="numeric"
               value={cep}
-              onChange={(event) =>
+              onChange={(event) => {
                 setCep(
                   event.target.value
-                    .replace(/[^0-9]/g, '')
+                    .replace(/\D/g, '')
                     .slice(0, 8),
                 )
-              }
+              }}
               placeholder="00000-000"
               maxLength={8}
             />
 
             <small>
-              Usaremos este CEP futuramente para
-              calcular o envio.
+              Informe o CEP de onde o produto será
+              enviado.
             </small>
           </label>
 
-          <div className="form-row">
+          {consultandoCep && (
+            <small>
+              Consultando endereço...
+            </small>
+          )}
+
+          {erroCep && (
+            <small>
+              {erroCep}
+            </small>
+          )}
+
+          {(cidade || estado) && !erroCep && (
+            <div className="form-row">
+              <label>
+                Cidade
+
+                <input
+                  value={cidade}
+                  readOnly
+                />
+              </label>
+
+              <label>
+                Estado
+
+                <input
+                  value={estado}
+                  readOnly
+                />
+              </label>
+            </div>
+          )}
+
+          <div className="frete-dimensoes-grid">
             <label>
               Peso (g)
 
               <input
-                inputMode="numeric"
+                inputMode="decimal"
                 value={peso}
                 onChange={(event) =>
                   setPeso(
                     event.target.value.replace(
-                      /[^0-9]/g,
+                      /[^0-9.,]/g,
                       '',
                     ),
                   )
                 }
                 placeholder="Ex.: 12000"
               />
+
+              <small>
+                Peso da embalagem em gramas.
+              </small>
             </label>
 
             <label>
-              Dimensões (cm)
+              Altura (cm)
 
               <input
-                value={dimensoes}
+                inputMode="decimal"
+                value={altura}
                 onChange={(event) =>
-                  setDimensoes(
-                    event.target.value,
+                  setAltura(
+                    event.target.value.replace(
+                      /[^0-9.,]/g,
+                      '',
+                    ),
                   )
                 }
-                placeholder="A x L x C"
+                placeholder="Ex.: 80"
               />
+            </label>
 
-              <small>
-                Ex.: 80 x 30 x 20
-              </small>
+            <label>
+              Largura (cm)
+
+              <input
+                inputMode="decimal"
+                value={largura}
+                onChange={(event) =>
+                  setLargura(
+                    event.target.value.replace(
+                      /[^0-9.,]/g,
+                      '',
+                    ),
+                  )
+                }
+                placeholder="Ex.: 30"
+              />
+            </label>
+
+            <label>
+              Comprimento (cm)
+
+              <input
+                inputMode="decimal"
+                value={comprimento}
+                onChange={(event) =>
+                  setComprimento(
+                    event.target.value.replace(
+                      /[^0-9.,]/g,
+                      '',
+                    ),
+                  )
+                }
+                placeholder="Ex.: 20"
+              />
             </label>
           </div>
+
+          <small>
+            Essas medidas serão utilizadas futuramente
+            no cálculo do frete.
+          </small>
 
           <fieldset>
             <legend>
