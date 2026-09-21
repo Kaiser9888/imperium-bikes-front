@@ -12,7 +12,7 @@ export default function InformacoesPage() {
   const { categoria } = useParams<{ categoria: string }>(); const router = useRouter(); const config = getCategoriaConfig(categoria)
   const [titulo, setTitulo] = useState(''); const [descricao, setDescricao] = useState(''); const [condicao, setCondicao] = useState('')
   useEffect(() => { const d = readDraft(categoria); setTitulo(String(d.titulo || '')); setDescricao(String(d.descricao || '')); setCondicao(String(d.condicao || '')) }, [categoria])
-  const pronto = titulo.trim().length >= 3 && descricao.trim().length >= 10 && Boolean(condicao)
+  const pronto = titulo.trim().length >= 10 && descricao.trim().length >= 10 && Boolean(condicao)
   function continuar() { if (!pronto) return; writeDraft(categoria, { titulo: titulo.trim(), descricao: descricao.trim(), condicao }); router.push(nextStep(categoria, 'informacoes')) }
   // config pode ser undefined se a categoria da URL não existir em CATEGORIAS
   // (link quebrado, categoria removida, etc.) — cai num rótulo genérico em vez

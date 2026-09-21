@@ -1,3 +1,4 @@
+
 // src/lib/publicar/storage.ts
 
 export interface CustoItem {
@@ -31,6 +32,10 @@ export interface DestacarDraft {
 }
 
 export interface PublishDraft {
+  titulo?: string
+  descricao?: string
+  condicao?: string
+
   categoryId?: string
 
   // Etapa: características
