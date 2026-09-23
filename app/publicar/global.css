@@ -834,18 +834,46 @@
     justify-content: space-between;
     gap: 18px;
     width: 100%;
+    min-height: 72px;
     border: 1px solid var(--imperium-line);
     background: var(--imperium-paper);
     color: var(--imperium-ink);
     padding: 15px;
     text-align: left;
     cursor: pointer;
+    transition:
+            border-color .18s ease,
+            background-color .18s ease;
 }
 
 .publish-options button:hover,
 .publish-options button.is-selected {
     border-color: var(--imperium-red);
     background: #f1e6df;
+}
+
+.publish-options button > span:last-child {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+    min-width: 110px;
+    text-align: right;
+}
+
+.publish-options button > span:last-child small {
+    color: var(--imperium-muted);
+}
+
+.publish-options button > span:last-child b {
+    font-size: 14px;
+}
+
+.publish-options button svg {
+    width: 17px;
+    height: 17px;
+    color: var(--imperium-red);
+    flex: 0 0 auto;
 }
 
 .publish-options button > span {
