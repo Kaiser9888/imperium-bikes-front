@@ -1,6 +1,9 @@
-// services/publish/product.service.ts
 import api from '@/lib/api'
-import { ProductRequest, ProductResponse } from '@/types/publish/product'
+import {
+    ProductRequest,
+    ProductResponse,
+    ShippingQuote,
+} from '@/types/publish/product'
 
 const BASE = '/api/products'
 
@@ -10,7 +13,10 @@ export const productService = {
         return res.data
     },
 
-    update: async (id: string, data: Partial<ProductRequest>): Promise<ProductResponse> => {
+    update: async (
+      id: string,
+      data: Partial<ProductRequest>
+    ): Promise<ProductResponse> => {
         const res = await api.put(BASE + '/' + id, data)
         return res.data
     },
@@ -20,8 +26,17 @@ export const productService = {
         return res.data
     },
 
-    getMyProducts: async (page = 0, size = 10): Promise<{ content: ProductResponse[]; totalElements: number }> => {
-        const res = await api.get(BASE + '/my', { params: { page, size } })
+    getMyProducts: async (
+      page = 0,
+      size = 10
+    ): Promise<{
+        content: ProductResponse[]
+        totalElements: number
+    }> => {
+        const res = await api.get(BASE + '/my', {
+            params: { page, size },
+        })
+
         return res.data
     },
 
@@ -31,6 +46,18 @@ export const productService = {
 
     publish: async (id: string): Promise<ProductResponse> => {
         const res = await api.put(BASE + '/' + id + '/publish')
+        return res.data
+    },
+
+    calculateShipping: async (
+      productId: string,
+      cepDestino: string
+    ): Promise<ShippingQuote[]> => {
+        const res = await api.post('/api/frete/cotar', {
+            productId,
+            cepDestino,
+        })
+
         return res.data
     },
 }

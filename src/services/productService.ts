@@ -1,40 +1,94 @@
-// src/services/productService.ts
-import api from '../lib/api';
+import api from '@/lib/api'
+import {
+    ProductRequest,
+    ProductResponse,
+    ShippingQuote,
+} from '@/types/publish/product'
+
+const BASE = '/api/products'
 
 export const productService = {
-    async getAll(page = 0, size = 10, sort = 'createdAt,desc') {
-        try {
-            const response = await api.get('/api/products', {
-                params: { page, size, sort }
-            });
-            console.log('✅ Produtos recebidos:', response.data);
-            return response.data;
-        } catch (error) {
-            console.error('❌ Erro ao buscar produtos:', error);
-            throw error;
-        }
+    create: async (
+      data: ProductRequest,
+    ): Promise<ProductResponse> => {
+        const res = await api.post(BASE, data)
+        return res.data
     },
 
-    async getById(id: string) {
-        try {
-            const response = await api.get(`/api/products/${id}`);
-            return response.data;
-        } catch (error) {
-            console.error(`❌ Erro ao buscar produto ${id}:`, error);
-            throw error;
-        }
+    update: async (
+      id: string,
+      data: Partial<ProductRequest>,
+    ): Promise<ProductResponse> => {
+        const res = await api.put(
+          BASE + '/' + id,
+          data,
+        )
+
+        return res.data
     },
 
-    async getDestaques() {
-        try {
-            // Tentar endpoint de destaques, se existir
-            const response = await api.get('/api/products/destaques');
-            return response.data;
-        } catch (error) {
-            // Fallback: buscar todos e filtrar
-            console.log('⚠️ Endpoint /destaques não encontrado, usando /api/products');
-            const allProducts = await this.getAll(0, 10, 'createdAt,desc');
-            return allProducts;
-        }
-    }
-};
+    getById: async (
+      id: string,
+    ): Promise<ProductResponse> => {
+        const res = await api.get(
+          BASE + '/' + id,
+        )
+
+        return res.data
+    },
+
+    getMyProducts: async (
+      page = 0,
+      size = 10,
+    ): Promise<{
+        content: ProductResponse[]
+        totalElements: number
+    }> => {
+        const res = await api.get(
+          BASE + '/my',
+          {
+              params: {
+                  page,
+                  size,
+              },
+          },
+        )
+
+        return res.data
+    },
+
+    calculateShipping: async (
+      productId: string,
+      cepDestino: string,
+    ): Promise<ShippingQuote[]> => {
+
+        const res = await api.post(
+          '/api/frete/cotar',
+          {
+              productId,
+              cepDestino:
+                cepDestino.replace(/\D/g, ''),
+          },
+        )
+
+        return res.data
+    },
+
+    delete: async (
+      id: string,
+    ): Promise<void> => {
+        await api.delete(
+          BASE + '/' + id,
+        )
+    },
+
+    publish: async (
+      id: string,
+    ): Promise<ProductResponse> => {
+        const res = await api.put(
+          BASE + '/' + id + '/publish',
+        )
+
+        return res.data
+    },
+}

@@ -30,6 +30,9 @@ const pagadores = [
   },
 ] as const
 
+const LIMITE_MEDIDA_CM = 300
+const LIMITE_PESO_KG = 1000
+
 interface CepResponse {
   cep?: string
   logradouro?: string
@@ -79,11 +82,13 @@ export default function FretePage() {
     setEstado(frete.localizacao?.estado ?? '')
     setEndereco(frete.localizacao?.endereco ?? '')
 
-    setPeso(
-      frete.peso_g
-        ? String(frete.peso_g)
-        : '',
-    )
+    if (frete.peso_g) {
+      setPeso(
+        String(frete.peso_g / 1000),
+      )
+    } else {
+      setPeso('')
+    }
 
     setAltura(
       frete.altura_cm
@@ -126,336 +131,403 @@ export default function FretePage() {
       try {
         const response = await fetch(
           `https://viacep.com.br/ws/${cepNumerico}/json/`,
-        )
+  )
 
-        if (!response.ok) {
-          throw new Error(
-            'Não foi possível consultar o CEP.',
-          )
-        }
+if (!response.ok) {
+  throw new Error(
+    'Não foi possível consultar o CEP.',
+  )
+}
 
-        const data =
-          (await response.json()) as CepResponse
+const data =
+  (await response.json()) as CepResponse
 
-        if (cancelado) {
-          return
-        }
+if (cancelado) {
+  return
+}
 
-        if (data.erro) {
-          setCidade('')
-          setEstado('')
-          setEndereco('')
-          setErroCep('CEP não encontrado.')
-          return
-        }
+if (data.erro) {
+  setCidade('')
+  setEstado('')
+  setEndereco('')
+  setErroCep('CEP não encontrado.')
+  return
+}
 
-        setEndereco(data.logradouro ?? '')
-        setCidade(data.localidade ?? '')
-        setEstado(data.uf ?? '')
-      } catch {
-        if (!cancelado) {
-          setCidade('')
-          setEstado('')
-          setEndereco('')
-          setErroCep(
-            'Não foi possível consultar o CEP agora.',
-          )
-        }
-      } finally {
-        if (!cancelado) {
-          setConsultandoCep(false)
-        }
-      }
-    }
-
-    consultarCep()
-
-    return () => {
-      cancelado = true
-    }
-  }, [cep])
-
-  const cepNumerico =
-    cep.replace(/\D/g, '')
-
-  const pesoNumerico = Number(peso)
-  const alturaNumerica = Number(altura)
-  const larguraNumerica = Number(largura)
-  const comprimentoNumerico = Number(comprimento)
-
-  const pronto =
-    cepNumerico.length === 8 &&
-    Boolean(cidade) &&
-    Boolean(estado) &&
-    pesoNumerico > 0 &&
-    alturaNumerica > 0 &&
-    larguraNumerica > 0 &&
-    comprimentoNumerico > 0 &&
-    Boolean(pagador)
-
-  function voltar() {
-    router.push(
-      `/publicar/${categoria}/fotos`,
+setEndereco(data.logradouro ?? '')
+setCidade(data.localidade ?? '')
+setEstado(data.uf ?? '')
+} catch {
+  if (!cancelado) {
+    setCidade('')
+    setEstado('')
+    setEndereco('')
+    setErroCep(
+      'Não foi possível consultar o CEP agora.',
     )
   }
+} finally {
+  if (!cancelado) {
+    setConsultandoCep(false)
+  }
+}
+}
 
-  function cancelar() {
-    clearDraft(categoria)
-    router.push('/publicar')
+consultarCep()
+
+return () => {
+  cancelado = true
+}
+}, [cep])
+
+const cepNumerico =
+  cep.replace(/\D/g, '')
+
+const pesoNumerico = Number(
+  peso.replace(',', '.'),
+)
+
+const alturaNumerica = Number(
+  altura.replace(',', '.'),
+)
+
+const larguraNumerica = Number(
+  largura.replace(',', '.'),
+)
+
+const comprimentoNumerico = Number(
+  comprimento.replace(',', '.'),
+)
+
+const pesoValido =
+  pesoNumerico > 0 &&
+  pesoNumerico <= LIMITE_PESO_KG
+
+const alturaValida =
+  alturaNumerica > 0 &&
+  alturaNumerica <= LIMITE_MEDIDA_CM
+
+const larguraValida =
+  larguraNumerica > 0 &&
+  larguraNumerica <= LIMITE_MEDIDA_CM
+
+const comprimentoValido =
+  comprimentoNumerico > 0 &&
+  comprimentoNumerico <= LIMITE_MEDIDA_CM
+
+const pronto =
+  cepNumerico.length === 8 &&
+  Boolean(cidade) &&
+  Boolean(estado) &&
+  pesoValido &&
+  alturaValida &&
+  larguraValida &&
+  comprimentoValido &&
+  Boolean(pagador)
+
+function voltar() {
+  router.push(
+    `/publicar/${categoria}/fotos`,
+  )
+}
+
+function cancelar() {
+  clearDraft(categoria)
+  router.push('/publicar')
+}
+
+function continuar() {
+  if (!pronto) {
+    return
   }
 
-  function continuar() {
-    if (!pronto) {
-      return
-    }
+  const pesoEmGramas = Math.round(
+    pesoNumerico * 1000,
+  )
 
-    saveDraft(categoria, {
-      frete: {
-        localizacao: {
-          endereco,
-          cidade,
-          estado,
-          cep: cepNumerico,
-        },
-        peso_g: pesoNumerico,
-        altura_cm: alturaNumerica,
-        largura_cm: larguraNumerica,
-        comprimento_cm: comprimentoNumerico,
-        pagador:
-          pagador === 'retirada_local'
-            ? 'retirada_local'
-            : pagador === 'vendedor'
-              ? 'vendedor'
-              : 'comprador',
+  saveDraft(categoria, {
+    frete: {
+      localizacao: {
+        endereco,
+        cidade,
+        estado,
+        cep: cepNumerico,
       },
-    })
+      peso_g: pesoEmGramas,
+      altura_cm: alturaNumerica,
+      largura_cm: larguraNumerica,
+      comprimento_cm: comprimentoNumerico,
+      pagador:
+        pagador === 'retirada_local'
+          ? 'retirada_local'
+          : pagador === 'vendedor'
+            ? 'vendedor'
+            : 'comprador',
+    },
+  })
 
-    router.push(
-      `/publicar/${categoria}/preco`,
-    )
-  }
+  router.push(
+    `/publicar/${categoria}/preco`,
+  )
+}
 
-  const nomeCategoria =
-    categoria === 'bikes'
-      ? 'Bicicleta'
-      : categoria === 'pecas'
-        ? 'Peças'
-        : categoria === 'consumiveis'
-          ? 'Consumíveis'
-          : categoria === 'servicos'
-            ? 'Serviços'
-            : categoria === 'produtos'
-              ? 'Produtos'
-              : categoria ?? 'Anúncio'
+const nomeCategoria =
+  categoria === 'bikes'
+    ? 'Bicicleta'
+    : categoria === 'pecas'
+      ? 'Peças'
+      : categoria === 'consumiveis'
+        ? 'Consumíveis'
+        : categoria === 'servicos'
+          ? 'Serviços'
+          : categoria === 'produtos'
+            ? 'Produtos'
+            : categoria ?? 'Anúncio'
 
-  return (
-    <main className="publish-page">
-      <header className="publish-header">
-        <button
-          type="button"
-          onClick={voltar}
-          className="publish-back"
-        >
-          <ArrowLeft />
-          Voltar
-        </button>
+return (
+  <main className="publish-page">
+    <header className="publish-header">
+      <button
+        type="button"
+        onClick={voltar}
+        className="publish-back"
+      >
+        <ArrowLeft />
+        Voltar
+      </button>
 
-        <strong>
-          {nomeCategoria}
-        </strong>
+      <strong>
+        {nomeCategoria}
+      </strong>
 
-        <button
-          type="button"
-          onClick={cancelar}
-          className="publish-cancel"
-        >
-          <X />
-          Cancelar
-        </button>
-      </header>
+      <button
+        type="button"
+        onClick={cancelar}
+        className="publish-cancel"
+      >
+        <X />
+        Cancelar
+      </button>
+    </header>
 
-      <div className="publish-shell">
-        <p className="publish-kicker">
-          Etapa 4 de 6
-        </p>
+    <div className="publish-shell">
+      <p className="publish-kicker">
+        Etapa 4 de 6
+      </p>
 
-        <h1>
-          Frete e entrega
-        </h1>
+      <h1>
+        Frete e entrega
+      </h1>
 
-        <p className="publish-lead">
-          Informe o local de envio e os dados
-          básicos da embalagem.
-        </p>
+      <p className="publish-lead">
+        Informe o local de envio e os dados
+        básicos da embalagem.
+      </p>
 
-        <div className="publish-progress">
+      <div className="publish-progress">
           <span
             style={{
               width: '60%',
             }}
           />
-        </div>
+      </div>
 
-        <section className="publish-card publish-form">
-          <label>
-            CEP de origem
+      <section className="publish-card publish-form">
+        <label>
+          CEP de origem
 
-            <input
-              inputMode="numeric"
-              value={cep}
-              onChange={(event) => {
-                setCep(
-                  event.target.value
-                    .replace(/\D/g, '')
-                    .slice(0, 8),
-                )
-              }}
-              placeholder="00000-000"
-              maxLength={8}
-            />
+          <input
+            inputMode="numeric"
+            value={cep}
+            onChange={(event) => {
+              setCep(
+                event.target.value
+                  .replace(/\D/g, '')
+                  .slice(0, 8),
+              )
+            }}
+            placeholder="00000-000"
+            maxLength={8}
+          />
 
-            <small>
-              Informe o CEP de onde o produto será
-              enviado.
-            </small>
-          </label>
+          <small>
+            Informe o CEP de onde o produto será
+            enviado.
+          </small>
+        </label>
 
-          {consultandoCep && (
-            <small>
-              Consultando endereço...
-            </small>
-          )}
+        {consultandoCep && (
+          <small>
+            Consultando endereço...
+          </small>
+        )}
 
-          {erroCep && (
-            <small>
-              {erroCep}
-            </small>
-          )}
+        {erroCep && (
+          <small>
+            {erroCep}
+          </small>
+        )}
 
-          {(cidade || estado) && !erroCep && (
-            <div className="form-row">
-              <label>
-                Cidade
-
-                <input
-                  value={cidade}
-                  readOnly
-                />
-              </label>
-
-              <label>
-                Estado
-
-                <input
-                  value={estado}
-                  readOnly
-                />
-              </label>
-            </div>
-          )}
-
-          <div className="frete-dimensoes-grid">
+        {(cidade || estado) && !erroCep && (
+          <div className="form-row">
             <label>
-              Peso (g)
+              Cidade
 
               <input
-                inputMode="decimal"
-                value={peso}
-                onChange={(event) =>
-                  setPeso(
-                    event.target.value.replace(
-                      /[^0-9.,]/g,
-                      '',
-                    ),
-                  )
-                }
-                placeholder="Ex.: 12000"
-              />
-
-              <small>
-                Peso da embalagem em gramas.
-              </small>
-            </label>
-
-            <label>
-              Altura (cm)
-
-              <input
-                inputMode="decimal"
-                value={altura}
-                onChange={(event) =>
-                  setAltura(
-                    event.target.value.replace(
-                      /[^0-9.,]/g,
-                      '',
-                    ),
-                  )
-                }
-                placeholder="Ex.: 80"
+                value={cidade}
+                readOnly
               />
             </label>
 
             <label>
-              Largura (cm)
+              Estado
 
               <input
-                inputMode="decimal"
-                value={largura}
-                onChange={(event) =>
-                  setLargura(
-                    event.target.value.replace(
-                      /[^0-9.,]/g,
-                      '',
-                    ),
-                  )
-                }
-                placeholder="Ex.: 30"
-              />
-            </label>
-
-            <label>
-              Comprimento (cm)
-
-              <input
-                inputMode="decimal"
-                value={comprimento}
-                onChange={(event) =>
-                  setComprimento(
-                    event.target.value.replace(
-                      /[^0-9.,]/g,
-                      '',
-                    ),
-                  )
-                }
-                placeholder="Ex.: 20"
+                value={estado}
+                readOnly
               />
             </label>
           </div>
+        )}
 
-          <small>
-            Essas medidas serão utilizadas futuramente
-            no cálculo do frete.
-          </small>
+        <div className="frete-dimensoes-grid">
+          <label>
+            Peso (kg)
 
-          <fieldset>
-            <legend>
-              Quem paga o frete?
-            </legend>
+            <input
+              inputMode="decimal"
+              value={peso}
+              onChange={(event) =>
+                setPeso(
+                  event.target.value.replace(
+                    /[^0-9.,]/g,
+                    '',
+                  ),
+                )
+              }
+              placeholder="Ex.: 12,5"
+            />
 
-            <div className="publish-options">
-              {pagadores.map((item) => (
-                <button
-                  type="button"
-                  key={item.id}
-                  className={
-                    pagador === item.id
-                      ? 'is-selected'
-                      : ''
-                  }
-                  onClick={() =>
-                    setPagador(item.id)
-                  }
-                >
+            <small>
+              Peso da embalagem. Máximo: 1000 kg.
+            </small>
+
+            {pesoNumerico > LIMITE_PESO_KG && (
+              <small>
+                Digite um peso de até 1000 kg.
+              </small>
+            )}
+          </label>
+
+          <label>
+            Altura (cm)
+
+            <input
+              inputMode="decimal"
+              value={altura}
+              onChange={(event) =>
+                setAltura(
+                  event.target.value.replace(
+                    /[^0-9.,]/g,
+                    '',
+                  ),
+                )
+              }
+              placeholder="Ex.: 80"
+            />
+
+            <small>
+              Máximo: 300 cm.
+            </small>
+
+            {alturaNumerica > LIMITE_MEDIDA_CM && (
+              <small>
+                Medida ultrapassa o limite de 300 cm.
+              </small>
+            )}
+          </label>
+
+          <label>
+            Largura (cm)
+
+            <input
+              inputMode="decimal"
+              value={largura}
+              onChange={(event) =>
+                setLargura(
+                  event.target.value.replace(
+                    /[^0-9.,]/g,
+                    '',
+                  ),
+                )
+              }
+              placeholder="Ex.: 30"
+            />
+
+            <small>
+              Máximo: 300 cm.
+            </small>
+
+            {larguraNumerica > LIMITE_MEDIDA_CM && (
+              <small>
+                Medida ultrapassa o limite de 300 cm.
+              </small>
+            )}
+          </label>
+
+          <label>
+            Comprimento (cm)
+
+            <input
+              inputMode="decimal"
+              value={comprimento}
+              onChange={(event) =>
+                setComprimento(
+                  event.target.value.replace(
+                    /[^0-9.,]/g,
+                    '',
+                  ),
+                )
+              }
+              placeholder="Ex.: 140"
+            />
+
+            <small>
+              Máximo: 300 cm.
+            </small>
+
+            {comprimentoNumerico > LIMITE_MEDIDA_CM && (
+              <small>
+                Medida ultrapassa o limite de 300 cm.
+              </small>
+            )}
+          </label>
+        </div>
+
+        <small>
+          Essas medidas serão utilizadas futuramente
+          no cálculo do frete.
+        </small>
+
+        <fieldset>
+          <legend>
+            Quem paga o frete?
+          </legend>
+
+          <div className="publish-options">
+            {pagadores.map((item) => (
+              <button
+                type="button"
+                key={item.id}
+                className={
+                  pagador === item.id
+                    ? 'is-selected'
+                    : ''
+                }
+                onClick={() =>
+                  setPagador(item.id)
+                }
+              >
                   <span>
                     <b>
                       {item.label}
@@ -466,26 +538,27 @@ export default function FretePage() {
                     </small>
                   </span>
 
-                  {pagador === item.id && (
-                    <Check />
-                  )}
-                </button>
-              ))}
-            </div>
-          </fieldset>
-        </section>
-      </div>
+                {pagador === item.id && (
+                  <Check />
+                )}
+              </button>
+            ))}
+          </div>
+        </fieldset>
+      </section>
+    </div>
 
-      <footer className="publish-footer">
-        <button
-          type="button"
-          disabled={!pronto}
-          onClick={continuar}
-        >
-          Continuar
-          <ArrowRight />
-        </button>
-      </footer>
-    </main>
-  )
+    <footer className="publish-footer">
+      <button
+        type="button"
+        disabled={!pronto}
+        onClick={continuar}
+      >
+        Continuar
+        <ArrowRight />
+      </button>
+    </footer>
+  </main>
+)
 }
+

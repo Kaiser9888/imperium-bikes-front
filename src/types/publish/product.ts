@@ -1,10 +1,22 @@
-// types/publish/product.ts
+export type ProductCondition =
+  | 'NEW'
+  | 'LIKE_NEW'
+  | 'USED'
+  | 'REFURBISHED'
+  | 'FOR_PARTS'
 
-export type ProductCondition = 'NEW' | 'LIKE_NEW' | 'USED' | 'REFURBISHED' | 'FOR_PARTS'
+export type ProductStatus =
+  | 'DRAFT'
+  | 'REVIEW'
+  | 'PUBLISHED'
+  | 'PAUSED'
+  | 'SOLD'
+  | 'ARCHIVED'
 
-export type ProductStatus = 'DRAFT' | 'REVIEW' | 'PUBLISHED' | 'PAUSED' | 'SOLD' | 'ARCHIVED'
-
-export type ShippingType = 'FREE' | 'CALCULATED' | 'PICKUP'
+export type ShippingType =
+  | 'FREE'
+  | 'CALCULATED'
+  | 'PICKUP'
 
 export interface ProductImage {
     id?: string
@@ -60,8 +72,17 @@ export interface ProductRequest {
     negotiable: boolean
     city: string
     state: string
+    originPostalCode: string
+    weightKg: number
+    heightCm: number
+    widthCm: number
+    lengthCm: number
     hasSecurePayment: boolean
-    images: { url: string; isMain: boolean; displayOrder: number }[]
+    images: {
+        url: string
+        isMain: boolean
+        displayOrder: number
+    }[]
 }
 
 export interface ProductResponse {
@@ -69,30 +90,99 @@ export interface ProductResponse {
     title: string
     description: string
     price: number
+    originalPrice?: number
     condition: ProductCondition
     status: ProductStatus
     brand: string
     model: string
+    year?: number
     stock: number
     negotiable: boolean
     city: string
     state: string
-    images: { id: string; url: string; isMain: boolean; displayOrder: number }[]
-    seller: { id: string; name: string; avatarUrl: string }
+
+    originPostalCode: string | null
+    weightKg: number | null
+    heightCm: number | null
+    widthCm: number | null
+    lengthCm: number | null
+
+    hasSecurePayment: boolean
+    isHighlighted?: boolean
+    highlightType?: string | null
+
+    images: {
+        id: string
+        url: string
+        isMain: boolean
+        displayOrder: number
+    }[]
+
+    seller: {
+        id: string
+        name: string
+        avatarUrl: string
+    }
+
     category: string
     createdAt: string
 }
 
-export const PRODUCT_CONDITIONS: { value: ProductCondition; label: string; description: string }[] = [
-    { value: 'NEW', label: 'Novo', description: 'Nunca usado, na embalagem original' },
-    { value: 'LIKE_NEW', label: 'Seminovo', description: 'Pouco uso, em perfeito estado' },
-    { value: 'USED', label: 'Usado', description: 'Com marcas de uso, mas funcional' },
-    { value: 'REFURBISHED', label: 'Recondicionado', description: 'Restaurado por profissional' },
-    { value: 'FOR_PARTS', label: 'Para pecas', description: 'Nao funcional, para reaproveitamento' },
+export interface ShippingQuote {
+    id: string
+    transportadora: string
+    servico: string
+    prazoDias: number
+    valor: number
+    valorOriginal: number
+}
+
+export const PRODUCT_CONDITIONS: {
+    value: ProductCondition
+    label: string
+    description: string
+}[] = [
+    {
+        value: 'NEW',
+        label: 'Novo',
+        description: 'Nunca usado, na embalagem original',
+    },
+    {
+        value: 'LIKE_NEW',
+        label: 'Seminovo',
+        description: 'Pouco uso, em perfeito estado',
+    },
+    {
+        value: 'USED',
+        label: 'Usado',
+        description: 'Com marcas de uso, mas funcional',
+    },
+    {
+        value: 'REFURBISHED',
+        label: 'Recondicionado',
+        description: 'Restaurado por profissional',
+    },
+    {
+        value: 'FOR_PARTS',
+        label: 'Para pecas',
+        description: 'Nao funcional, para reaproveitamento',
+    },
 ]
 
-export const SHIPPING_TYPES: { value: ShippingType; label: string }[] = [
-    { value: 'FREE', label: 'Frete gratis' },
-    { value: 'CALCULATED', label: 'Calcular frete' },
-    { value: 'PICKUP', label: 'Retirada no local' },
+export const SHIPPING_TYPES: {
+    value: ShippingType
+    label: string
+}[] = [
+    {
+        value: 'FREE',
+        label: 'Frete gratis',
+    },
+    {
+        value: 'CALCULATED',
+        label: 'Calcular frete',
+    },
+    {
+        value: 'PICKUP',
+        label: 'Retirada no local',
+    },
 ]
