@@ -11,7 +11,34 @@ export const productService = {
     create: async (
       data: ProductRequest,
     ): Promise<ProductResponse> => {
-        const res = await api.post(BASE, data)
+        const res = await api.post(
+          BASE,
+          data,
+        )
+
+        return res.data
+    },
+
+    getAll: async (
+      page = 0,
+      size = 20,
+    ): Promise<{
+        content: ProductResponse[]
+        totalElements: number
+        totalPages: number
+        number: number
+        size: number
+    }> => {
+        const res = await api.get(
+          BASE,
+          {
+              params: {
+                  page,
+                  size,
+              },
+          },
+        )
+
         return res.data
     },
 
@@ -61,7 +88,6 @@ export const productService = {
       productId: string,
       cepDestino: string,
     ): Promise<ShippingQuote[]> => {
-
         const res = await api.post(
           '/api/frete/cotar',
           {
