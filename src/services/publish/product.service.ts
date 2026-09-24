@@ -13,6 +13,26 @@ export const productService = {
         return res.data
     },
 
+    getAll: async (
+      page = 0,
+      size = 20
+    ): Promise<{
+        content: ProductResponse[]
+        totalElements: number
+        totalPages: number
+        number: number
+        size: number
+    }> => {
+        const res = await api.get(BASE, {
+            params: {
+                page,
+                size,
+            },
+        })
+
+        return res.data
+    },
+
     update: async (
       id: string,
       data: Partial<ProductRequest>
@@ -34,7 +54,10 @@ export const productService = {
         totalElements: number
     }> => {
         const res = await api.get(BASE + '/my', {
-            params: { page, size },
+            params: {
+                page,
+                size,
+            },
         })
 
         return res.data
