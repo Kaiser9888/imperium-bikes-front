@@ -9,10 +9,18 @@ import Image from "next/image"
 
 type HeaderProps = {
     onMenuClick: () => void
+    cartCount?: number
+    notificationCount?: number
 }
 
-export function Header({ onMenuClick }: HeaderProps) {
-    const [activeCard, setActiveCard] = useState<"notifications" | "cart" | null>(null)
+export function Header({
+    onMenuClick,
+    cartCount = 0,
+    notificationCount = 0,
+}: HeaderProps) {
+    const [activeCard, setActiveCard] = useState<
+        "notifications" | "cart" | null
+    >(null)
 
     function handleNotifications() {
         setActiveCard((current) =>
@@ -33,7 +41,9 @@ export function Header({ onMenuClick }: HeaderProps) {
     return (
         <header
             className="sticky top-0 z-40 border-b border-border/60 bg-marble bg-cover bg-center shadow-sm"
-            style={{ backgroundImage: "url(/images/marble-light.png)" }}
+            style={{
+                backgroundImage: "url(/images/marble-light.png)",
+            }}
         >
             <div className="bg-marble/1 backdrop-blur-[2px]">
                 <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-3 px-4 py-3">
@@ -59,10 +69,20 @@ export function Header({ onMenuClick }: HeaderProps) {
                             type="button"
                             onClick={handleNotifications}
                             aria-label="Notificações"
-                            aria-expanded={activeCard === "notifications"}
-                            className="flex size-10 items-center justify-center rounded-md text-marble-foreground transition-colors hover:bg-marble-foreground/10"
+                            aria-expanded={
+                                activeCard === "notifications"
+                            }
+                            className="relative flex size-10 items-center justify-center rounded-md text-marble-foreground transition-colors hover:bg-marble-foreground/10"
                         >
                             <Bell className="size-5" />
+
+                            {notificationCount > 0 && (
+                                <span className="absolute right-1 top-1 flex min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[0.6rem] font-bold leading-4 text-primary-foreground">
+                                    {notificationCount > 9
+                                        ? "9+"
+                                        : notificationCount}
+                                </span>
+                            )}
                         </button>
 
                         <button
@@ -70,9 +90,15 @@ export function Header({ onMenuClick }: HeaderProps) {
                             onClick={handleCart}
                             aria-label="Carrinho"
                             aria-expanded={activeCard === "cart"}
-                            className="flex size-10 items-center justify-center rounded-md text-marble-foreground transition-colors hover:bg-marble-foreground/10"
+                            className="relative flex size-10 items-center justify-center rounded-md text-marble-foreground transition-colors hover:bg-marble-foreground/10"
                         >
                             <ShoppingCart className="size-5" />
+
+                            {cartCount > 0 && (
+                                <span className="absolute right-1 top-1 flex min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[0.6rem] font-bold leading-4 text-primary-foreground">
+                                    {cartCount > 9 ? "9+" : cartCount}
+                                </span>
+                            )}
                         </button>
 
                         <Guest>
@@ -135,9 +161,19 @@ export function Header({ onMenuClick }: HeaderProps) {
                                 Notificações
                             </h2>
 
-                            <p className="mt-1 text-sm text-muted-foreground">
-                                Você não possui novas notificações.
-                            </p>
+                            {notificationCount > 0 ? (
+                                <p className="mt-1 text-sm text-muted-foreground">
+                                    Você tem {notificationCount}{" "}
+                                    {notificationCount === 1
+                                        ? "notificação"
+                                        : "notificações"}{" "}
+                                    não lidas.
+                                </p>
+                            ) : (
+                                <p className="mt-1 text-sm text-muted-foreground">
+                                    Você não possui novas notificações.
+                                </p>
+                            )}
                         </div>
 
                         <button
@@ -160,9 +196,19 @@ export function Header({ onMenuClick }: HeaderProps) {
                                 Carrinho
                             </h2>
 
-                            <p className="mt-1 text-sm text-muted-foreground">
-                                Seu carrinho está vazio.
-                            </p>
+                            {cartCount > 0 ? (
+                                <p className="mt-1 text-sm text-muted-foreground">
+                                    Você possui {cartCount}{" "}
+                                    {cartCount === 1
+                                        ? "item"
+                                        : "itens"}{" "}
+                                    no carrinho.
+                                </p>
+                            ) : (
+                                <p className="mt-1 text-sm text-muted-foreground">
+                                    Seu carrinho está vazio.
+                                </p>
+                            )}
                         </div>
 
                         <button
@@ -187,4 +233,3 @@ export function Header({ onMenuClick }: HeaderProps) {
         </header>
     )
 }
-
