@@ -3,9 +3,8 @@ import type { Metadata, Viewport } from 'next'
 import './global.css'
 
 export const metadata: Metadata = {
-  title: 'Imperium Bikes — Classificação de bicicletas',
-  description:
-    'Classifique sua bicicleta com clareza para publicar no Imperium Bikes.',
+  title: 'Imperium ',
+
   icons: {
     icon: [
       {
