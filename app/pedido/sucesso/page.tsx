@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { Suspense, useEffect, useState } from "react"
 import { useAuth } from "@clerk/nextjs"
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
@@ -14,7 +14,7 @@ import type { PaymentStatus } from "@/types/payment"
 // 2) endpoint GET /api/payments/by-session/{sessionId} no backend
 // Abaixo assumo a opção 1: success_url = ".../sucesso?paymentId={id}"
 
-export default function PedidoSucessoPage() {
+function PedidoSucessoContent() {
   const { getToken } = useAuth()
   const params = useSearchParams()
   const paymentId = params.get("paymentId")
@@ -134,5 +134,31 @@ export default function PedidoSucessoPage() {
 
       </div>
     </main>
+  )
+}
+
+function PedidoSucessoLoading() {
+  return (
+    <main className="grid min-h-screen place-items-center bg-[#f5f3ee] px-6 text-center text-[#1d282b]">
+      <div className="max-w-md">
+        <Loader2 className="mx-auto size-10 animate-spin text-[#a33c36]" />
+
+        <h1 className="mt-5 font-serif text-3xl">
+          Confirmando pagamento...
+        </h1>
+
+        <p className="mt-2 text-sm text-[#68737a]">
+          Isso pode levar alguns segundos.
+        </p>
+      </div>
+    </main>
+  )
+}
+
+export default function PedidoSucessoPage() {
+  return (
+    <Suspense fallback={<PedidoSucessoLoading />}>
+      <PedidoSucessoContent />
+    </Suspense>
   )
 }
