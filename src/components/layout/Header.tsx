@@ -56,10 +56,10 @@ export function Header({
                         <Image
                             src="/logo1.png"
                             alt="Imperium Bikes"
-                            width={80}
-                            height={30}
+                            width={180}
+                            height={60}
                             priority
-                            className="h-auto w-[80px] object-contain"
+                            className="h-auto w-[150px] object-contain"
                         />
                     </Link>
 
