@@ -1,4 +1,3 @@
-
 // src/lib/publicar/storage.ts
 
 export interface CustoItem {
@@ -35,6 +34,7 @@ export interface PublishDraft {
   titulo?: string
   descricao?: string
   condicao?: string
+  quantidade?: number
 
   categoryId?: string
 
@@ -125,3 +125,4 @@ export function clearDraft(categoria: string) {
 
   sessionStorage.removeItem(storageKey(categoria))
 }
+

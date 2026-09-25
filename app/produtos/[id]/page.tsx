@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
-import { useParams } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import {
   ArrowLeft,
   Calculator,
@@ -29,6 +29,7 @@ import type {
 
 function ProdutoPage() {
   const params = useParams<{ id: string }>()
+  const router = useRouter()
   const id = params?.id
 
   const [produto, setProduto] =
@@ -634,18 +635,14 @@ function ProdutoPage() {
             <div className="mt-7 grid gap-3 sm:grid-cols-[1fr_auto]">
 
               <button
-                onClick={() =>
-                  setBought(true)
-                }
+                onClick={() => {
+                  if (!id) return
+                  router.push(`/produtos/${id}/comprar`)
+                }}
                 className="flex items-center justify-center gap-2 bg-[#a33c36] px-5 py-4 text-sm font-bold text-white transition hover:bg-[#812f2b]"
               >
-
                 <ShoppingBag className="size-5" />
-
-                {bought
-                  ? "Interesse registrado"
-                  : "Comprar agora"}
-
+                Comprar agora
               </button>
 
               <button
@@ -948,3 +945,4 @@ function ProdutoPage() {
 }
 
 export default ProdutoPage;
+
