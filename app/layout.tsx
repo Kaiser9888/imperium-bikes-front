@@ -36,39 +36,3 @@ export const metadata: Metadata = {
         apple: '/apple-icon.png',
     },
 }
-
-export default function RootLayout({ children }: { children: React.ReactNode }) {
-    return (
-      <ClerkProvider
-        localization={ptBR}
-        appearance={{
-            variables: {
-                colorPrimary: '#9e2b25',
-                colorText: '#3a2f2a',
-                borderRadius: '0.5rem',
-            },
-        }}
-      >
-          <html lang="pt-BR" className={`${geistSans.variable} ${cinzel.variable} ${blackletter.variable} ${caesar.variable} bg-background`}>
-          <body className="font-sans antialiased">
-          {/*
-            UserSyncProvider substitui o antigo <AutoSync /> solto.
-            Ele dispara o POST /api/users/sync uma única vez por login e
-            expõe, via contexto (hook useUserSync), o momento em que esse
-            sync terminou. Páginas como /carteira usam isso para não
-            disparar suas próprias chamadas autenticadas antes do sync
-            inicial concluir — evitando várias requisições concorrentes
-            tentando criar o mesmo usuário no banco ao mesmo tempo.
-          */}
-          <UserSyncProvider>
-              <header className="flex justify-end px-4 py-3 border-b border-border">
-
-              </header>
-              {children}
-          </UserSyncProvider>
-          {process.env.NODE_ENV === 'production' && <Analytics />}
-          </body>
-          </html>
-      </ClerkProvider>
-    )
-}
