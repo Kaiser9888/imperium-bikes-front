@@ -59,7 +59,7 @@ export function Header({
                             width={180}
                             height={60}
                             priority
-                            className="h-auto w-[150px] object-contain"
+                            className="h-auto w-[100px] object-contain"
                         />
                     </Link>
 
