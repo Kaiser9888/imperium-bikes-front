@@ -182,6 +182,7 @@ export function MenuDrawer({ open, onClose }: MenuDrawerProps) {
                       <li key={href}>
                         <Link
                           href={href}
+                          prefetch={false}
                           onClick={onClose}
                           aria-current={selecionado ? "page" : undefined}
                           className={`flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors ${

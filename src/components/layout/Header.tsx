@@ -82,7 +82,7 @@ export function Header({
                         className="h-auto w-[100px] object-contain"
                       />
 
-                      <span className="mt-0.5 font-Norse text-[11px] font-semibold tracking-[0.18em] text-marble-foreground">
+                      <span className="mt-0.5 font-Norse text-[11px] font-semibold tracking-[0.18em] text-#A33C36">
                             IMPERIUM BIKES
                         </span>
                   </Link>
