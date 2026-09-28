@@ -76,10 +76,10 @@ export function Header({
                       <Image
                         src="/logo1.png"
                         alt="Imperium Bikes"
-                        width={180}
-                        height={60}
+                        width={100}
+                        height={50}
                         priority
-                        className="h-auto w-[100px] object-contain"
+                        className="h-auto w-[80px] object-contain"
                       />
 
                       <span className="mt-0.5 font-Norse text-[11px] font-semibold tracking-[0.18em] text-#A33C36">

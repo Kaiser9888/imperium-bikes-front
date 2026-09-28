@@ -3,10 +3,11 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
+import { useAuth } from "@clerk/nextjs"
+
 import {
   ArrowLeft,
   Calculator,
-  Check,
   ChevronLeft,
   ChevronRight,
   Heart,
@@ -27,10 +28,14 @@ import type {
   ShippingQuote,
 } from "@/types/publish/product"
 
+import { iniciarConversa } from "@/lib/stream"
+
 function ProdutoPage() {
   const params = useParams<{ id: string }>()
   const router = useRouter()
   const id = params?.id
+
+  const { isSignedIn } = useAuth()
 
   const [produto, setProduto] =
     useState<ProductResponse | null>(null)
@@ -59,6 +64,9 @@ function ProdutoPage() {
     useState<string | null>(null)
 
   const [bought, setBought] =
+    useState(false)
+
+  const [abrindoChat, setAbrindoChat] =
     useState(false)
 
   useEffect(() => {
@@ -103,6 +111,65 @@ function ProdutoPage() {
     carregarProduto()
   }, [id])
 
+  // ---------- CHAT COM VENDEDOR ----------
+
+  async function falarComVendedor() {
+    if (!isSignedIn) {
+      router.push("/sign-in")
+      return
+    }
+
+    const produtoAtual = produto as
+      | (ProductResponse & {
+          sellerId?: string
+          userId?: string
+          seller?: string | {
+            id?: string
+            name?: string
+          }
+        })
+      | null
+
+    const vendedorId =
+      produtoAtual?.sellerId ??
+      produtoAtual?.userId ??
+      (
+        typeof produtoAtual?.seller === "object"
+          ? produtoAtual.seller?.id
+          : undefined
+      )
+
+    if (!vendedorId || !id) {
+      console.error(
+        "Não foi possível identificar o vendedor.",
+      )
+      return
+    }
+
+    try {
+      setAbrindoChat(true)
+
+      const canalId =
+        await iniciarConversa(
+          String(vendedorId),
+          String(id),
+        )
+
+      router.push(`/chat/${canalId}`)
+
+    } catch (error) {
+
+      console.error(
+        "Erro ao iniciar conversa com vendedor:",
+        error,
+      )
+
+    } finally {
+
+      setAbrindoChat(false)
+    }
+  }
+
   // ---------- LOADING ----------
 
   if (loading) {
@@ -122,6 +189,7 @@ function ProdutoPage() {
     return (
       <main className="grid min-h-screen place-items-center bg-[#f5f3ee] px-6 text-center">
         <div>
+
           <p className="text-xs font-bold uppercase tracking-[.2em] text-[#a33c36]">
             Imperium Bikes
           </p>
@@ -142,6 +210,7 @@ function ProdutoPage() {
             <ArrowLeft className="size-4" />
             Voltar ao marketplace
           </Link>
+
         </div>
       </main>
     )
@@ -153,22 +222,35 @@ function ProdutoPage() {
     produto as ProductResponse & {
       location?: string
       neighborhood?: string
+
       seller?: string | {
+        id?: string
         name?: string
       }
+
+      sellerId?: string
+      userId?: string
+
       seller_initials?: string
       initials?: string
+
       seller_since?: number | string
       sellerSince?: number | string
+
       rating?: number | string
       reviews?: number | string
+
       active_listings?: number | string
       active?: number | string
+
       specs?: [string, string][]
+
       imageUrl?: string
       image?: string
       photos?: string[]
-      images?: string[]
+      images?: {
+        url: string
+      }[]
     }
 
   const titulo =
@@ -195,8 +277,8 @@ function ProdutoPage() {
       ? p.photos
       : p.images?.length
         ? p.images.map(
-          (image) => image.url,
-        )
+            (image) => image.url,
+          )
         : p.imageUrl
           ? [p.imageUrl]
           : p.image
@@ -217,7 +299,7 @@ function ProdutoPage() {
     typeof p.seller === "string"
       ? p.seller
       : p.seller?.name ??
-      "Vendedor"
+        "Vendedor"
 
   const iniciais =
     p.seller_initials ??
@@ -254,14 +336,14 @@ function ProdutoPage() {
   const precoFormatado =
     typeof preco === "number"
       ? preco.toLocaleString(
-        "pt-BR",
-        {
-          style: "currency",
-          currency: "BRL",
-        },
-      )
+          "pt-BR",
+          {
+            style: "currency",
+            currency: "BRL",
+          },
+        )
       : preco ??
-      "Preço sob consulta"
+        "Preço sob consulta"
 
   // ---------- FRETE ----------
 
@@ -360,6 +442,7 @@ function ProdutoPage() {
     <main className="min-h-screen bg-[#f5f3ee] text-[#1d282b]">
 
       <header className="border-b border-[#dedbd2] bg-[#f8f7f3]/95">
+
         <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-5 lg:px-8">
 
           <div className="flex items-center gap-5">
@@ -393,6 +476,7 @@ function ProdutoPage() {
           </div>
 
         </div>
+
       </header>
 
       <div className="mx-auto max-w-7xl px-5 py-8 lg:px-8 lg:py-12">
@@ -405,13 +489,17 @@ function ProdutoPage() {
           <span>/</span>
           <span>Bicicletas</span>
           <span>/</span>
+
           <span className="text-[#1d282b]">
             {marca}
           </span>
+
           <span>/</span>
+
           <span className="text-[#1d282b]">
             {titulo}
           </span>
+
         </nav>
 
         <section className="grid items-start gap-10 lg:grid-cols-[minmax(0,1.06fr)_minmax(380px,0.94fr)] lg:gap-16">
@@ -440,13 +528,14 @@ function ProdutoPage() {
 
               {imagens.length > 1 && (
                 <>
+
                   <button
                     onClick={() =>
                       setActiveImage(
                         (activeImage +
                           imagens.length -
                           1) %
-                        imagens.length,
+                          imagens.length,
                       )
                     }
                     className="absolute left-4 top-1/2 grid size-10 -translate-y-1/2 place-items-center rounded-full border border-white/50 bg-black/20 text-white backdrop-blur hover:bg-black/50"
@@ -459,7 +548,7 @@ function ProdutoPage() {
                     onClick={() =>
                       setActiveImage(
                         (activeImage + 1) %
-                        imagens.length,
+                          imagens.length,
                       )
                     }
                     className="absolute right-4 top-1/2 grid size-10 -translate-y-1/2 place-items-center rounded-full border border-white/50 bg-black/20 text-white backdrop-blur hover:bg-black/50"
@@ -468,10 +557,10 @@ function ProdutoPage() {
                     <ChevronRight />
                   </button>
 
-                  <span
-                    className="absolute bottom-4 left-4 bg-[#1d282b]/85 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.16em] text-white">
+                  <span className="absolute bottom-4 left-4 bg-[#1d282b]/85 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.16em] text-white">
                     {activeImage + 1} / {imagens.length}
                   </span>
+
                 </>
               )}
 
@@ -489,10 +578,10 @@ function ProdutoPage() {
                         setActiveImage(index)
                       }
                       className={`aspect-[4/3] overflow-hidden border-2 bg-[#e6e3dc] ${
-                        activeImage === index
-                          ? "border-[#a33c36]"
-                          : "border-transparent opacity-70 hover:opacity-100"
-                      }`}
+  activeImage === index
+    ? "border-[#a33c36]"
+    : "border-transparent opacity-70 hover:opacity-100"
+}`}
                       aria-label={`Ver foto ${index + 1}`}
                     >
 
@@ -503,6 +592,7 @@ function ProdutoPage() {
                       />
 
                     </button>
+
                   ),
                 )}
 
@@ -547,10 +637,10 @@ function ProdutoPage() {
 
                 <Heart
                   className={`size-5 ${
-                    favorite
-                      ? "fill-[#a33c36] text-[#a33c36]"
-                      : "text-[#68737a]"
-                  }`}
+  favorite
+    ? "fill-[#a33c36] text-[#a33c36]"
+    : "text-[#68737a]"
+}`}
                 />
 
               </button>
@@ -571,8 +661,7 @@ function ProdutoPage() {
 
               </div>
 
-              <span
-                className="inline-flex items-center gap-1.5 bg-[#e5eee7] px-3 py-2 text-[11px] font-bold uppercase tracking-[0.12em] text-[#386148]">
+              <span className="inline-flex items-center gap-1.5 bg-[#e5eee7] px-3 py-2 text-[11px] font-bold uppercase tracking-[0.12em] text-[#386148]">
                 <ShieldCheck className="size-4" />
                 Compra segura
               </span>
@@ -600,6 +689,7 @@ function ProdutoPage() {
                         </p>
 
                       </div>
+
                     ),
                   )}
 
@@ -637,174 +727,190 @@ function ProdutoPage() {
               <button
                 onClick={() => {
                   if (!id) return
-                  router.push(`/produtos/${id}/comprar`)
-                }}
-                className="flex items-center justify-center gap-2 bg-[#a33c36] px-5 py-4 text-sm font-bold text-white transition hover:bg-[#812f2b]"
-              >
-                <ShoppingBag className="size-5" />
-                Comprar agora
-              </button>
 
-              <button
-                className="flex items-center justify-center gap-2 border border-[#1d282b] px-5 py-4 text-sm font-bold hover:bg-white"
-              >
+                  router.push(
+                    `/produtos/${id}/comprar`,
+)
+}}
+className="flex items-center justify-center gap-2 bg-[#a33c36] px-5 py-4 text-sm font-bold text-white transition hover:bg-[#812f2b]"
+  >
+  <ShoppingBag className="size-5" />
+  Comprar agora
+</button>
 
-                <MessageCircle className="size-5" />
+<button
+  type="button"
+  onClick={falarComVendedor}
+  disabled={abrindoChat}
+  className="flex items-center justify-center gap-2 border border-[#1d282b] px-5 py-4 text-sm font-bold hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
+>
 
-                Falar com vendedor
+  {abrindoChat ? (
+    <>
+      <Loader2 className="size-5 animate-spin" />
+      Abrindo conversa...
+    </>
+  ) : (
+    <>
+      <MessageCircle className="size-5" />
+      Falar com vendedor
+    </>
+  )}
 
-              </button>
+</button>
+
+</div>
+
+{/* FRETE */}
+
+<div className="mt-5 border border-[#dedbd2] bg-[#faf9f5] p-5">
+
+  <div className="mb-4 flex items-center gap-3">
+
+    <Calculator className="size-5 text-[#a33c36]" />
+
+    <div>
+
+      <p className="font-semibold">
+        Calcule o frete
+      </p>
+
+      <p className="text-xs text-[#68737a]">
+        Informe seu CEP para ver opções de entrega.
+      </p>
+
+    </div>
+
+  </div>
+
+  <div className="flex gap-2">
+
+    <input
+      value={zip}
+      onChange={(e) => {
+        setZip(e.target.value)
+        setShipping([])
+        setErroFrete(null)
+      }}
+      inputMode="numeric"
+      placeholder="00000-000"
+      aria-label="CEP para cálculo do frete"
+      className="min-w-0 flex-1 border border-[#d3d0c7] bg-white px-3 py-3 text-sm outline-none focus:border-[#a33c36]"
+    />
+
+    <button
+      onClick={calculateShipping}
+      disabled={calculandoFrete}
+      className="flex min-w-[105px] items-center justify-center gap-2 bg-[#1d282b] px-4 text-xs font-bold uppercase tracking-[0.08em] text-white hover:bg-[#a33c36] disabled:cursor-not-allowed disabled:opacity-60"
+    >
+
+      {calculandoFrete ? (
+        <>
+          <Loader2 className="size-4 animate-spin" />
+          Calculando
+        </>
+      ) : (
+        "Calcular"
+      )}
+
+    </button>
+
+  </div>
+
+  {erroFrete && (
+    <p className="mt-3 text-xs font-semibold text-[#a33c36]">
+      {erroFrete}
+    </p>
+  )}
+
+  {shipping.length > 0 && (
+    <div className="mt-4 space-y-2">
+
+      <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#68737a]">
+        Opções de entrega
+      </p>
+
+      {shipping.map(
+        (opcao) => (
+
+          <div
+            key={opcao.id}
+            className="flex items-center justify-between gap-4 border border-[#dedbd2] bg-white p-3"
+          >
+
+            <div className="min-w-0">
+
+              <p className="text-sm font-semibold">
+                {opcao.transportadora}
+              </p>
+
+              <p className="mt-1 text-xs text-[#68737a]">
+                {opcao.servico} ·{" "}
+                {opcao.prazoDias}{" "}
+                {opcao.prazoDias === 1
+                  ? "dia útil"
+                  : "dias úteis"}
+              </p>
 
             </div>
 
-            {/* FRETE */}
-
-            <div className="mt-5 border border-[#dedbd2] bg-[#faf9f5] p-5">
-
-              <div className="mb-4 flex items-center gap-3">
-
-                <Calculator className="size-5 text-[#a33c36]" />
-
-                <div>
-
-                  <p className="font-semibold">
-                    Calcule o frete
-                  </p>
-
-                  <p className="text-xs text-[#68737a]">
-                    Informe seu CEP para ver opções de entrega.
-                  </p>
-
-                </div>
-
-              </div>
-
-              <div className="flex gap-2">
-
-                <input
-                  value={zip}
-                  onChange={(e) => {
-                    setZip(e.target.value)
-                    setShipping([])
-                    setErroFrete(null)
-                  }}
-                  inputMode="numeric"
-                  placeholder="00000-000"
-                  aria-label="CEP para cálculo do frete"
-                  className="min-w-0 flex-1 border border-[#d3d0c7] bg-white px-3 py-3 text-sm outline-none focus:border-[#a33c36]"
-                />
-
-                <button
-                  onClick={calculateShipping}
-                  disabled={calculandoFrete}
-                  className="flex min-w-[105px] items-center justify-center gap-2 bg-[#1d282b] px-4 text-xs font-bold uppercase tracking-[0.08em] text-white hover:bg-[#a33c36] disabled:cursor-not-allowed disabled:opacity-60"
-                >
-
-                  {calculandoFrete ? (
-                    <>
-                      <Loader2 className="size-4 animate-spin" />
-                      Calculando
-                    </>
-                  ) : (
-                    "Calcular"
-                  )}
-
-                </button>
-
-              </div>
-
-              {erroFrete && (
-                <p className="mt-3 text-xs font-semibold text-[#a33c36]">
-                  {erroFrete}
-                </p>
+            <p className="shrink-0 text-sm font-bold">
+              {formatarFrete(
+                opcao.valor,
               )}
+            </p>
 
-              {shipping.length > 0 && (
-                <div className="mt-4 space-y-2">
+          </div>
 
-                  <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#68737a]">
-                    Opções de entrega
-                  </p>
+        ),
+      )}
 
-                  {shipping.map(
-                    (opcao) => (
+    </div>
+  )}
 
-                      <div
-                        key={opcao.id}
-                        className="flex items-center justify-between gap-4 border border-[#dedbd2] bg-white p-3"
-                      >
+</div>
 
-                        <div className="min-w-0">
+{/* VENDEDOR */}
 
-                          <p className="text-sm font-semibold">
-                            {opcao.transportadora}
-                          </p>
+<div className="mt-6 border border-[#dedbd2] bg-[#faf9f5] p-5">
 
-                          <p className="mt-1 text-xs text-[#68737a]">
-                            {opcao.servico} ·{" "}
-                            {opcao.prazoDias}{" "}
-                            {opcao.prazoDias === 1
-                              ? "dia útil"
-                              : "dias úteis"}
-                          </p>
+  <div className="flex items-center justify-between gap-4">
 
-                        </div>
+    <div className="flex items-center gap-3">
 
-                        <p className="shrink-0 text-sm font-bold">
-                          {formatarFrete(
-                            opcao.valor,
-                          )}
-                        </p>
+      <div className="grid size-12 place-items-center rounded-full bg-[#d9d8d1] text-sm font-bold">
+        {iniciais || (
+          <User className="size-5" />
+        )}
+      </div>
 
-                      </div>
-                    ),
-                  )}
+      <div>
 
-                </div>
-              )}
+        <p className="font-semibold">
+          {vendedorNome}
+        </p>
 
-            </div>
+        {sellerSince && (
+          <p className="mt-1 text-xs text-[#68737a]">
+            Vendedor desde{" "}
+            {sellerSince}
+          </p>
+        )}
 
-            {/* VENDEDOR */}
+      </div>
 
-            <div className="mt-6 border border-[#dedbd2] bg-[#faf9f5] p-5">
+    </div>
 
-              <div className="flex items-center justify-between gap-4">
+    <a
+      href="#vendedor"
+      className="text-xs font-bold uppercase tracking-[0.1em] text-[#a33c36] hover:underline"
+    >
+      Ver perfil
+    </a>
 
-                <div className="flex items-center gap-3">
+  </div>
 
-                  <div className="grid size-12 place-items-center rounded-full bg-[#d9d8d1] text-sm font-bold">
-                    {iniciais ||
-                      <User className="size-5" />}
-                  </div>
-
-                  <div>
-
-                    <p className="font-semibold">
-                      {vendedorNome}
-                    </p>
-
-                    {sellerSince && (
-                      <p className="mt-1 text-xs text-[#68737a]">
-                        Vendedor desde{" "}
-                        {sellerSince}
-                      </p>
-                    )}
-
-                  </div>
-
-                </div>
-
-                <a
-                  href="#vendedor"
-                  className="text-xs font-bold uppercase tracking-[0.1em] text-[#a33c36] hover:underline"
-                >
-                  Ver perfil
-                </a>
-
-              </div>
-
-              <div className="mt-4 flex items-center gap-5 border-t border-[#dedbd2] pt-4 text-xs text-[#68737a]">
+  <div className="mt-4 flex items-center gap-5 border-t border-[#dedbd2] pt-4 text-xs text-[#68737a]">
 
                 <span className="flex items-center gap-1.5">
 
@@ -815,134 +921,134 @@ function ProdutoPage() {
 
                 </span>
 
-                <span>
+    <span>
                   {activeListings} anúncios ativos
                 </span>
 
-              </div>
+  </div>
 
-            </div>
+</div>
 
-          </div>
+</div>
 
-        </section>
+</section>
 
-        {/* DESCRIÇÃO + FICHA TÉCNICA */}
+{/* DESCRIÇÃO + FICHA TÉCNICA */}
 
-        <section className="mt-16 grid gap-10 border-t border-[#dedbd2] pt-12 lg:grid-cols-[1.35fr_0.65fr]">
+<section className="mt-16 grid gap-10 border-t border-[#dedbd2] pt-12 lg:grid-cols-[1.35fr_0.65fr]">
 
-          <div>
+  <div>
 
-            <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.2em] text-[#a33c36]">
-              Sobre este anúncio
-            </p>
+    <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.2em] text-[#a33c36]">
+      Sobre este anúncio
+    </p>
 
-            <h2 className="font-serif text-3xl tracking-[-0.03em]">
-              Detalhes do produto.
-            </h2>
+    <h2 className="font-serif text-3xl tracking-[-0.03em]">
+      Detalhes do produto.
+    </h2>
 
-            <p className="mt-5 max-w-2xl whitespace-pre-line text-[15px] leading-7 text-[#68737a]">
-              {descricao}
-            </p>
+    <p className="mt-5 max-w-2xl whitespace-pre-line text-[15px] leading-7 text-[#68737a]">
+      {descricao}
+    </p>
 
-            <div className="mt-8 grid gap-3 sm:grid-cols-2">
+    <div className="mt-8 grid gap-3 sm:grid-cols-2">
 
-              <div className="flex gap-3 border-t border-[#dedbd2] pt-4">
+      <div className="flex gap-3 border-t border-[#dedbd2] pt-4">
 
-                <PackageCheck className="size-5 text-[#a33c36]" />
+        <PackageCheck className="size-5 text-[#a33c36]" />
 
-                <div>
+        <div>
 
-                  <p className="text-sm font-semibold">
-                    Envio protegido
-                  </p>
+          <p className="text-sm font-semibold">
+            Envio protegido
+          </p>
 
-                  <p className="mt-1 text-xs leading-5 text-[#68737a]">
-                    Embalagem segura e acompanhamento da entrega.
-                  </p>
+          <p className="mt-1 text-xs leading-5 text-[#68737a]">
+            Embalagem segura e acompanhamento da entrega.
+          </p>
 
-                </div>
-
-              </div>
-
-              <div className="flex gap-3 border-t border-[#dedbd2] pt-4">
-
-                <ShieldCheck className="size-5 text-[#a33c36]" />
-
-                <div>
-
-                  <p className="text-sm font-semibold">
-                    Anúncio verificado
-                  </p>
-
-                  <p className="mt-1 text-xs leading-5 text-[#68737a]">
-                    Dados e vendedor conferidos pela equipe.
-                  </p>
-
-                </div>
-
-              </div>
-
-            </div>
-
-          </div>
-
-          {specs.length > 0 && (
-            <aside className="border-l border-[#dedbd2] pl-0 lg:pl-8">
-
-              <p className="mb-4 text-[11px] font-bold uppercase tracking-[0.2em] text-[#a33c36]">
-                Ficha técnica
-              </p>
-
-              <dl className="flex flex-col gap-4 text-sm">
-
-                {specs.map(
-                  ([label, value]) => (
-
-                    <div
-                      key={label}
-                      className="flex justify-between gap-4 border-b border-[#dedbd2] pb-3"
-                    >
-
-                      <dt className="text-[#68737a]">
-                        {label}
-                      </dt>
-
-                      <dd className="text-right font-semibold">
-                        {value}
-                      </dd>
-
-                    </div>
-                  ),
-                )}
-
-              </dl>
-
-            </aside>
-          )}
-
-        </section>
-
-        {/* RODAPÉ */}
-
-        <section className="mt-16 border-t border-[#dedbd2] pt-12">
-
-          <div className="flex items-center gap-3">
-
-            <Truck className="size-5 text-[#a33c36]" />
-
-            <p className="text-sm text-[#68737a]">
-              Envio para todo o Brasil · Pagamento protegido pelo Imperium Bikes
-            </p>
-
-          </div>
-
-        </section>
+        </div>
 
       </div>
-    </main>
-  )
+
+      <div className="flex gap-3 border-t border-[#dedbd2] pt-4">
+
+        <ShieldCheck className="size-5 text-[#a33c36]" />
+
+        <div>
+
+          <p className="text-sm font-semibold">
+            Anúncio verificado
+          </p>
+
+          <p className="mt-1 text-xs leading-5 text-[#68737a]">
+            Dados e vendedor conferidos pela equipe.
+          </p>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  {specs.length > 0 && (
+    <aside className="border-l border-[#dedbd2] pl-0 lg:pl-8">
+
+      <p className="mb-4 text-[11px] font-bold uppercase tracking-[0.2em] text-[#a33c36]">
+        Ficha técnica
+      </p>
+
+      <dl className="flex flex-col gap-4 text-sm">
+
+        {specs.map(
+          ([label, value]) => (
+
+            <div
+              key={label}
+              className="flex justify-between gap-4 border-b border-[#dedbd2] pb-3"
+            >
+
+              <dt className="text-[#68737a]">
+                {label}
+              </dt>
+
+              <dd className="text-right font-semibold">
+                {value}
+              </dd>
+
+            </div>
+
+          ),
+        )}
+
+      </dl>
+
+    </aside>
+  )}
+
+</section>
+
+{/* RODAPÉ */}
+
+<section className="mt-16 border-t border-[#dedbd2] pt-12">
+
+  <div className="flex items-center gap-3">
+
+    <Truck className="size-5 text-[#a33c36]" />
+
+    <p className="text-sm text-[#68737a]">
+      Envio para todo o Brasil · Pagamento protegido pelo Imperium Bikes
+    </p>
+
+  </div>
+
+</section>
+
+</div>
+</main>
+)
 }
 
-export default ProdutoPage;
-
+export default ProdutoPage
