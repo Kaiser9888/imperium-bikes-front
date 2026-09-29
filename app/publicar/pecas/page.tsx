@@ -1,79 +1,52 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import {
-  ArrowLeft,
-  ArrowRight,
-  ChevronDown,
-  Check,
-  Cog,
-  Disc,
-  Wrench,
-  Activity,
-  RotateCw,
-  Cable,
-  CircleDot,
-  Sun,
-  Move,
-  Target,
-  Footprints,
-  ArrowUpFromLine,
-  Circle,
-  Box,
-} from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 
 /* ------------------------------------------------------------------ */
-/* CATEGORIAS PRINCIPAIS DE PEÇAS                                    */
+/* CATEGORIAS PRINCIPAIS                                               */
 /* ------------------------------------------------------------------ */
 
 const PECA_CATEGORIES = [
   {
     id: "transmissao",
     label: "Transmissão",
-    description: "Câmbios, relação, pedivelas e movimentos centrais",
-    icon: Cog,
-    image: "/images/categories/pecas/transmissao.jpg",
+    description:
+      "Câmbios, relação, pedivelas e movimentos centrais",
     categoryIds: [
       "transmissao-cambios",
       "transmissao-desgaste",
       "transmissao-pedivela-central",
     ],
   },
-
   {
     id: "freios",
     label: "Freios",
-    description: "Freios dianteiros, traseiros, discos e pastilhas",
-    icon: Disc,
-    image: "/images/categories/pecas/freios.jpg",
+    description:
+      "Freios dianteiros, traseiros, discos e pastilhas",
     categoryIds: [
       "freio-dianteiro",
       "freio-traseiro",
       "discos-rotores",
     ],
   },
-
   {
     id: "suspensao",
     label: "Suspensão",
-    description: "Suspensões dianteiras e amortecedores traseiros",
-    icon: Wrench,
-    image: "/images/categories/pecas/suspensao.jpg",
+    description:
+      "Suspensões dianteiras e amortecedores traseiros",
     categoryIds: [
       "suspensao-single-crown",
       "suspensao-double-crown",
       "shock-traseiro",
     ],
   },
-
   {
     id: "rodas",
     label: "Rodas",
-    description: "Pares, rodas avulsas, cubos, aros e raios",
-    icon: CircleDot,
-    image: "/images/categories/pecas/rodas.jpg",
+    description:
+      "Pares, rodas avulsas, cubos, aros e raios",
     categoryIds: [
       "rodas-par",
       "rodas-avulsas",
@@ -81,258 +54,180 @@ const PECA_CATEGORIES = [
       "aros-raios",
     ],
   },
-
   {
     id: "cockpit-direcao",
     label: "Cockpit e Direção",
-    description: "Guidões, mesas, caixas de direção e espaçadores",
-    icon: Move,
-    image: "/images/categories/pecas/cockpit.jpg",
-    categoryIds: [
-      "cockpit",
-    ],
+    description:
+      "Guidões, mesas, caixas de direção e espaçadores",
+    categoryIds: ["cockpit"],
   },
-
   {
     id: "selim-canote",
     label: "Selim e Canote",
-    description: "Selins, canotes e abraçadeiras",
-    icon: ArrowUpFromLine,
-    image: "/images/categories/pecas/selim.jpg",
-    categoryIds: [
-      "selim-canote",
-    ],
+    description:
+      "Selins, canotes e abraçadeiras",
+    categoryIds: ["selim-canote"],
   },
-
   {
     id: "pedais",
     label: "Pedais",
-    description: "Pedais de encaixe, plataforma e tacos",
-    icon: Footprints,
-    image: "/images/categories/pecas/pedais.jpg",
-    categoryIds: [
-      "pedais",
-    ],
+    description:
+      "Pedais de encaixe, plataforma e tacos",
+    categoryIds: ["pedais"],
   },
-
   {
     id: "cabos-conduites",
     label: "Cabos e Conduítes",
-    description: "Cabos, conduítes, capas e terminais",
-    icon: Cable,
-    image: "/images/categories/pecas/cabos.jpg",
-    categoryIds: [
-      "cabos-conduites",
-    ],
+    description:
+      "Cabos, conduítes, capas e terminais",
+    categoryIds: ["cabos-conduites"],
   },
 ] as const
 
-
 /* ------------------------------------------------------------------ */
-/* SUBCATEGORIAS                                                      */
-/* */
-/* ESTES SÃO OS IDS REAIS USADOS PELO SISTEMA                         */
-/* NÃO ALTERAR OS IDS                                                 */
+/* SUBCATEGORIAS                                                       */
 /* ------------------------------------------------------------------ */
 
 const PECA_SUBCATEGORIES = [
-  /* ---------------- TRANSMISSÃO ---------------- */
-
   {
     id: "transmissao-cambios",
     parentId: "transmissao",
     label: "Câmbios e Passadores",
-    description: "Câmbios dianteiros, traseiros e passadores",
-    icon: Cog,
-    image: "/images/categories/pecas/cambios.jpg",
+    description:
+      "Câmbios dianteiros, traseiros e passadores",
   },
-
   {
     id: "transmissao-desgaste",
     parentId: "transmissao",
     label: "Cassetes, Correntes e Coroas",
-    description: "Cassetes, correntes e coroas",
-    icon: Activity,
-    image: "/images/categories/pecas/relacao.jpg",
+    description:
+      "Cassetes, correntes e coroas",
   },
-
   {
     id: "transmissao-pedivela-central",
     parentId: "transmissao",
     label: "Pedivelas e Movimentos Centrais",
-    description: "Pedivelas e movimentos centrais",
-    icon: RotateCw,
-    image: "/images/categories/pecas/pedivela.jpg",
+    description:
+      "Pedivelas e movimentos centrais",
   },
-
-
-  /* ---------------- FREIOS ---------------- */
 
   {
     id: "freio-dianteiro",
     parentId: "freios",
     label: "Freio Dianteiro",
-    description: "Componentes e kits do freio dianteiro",
-    icon: Disc,
-    image: "/images/categories/pecas/freio-dianteiro.jpg",
+    description:
+      "Componentes e kits do freio dianteiro",
   },
-
   {
     id: "freio-traseiro",
     parentId: "freios",
     label: "Freio Traseiro",
-    description: "Componentes e kits do freio traseiro",
-    icon: Disc,
-    image: "/images/categories/pecas/freio-traseiro.jpg",
+    description:
+      "Componentes e kits do freio traseiro",
   },
-
   {
     id: "discos-rotores",
     parentId: "freios",
     label: "Discos, Rotores e Pastilhas",
-    description: "Discos, pastilhas e adaptadores",
-    icon: Target,
-    image: "/images/categories/pecas/discos.jpg",
+    description:
+      "Discos, pastilhas e adaptadores",
   },
-
-
-  /* ---------------- SUSPENSÃO ---------------- */
 
   {
     id: "suspensao-single-crown",
     parentId: "suspensao",
     label: "Single Crown",
-    description: "Suspensões dianteiras de uma coroa",
-    icon: Wrench,
-    image: "/images/categories/pecas/suspensao-single.jpg",
+    description:
+      "Suspensões dianteiras de uma coroa",
   },
-
   {
     id: "suspensao-double-crown",
     parentId: "suspensao",
     label: "Double Crown",
-    description: "Suspensões de duas coroas para Downhill",
-    icon: Wrench,
-    image: "/images/categories/pecas/suspensao-double.jpg",
+    description:
+      "Suspensões de duas coroas para Downhill",
   },
-
   {
     id: "shock-traseiro",
     parentId: "suspensao",
     label: "Shock Traseiro",
-    description: "Amortecedores para Full Suspension",
-    icon: Activity,
-    image: "/images/categories/pecas/shock.jpg",
+    description:
+      "Amortecedores para Full Suspension",
   },
-
-
-  /* ---------------- RODAS ---------------- */
 
   {
     id: "rodas-par",
     parentId: "rodas",
     label: "Pares de Rodas",
-    description: "Jogos de rodas completos",
-    icon: CircleDot,
-    image: "/images/categories/pecas/par-rodas.jpg",
+    description:
+      "Jogos de rodas completos",
   },
-
   {
     id: "rodas-avulsas",
     parentId: "rodas",
     label: "Rodas Avulsas",
-    description: "Roda dianteira ou traseira",
-    icon: Circle,
-    image: "/images/categories/pecas/roda-avulsa.jpg",
+    description:
+      "Roda dianteira ou traseira",
   },
-
   {
     id: "cubos-avulsos",
     parentId: "rodas",
     label: "Cubos",
-    description: "Cubos dianteiros e traseiros",
-    icon: Box,
-    image: "/images/categories/pecas/cubos.jpg",
+    description:
+      "Cubos dianteiros e traseiros",
   },
-
   {
     id: "aros-raios",
     parentId: "rodas",
     label: "Aros e Raios",
-    description: "Aros e kits de raios",
-    icon: Sun,
-    image: "/images/categories/pecas/aros.jpg",
+    description:
+      "Aros e kits de raios",
   },
-
-
-  /* ---------------- COCKPIT E DIREÇÃO ---------------- */
 
   {
     id: "cockpit",
     parentId: "cockpit-direcao",
     label: "Cockpit",
-    description: "Guidões, mesas, caixas de direção e espaçadores",
-    icon: Move,
-    image: "/images/categories/pecas/cockpit.jpg",
+    description:
+      "Guidões, mesas, caixas de direção e espaçadores",
   },
-
-
-  /* ---------------- SELIM E CANOTE ---------------- */
 
   {
     id: "selim-canote",
     parentId: "selim-canote",
     label: "Selim e Canote",
-    description: "Selins, canotes e abraçadeiras",
-    icon: ArrowUpFromLine,
-    image: "/images/categories/pecas/selim.jpg",
+    description:
+      "Selins, canotes e abraçadeiras",
   },
-
-
-  /* ---------------- PEDAIS ---------------- */
 
   {
     id: "pedais",
     parentId: "pedais",
     label: "Pedais",
-    description: "Pedais de encaixe, plataforma e tacos",
-    icon: Footprints,
-    image: "/images/categories/pecas/pedais.jpg",
+    description:
+      "Pedais de encaixe, plataforma e tacos",
   },
-
-
-  /* ---------------- CABOS E CONDUÍTES ---------------- */
 
   {
     id: "cabos-conduites",
     parentId: "cabos-conduites",
     label: "Cabos, Conduítes e Guias",
-    description: "Cabos, conduítes, capas e terminais",
-    icon: Cable,
-    image: "/images/categories/pecas/cabos.jpg",
+    description:
+      "Cabos, conduítes, capas e terminais",
   },
 ] as const
-
-
-/* ------------------------------------------------------------------ */
-/* TIPO DOS IDS DAS SUBCATEGORIAS                                     */
-/* ------------------------------------------------------------------ */
 
 type PecaSubcategoryId =
   (typeof PECA_SUBCATEGORIES)[number]["id"]
 
-
 /* ------------------------------------------------------------------ */
-/* TIPOS ESPECÍFICOS                                                  */
+/* TIPOS                                                               */
 /* ------------------------------------------------------------------ */
 
 const TIPOS_BY_CATEGORY: Record<
   PecaSubcategoryId,
   readonly string[]
 > = {
-
-  /* ---------------- TRANSMISSÃO ---------------- */
-
   "transmissao-cambios": [
     "Câmbio Dianteiro",
     "Câmbio Traseiro",
@@ -354,9 +249,6 @@ const TIPOS_BY_CATEGORY: Record<
     "Kit Pedivela + Central",
   ],
 
-
-  /* ---------------- FREIOS ---------------- */
-
   "freio-dianteiro": [
     "Kit Freio Dianteiro Completo",
     "Pinça Dianteira",
@@ -375,9 +267,6 @@ const TIPOS_BY_CATEGORY: Record<
     "Adaptador de Pinça",
     "Kit Discos + Pastilhas",
   ],
-
-
-  /* ---------------- SUSPENSÃO ---------------- */
 
   "suspensao-single-crown": [
     "Suspensão 100mm",
@@ -398,12 +287,9 @@ const TIPOS_BY_CATEGORY: Record<
     "Shock Eletrônico",
   ],
 
-
-  /* ---------------- RODAS ---------------- */
-
   "rodas-par": [
-    "Par de Rodas MTB 29\"",
-    "Par de Rodas MTB 27.5\"",
+    'Par de Rodas MTB 29"',
+    'Par de Rodas MTB 27.5"',
     "Par de Rodas Speed 700c",
     "Par de Rodas Gravel 650b",
   ],
@@ -419,17 +305,14 @@ const TIPOS_BY_CATEGORY: Record<
   ],
 
   "aros-raios": [
-    "Aro MTB 29\"",
-    "Aro MTB 27.5\"",
+    'Aro MTB 29"',
+    'Aro MTB 27.5"',
     "Aro Speed 700c",
     "Aro Gravel 650b",
     "Kit Raios e Niples",
   ],
 
-
-  /* ---------------- COCKPIT ---------------- */
-
-  "cockpit": [
+  cockpit: [
     "Guidão MTB",
     "Guidão Speed",
     "Guidão Gravel",
@@ -438,9 +321,6 @@ const TIPOS_BY_CATEGORY: Record<
     "Espaçadores",
   ],
 
-
-  /* ---------------- SELIM E CANOTE ---------------- */
-
   "selim-canote": [
     "Selim",
     "Canote Rígido",
@@ -448,17 +328,11 @@ const TIPOS_BY_CATEGORY: Record<
     "Abraçadeira de Quadro",
   ],
 
-
-  /* ---------------- PEDAIS ---------------- */
-
-  "pedais": [
+  pedais: [
     "Pedal de Encaixe (Clip)",
     "Pedal Plataforma",
     "Tacos de Sapatilha",
   ],
-
-
-  /* ---------------- CABOS ---------------- */
 
   "cabos-conduites": [
     "Cabo de Freio",
@@ -469,9 +343,8 @@ const TIPOS_BY_CATEGORY: Record<
   ],
 }
 
-
 /* ------------------------------------------------------------------ */
-/* CONDIÇÃO                                                           */
+/* OPÇÕES                                                              */
 /* ------------------------------------------------------------------ */
 
 const CONDICAO_OPTIONS = [
@@ -487,11 +360,6 @@ const CONDICAO_OPTIONS = [
   },
 ] as const
 
-
-/* ------------------------------------------------------------------ */
-/* COMPATIBILIDADE                                                    */
-/* ------------------------------------------------------------------ */
-
 const COMPATIBILIDADE_OPTIONS = [
   "Shimano",
   "SRAM",
@@ -501,9 +369,8 @@ const COMPATIBILIDADE_OPTIONS = [
   "Não se aplica",
 ] as const
 
-
 /* ------------------------------------------------------------------ */
-/* RESPOSTAS                                                          */
+/* MODELO                                                              */
 /* ------------------------------------------------------------------ */
 
 type Answers = {
@@ -520,11 +387,6 @@ const EMPTY_ANSWERS: Answers = {
   compatibilidade: "",
 }
 
-
-/* ------------------------------------------------------------------ */
-/* MODELO DOS PASSOS                                                  */
-/* ------------------------------------------------------------------ */
-
 type StepOption = {
   id: string
   label: string
@@ -538,9 +400,47 @@ type Step = {
   options: StepOption[]
 }
 
+/* ------------------------------------------------------------------ */
+/* CARD                                                                */
+/* ------------------------------------------------------------------ */
+
+function ChoiceCard({
+                      selected,
+                      label,
+                      description,
+                      onClick,
+                    }: {
+  selected: boolean
+  label: string
+  description?: string
+  onClick: () => void
+}) {
+  return (
+    <button
+      type="button"
+      className={`choice-card ${
+        selected
+          ? "choice-card-selected"
+          : ""
+      }`}
+      aria-pressed={selected}
+      onClick={onClick}
+    >
+      <span className="choice-card-label">
+        {label}
+      </span>
+
+      {description ? (
+        <span className="choice-card-description">
+          {description}
+        </span>
+      ) : null}
+    </button>
+  )
+}
 
 /* ------------------------------------------------------------------ */
-/* PÁGINA                                                             */
+/* PÁGINA                                                              */
 /* ------------------------------------------------------------------ */
 
 export default function PublicarPecasPage() {
@@ -549,79 +449,68 @@ export default function PublicarPecasPage() {
   const [answers, setAnswers] =
     useState<Answers>(EMPTY_ANSWERS)
 
-  const [expandedKey, setExpandedKey] =
-    useState<keyof Answers | null>("subcategoryId")
+  const [activeStep, setActiveStep] =
+    useState(1)
 
+  const selectedSubcategory =
+    useMemo(
+      () =>
+        PECA_SUBCATEGORIES.find(
+          (item) =>
+            item.id ===
+            answers.subcategoryId
+        ),
+      [answers.subcategoryId]
+    )
 
-  /* ---------------------------------------------------------------- */
-  /* SUBCATEGORIA SELECIONADA                                         */
-  /* ---------------------------------------------------------------- */
+  const selectedParentCategory =
+    useMemo(
+      () =>
+        PECA_CATEGORIES.find(
+          (category) =>
+            category.categoryIds.includes(
+              answers.subcategoryId as never
+            )
+        ),
+      [answers.subcategoryId]
+    )
 
-  const selectedSubcategory = useMemo(
-    () =>
-      PECA_SUBCATEGORIES.find(
-        (item) => item.id === answers.subcategoryId
-      ),
-    [answers.subcategoryId]
-  )
-
-
-  /* ---------------------------------------------------------------- */
-  /* CATEGORIA PRINCIPAL DA SUBCATEGORIA                               */
-  /* ---------------------------------------------------------------- */
-
-  const selectedParentCategory = useMemo(
-    () =>
-      PECA_CATEGORIES.find(
-        (category) =>
-          category.categoryIds.includes(
-            answers.subcategoryId as never
-          )
-      ),
-    [answers.subcategoryId]
-  )
-
-
-  /* ---------------------------------------------------------------- */
-  /* PASSOS                                                           */
-  /* ---------------------------------------------------------------- */
-
-  const steps: Step[] = useMemo(() => {
-
-    const subId = answers.subcategoryId
-
-    return [
+  const steps: Step[] = useMemo(
+    () => [
       {
         key: "subcategoryId",
         title: "Categoria da peça",
-        subtitle: "Escolha onde sua peça se encaixa",
-
-        options: PECA_CATEGORIES.flatMap((parent) => {
-
-          const subcategories =
-            PECA_SUBCATEGORIES.filter(
-              (sub) => sub.parentId === parent.id
-            )
-
-          return subcategories.map((sub) => ({
-            id: sub.id,
-            label: `${parent.label} • ${sub.label}`,
-            description: sub.description,
-          }))
-        }),
+        subtitle:
+          "Escolha onde sua peça se encaixa",
+        options:
+          PECA_CATEGORIES.flatMap(
+            (parent) =>
+              PECA_SUBCATEGORIES.filter(
+                (sub) =>
+                  sub.parentId ===
+                  parent.id
+              ).map((sub) => ({
+                id: sub.id,
+                label: `${parent.label} · ${sub.label}`,
+                description:
+                sub.description,
+              }))
+          ),
       },
 
       {
         key: "tipo",
-
         title: "Tipo específico",
-
-        subtitle: subId
-          ? `Escolha o tipo de ${selectedSubcategory?.label.toLowerCase() ?? "peça"}`
+        subtitle: answers.subcategoryId
+          ? `Escolha o tipo de ${
+            selectedSubcategory?.label.toLowerCase() ??
+            "peça"
+          }`
           : "Escolha a categoria primeiro",
-
-        options: subId
-          ? TIPOS_BY_CATEGORY[subId].map((tipo) => ({
+        options: answers.subcategoryId
+          ? TIPOS_BY_CATEGORY[
+            answers.subcategoryId
+            ].map((tipo) => ({
             id: tipo,
             label: tipo,
           }))
@@ -630,60 +519,39 @@ export default function PublicarPecasPage() {
 
       {
         key: "condicao",
-
         title: "Estado",
-
-        subtitle: "Condição da peça",
-
-        options: CONDICAO_OPTIONS.map((item) => ({
-          id: item.id,
-          label: item.label,
-          description: item.description,
-        })),
+        subtitle:
+          "Condição da peça",
+        options:
+          CONDICAO_OPTIONS.map(
+            (item) => ({
+              id: item.id,
+              label: item.label,
+              description:
+              item.description,
+            })
+          ),
       },
 
       {
         key: "compatibilidade",
-
         title: "Compatibilidade",
-
-        subtitle: "Fabricante ou padrão compatível",
-
-        options: COMPATIBILIDADE_OPTIONS.map((item) => ({
-          id: item,
-          label: item,
-        })),
+        subtitle:
+          "Fabricante ou padrão compatível",
+        options:
+          COMPATIBILIDADE_OPTIONS.map(
+            (item) => ({
+              id: item,
+              label: item,
+            })
+          ),
       },
+    ],
+    [
+      answers.subcategoryId,
+      selectedSubcategory,
     ]
-
-  }, [
-    answers.subcategoryId,
-    selectedSubcategory,
-  ])
-
-
-  /* ---------------------------------------------------------------- */
-  /* ÍNDICE DOS PASSOS                                                */
-  /* ---------------------------------------------------------------- */
-
-  const stepIndexByKey = useMemo(() => {
-
-    const map: Partial<
-      Record<keyof Answers, number>
-    > = {}
-
-    steps.forEach((step, index) => {
-      map[step.key] = index
-    })
-
-    return map
-
-  }, [steps])
-
-
-  /* ---------------------------------------------------------------- */
-  /* PROGRESSO                                                        */
-  /* ---------------------------------------------------------------- */
+  )
 
   const firstUnansweredIndex =
     steps.findIndex(
@@ -693,103 +561,75 @@ export default function PublicarPecasPage() {
   const allAnswered =
     firstUnansweredIndex === -1
 
+  const isStepReady = (
+    stepNumber: number
+  ) => {
+    if (stepNumber === 1) {
+      return true
+    }
 
-  const isStepUnlocked = (index: number) =>
-    index <=
-    (
-      firstUnansweredIndex === -1
-        ? steps.length - 1
-        : firstUnansweredIndex
-    )
+    if (stepNumber === 2) {
+      return Boolean(
+        answers.subcategoryId
+      )
+    }
 
+    if (stepNumber === 3) {
+      return Boolean(
+        answers.subcategoryId &&
+        answers.tipo
+      )
+    }
 
-  /* ---------------------------------------------------------------- */
-  /* SELEÇÃO                                                          */
-  /* ---------------------------------------------------------------- */
+    if (stepNumber === 4) {
+      return Boolean(
+        answers.subcategoryId &&
+        answers.tipo &&
+        answers.condicao
+      )
+    }
+
+    return false
+  }
 
   const handleSelect = (
     step: Step,
     optionId: string
   ) => {
-
-    setAnswers((prev) => {
-
+    setAnswers((current) => {
       const next = {
-        ...prev,
+        ...current,
         [step.key]: optionId,
-      } as Answers
+      }
 
-      /* Se mudar a categoria, limpa o tipo */
-      if (step.key === "subcategoryId") {
+      if (
+        step.key ===
+        "subcategoryId"
+      ) {
         next.tipo = ""
       }
 
       return next
     })
-
-
-    const currentIndex =
-      stepIndexByKey[step.key] ?? 0
-
-    const nextStep =
-      steps[currentIndex + 1]
-
-    setExpandedKey(
-      nextStep
-        ? nextStep.key
-        : null
-    )
   }
-
-
-  /* ---------------------------------------------------------------- */
-  /* ABRIR / FECHAR PASSO                                             */
-  /* ---------------------------------------------------------------- */
-
-  const toggleStep = (
-    step: Step,
-    index: number
-  ) => {
-
-    if (!isStepUnlocked(index)) {
-      return
-    }
-
-    setExpandedKey((prev) =>
-      prev === step.key
-        ? null
-        : step.key
-    )
-  }
-
-
-  /* ---------------------------------------------------------------- */
-  /* CONTINUAR                                                        */
-  /* ---------------------------------------------------------------- */
 
   const handleContinue = () => {
-
     if (!allAnswered) {
       return
     }
-
 
     const currentData =
       sessionStorage.getItem(
         "imperium_bikes_publish"
       )
 
-
     let publishData: Record<
       string,
       unknown
     > = {}
 
-
     if (currentData) {
-
       try {
-
         const parsed =
           JSON.parse(currentData)
 
@@ -800,196 +640,132 @@ export default function PublicarPecasPage() {
         ) {
           publishData = parsed
         }
-
       } catch {
         publishData = {}
       }
     }
 
-
     const updatedData = {
-
       ...publishData,
-
       categoryId: "pecas",
-
       ...answers,
-
     }
-
 
     sessionStorage.setItem(
       "imperium_bikes_publish",
       JSON.stringify(updatedData)
     )
 
-
-    /*
-     * IMPORTANTE:
-     * Mantém a mesma página que já existia.
-     * Nenhuma nova rota foi criada.
-     */
-
     router.push(
       "/publicar/pecas/informacoes"
     )
   }
 
-
-  /* ---------------------------------------------------------------- */
-  /* RENDER                                                           */
-  /* ---------------------------------------------------------------- */
+  const handleCancel = () => {
+    router.push("/publicar")
+  }
 
   return (
-    <main className="min-h-screen bg-background text-foreground">
+    <main className="imperium-page">
+      <header className="imperium-header">
+        <Link
+          className="header-back"
+          href="/publicar"
+        >
+          Voltar
+        </Link>
 
-      <style>{`
-
-        @keyframes pecaIconPop {
-
-          0% {
-            transform: scale(0.6);
-            opacity: 0;
-          }
-
-          60% {
-            transform: scale(1.08);
-            opacity: 1;
-          }
-
-          100% {
-            transform: scale(1);
-            opacity: 1;
-          }
-
-        }
-
-        .peca-icon-pop {
-          animation:
-            pecaIconPop
-            0.35s
-            ease-out;
-        }
-
-        @media (
-          prefers-reduced-motion: reduce
-        ) {
-
-          .peca-icon-pop {
-            animation: none;
-          }
-
-        }
-
-      `}</style>
-
-
-      {/* ============================================================ */}
-      {/* HEADER                                                        */}
-      {/* ============================================================ */}
-
-      <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur-lg">
-
-        <div className="mx-auto flex h-14 max-w-2xl items-center justify-between px-4">
-
-          <Link
-            href="/publicar"
-            className="flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
-          >
-            <ArrowLeft className="size-4" />
-
-            Voltar
-          </Link>
-
-
-          <span className="text-sm font-semibold">
-            Peças
-          </span>
-
-
-          <div className="w-[52px]" />
-
+        <div
+          className="brand-mark"
+          aria-label="Imperium Bikes"
+        >
+          IB
         </div>
 
-      </header>
-
-
-      {/* ============================================================ */}
-      {/* CONTEÚDO                                                      */}
-      {/* ============================================================ */}
-
-      <div className="mx-auto max-w-2xl px-4 pb-32 pt-6">
-
-        <section className="mb-6">
-
-          <h1 className="font-heading text-2xl font-bold tracking-tight">
-            Caracterize sua peça
-          </h1>
-
-          <p className="mt-2 max-w-xl text-sm leading-6 text-muted-foreground">
-            Escolha a categoria e depois o tipo específico da peça.
+        <div>
+          <p className="eyebrow">
+            Imperium Bikes
           </p>
 
-        </section>
+          <p className="header-context">
+            Publicar anúncio
+          </p>
+        </div>
 
+        <span
+          className="header-divider"
+          aria-hidden="true"
+        />
 
-        {/* ======================================================== */}
-        {/* PEÇA SELECIONADA                                          */}
-        {/* ======================================================== */}
+        <p className="header-category">
+          Peças
+        </p>
+      </header>
 
-        {selectedSubcategory && (
+      <div className="classification-layout">
+        <section
+          className="classification-intro"
+          aria-labelledby="page-title"
+        >
+          <p className="eyebrow">
+            Etapa 1 de 6
+          </p>
+
+          <h1 id="page-title">
+            Classifique sua peça
+          </h1>
+
+          <p>
+            Escolha as características
+            principais para que seu anúncio
+            seja encontrado com facilidade.
+          </p>
 
           <div
-            key={selectedSubcategory.id}
-            className="peca-icon-pop mb-6 flex items-center gap-3 rounded-xl border border-border bg-muted/30 px-4 py-3"
+            className="progress-line"
+            aria-label="Etapa 1 de 6"
           >
+            <span className="progress-active" />
+            <span />
+          </div>
 
-            <img
-              src={selectedSubcategory.image}
-              alt={selectedSubcategory.label}
-              className="size-12 shrink-0 rounded-full border border-primary/20 object-cover"
-            />
+          {selectedSubcategory ? (
+            <div className="classification-selection">
+              <p className="summary-label">
+                Categoria selecionada
+              </p>
 
-
-            <div className="min-w-0">
-
-              {selectedParentCategory && (
-                <p className="text-[11px] font-medium uppercase tracking-wide text-primary">
-                  {selectedParentCategory.label}
-                </p>
-              )}
-
-              <p className="text-sm font-semibold">
+              <p className="summary-value">
+                {selectedParentCategory?.label}
+                {" · "}
                 {selectedSubcategory.label}
               </p>
 
-              <p className="truncate text-xs text-muted-foreground">
+              <p className="field-note">
                 {selectedSubcategory.description}
               </p>
-
             </div>
+          ) : null}
+        </section>
 
-          </div>
-
-        )}
-
-
-        {/* ======================================================== */}
-        {/* PASSOS                                                    */}
-        {/* ======================================================== */}
-
-        <section className="space-y-2">
-
+        <section
+          className="steps-panel"
+          aria-label="Classificação da peça"
+        >
           {steps.map((step, index) => {
+            const stepNumber =
+              index + 1
 
-            const isExpanded =
-              expandedKey === step.key
+            const active =
+              activeStep === stepNumber
 
-            const isUnlocked =
-              isStepUnlocked(index)
+            const ready =
+              isStepReady(stepNumber)
 
-            const isAnswered =
-              Boolean(answers[step.key])
+            const answered =
+              Boolean(
+                answers[step.key]
+              )
 
             const selectedOption =
               step.options.find(
@@ -998,280 +774,179 @@ export default function PublicarPecasPage() {
                   answers[step.key]
               )
 
-
             return (
-
               <div
                 key={step.key}
-                className={`overflow-hidden rounded-xl border transition-colors ${
-                  isAnswered
-                    ? "border-primary/40"
-                    : "border-border"
+                className={`step-block ${
+                  active
+                    ? "step-block-active"
+                    : ""
                 } ${
-                  !isUnlocked
-                    ? "opacity-40"
+                  !ready
+                    ? "step-block-locked"
                     : ""
                 }`}
               >
-
-                {/* ------------------------------------------------ */}
-                {/* CABEÇALHO DO CAMPO                               */}
-                {/* ------------------------------------------------ */}
-
                 <button
                   type="button"
+                  className="step-heading"
                   onClick={() =>
-                    toggleStep(
-                      step,
-                      index
+                    ready &&
+                    setActiveStep(
+                      stepNumber
                     )
                   }
-                  disabled={!isUnlocked}
-                  aria-expanded={isExpanded}
-                  className="flex w-full items-center justify-between gap-3 px-4 py-3.5 text-left disabled:cursor-not-allowed"
+                  disabled={!ready}
+                  aria-expanded={active}
                 >
+                  <span className="step-number">
+                    {String(
+                      stepNumber
+                    ).padStart(2, "0")}
+                  </span>
 
-                  <div className="min-w-0">
-
-                    <p className="text-sm font-semibold">
+                  <span className="step-heading-copy">
+                    <strong>
                       {step.title}
-                    </p>
+                    </strong>
 
-                    <p
-                      className={`mt-0.5 truncate text-xs ${
-                        isAnswered
-                          ? "font-medium text-primary"
-                          : "text-muted-foreground"
-                      }`}
-                    >
+                    <small>
                       {selectedOption
                         ? selectedOption.label
                         : step.subtitle}
-                    </p>
-
-                  </div>
-
-
-                  <span className="flex shrink-0 items-center gap-2">
-
-                    {isAnswered && (
-
-                      <span className="flex size-5 items-center justify-center rounded-full bg-primary text-white">
-
-                        <Check className="size-3" />
-
-                      </span>
-
-                    )}
-
-
-                    <ChevronDown
-                      className={`size-4 text-muted-foreground transition-transform ${
-                        isExpanded
-                          ? "rotate-180"
-                          : ""
-                      }`}
-                    />
-
+                    </small>
                   </span>
 
+                  {answered ? (
+                    <span className="step-status">
+                      Concluído
+                    </span>
+                  ) : null}
                 </button>
 
+                {active && ready ? (
+                  <div className="step-content">
+                    <p className="field-label">
+                      {step.title}
+                    </p>
 
-                {/* ------------------------------------------------ */}
-                {/* OPÇÕES                                           */}
-                {/* ------------------------------------------------ */}
-
-                {isExpanded &&
-                  isUnlocked && (
-
-                    <div className="border-t border-border px-2 pb-2 pt-1">
-
-                      {step.options.length === 0 ? (
-
-                        <p className="px-2 py-3 text-xs text-muted-foreground">
-                          Nenhuma opção disponível ainda.
-                        </p>
-
-                      ) : (
-
-                        step.options.map(
-                          (option) => {
-
-                            const isSelected =
+                    <div className="choice-grid choice-grid-types">
+                      {step.options.map(
+                        (option) => (
+                          <ChoiceCard
+                            key={
+                              option.id
+                            }
+                            selected={
                               answers[
                                 step.key
-                                ] === option.id
-
-
-                            return (
-
-                              <button
-                                key={option.id}
-                                type="button"
-                                onClick={() =>
-                                  handleSelect(
-                                    step,
-                                    option.id
-                                  )
-                                }
-                                className={`flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition-colors ${
-                                  isSelected
-                                    ? "bg-primary/10 font-semibold text-primary"
-                                    : "hover:bg-muted/60"
-                                }`}
-                              >
-
-                                <span className="min-w-0">
-
-                                  <span>
-                                    {option.label}
-                                  </span>
-
-
-                                  {option.description && (
-
-                                    <span className="ml-2 text-xs font-normal text-muted-foreground">
-
-                                      {option.description}
-
-                                    </span>
-
-                                  )}
-
-                                </span>
-
-
-                                {isSelected && (
-
-                                  <Check className="size-3.5 shrink-0" />
-
-                                )}
-
-                              </button>
-
-                            )
-                          }
+                                ] ===
+                              option.id
+                            }
+                            label={
+                              option.label
+                            }
+                            description={
+                              option.description
+                            }
+                            onClick={() =>
+                              handleSelect(
+                                step,
+                                option.id
+                              )
+                            }
+                          />
                         )
-
                       )}
-
                     </div>
 
-                  )}
-
+                    {stepNumber <
+                    steps.length ? (
+                      <button
+                        type="button"
+                        className="text-action"
+                        disabled={
+                          !answers[
+                            step.key
+                            ]
+                        }
+                        onClick={() =>
+                          setActiveStep(
+                            stepNumber +
+                            1
+                          )
+                        }
+                      >
+                        Continuar para{" "}
+                        {steps[
+                          stepNumber
+                          ].title.toLowerCase()}{" "}
+                        <span aria-hidden="true">
+                          →
+                        </span>
+                      </button>
+                    ) : null}
+                  </div>
+                ) : null}
               </div>
-
             )
           })}
-
         </section>
 
-
-        {/* ======================================================== */}
-        {/* CLASSIFICAÇÃO                                             */}
-        {/* ======================================================== */}
-
-        {answers.subcategoryId && (
-
-          <section className="mt-6 rounded-2xl border border-border bg-muted/30 p-4">
-
-            <p className="text-xs text-muted-foreground">
-              Seu anúncio será classificado como
+        <aside
+          className="classification-summary"
+          aria-live="polite"
+        >
+          <div>
+            <p className="summary-label">
+              Sua classificação
             </p>
 
+            <p
+              className={`summary-value ${
+                answers.subcategoryId
+                  ? ""
+                  : "summary-placeholder"
+              }`}
+            >
+              {[
+                  "Peças",
+                  selectedParentCategory?.label,
+                  selectedSubcategory?.label,
+                  answers.tipo,
+                  CONDICAO_OPTIONS.find(
+                    (item) =>
+                      item.id ===
+                      answers.condicao
+                  )?.label,
+                  answers.compatibilidade,
+                ]
+                  .filter(Boolean)
+                  .join(" · ") ||
+                "As escolhas aparecerão aqui"}
+            </p>
+          </div>
 
-            <div className="mt-2 flex flex-wrap items-center gap-2">
+          <div className="summary-actions">
+            <button
+              type="button"
+              className="secondary-action"
+              onClick={handleCancel}
+            >
+              Cancelar anúncio
+            </button>
 
-              <span className="rounded-full bg-primary px-3 py-1 text-xs font-medium text-white">
-                Peças
-              </span>
-
-
-              {selectedParentCategory && (
-
-                <>
-                  <span className="text-muted-foreground">
-                    →
-                  </span>
-
-                  <span className="rounded-full bg-background px-3 py-1 text-xs font-medium ring-1 ring-border">
-                    {selectedParentCategory.label}
-                  </span>
-                </>
-
-              )}
-
-
-              {steps
-                .filter(
-                  (step) =>
-                    answers[step.key]
-                )
-                .map((step) => {
-
-                  const label =
-                    step.options.find(
-                      (option) =>
-                        option.id ===
-                        answers[step.key]
-                    )?.label
-
-
-                  return (
-
-                    <span
-                      key={step.key}
-                      className="flex items-center gap-2"
-                    >
-
-                      <span className="text-muted-foreground">
-                        →
-                      </span>
-
-                      <span className="rounded-full bg-background px-3 py-1 text-xs font-medium ring-1 ring-border">
-                        {label}
-                      </span>
-
-                    </span>
-
-                  )
-                })}
-
-            </div>
-
-          </section>
-
-        )}
-
+            <button
+              type="button"
+              className="primary-action"
+              disabled={!allAnswered}
+              onClick={handleContinue}
+            >
+              Continuar
+            </button>
+          </div>
+        </aside>
       </div>
-
-
-      {/* ============================================================ */}
-      {/* BOTÃO CONTINUAR                                               */}
-      {/* ============================================================ */}
-
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background/95 backdrop-blur-lg">
-
-        <div className="mx-auto max-w-2xl px-4 py-3">
-
-          <button
-            type="button"
-            onClick={handleContinue}
-            disabled={!allAnswered}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3.5 text-sm font-semibold text-white transition-all hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40"
-          >
-
-            Continuar
-
-            <ArrowRight className="size-4" />
-
-          </button>
-
-        </div>
-
-      </div>
-
     </main>
   )
 }

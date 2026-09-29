@@ -1,20 +1,6 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import {
-  ArrowLeft,
-  ArrowRight,
-  ChevronDown,
-  Check,
-  Wrench,
-  Droplets,
-  Settings,
-  Bike,
-  Gauge,
-  Sparkles,
-  ShieldCheck,
-  Timer,
-} from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 
@@ -23,43 +9,168 @@ import { useRouter } from "next/navigation"
 /* ------------------------------------------------------------------ */
 
 const SERVICO_CATEGORIES = [
-  { id: "lavagem", label: "Lavagem e Estética", description: "Limpeza e cuidado com a bike", icon: Droplets, image: "/images/categories/servicos/lavagem.jpg" },
-  { id: "revisao-basica", label: "Revisão Básica", description: "Regulagem de freios e marchas", icon: Settings, image: "/images/categories/servicos/revisao-basica.jpg" },
-  { id: "revisao-completa", label: "Revisão Geral", description: "Desmontagem e lubrificação completa", icon: Wrench, image: "/images/categories/servicos/revisao-completa.jpg" },
-  { id: "sangria-freio", label: "Sangria de Freio", description: "Freio hidráulico", icon: ShieldCheck, image: "/images/categories/servicos/sangria.jpg" },
-  { id: "suspensao", label: "Revisão de Suspensão", description: "Suspensão dianteira e amortecedor", icon: Gauge, image: "/images/categories/servicos/suspensao.jpg" },
-  { id: "montagem", label: "Montagem de Bike", description: "Bike na caixa", icon: Bike, image: "/images/categories/servicos/montagem.jpg" },
-  { id: "rodas", label: "Montagem de Rodas", description: "Raiamento e alinhamento", icon: Sparkles, image: "/images/categories/servicos/rodas.jpg" },
-  { id: "tubeless", label: "Conversão Tubeless", description: "Instalação de sistema tubeless", icon: Wrench, image: "/images/categories/servicos/tubeless.jpg" },
-  { id: "bike-fit", label: "Bike Fit", description: "Ajuste ergonômico profissional", icon: Gauge, image: "/images/categories/servicos/bikefit.jpg" },
-  { id: "leva-traz", label: "Leva e Traz", description: "Logística de oficina", icon: Timer, image: "/images/categories/servicos/leva-traz.jpg" },
+  {
+    id: "lavagem",
+    label: "Lavagem e Estética",
+    description:
+      "Limpeza e cuidado com a bike",
+  },
+  {
+    id: "revisao-basica",
+    label: "Revisão Básica",
+    description:
+      "Regulagem de freios e marchas",
+  },
+  {
+    id: "revisao-completa",
+    label: "Revisão Geral",
+    description:
+      "Desmontagem e lubrificação completa",
+  },
+  {
+    id: "sangria-freio",
+    label: "Sangria de Freio",
+    description:
+      "Freio hidráulico",
+  },
+  {
+    id: "suspensao",
+    label: "Revisão de Suspensão",
+    description:
+      "Suspensão dianteira e amortecedor",
+  },
+  {
+    id: "montagem",
+    label: "Montagem de Bike",
+    description:
+      "Bike na caixa",
+  },
+  {
+    id: "rodas",
+    label: "Montagem de Rodas",
+    description:
+      "Raiamento e alinhamento",
+  },
+  {
+    id: "tubeless",
+    label: "Conversão Tubeless",
+    description:
+      "Instalação de sistema tubeless",
+  },
+  {
+    id: "bike-fit",
+    label: "Bike Fit",
+    description:
+      "Ajuste ergonômico profissional",
+  },
+  {
+    id: "leva-traz",
+    label: "Leva e Traz",
+    description:
+      "Logística de oficina",
+  },
 ] as const
 
-type ServicoCategoryId = (typeof SERVICO_CATEGORIES)[number]["id"]
+type ServicoCategoryId =
+  (typeof SERVICO_CATEGORIES)[number]["id"]
 
-const TIPOS_BY_CATEGORY: Record<ServicoCategoryId, readonly string[]> = {
-  "lavagem": ["Lavagem Simples", "Lavagem Detalhada", "Vitrificação", "Polimento"],
-  "revisao-basica": ["Regulagem de Freio", "Regulagem de Marcha", "Regulagem Geral", "Ajuste de Cabos"],
-  "revisao-completa": ["Revisão Completa", "Revisão Completa + Suspensão", "Revisão Completa + Freios"],
-  "sangria-freio": ["Sangria Freio Dianteiro", "Sangria Freio Traseiro", "Sangria Completa"],
-  "suspensao": ["Revisão Suspensão Dianteira", "Revisão Amortecedor Traseiro", "Revisão Completa Suspensão"],
-  "montagem": ["Montagem de Bike na Caixa", "Montagem + Revisão Básica", "Montagem + Revisão Completa"],
-  "rodas": ["Montagem de Roda", "Alinhamento de Roda", "Raiamento Completo"],
-  "tubeless": ["Conversão Tubeless", "Instalação Pneu Tubeless", "Reparo Tubeless"],
-  "bike-fit": ["Bike Fit Completo", "Bike Fit Básico", "Ajuste de Posição"],
-  "leva-traz": ["Leva e Traz Ida", "Leva e Traz Ida e Volta"],
+const TIPOS_BY_CATEGORY: Record<
+  ServicoCategoryId,
+  readonly string[]
+> = {
+  lavagem: [
+    "Lavagem Simples",
+    "Lavagem Detalhada",
+    "Vitrificação",
+    "Polimento",
+  ],
+
+  "revisao-basica": [
+    "Regulagem de Freio",
+    "Regulagem de Marcha",
+    "Regulagem Geral",
+    "Ajuste de Cabos",
+  ],
+
+  "revisao-completa": [
+    "Revisão Completa",
+    "Revisão Completa + Suspensão",
+    "Revisão Completa + Freios",
+  ],
+
+  "sangria-freio": [
+    "Sangria Freio Dianteiro",
+    "Sangria Freio Traseiro",
+    "Sangria Completa",
+  ],
+
+  suspensao: [
+    "Revisão Suspensão Dianteira",
+    "Revisão Amortecedor Traseiro",
+    "Revisão Completa Suspensão",
+  ],
+
+  montagem: [
+    "Montagem de Bike na Caixa",
+    "Montagem + Revisão Básica",
+    "Montagem + Revisão Completa",
+  ],
+
+  rodas: [
+    "Montagem de Roda",
+    "Alinhamento de Roda",
+    "Raiamento Completo",
+  ],
+
+  tubeless: [
+    "Conversão Tubeless",
+    "Instalação Pneu Tubeless",
+    "Reparo Tubeless",
+  ],
+
+  "bike-fit": [
+    "Bike Fit Completo",
+    "Bike Fit Básico",
+    "Ajuste de Posição",
+  ],
+
+  "leva-traz": [
+    "Leva e Traz Ida",
+    "Leva e Traz Ida e Volta",
+  ],
 }
 
 const TEMPO_ESTIMADO_OPTIONS = [
-  { id: "menos-1h", label: "Menos de 1 hora", description: "Serviço rápido" },
-  { id: "1-3h", label: "1 a 3 horas", description: "Serviço padrão" },
-  { id: "1-dia", label: "1 dia", description: "Serviço completo" },
-  { id: "2-3-dias", label: "2 a 3 dias", description: "Serviço detalhado" },
-  { id: "1-semana", label: "1 semana", description: "Serviço especializado" },
+  {
+    id: "menos-1h",
+    label: "Menos de 1 hora",
+    description: "Serviço rápido",
+  },
+  {
+    id: "1-3h",
+    label: "1 a 3 horas",
+    description: "Serviço padrão",
+  },
+  {
+    id: "1-dia",
+    label: "1 dia",
+    description: "Serviço completo",
+  },
+  {
+    id: "2-3-dias",
+    label: "2 a 3 dias",
+    description: "Serviço detalhado",
+  },
+  {
+    id: "1-semana",
+    label: "1 semana",
+    description:
+      "Serviço especializado",
+  },
 ] as const
 
 /* ------------------------------------------------------------------ */
-/* MODELO DE RESPOSTAS                                                 */
+/* MODELO                                                              */
 /* ------------------------------------------------------------------ */
 
 type Answers = {
@@ -85,7 +196,45 @@ type Step = {
   title: string
   subtitle: string
   options: StepOption[]
-  optional?: boolean
+}
+
+/* ------------------------------------------------------------------ */
+/* CARD                                                                */
+/* ------------------------------------------------------------------ */
+
+function ChoiceCard({
+                      selected,
+                      label,
+                      description,
+                      onClick,
+                    }: {
+  selected: boolean
+  label: string
+  description?: string
+  onClick: () => void
+}) {
+  return (
+    <button
+      type="button"
+      className={`choice-card ${
+        selected
+          ? "choice-card-selected"
+          : ""
+      }`}
+      aria-pressed={selected}
+      onClick={onClick}
+    >
+      <span className="choice-card-label">
+        {label}
+      </span>
+
+      {description ? (
+        <span className="choice-card-description">
+          {description}
+        </span>
+      ) : null}
+    </button>
+  )
 }
 
 /* ------------------------------------------------------------------ */
@@ -95,97 +244,159 @@ type Step = {
 export default function PublicarServicosPage() {
   const router = useRouter()
 
-  const [answers, setAnswers] = useState<Answers>(EMPTY_ANSWERS)
-  const [expandedKey, setExpandedKey] = useState<keyof Answers | null>("subcategoryId")
+  const [answers, setAnswers] =
+    useState<Answers>(EMPTY_ANSWERS)
 
-  const selectedCategory = useMemo(
-    () => SERVICO_CATEGORIES.find((item) => item.id === answers.subcategoryId),
-    [answers.subcategoryId]
-  )
+  const [activeStep, setActiveStep] =
+    useState(1)
 
-  const steps: Step[] = useMemo(() => {
-    const subId = answers.subcategoryId
+  const selectedCategory =
+    useMemo(
+      () =>
+        SERVICO_CATEGORIES.find(
+          (item) =>
+            item.id ===
+            answers.subcategoryId
+        ),
+      [answers.subcategoryId]
+    )
 
-    return [
+  const steps: Step[] = useMemo(
+    () => [
       {
         key: "subcategoryId",
         title: "Tipo de serviço",
-        subtitle: "Qual serviço você oferece?",
-        options: SERVICO_CATEGORIES.map((s) => ({
-          id: s.id,
-          label: s.label,
-          description: s.description,
-        })),
+        subtitle:
+          "Qual serviço você oferece?",
+        options:
+          SERVICO_CATEGORIES.map(
+            (item) => ({
+              id: item.id,
+              label: item.label,
+              description:
+              item.description,
+            })
+          ),
       },
+
       {
         key: "tipo",
         title: "Serviço específico",
-        subtitle: subId ? `Especialidade de ${selectedCategory?.label.toLowerCase()}` : "Escolha o serviço primeiro",
-        options: subId
-          ? TIPOS_BY_CATEGORY[subId].map((t) => ({ id: t, label: t }))
+        subtitle: answers.subcategoryId
+          ? `Especialidade de ${
+            selectedCategory?.label.toLowerCase() ??
+            "serviço"
+          }`
+          : "Escolha o serviço primeiro",
+        options: answers.subcategoryId
+          ? TIPOS_BY_CATEGORY[
+            answers.subcategoryId
+            ].map((item) => ({
+            id: item,
+            label: item,
+          }))
           : [],
       },
+
       {
         key: "tempoEstimado",
         title: "Tempo estimado",
-        subtitle: "Quanto tempo leva o serviço?",
-        options: TEMPO_ESTIMADO_OPTIONS.map((t) => ({ id: t.id, label: t.label, description: t.description })),
+        subtitle:
+          "Quanto tempo leva o serviço?",
+        options:
+          TEMPO_ESTIMADO_OPTIONS.map(
+            (item) => ({
+              id: item.id,
+              label: item.label,
+              description:
+              item.description,
+            })
+          ),
       },
+    ],
+    [
+      answers.subcategoryId,
+      selectedCategory,
     ]
-  }, [answers.subcategoryId, selectedCategory])
+  )
 
-  const stepIndexByKey = useMemo(() => {
-    const map: Partial<Record<keyof Answers, number>> = {}
-    steps.forEach((step, index) => {
-      map[step.key] = index
-    })
-    return map
-  }, [steps])
+  const firstUnansweredIndex =
+    steps.findIndex(
+      (step) => !answers[step.key]
+    )
 
-  const allAnswered = steps.every((step) => {
-    if (step.optional) return true
-    return Boolean(answers[step.key])
-  })
+  const allAnswered =
+    firstUnansweredIndex === -1
 
-  const firstUnansweredIndex = steps.findIndex((step) => {
-    if (step.optional) return false
-    return !answers[step.key]
-  })
+  const isStepReady = (
+    stepNumber: number
+  ) => {
+    if (stepNumber === 1) {
+      return true
+    }
 
-  const isStepUnlocked = (index: number) => index <= (firstUnansweredIndex === -1 ? steps.length - 1 : firstUnansweredIndex)
+    if (stepNumber === 2) {
+      return Boolean(
+        answers.subcategoryId
+      )
+    }
 
-  const handleSelect = (step: Step, optionId: string) => {
-    setAnswers((prev) => {
-      const next = { ...prev, [step.key]: optionId }
+    if (stepNumber === 3) {
+      return Boolean(
+        answers.subcategoryId &&
+        answers.tipo
+      )
+    }
 
-      if (step.key === "subcategoryId") {
+    return false
+  }
+
+  const handleSelect = (
+    step: Step,
+    optionId: string
+  ) => {
+    setAnswers((current) => {
+      const next = {
+        ...current,
+        [step.key]: optionId,
+      }
+
+      if (
+        step.key ===
+        "subcategoryId"
+      ) {
         next.tipo = ""
       }
 
       return next
     })
-
-    const currentIndex = stepIndexByKey[step.key] ?? 0
-    const nextStep = steps[currentIndex + 1]
-
-    setExpandedKey(nextStep ? nextStep.key : null)
-  }
-
-  const toggleStep = (step: Step, index: number) => {
-    if (!isStepUnlocked(index)) return
-    setExpandedKey((prev) => (prev === step.key ? null : step.key))
   }
 
   const handleContinue = () => {
-    if (!allAnswered) return
+    if (!allAnswered) {
+      return
+    }
 
-    const currentData = sessionStorage.getItem("imperium_bikes_publish")
-    let publishData: Record<string, unknown> = {}
+    const currentData =
+      sessionStorage.getItem(
+        "imperium_bikes_publish"
+      )
+
+    let publishData: Record<
+      string,
+      unknown
+    > = {}
 
     if (currentData) {
       try {
-        const parsed = JSON.parse(currentData)
-        if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+        const parsed =
+          JSON.parse(currentData)
+
+        if (
+          parsed &&
+          typeof parsed === "object" &&
+          !Array.isArray(parsed)
+        ) {
           publishData = parsed
         }
       } catch {
@@ -199,148 +410,298 @@ export default function PublicarServicosPage() {
       ...answers,
     }
 
-    sessionStorage.setItem("imperium_bikes_publish", JSON.stringify(updatedData))
-    router.push("/publicar/servicos/informacoes")
+    sessionStorage.setItem(
+      "imperium_bikes_publish",
+      JSON.stringify(updatedData)
+    )
+
+    router.push(
+      "/publicar/servicos/informacoes"
+    )
+  }
+
+  const handleCancel = () => {
+    router.push("/publicar")
   }
 
   return (
-    <main className="min-h-screen bg-background text-foreground">
-      <style>{`
-@keyframes servicoIconPop {
-  0% { transform: scale(0.6); opacity: 0; }
-  60% { transform: scale(1.08); opacity: 1; }
-  100% { transform: scale(1); opacity: 1; }
-}
-.servico-icon-pop { animation: servicoIconPop 0.35s ease-out; }
-@media (prefers-reduced-motion: reduce) {
-.servico-icon-pop { animation: none; }
-}
-`}</style>
+    <main className="imperium-page">
+      <header className="imperium-header">
+        <Link
+          className="header-back"
+          href="/publicar"
+        >
+          Voltar
+        </Link>
 
-      {/* HEADER */}
-      <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur-lg">
-        <div className="mx-auto flex h-14 max-w-2xl items-center justify-between px-4">
-          <Link href="/publicar" className="flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground">
-            <ArrowLeft className="size-4" />
-            Voltar
-          </Link>
-          <span className="text-sm font-semibold">Serviços</span>
-          <div className="w-[52px]" />
+        <div
+          className="brand-mark"
+          aria-label="Imperium Bikes"
+        >
+          IB
         </div>
+
+        <div>
+          <p className="eyebrow">
+            Imperium Bikes
+          </p>
+
+          <p className="header-context">
+            Publicar anúncio
+          </p>
+        </div>
+
+        <span
+          className="header-divider"
+          aria-hidden="true"
+        />
+
+        <p className="header-category">
+          Serviços
+        </p>
       </header>
 
-      {/* CONTEÚDO */}
-      <div className="mx-auto max-w-2xl px-4 pb-32 pt-6">
-        <section className="mb-6">
-          <h1 className="font-heading text-2xl font-bold tracking-tight">
+      <div className="classification-layout">
+        <section
+          className="classification-intro"
+          aria-labelledby="page-title"
+        >
+          <p className="eyebrow">
+            Etapa 1 de 6
+          </p>
+
+          <h1 id="page-title">
             Descreva seu serviço
           </h1>
-          <p className="mt-2 max-w-xl text-sm leading-6 text-muted-foreground">
-            Toque em cada campo para preencher, na ordem.
+
+          <p>
+            Escolha as características
+            principais para que seu anúncio
+            seja encontrado com facilidade.
           </p>
+
+          <div
+            className="progress-line"
+            aria-label="Etapa 1 de 6"
+          >
+            <span className="progress-active" />
+            <span />
+          </div>
+
+          {selectedCategory ? (
+            <div className="classification-selection">
+              <p className="summary-label">
+                Serviço selecionado
+              </p>
+
+              <p className="summary-value">
+                {selectedCategory.label}
+              </p>
+
+              <p className="field-note">
+                {selectedCategory.description}
+              </p>
+            </div>
+          ) : null}
         </section>
 
-        {selectedCategory && (
-          <div key={selectedCategory.id} className="servico-icon-pop mb-6 flex items-center gap-3 rounded-xl border border-border bg-muted/30 px-4 py-3">
-            <img src={selectedCategory.image} alt={selectedCategory.label} className="size-12 shrink-0 rounded-full object-cover border border-primary/20" />
-            <div>
-              <p className="text-sm font-semibold">{selectedCategory.label}</p>
-              <p className="text-xs text-muted-foreground">{selectedCategory.description}</p>
-            </div>
-          </div>
-        )}
-
-        <section className="space-y-2">
+        <section
+          className="steps-panel"
+          aria-label="Classificação do serviço"
+        >
           {steps.map((step, index) => {
-            const isExpanded = expandedKey === step.key
-            const isUnlocked = isStepUnlocked(index)
-            const isAnswered = Boolean(answers[step.key])
-            const selectedOption = step.options.find((o) => o.id === answers[step.key])
+            const stepNumber =
+              index + 1
+
+            const active =
+              activeStep === stepNumber
+
+            const ready =
+              isStepReady(stepNumber)
+
+            const answered =
+              Boolean(
+                answers[step.key]
+              )
+
+            const selectedOption =
+              step.options.find(
+                (option) =>
+                  option.id ===
+                  answers[step.key]
+              )
 
             return (
-              <div key={step.key} className={`overflow-hidden rounded-xl border transition-colors ${
-  isAnswered ? "border-primary/40" : "border-border"
-} ${!isUnlocked ? "opacity-40" : ""}`}>
-                <button type="button" onClick={() => toggleStep(step, index)} disabled={!isUnlocked} aria-expanded={isExpanded}
-                        className="flex w-full items-center justify-between gap-3 px-4 py-3.5 text-left disabled:cursor-not-allowed">
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold">
-                      {step.title}
-                      {step.optional && <span className="ml-1 text-xs font-normal text-muted-foreground">(opcional)</span>}
-                    </p>
-                    <p className={`mt-0.5 truncate text-xs ${isAnswered ? "font-medium text-primary" : "text-muted-foreground"}`}>
-                      {selectedOption ? selectedOption.label : step.subtitle}
-                    </p>
-                  </div>
-                  <span className="flex shrink-0 items-center gap-2">
-                    {isAnswered && (
-                      <span className="flex size-5 items-center justify-center rounded-full bg-primary text-white">
-                        <Check className="size-3" />
-                      </span>
-                    )}
-                    <ChevronDown className={`size-4 text-muted-foreground transition-transform ${isExpanded ? "rotate-180" : ""}`} />
+              <div
+                key={step.key}
+                className={`step-block ${
+                  active
+                    ? "step-block-active"
+                    : ""
+                } ${
+                  !ready
+                    ? "step-block-locked"
+                    : ""
+                }`}
+              >
+                <button
+                  type="button"
+                  className="step-heading"
+                  onClick={() =>
+                    ready &&
+                    setActiveStep(
+                      stepNumber
+                    )
+                  }
+                  disabled={!ready}
+                  aria-expanded={active}
+                >
+                  <span className="step-number">
+                    {String(
+                      stepNumber
+                    ).padStart(2, "0")}
                   </span>
+
+                  <span className="step-heading-copy">
+                    <strong>
+                      {step.title}
+                    </strong>
+
+                    <small>
+                      {selectedOption
+                        ? selectedOption.label
+                        : step.subtitle}
+                    </small>
+                  </span>
+
+                  {answered ? (
+                    <span className="step-status">
+                      Concluído
+                    </span>
+                  ) : null}
                 </button>
 
-                {isExpanded && isUnlocked && (
-                  <div className="border-t border-border px-2 pb-2 pt-1">
-                    {step.options.length === 0 ? (
-                      <p className="px-2 py-3 text-xs text-muted-foreground">Nenhuma opção disponível ainda.</p>
-                    ) : (
-                      step.options.map((option) => {
-                        const isSelected = answers[step.key] === option.id
-                        return (
-                          <button key={option.id} type="button" onClick={() => handleSelect(step, option.id)}
-                                  className={`flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition-colors ${
-  isSelected ? "bg-primary/10 text-primary font-semibold" : "hover:bg-muted/60"
-}`}>
-                            <span>
-                              {option.label}
-                              {option.description && (
-                                <span className="ml-2 text-xs font-normal text-muted-foreground">{option.description}</span>
-                              )}
-                            </span>
-                            {isSelected && <Check className="size-3.5 shrink-0" />}
-                          </button>
+                {active && ready ? (
+                  <div className="step-content">
+                    <p className="field-label">
+                      {step.title}
+                    </p>
+
+                    <div className="choice-grid choice-grid-types">
+                      {step.options.map(
+                        (option) => (
+                          <ChoiceCard
+                            key={
+                              option.id
+                            }
+                            selected={
+                              answers[
+                                step.key
+                                ] ===
+                              option.id
+                            }
+                            label={
+                              option.label
+                            }
+                            description={
+                              option.description
+                            }
+                            onClick={() =>
+                              handleSelect(
+                                step,
+                                option.id
+                              )
+                            }
+                          />
                         )
-                      })
-                    )}
+                      )}
+                    </div>
+
+                    {stepNumber <
+                    steps.length ? (
+                      <button
+                        type="button"
+                        className="text-action"
+                        disabled={
+                          !answers[
+                            step.key
+                            ]
+                        }
+                        onClick={() =>
+                          setActiveStep(
+                            stepNumber +
+                            1
+                          )
+                        }
+                      >
+                        Continuar para{" "}
+                        {steps[
+                          stepNumber
+                          ].title.toLowerCase()}{" "}
+                        <span aria-hidden="true">
+                          →
+                        </span>
+                      </button>
+                    ) : null}
                   </div>
-                )}
+                ) : null}
               </div>
             )
           })}
         </section>
 
-        {answers.subcategoryId && (
-          <section className="mt-6 rounded-2xl border border-border bg-muted/30 p-4">
-            <p className="text-xs text-muted-foreground">Seu anúncio será classificado como</p>
-            <div className="mt-2 flex flex-wrap items-center gap-2">
-              <span className="rounded-full bg-primary px-3 py-1 text-xs font-medium text-white">Serviços</span>
-              {steps.filter((step) => answers[step.key]).map((step) => (
-                <span key={step.key} className="flex items-center gap-2">
-                  <span className="text-muted-foreground">→</span>
-                  <span className="rounded-full bg-background px-3 py-1 text-xs font-medium ring-1 ring-border">
-                    {step.options.find((o) => o.id === answers[step.key])?.label}
-                  </span>
-                </span>
-              ))}
-            </div>
-          </section>
-        )}
-      </div>
+        <aside
+          className="classification-summary"
+          aria-live="polite"
+        >
+          <div>
+            <p className="summary-label">
+              Sua classificação
+            </p>
 
-      {/* BOTÃO CONTINUAR */}
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background/95 backdrop-blur-lg">
-        <div className="mx-auto max-w-2xl px-4 py-3">
-          <button type="button" onClick={handleContinue} disabled={!allAnswered}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3.5 text-sm font-semibold text-white transition-all hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40">
-            Continuar
-            <ArrowRight className="size-4" />
-          </button>
-        </div>
+            <p
+              className={`summary-value ${
+                answers.subcategoryId
+                  ? ""
+                  : "summary-placeholder"
+              }`}
+            >
+              {[
+                  "Serviços",
+                  selectedCategory?.label,
+                  answers.tipo,
+                  TEMPO_ESTIMADO_OPTIONS.find(
+                    (item) =>
+                      item.id ===
+                      answers.tempoEstimado
+                  )?.label,
+                ]
+                  .filter(Boolean)
+                  .join(" · ") ||
+                "As escolhas aparecerão aqui"}
+            </p>
+          </div>
+
+          <div className="summary-actions">
+            <button
+              type="button"
+              className="secondary-action"
+              onClick={handleCancel}
+            >
+              Cancelar anúncio
+            </button>
+
+            <button
+              type="button"
+              className="primary-action"
+              disabled={!allAnswered}
+              onClick={handleContinue}
+            >
+              Continuar
+            </button>
+          </div>
+        </aside>
       </div>
     </main>
   )
 }
-

@@ -1,20 +1,6 @@
-
 "use client"
 
 import { useMemo, useState } from "react"
-import {
-  ArrowLeft,
-  ArrowRight,
-  ChevronDown,
-  Check,
-  Droplets,
-  Utensils,
-  BatteryCharging,
-  HeartPulse,
-  Apple,
-  FlaskConical,
-  Package,
-} from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 
@@ -27,57 +13,41 @@ const CONSUMIVEIS_CATEGORIES = [
     id: "energia",
     label: "Energia",
     description: "Produtos para energia durante o exercício",
-    icon: BatteryCharging,
-    image: "/images/categories/consumiveis/energia.jpg",
   },
   {
     id: "hidratacao",
     label: "Hidratação",
     description: "Bebidas e produtos para reposição de líquidos",
-    icon: Droplets,
-    image: "/images/categories/consumiveis/hidratacao.jpg",
   },
   {
     id: "nutricao",
     label: "Nutrição Esportiva",
     description: "Produtos para alimentação e desempenho esportivo",
-    icon: Utensils,
-    image: "/images/categories/consumiveis/nutricao.jpg",
   },
   {
     id: "recuperacao",
     label: "Recuperação",
     description: "Produtos voltados à recuperação após o exercício",
-    icon: HeartPulse,
-    image: "/images/categories/consumiveis/recuperacao.jpg",
   },
   {
     id: "suplementos",
     label: "Suplementos",
     description: "Produtos nutricionais para diferentes objetivos",
-    icon: FlaskConical,
-    image: "/images/categories/consumiveis/suplementos.jpg",
   },
   {
     id: "alimentos",
     label: "Alimentos Esportivos",
     description: "Alimentos desenvolvidos para prática esportiva",
-    icon: Apple,
-    image: "/images/categories/consumiveis/alimentos.jpg",
   },
   {
     id: "vitaminas",
     label: "Vitaminas e Minerais",
     description: "Produtos nutricionais com vitaminas e minerais",
-    icon: FlaskConical,
-    image: "/images/categories/consumiveis/vitaminas.jpg",
   },
   {
     id: "outros",
     label: "Outros Consumíveis",
     description: "Outros produtos consumíveis relacionados ao esporte",
-    icon: Package,
-    image: "/images/categories/consumiveis/outros.jpg",
   },
 ] as const
 
@@ -219,7 +189,43 @@ type Step = {
   title: string
   subtitle: string
   options: StepOption[]
-  optional?: boolean
+}
+
+/* ------------------------------------------------------------------ */
+/* CARD DE ESCOLHA                                                     */
+/* ------------------------------------------------------------------ */
+
+function ChoiceCard({
+                      selected,
+                      label,
+                      description,
+                      onClick,
+                    }: {
+  selected: boolean
+  label: string
+  description?: string
+  onClick: () => void
+}) {
+  return (
+    <button
+      type="button"
+      className={`choice-card ${
+        selected ? "choice-card-selected" : ""
+      }`}
+      aria-pressed={selected}
+      onClick={onClick}
+    >
+      <span className="choice-card-label">
+        {label}
+      </span>
+
+      {description ? (
+        <span className="choice-card-description">
+          {description}
+        </span>
+      ) : null}
+    </button>
+  )
 }
 
 /* ------------------------------------------------------------------ */
@@ -232,153 +238,129 @@ export default function PublicarConsumiveisPage() {
   const [answers, setAnswers] =
     useState<Answers>(EMPTY_ANSWERS)
 
-  const [expandedKey, setExpandedKey] =
-    useState<keyof Answers | null>("subcategoryId")
+  const [activeStep, setActiveStep] =
+    useState(1)
 
   const selectedCategory = useMemo(
     () =>
       CONSUMIVEIS_CATEGORIES.find(
-        (item) => item.id === answers.subcategoryId
+        (item) =>
+          item.id === answers.subcategoryId
       ),
     [answers.subcategoryId]
   )
 
-  /* ---------------------------------------------------------------- */
-  /* ETAPAS                                                            */
-  /* ---------------------------------------------------------------- */
-
-  const steps: Step[] = useMemo(() => {
-    const subId = answers.subcategoryId
-
-    return [
+  const steps: Step[] = useMemo(
+    () => [
       {
         key: "subcategoryId",
         title: "Finalidade do produto",
-        subtitle: "Para que tipo de consumo esportivo ele é indicado?",
-        options: CONSUMIVEIS_CATEGORIES.map((item) => ({
-          id: item.id,
-          label: item.label,
-          description: item.description,
-        })),
+        subtitle:
+          "Para que tipo de consumo esportivo ele é indicado?",
+        options:
+          CONSUMIVEIS_CATEGORIES.map(
+            (item) => ({
+              id: item.id,
+              label: item.label,
+              description:
+              item.description,
+            })
+          ),
       },
-
       {
         key: "tipo",
         title: "Produto específico",
-        subtitle: subId
-          ? `Escolha o produto de ${selectedCategory?.label.toLowerCase()}`
+        subtitle: answers.subcategoryId
+          ? `Escolha o produto de ${
+            selectedCategory?.label.toLowerCase() ??
+            "consumo"
+          }`
           : "Escolha a finalidade primeiro",
-        options: subId
-          ? TIPOS_BY_CATEGORY[subId].map((item) => ({
-              id: item,
-              label: item,
-            }))
+        options: answers.subcategoryId
+          ? TIPOS_BY_CATEGORY[
+            answers.subcategoryId
+            ].map((item) => ({
+            id: item,
+            label: item,
+          }))
           : [],
       },
-
       {
         key: "volume",
         title: "Formato de venda",
-        subtitle: "Como o produto será vendido?",
-        options: VOLUME_OPTIONS.map((item) => ({
-          id: item.id,
-          label: item.label,
-          description: item.description,
-        })),
+        subtitle:
+          "Como o produto será vendido?",
+        options:
+          VOLUME_OPTIONS.map(
+            (item) => ({
+              id: item.id,
+              label: item.label,
+              description:
+              item.description,
+            })
+          ),
       },
+    ],
+    [
+      answers.subcategoryId,
+      selectedCategory,
     ]
-  }, [answers.subcategoryId, selectedCategory])
+  )
 
-  /* ---------------------------------------------------------------- */
-  /* CONTROLE DAS ETAPAS                                               */
-  /* ---------------------------------------------------------------- */
+  const firstUnansweredIndex =
+    steps.findIndex(
+      (step) => !answers[step.key]
+    )
 
-  const stepIndexByKey = useMemo(() => {
-    const map: Partial<Record<keyof Answers, number>> = {}
+  const allAnswered =
+    firstUnansweredIndex === -1
 
-    steps.forEach((step, index) => {
-      map[step.key] = index
-    })
+  const isStepReady = (stepNumber: number) => {
+    if (stepNumber === 1) {
+      return true
+    }
 
-    return map
-  }, [steps])
+    if (stepNumber === 2) {
+      return Boolean(
+        answers.subcategoryId
+      )
+    }
 
-  const allAnswered = steps.every((step) => {
-    if (step.optional) return true
+    if (stepNumber === 3) {
+      return Boolean(
+        answers.subcategoryId &&
+        answers.tipo
+      )
+    }
 
-    return Boolean(answers[step.key])
-  })
-
-  const firstUnansweredIndex = steps.findIndex((step) => {
-    if (step.optional) return false
-
-    return !answers[step.key]
-  })
-
-  const isStepUnlocked = (index: number) =>
-    index <=
-    (firstUnansweredIndex === -1
-      ? steps.length - 1
-      : firstUnansweredIndex)
-
-  /* ---------------------------------------------------------------- */
-  /* SELEÇÃO                                                           */
-  /* ---------------------------------------------------------------- */
+    return false
+  }
 
   const handleSelect = (
     step: Step,
     optionId: string
   ) => {
-    setAnswers((prev) => {
+    setAnswers((current) => {
       const next = {
-        ...prev,
+        ...current,
         [step.key]: optionId,
       }
 
-      /*
-       * Se a categoria mudar, o produto específico
-       * anterior deixa de ser válido.
-       */
-      if (step.key === "subcategoryId") {
+      if (
+        step.key ===
+        "subcategoryId"
+      ) {
         next.tipo = ""
       }
 
       return next
     })
-
-    const currentIndex =
-      stepIndexByKey[step.key] ?? 0
-
-    const nextStep = steps[currentIndex + 1]
-
-    setExpandedKey(
-      nextStep ? nextStep.key : null
-    )
   }
-
-  /* ---------------------------------------------------------------- */
-  /* ABRIR / FECHAR ETAPA                                             */
-  /* ---------------------------------------------------------------- */
-
-  const toggleStep = (
-    step: Step,
-    index: number
-  ) => {
-    if (!isStepUnlocked(index)) return
-
-    setExpandedKey((prev) =>
-      prev === step.key
-        ? null
-        : step.key
-    )
-  }
-
-  /* ---------------------------------------------------------------- */
-  /* CONTINUAR                                                         */
-  /* ---------------------------------------------------------------- */
 
   const handleContinue = () => {
-    if (!allAnswered) return
+    if (!allAnswered) {
+      return
+    }
 
     const currentData =
       sessionStorage.getItem(
@@ -409,9 +391,7 @@ export default function PublicarConsumiveisPage() {
 
     const updatedData = {
       ...publishData,
-
       categoryId: "consumiveis",
-
       ...answers,
     }
 
@@ -425,133 +405,109 @@ export default function PublicarConsumiveisPage() {
     )
   }
 
-  /* ---------------------------------------------------------------- */
-  /* RENDER                                                            */
-  /* ---------------------------------------------------------------- */
+  const handleCancel = () => {
+    router.push("/publicar")
+  }
 
   return (
-    <main className="min-h-screen bg-background text-foreground">
+    <main className="imperium-page">
+      <header className="imperium-header">
+        <Link
+          className="header-back"
+          href="/publicar"
+        >
+          Voltar
+        </Link>
 
-      <style>{`
-@keyframes consumivelIconPop {
-  0% {
-    transform: scale(0.6);
-    opacity: 0;
-  }
-
-  60% {
-    transform: scale(1.08);
-    opacity: 1;
-  }
-
-  100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-}
-
-.consumivel-icon-pop {
-  animation: consumivelIconPop 0.35s ease-out;
-}
-
-@media (prefers-reduced-motion: reduce) {
-.consumivel-icon-pop {
-    animation: none;
-  }
-}
-`}</style>
-
-      {/* ------------------------------------------------------------ */}
-      {/* HEADER                                                        */}
-      {/* ------------------------------------------------------------ */}
-
-      <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur-lg">
-        <div className="mx-auto flex h-14 max-w-2xl items-center justify-between px-4">
-
-          <Link
-            href="/publicar"
-            className="flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
-          >
-            <ArrowLeft className="size-4" />
-
-            Voltar
-          </Link>
-
-          <span className="text-sm font-semibold">
-            Consumíveis
-          </span>
-
-          <div className="w-[52px]" />
-
+        <div
+          className="brand-mark"
+          aria-label="Imperium Bikes"
+        >
+          IB
         </div>
+
+        <div>
+          <p className="eyebrow">
+            Imperium Bikes
+          </p>
+
+          <p className="header-context">
+            Publicar anúncio
+          </p>
+        </div>
+
+        <span
+          className="header-divider"
+          aria-hidden="true"
+        />
+
+        <p className="header-category">
+          Consumíveis
+        </p>
       </header>
 
-      {/* ------------------------------------------------------------ */}
-      {/* CONTEÚDO                                                      */}
-      {/* ------------------------------------------------------------ */}
+      <div className="classification-layout">
+        <section
+          className="classification-intro"
+          aria-labelledby="page-title"
+        >
+          <p className="eyebrow">
+            Etapa 1 de 6
+          </p>
 
-      <div className="mx-auto max-w-2xl px-4 pb-32 pt-6">
-
-        <section className="mb-6">
-
-          <h1 className="font-heading text-2xl font-bold tracking-tight">
+          <h1 id="page-title">
             Caracterize seu consumível
           </h1>
 
-          <p className="mt-2 max-w-xl text-sm leading-6 text-muted-foreground">
-            Escolha primeiro a finalidade do produto e depois
-            especifique o item.
+          <p>
+            Escolha as características
+            principais para que seu anúncio
+            seja encontrado com facilidade.
           </p>
 
-        </section>
-
-        {/* ---------------------------------------------------------- */}
-        {/* CATEGORIA SELECIONADA                                      */}
-        {/* ---------------------------------------------------------- */}
-
-        {selectedCategory && (
           <div
-            key={selectedCategory.id}
-            className="consumivel-icon-pop mb-6 flex items-center gap-3 rounded-xl border border-border bg-muted/30 px-4 py-3"
+            className="progress-line"
+            aria-label="Etapa 1 de 6"
           >
+            <span className="progress-active" />
+            <span />
+          </div>
 
-            <img
-              src={selectedCategory.image}
-              alt={selectedCategory.label}
-              className="size-12 shrink-0 rounded-full border border-primary/20 object-cover"
-            />
+          {selectedCategory ? (
+            <div className="classification-selection">
+              <p className="summary-label">
+                Categoria selecionada
+              </p>
 
-            <div>
-
-              <p className="text-sm font-semibold">
+              <p className="summary-value">
                 {selectedCategory.label}
               </p>
 
-              <p className="text-xs text-muted-foreground">
+              <p className="field-note">
                 {selectedCategory.description}
               </p>
-
             </div>
+          ) : null}
+        </section>
 
-          </div>
-        )}
-
-        {/* ---------------------------------------------------------- */}
-        {/* ETAPAS                                                      */}
-        {/* ---------------------------------------------------------- */}
-
-        <section className="space-y-2">
-
+        <section
+          className="steps-panel"
+          aria-label="Classificação do consumível"
+        >
           {steps.map((step, index) => {
+            const stepNumber =
+              index + 1
 
-            const isExpanded =
-              expandedKey === step.key
+            const active =
+              activeStep === stepNumber
 
-            const isUnlocked =
-              isStepUnlocked(index)
+            const ready =
+              isStepReady(stepNumber)
 
-            const isAnswered =
-              Boolean(answers[step.key])
+            const answered =
+              Boolean(
+                answers[step.key]
+              )
 
             const selectedOption =
               step.options.find(
@@ -563,219 +519,176 @@ export default function PublicarConsumiveisPage() {
             return (
               <div
                 key={step.key}
-                className={`overflow-hidden rounded-xl border transition-colors ${
-  isAnswered
-    ? "border-primary/40"
-    : "border-border"
-} ${
-  !isUnlocked
-    ? "opacity-40"
-    : ""
-}`}
+                className={`step-block ${
+                  active
+                    ? "step-block-active"
+                    : ""
+                } ${
+                  !ready
+                    ? "step-block-locked"
+                    : ""
+                }`}
               >
-
-                {/* CABEÇALHO DA ETAPA */}
-
                 <button
                   type="button"
+                  className="step-heading"
                   onClick={() =>
-                    toggleStep(step, index)
+                    ready &&
+                    setActiveStep(
+                      stepNumber
+                    )
                   }
-                  disabled={!isUnlocked}
-                  aria-expanded={isExpanded}
-                  className="flex w-full items-center justify-between gap-3 px-4 py-3.5 text-left disabled:cursor-not-allowed"
+                  disabled={!ready}
+                  aria-expanded={active}
                 >
+                  <span className="step-number">
+                    {String(
+                      stepNumber
+                    ).padStart(2, "0")}
+                  </span>
 
-                  <div className="min-w-0">
-
-                    <p className="text-sm font-semibold">
+                  <span className="step-heading-copy">
+                    <strong>
                       {step.title}
-                    </p>
+                    </strong>
 
-                    <p
-                      className={`mt-0.5 truncate text-xs ${
-  isAnswered
-    ? "font-medium text-primary"
-    : "text-muted-foreground"
-}`}
-                    >
+                    <small>
                       {selectedOption
                         ? selectedOption.label
                         : step.subtitle}
-                    </p>
-
-                  </div>
-
-                  <span className="flex shrink-0 items-center gap-2">
-
-                    {isAnswered && (
-                      <span className="flex size-5 items-center justify-center rounded-full bg-primary text-white">
-                        <Check className="size-3" />
-                      </span>
-                    )}
-
-                    <ChevronDown
-                      className={`size-4 text-muted-foreground transition-transform ${
-  isExpanded
-    ? "rotate-180"
-    : ""
-}`}
-                    />
-
+                    </small>
                   </span>
 
+                  {answered ? (
+                    <span className="step-status">
+                      Concluído
+                    </span>
+                  ) : null}
                 </button>
 
-                {/* OPÇÕES */}
+                {active && ready ? (
+                  <div className="step-content">
+                    <p className="field-label">
+                      {step.title}
+                    </p>
 
-                {isExpanded && isUnlocked && (
-                  <div className="border-t border-border px-2 pb-2 pt-1">
+                    <div className="choice-grid choice-grid-types">
+                      {step.options.map(
+                        (option) => (
+                          <ChoiceCard
+                            key={
+                              option.id
+                            }
+                            selected={
+                              answers[
+                                step.key
+                                ] ===
+                              option.id
+                            }
+                            label={
+                              option.label
+                            }
+                            description={
+                              option.description
+                            }
+                            onClick={() =>
+                              handleSelect(
+                                step,
+                                option.id
+                              )
+                            }
+                          />
+                        )
+                      )}
+                    </div>
 
-                    {step.options.length === 0 ? (
-
-                      <p className="px-2 py-3 text-xs text-muted-foreground">
-                        Nenhuma opção disponível ainda.
-                      </p>
-
-                    ) : (
-
-                      step.options.map(
-                        (option) => {
-
-                          const isSelected =
-                            answers[
-                              step.key
-                            ] === option.id
-
-                          return (
-                            <button
-                              key={option.id}
-                              type="button"
-                              onClick={() =>
-                                handleSelect(
-                                  step,
-                                  option.id
-                                )
-                              }
-                              className={`flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition-colors ${
-  isSelected
-    ? "bg-primary/10 font-semibold text-primary"
-    : "hover:bg-muted/60"
-}`}
-                            >
-
-                              <span>
-
-                                {option.label}
-
-                                {option.description && (
-                                  <span className="ml-2 text-xs font-normal text-muted-foreground">
-                                    {option.description}
-                                  </span>
-                                )}
-
-                              </span>
-
-                              {isSelected && (
-                                <Check className="size-3.5 shrink-0" />
-                              )}
-
-                            </button>
+                    {stepNumber <
+                    steps.length ? (
+                      <button
+                        type="button"
+                        className="text-action"
+                        disabled={
+                          !answers[
+                            step.key
+                            ]
+                        }
+                        onClick={() =>
+                          setActiveStep(
+                            stepNumber +
+                            1
                           )
                         }
-                      )
-
-                    )}
-
+                      >
+                        Continuar para{" "}
+                        {steps[
+                          stepNumber
+                          ].title.toLowerCase()}{" "}
+                        <span aria-hidden="true">
+                          →
+                        </span>
+                      </button>
+                    ) : null}
                   </div>
-                )}
-
+                ) : null}
               </div>
             )
           })}
-
         </section>
 
-        {/* ---------------------------------------------------------- */}
-        {/* CLASSIFICAÇÃO                                               */}
-        {/* ---------------------------------------------------------- */}
-
-        {answers.subcategoryId && (
-          <section className="mt-6 rounded-2xl border border-border bg-muted/30 p-4">
-
-            <p className="text-xs text-muted-foreground">
-              Seu anúncio será classificado como
+        <aside
+          className="classification-summary"
+          aria-live="polite"
+        >
+          <div>
+            <p className="summary-label">
+              Sua classificação
             </p>
 
-            <div className="mt-2 flex flex-wrap items-center gap-2">
+            <p
+              className={`summary-value ${
+                answers.subcategoryId ||
+                answers.tipo ||
+                answers.volume
+                  ? ""
+                  : "summary-placeholder"
+              }`}
+            >
+              {[
+                  "Consumíveis",
+                  selectedCategory?.label,
+                  answers.tipo,
+                  VOLUME_OPTIONS.find(
+                    (item) =>
+                      item.id ===
+                      answers.volume
+                  )?.label,
+                ]
+                  .filter(Boolean)
+                  .join(" · ") ||
+                "As escolhas aparecerão aqui"}
+            </p>
+          </div>
 
-              <span className="rounded-full bg-primary px-3 py-1 text-xs font-medium text-white">
-                Consumíveis
-              </span>
+          <div className="summary-actions">
+            <button
+              type="button"
+              className="secondary-action"
+              onClick={handleCancel}
+            >
+              Cancelar anúncio
+            </button>
 
-              {steps
-                .filter(
-                  (step) =>
-                    answers[step.key]
-                )
-                .map((step) => (
-
-                  <span
-                    key={step.key}
-                    className="flex items-center gap-2"
-                  >
-
-                    <span className="text-muted-foreground">
-                      →
-                    </span>
-
-                    <span className="rounded-full bg-background px-3 py-1 text-xs font-medium ring-1 ring-border">
-                      {
-                        step.options.find(
-                          (option) =>
-                            option.id ===
-                            answers[step.key]
-                        )?.label
-                      }
-                    </span>
-
-                  </span>
-
-                ))}
-
-            </div>
-
-          </section>
-        )}
-
+            <button
+              type="button"
+              className="primary-action"
+              disabled={!allAnswered}
+              onClick={handleContinue}
+            >
+              Continuar
+            </button>
+          </div>
+        </aside>
       </div>
-
-      {/* ------------------------------------------------------------ */}
-      {/* BOTÃO CONTINUAR                                               */}
-      {/* ------------------------------------------------------------ */}
-
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background/95 backdrop-blur-lg">
-
-        <div className="mx-auto max-w-2xl px-4 py-3">
-
-          <button
-            type="button"
-            onClick={handleContinue}
-            disabled={!allAnswered}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3.5 text-sm font-semibold text-white transition-all hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40"
-          >
-
-            Continuar
-
-            <ArrowRight className="size-4" />
-
-          </button>
-
-        </div>
-
-      </div>
-
     </main>
   )
 }
-
