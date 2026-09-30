@@ -45,7 +45,7 @@ export function BikeCard({
 
     return (
         <div
-            onClick={() => window.location.href = `/produto/${id}`}
+            onClick={() => window.location.href = `/produtos/${id}`}
             style={{
                 backgroundColor: '#ffffff',
                 borderRadius: '12px',

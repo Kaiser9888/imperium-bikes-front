@@ -4,7 +4,9 @@ import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@clerk/nextjs";
 import { Send, MessageCircle, AlertCircle, Trash2 } from "lucide-react";
 
-const API_URL = "https://imperium-bikes.onrender.com";
+import { API_BASE_URL } from "@/lib/api-config";
+
+const API_URL = API_BASE_URL;
 
 interface Comment {
     id: string;

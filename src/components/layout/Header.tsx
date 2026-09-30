@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
 import {
     Bell,
     Menu,
@@ -13,21 +14,34 @@ import { SignInButton, UserButton } from "@clerk/nextjs"
 import { Authed, Guest } from "@/components/auth/auth-gates"
 import Link from "next/link"
 import Image from "next/image"
+import { CART_UPDATED_EVENT, cartItemCount } from "@/lib/cart"
 
 type HeaderProps = {
     onMenuClick: () => void
-    cartCount?: number
     notificationCount?: number
 }
 
 export function Header({
                            onMenuClick,
-                           cartCount,
                            notificationCount,
                        }: HeaderProps) {
+    const router = useRouter()
+    const [searchTerm, setSearchTerm] = useState("")
     const [activeCard, setActiveCard] = useState<
       "notifications" | "cart" | null
     >(null)
+    const [cartCount, setCartCount] = useState(0)
+
+    useEffect(() => {
+        const updateCount = () => setCartCount(cartItemCount())
+        updateCount()
+        window.addEventListener(CART_UPDATED_EVENT, updateCount)
+        window.addEventListener("storage", updateCount)
+        return () => {
+            window.removeEventListener(CART_UPDATED_EVENT, updateCount)
+            window.removeEventListener("storage", updateCount)
+        }
+    }, [])
 
     function handleNotifications() {
         setActiveCard((current) =>
@@ -52,7 +66,6 @@ export function Header({
       notificationCount > 0
 
     const hasCartCount =
-      typeof cartCount === "number" &&
       cartCount > 0
 
     return (
@@ -176,14 +189,18 @@ export function Header({
                   <form
                     role="search"
                     className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2.5 shadow-sm focus-within:ring-2 focus-within:ring-ring/40"
-                    onSubmit={(e) =>
-                      e.preventDefault()
-                    }
+                    onSubmit={(event) => {
+                      event.preventDefault()
+                      const term = searchTerm.trim()
+                      if (term) router.push(`/buscar?q=${encodeURIComponent(term)}`)
+                    }}
                   >
                       <Search className="size-4 shrink-0 text-muted-foreground" />
 
                       <input
                         type="search"
+                        value={searchTerm}
+                        onChange={(event) => setSearchTerm(event.target.value)}
                         placeholder="Buscar bikes, peças, marcas..."
                         className="w-full bg-transparent text-sm text-card-foreground outline-none placeholder:text-muted-foreground"
                       />

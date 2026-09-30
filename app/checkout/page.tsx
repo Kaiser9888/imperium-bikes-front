@@ -1,108 +1,69 @@
-// app/checkout/page.tsx
-"use client";
+"use client"
 
-import { useAuth } from "@clerk/nextjs";
-import { Suspense, useEffect, useState } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
-import { Elements } from "@stripe/react-stripe-js";
-import { getStripe } from "@/lib/stripe";
-import { apiFetch } from "@/lib/apiClient";
-import { useUserSync } from "@/lib/UserSyncContext";
-import CheckoutForm from "@/components/checkout/CheckoutForm";
+import { Suspense, useEffect, useState } from "react"
+import { useAuth } from "@clerk/nextjs"
+import { useSearchParams, useRouter } from "next/navigation"
+import Link from "next/link"
+import { Loader2 } from "lucide-react"
+import { paymentService } from "@/services/publish/payment.service"
+import { productService } from "@/services/publish/product.service"
+import type { ProductResponse } from "@/types/publish/product"
 
-interface CheckoutResponse {
-  orderId: string;
-  clientSecret: string;
-  valorProduto: number;
-}
+const money = (value: number) => value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
 
-// useSearchParams() precisa estar dentro de um <Suspense> pro Next.js
-// conseguir pré-renderizar a página sem quebrar o build. Por isso o
-// conteúdo real fica num componente filho, e o export default só monta
-// o Suspense em volta dele.
-export default function CheckoutPage() {
-  return (
-    <Suspense fallback={<StatusMessage>Preparando checkout...</StatusMessage>}>
-      <CheckoutPageContent />
-    </Suspense>
-  );
-}
-
-function CheckoutPageContent() {
-  const { getToken, isLoaded, isSignedIn } = useAuth();
-  const { isSynced } = useUserSync();
-  const searchParams = useSearchParams();
-  const router = useRouter();
-  const productId = searchParams.get("productId");
-
-  const [checkout, setCheckout] = useState<CheckoutResponse | null>(null);
-  const [erro, setErro] = useState<string | null>(null);
+function CheckoutContent() {
+  const { getToken, isLoaded, isSignedIn } = useAuth()
+  const params = useSearchParams()
+  const router = useRouter()
+  const productId = params.get("productId")
+  const [product, setProduct] = useState<ProductResponse | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [sending, setSending] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!isLoaded || !isSignedIn || !isSynced) return;
-
-    if (!productId) {
-      setErro("Produto não especificado.");
-      return;
+    if (!isLoaded) return
+    if (!isSignedIn) {
+      const returnTo = productId ? `/checkout?productId=${encodeURIComponent(productId)}` : "/checkout"
+      router.replace(`/sign-in?redirect_url=${encodeURIComponent(returnTo)}`)
+      return
     }
+    if (!productId) return
+    let active = true
+    productService.getById(productId)
+      .then((result) => { if (active) setProduct(result) })
+      .catch(() => { if (active) setError("Não foi possível carregar este produto.") })
+      .finally(() => { if (active) setLoading(false) })
+    return () => { active = false }
+  }, [getToken, isLoaded, isSignedIn, productId, router])
 
-    apiFetch<CheckoutResponse>("/api/orders", getToken, {
-      method: "POST",
-      body: JSON.stringify({ productId }),
-    })
-      .then(setCheckout)
-      .catch((err) => {
-        console.error("[Checkout] Erro ao criar pedido:", err);
-        setErro("Não foi possível iniciar o pagamento. Tente novamente.");
-      });
-  }, [isLoaded, isSignedIn, isSynced, productId, getToken]);
-
-  if (!isLoaded || !isSignedIn || !isSynced) {
-    return <StatusMessage>Preparando checkout...</StatusMessage>;
+  async function startPayment() {
+    if (!productId || !product || sending) return
+    setSending(true)
+    setError(null)
+    try {
+      const payment = await paymentService.create({
+        type: "PRODUCT_PURCHASE",
+        referenceId: productId,
+        referenceType: "PRODUCT",
+        description: product.title,
+      }, getToken)
+      if (!payment.checkoutUrl) throw new Error("O serviço de pagamento não retornou o endereço do checkout.")
+      window.location.assign(payment.checkoutUrl)
+    } catch (cause) {
+      console.error("Falha ao iniciar pagamento:", cause)
+      setError("Não foi possível iniciar o pagamento. Tente novamente.")
+      setSending(false)
+    }
   }
 
-  if (erro) {
-    return (
-      <div className="max-w-md mx-auto px-4 py-20 text-center">
-        <p className="text-sm text-destructive mb-6">{erro}</p>
-        <button
-          onClick={() => router.back()}
-          className="px-4 py-2.5 rounded-md bg-secondary text-secondary-foreground text-sm font-medium"
-        >
-          Voltar
-        </button>
-      </div>
-    );
-  }
+  const loadingPage = !isLoaded || (Boolean(isSignedIn) && Boolean(productId) && loading)
+  if (loadingPage) return <main className="grid min-h-screen place-items-center bg-[#f5f3ee]"><Loader2 className="size-8 animate-spin text-[#a33c36]" aria-label="Carregando checkout" /></main>
+  if (!productId) return <main className="grid min-h-screen place-items-center px-4 text-center"><p role="alert" className="text-sm text-destructive">Nenhum produto foi selecionado.</p></main>
 
-  if (!checkout) {
-    return <StatusMessage>Preparando checkout...</StatusMessage>;
-  }
-
-  return (
-    <div className="max-w-md mx-auto px-4 py-16">
-      <h1 className="font-heading text-2xl text-foreground mb-1">Finalizar compra</h1>
-      <p className="text-sm text-muted-foreground mb-8">
-        Pagamento processado com segurança pela Stripe.
-      </p>
-
-      <Elements
-        stripe={getStripe()}
-        options={{
-          clientSecret: checkout.clientSecret,
-          locale: "pt-BR",
-        }}
-      >
-        <CheckoutForm orderId={checkout.orderId} valorProduto={checkout.valorProduto} />
-      </Elements>
-    </div>
-  );
+  return <main className="min-h-screen bg-[#f5f3ee] px-6 py-12 text-[#1d282b]"><div className="mx-auto max-w-lg"><h1 className="font-serif text-3xl">Finalizar compra</h1>{product && <div className="mt-6 flex items-baseline justify-between border-b border-[#1d282b]/20 pb-4"><span className="text-sm">{product.title}</span><span className="font-serif text-xl">{money(product.price)}</span></div>}<p className="mt-5 text-sm text-[#68737a]">O pagamento será processado com segurança pelo provedor de pagamentos.</p>{error && <p role="alert" className="mt-4 text-sm text-[#a33c36]">{error}</p>}<button onClick={startPayment} disabled={!product || sending} className="mt-6 flex w-full items-center justify-center gap-2 bg-[#1d282b] px-5 py-3 text-sm font-bold text-white disabled:opacity-50">{sending && <Loader2 className="size-4 animate-spin" />}{sending ? "Redirecionando..." : "Continuar para pagamento"}</button><Link href={productId ? `/produtos/${productId}` : "/produtos"} className="mt-4 block text-center text-sm text-[#68737a] underline">Voltar ao anúncio</Link></div></main>
 }
 
-function StatusMessage({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="max-w-md mx-auto px-4 py-20 text-center text-sm text-muted-foreground">
-      {children}
-    </div>
-  );
+export default function CheckoutPage() {
+  return <Suspense fallback={<main className="grid min-h-screen place-items-center bg-[#f5f3ee]"><Loader2 className="size-8 animate-spin text-[#a33c36]" /></main>}><CheckoutContent /></Suspense>
 }

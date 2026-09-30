@@ -1,7 +1,7 @@
 import axios from 'axios';
+import { API_BASE_URL } from '@/lib/api-config';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://imperium-bikes.onrender.com';
-const BASE_URL = API_URL.startsWith('http') ? API_URL : `https://${API_URL}`;
+const BASE_URL = API_BASE_URL.startsWith('http') ? API_BASE_URL : `https://${API_BASE_URL}`;
 
 console.log('🔧 API Base URL:', BASE_URL);
 

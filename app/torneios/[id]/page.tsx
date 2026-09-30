@@ -6,46 +6,102 @@ import { useUser } from "@clerk/nextjs"
 import { ArrowLeft, MapPin, Calendar, Users, Trophy, DollarSign, Shield, Flame, Clock, Share2, ChevronRight, Star, CheckCircle } from "lucide-react"
 import Link from "next/link"
 import { useParams } from "next/navigation"
-import { useState } from "react"
+import { useEffect, useState } from "react"
+import { tournamentService } from "@/services/tournamentService"
 
-const torneio = {
-    id: "1",
-    nome: "Downhill Cup 2026",
-    modalidade: "Downhill",
-    descricao: "O maior torneio de downhill do Brasil. Pista técnica com mais de 2km de descida em meio à mata nativa da Serra da Mantiqueira. Prepare seu equipamento e venha competir com os melhores riders do país.",
-    regras: "- Bicicletas com suspensão mínima de 180mm\n- Capacete full face obrigatório\n- Joelheiras e cotoveleiras recomendadas\n- Categoria única: Open\n- Cronometragem eletrônica",
-    data: "15 Ago 2026",
-    horario: "08:00 - 18:00",
-    local: "Parque Municipal",
-    endereco: "Av. Principal, 1000 - Campos do Jordão, SP",
-    participantes: 32,
-    maxParticipantes: 48,
-    valorInscricao: 89.90,
-    premiacao: "R$ 5.000 (1º), R$ 2.000 (2º), R$ 1.000 (3º)",
-    status: "aberto",
-    banner: "/images/torneio-1.png",
-    organizador: {
-        nome: "Pedro Alves",
-        username: "@pedalpesado",
-        avatar: "/placeholder.svg",
-        torneiosCriados: 8,
-        nota: 4.9,
-    },
-    diasRestantes: 12,
-    podio: [
-        { nome: "Carlos Silva", posicao: 1 },
-        { nome: "Ana Oliveira", posicao: 2 },
-        { nome: "Pedro Santos", posicao: 3 },
-    ],
+interface TournamentDetail {
+    nome: string; modalidade: string; descricao: string; regras: string; data: string; horario: string
+    local: string; endereco: string; participantes: number; maxParticipantes: number; valorInscricao: number
+    premiacao: string; status: string; banner: string; inscrito: boolean
+    organizador: { nome: string; username: string; avatar: string; torneiosCriados: number; nota: number }
+    podio: { nome: string; posicao: number }[]
+}
+
+function toTournamentDetail(payload: unknown): TournamentDetail {
+    const outer = payload && typeof payload === "object" ? payload as Record<string, unknown> : {}
+    const item = (outer.data && typeof outer.data === "object" ? outer.data : payload) as Record<string, unknown>
+    const organizer = (item.organizer ?? item.organizador ?? {}) as Record<string, unknown>
+    const statusValue = String(item.status ?? "open").toLowerCase()
+    const status = /closed|ended|encerr|finaliz/.test(statusValue) ? "finalizado" : /progress|live|andamento/.test(statusValue) ? "andamento" : "aberto"
+    const dateValue = item.startDate ?? item.dataInicio ?? item.date ?? item.data
+    const date = dateValue ? new Date(String(dateValue)) : null
+    const podium = Array.isArray(item.podium ?? item.podio) ? (item.podium ?? item.podio) as unknown[] : []
+    return {
+        nome: String(item.name ?? item.nome ?? item.title ?? "Torneio"),
+        modalidade: String(item.modality ?? item.modalidade ?? "Ciclismo"),
+        descricao: String(item.description ?? item.descricao ?? ""), regras: String(item.rules ?? item.regras ?? ""),
+        data: date && !Number.isNaN(date.getTime()) ? date.toLocaleDateString("pt-BR") : "Data a confirmar",
+        horario: String(item.schedule ?? item.horario ?? "Horário a confirmar"),
+        local: String(item.locationName ?? item.local ?? item.location ?? "Local a confirmar"),
+        endereco: String(item.address ?? item.endereco ?? item.location ?? ""),
+        participantes: Number(item.participantsCount ?? item.participantes ?? item.participants ?? 0),
+        maxParticipantes: Math.max(1, Number(item.maxParticipants ?? item.maxParticipantes ?? 1)),
+        valorInscricao: Number(item.entryFee ?? item.valorInscricao ?? item.price ?? 0),
+        premiacao: String(item.prize ?? item.premiacao ?? "Premiação a confirmar"), status,
+        banner: String(item.bannerUrl ?? item.banner ?? "/placeholder.svg"),
+        inscrito: Boolean(item.isParticipant ?? item.inscrito),
+        organizador: {
+            nome: String(organizer.name ?? organizer.nome ?? "Organizador"),
+            username: String(organizer.username ?? organizer.id ?? ""),
+            avatar: String(organizer.avatarUrl ?? organizer.avatar ?? "/placeholder.svg"),
+            torneiosCriados: Number(organizer.tournamentsCount ?? organizer.torneiosCriados ?? 0),
+            nota: Number(organizer.rating ?? organizer.nota ?? 0),
+        },
+        podio: podium.flatMap((entry, index) => {
+            if (!entry || typeof entry !== "object") return []
+            const row = entry as Record<string, unknown>
+            return [{ nome: String(row.name ?? row.nome ?? "Participante"), posicao: Number(row.position ?? row.posicao ?? index + 1) }]
+        }),
+    }
 }
 
 export default function TorneioDetalhesPage() {
-    const { user, isSignedIn } = useUser()
+    const { isSignedIn } = useUser()
     const params = useParams()
     const torneioId = params.id as string
+    const numericTournamentId = Number(torneioId)
+    const validTournamentId = Number.isInteger(numericTournamentId) && numericTournamentId > 0
 
+    const [torneio, setTorneio] = useState<TournamentDetail | null>(null)
+    const [carregando, setCarregando] = useState(true)
+    const [erro, setErro] = useState<string | null>(null)
     const [inscrito, setInscrito] = useState(false)
+    const [inscrevendo, setInscrevendo] = useState(false)
+    const [erroInscricao, setErroInscricao] = useState<string | null>(null)
     const [mostrarRegras, setMostrarRegras] = useState(false)
+
+    useEffect(() => {
+        if (!validTournamentId) return
+        let active = true
+        tournamentService.buscarPorId(numericTournamentId).then((data) => {
+            if (active) {
+                const result = toTournamentDetail(data)
+                setTorneio(result)
+                setInscrito(result.inscrito)
+            }
+        }).catch(() => { if (active) setErro("Não foi possível carregar este torneio.") }).finally(() => { if (active) setCarregando(false) })
+        return () => { active = false }
+    }, [numericTournamentId, torneioId, validTournamentId])
+
+    async function handleInscrever() {
+        if (!isSignedIn) {
+            window.location.assign(`/sign-in?redirect_url=${encodeURIComponent(window.location.pathname)}`)
+            return
+        }
+        setInscrevendo(true)
+        setErroInscricao(null)
+        try {
+            await tournamentService.inscrever(Number(torneioId))
+            setInscrito(true)
+        } catch {
+            setErroInscricao("Não foi possível concluir sua inscrição. Tente novamente.")
+        } finally {
+            setInscrevendo(false)
+        }
+    }
+
+    if (carregando && validTournamentId) return <main className="grid min-h-screen place-items-center text-sm text-muted-foreground">Carregando torneio...</main>
+    if (erro || !torneio) return <main className="grid min-h-screen place-items-center px-4 text-center"><div><p role="alert" className="text-sm text-destructive">{erro ?? (!validTournamentId ? "Torneio inválido." : "Torneio não encontrado.")}</p><Link href="/torneios" className="mt-4 inline-block underline">Voltar aos torneios</Link></div></main>
 
     const vagasRestantes = torneio.maxParticipantes - torneio.participantes
     const quaseCheio = vagasRestantes <= 5
@@ -219,13 +275,14 @@ export default function TorneioDetalhesPage() {
                                     <CheckCircle className="size-5 text-green-600" />
                                     <span className="text-sm font-semibold text-green-700">Inscrito!</span>
                                 </div>
-                                <button onClick={() => setInscrito(false)} className="text-xs text-red-500 hover:underline">Cancelar inscrição</button>
+                                <span className="text-xs text-muted-foreground">Sua inscrição foi enviada.</span>
                             </div>
                         ) : (
-                            <button onClick={() => setInscrito(true)} className="w-full rounded-2xl bg-primary py-4 text-sm font-bold text-primary-foreground hover:bg-primary/90 transition-colors shadow-lg shadow-primary/20">
-                                Inscrever-se • {torneio.valorInscricao > 0 ? `R$ ${torneio.valorInscricao.toFixed(2)}` : "Grátis"}
+                            <button disabled={inscrevendo} onClick={handleInscrever} className="w-full rounded-2xl bg-primary py-4 text-sm font-bold text-primary-foreground hover:bg-primary/90 transition-colors shadow-lg shadow-primary/20 disabled:opacity-50">
+                                {inscrevendo ? "Enviando inscrição..." : `Inscrever-se • ${torneio.valorInscricao > 0 ? `R$ ${torneio.valorInscricao.toFixed(2)}` : "Grátis"}`}
                             </button>
                         )}
+                        {erroInscricao && <p role="alert" className="mt-2 text-center text-sm text-destructive">{erroInscricao}</p>}
                     </div>
                 )}
             </main>

@@ -3,8 +3,9 @@ import type {
     VideoPage,
     ReactionResponse,
 } from "./types";
+import { API_BASE_URL } from "@/lib/api-config";
 
-export const API_URL = "https://imperium-bikes.onrender.com";
+export const API_URL = API_BASE_URL;
 
 export const PAGE_SIZE = 12;
 

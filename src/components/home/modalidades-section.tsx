@@ -1,3 +1,5 @@
+import Link from "next/link"
+
 const modalidades = [
     { label: "Downhill", img: "/images/mod-downhill.png", href: "/modalidades/downhill" },
     { label: "BMX", img: "/images/mod-bmx.png", href: "/modalidades/bmx" },
@@ -14,15 +16,15 @@ export function ModalidadesSection() {
                 <h2 id="modalidades-title" className="font-heading text-lg font-bold uppercase tracking-wide text-foreground">
                     Modalidades
                 </h2>
-                <a href="/modalidades" className="text-xs font-medium text-primary hover:underline">
+                <Link href="/modalidades" className="text-xs font-medium text-primary hover:underline">
                     Ver todas
-                </a>
+                </Link>
             </div>
 
             <ul className="flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 {modalidades.map(({ label, img, href }) => (
                     <li key={label} className="snap-start">
-                        <a
+                        <Link
                             href={href}
                             className="group relative flex h-32 w-28 shrink-0 flex-col justify-end overflow-hidden rounded-xl border border-border"
                         >
@@ -35,7 +37,7 @@ export function ModalidadesSection() {
                             <span className="relative p-3 font-heading text-sm font-bold uppercase tracking-wide text-background">
                 {label}
               </span>
-                        </a>
+                        </Link>
                     </li>
                 ))}
             </ul>

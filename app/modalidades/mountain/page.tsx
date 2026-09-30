@@ -6,6 +6,7 @@ import { BottomNav } from "@/components/layout/bottom-nav"
 import { ArrowLeft, SlidersHorizontal, X } from "lucide-react"
 import Link from "next/link"
 import { useState } from "react"
+import { ProductsCatalog } from "@/components/marketplace/ProductsCatalog"
 
 const categorias = [
     "Bike Completa",
@@ -44,7 +45,7 @@ export default function MountainPage() {
 
     return (
         <div className="min-h-screen bg-background">
-            <Header onMenuClick={() => {}} cartCount={0} notificationCount={0} />
+            <Header onMenuClick={() => {}} notificationCount={0} />
 
             {/* Hero com vídeo */}
             <section className="relative h-[60vh] min-h-[400px] overflow-hidden">
@@ -167,7 +168,7 @@ export default function MountainPage() {
             {/* Conteúdo (placeholder) */}
             <section className="mx-auto max-w-7xl px-4 pb-10">
                 <div className="rounded-xl border border-border bg-card p-8 text-center">
-                    <p className="text-muted-foreground text-sm">Produtos de Mountain Bike — em breve.</p>
+                    <ProductsCatalog category="Mountain" condition={condicao} minPrice={precoMin} maxPrice={precoMax} subcategory={categoriaSelecionada} />
                 </div>
             </section>
 

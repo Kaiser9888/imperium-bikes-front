@@ -1,9 +1,12 @@
 "use client"
 
 import { useState } from "react"
+import { useAuth } from "@clerk/nextjs"
 import { Check, ChevronDown, Loader2, Send, Tag, Truck } from "lucide-react"
 
-const API_URL = "https://imperium-bikes.onrender.com"
+import { API_BASE_URL } from "@/lib/api-config"
+
+const API_URL = API_BASE_URL
 
 interface OpcaoFrete {
   transportadora: string
@@ -78,6 +81,7 @@ interface ProdutoFreteOfertaProps {
 }
 
 export default function ProdutoFreteOferta({ anuncioId, precoProduto, cepOrigemVendedor }: ProdutoFreteOfertaProps) {
+  const { getToken } = useAuth()
   // Calculadora de frete
   const [cepDestino, setCepDestino] = useState("")
   const [opcoesFrete, setOpcoesFrete] = useState<OpcaoFrete[]>([])
@@ -148,9 +152,11 @@ export default function ProdutoFreteOferta({ anuncioId, precoProduto, cepOrigemV
     setErroOferta(null)
 
     try {
+      const token = await getToken()
+      if (!token) throw new Error("Autenticação necessária")
       const res = await fetch(`${API_URL}/api/anuncios/${anuncioId}/ofertas`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({
           tipo: tipoOferta,
           cepDestino,

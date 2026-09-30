@@ -16,4 +16,12 @@ export const tournamentService = {
         const response = await api.post(`/api/tournaments/${tournamentId}/participants`)
         return response.data
     },
+    async criar(payload: {
+        name: string; description: string; modality: string; location: string; city: string; state: string
+        startDate: string; endDate: string; registrationDeadline: string; maxParticipants: number
+        minParticipants: number; entryFee: number; prize: string; rules: string; bannerUrl: string
+    }) {
+        const response = await api.post('/api/tournaments', payload)
+        return response.data
+    },
 }

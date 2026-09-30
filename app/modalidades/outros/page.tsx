@@ -6,6 +6,7 @@ import { BottomNav } from "@/components/layout/bottom-nav"
 import { ArrowLeft, SlidersHorizontal, X } from "lucide-react"
 import Link from "next/link"
 import { useState } from "react"
+import { ProductsCatalog } from "@/components/marketplace/ProductsCatalog"
 
 const categorias = [
     "Capacete",
@@ -46,7 +47,7 @@ export default function OutrosPage() {
 
     return (
         <div className="min-h-screen bg-background">
-            <Header onMenuClick={() => {}} cartCount={0} notificationCount={0} />
+            <Header onMenuClick={() => {}} notificationCount={0} />
 
             {/* Hero sem vídeo (imagem de fundo) */}
             <section className="relative h-[40vh] min-h-[300px] overflow-hidden bg-secondary">
@@ -137,7 +138,7 @@ export default function OutrosPage() {
             {/* Conteúdo (placeholder) */}
             <section className="mx-auto max-w-7xl px-4 pb-10">
                 <div className="rounded-xl border border-border bg-card p-8 text-center">
-                    <p className="text-muted-foreground text-sm">Acessórios e equipamentos — em breve.</p>
+                    <ProductsCatalog category="Outros" condition={condicao} minPrice={precoMin} maxPrice={precoMax} subcategory={categoriaSelecionada} />
                 </div>
             </section>
 

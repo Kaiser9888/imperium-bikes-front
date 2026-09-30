@@ -7,11 +7,12 @@ import { useUser } from "@clerk/nextjs"
 import { ArrowLeft, Calendar, MapPin, Users, DollarSign, Trophy, Image, X, Info, Shield } from "lucide-react"
 import Link from "next/link"
 import { useState } from "react"
+import { tournamentService } from "@/services/tournamentService"
 
 const MODALIDADES = ["Downhill", "Mountain Bike", "Speed", "BMX", "Urbana"]
 
 export default function CriarTorneioPage() {
-    const { user, isSignedIn } = useUser()
+    const { isSignedIn } = useUser()
 
     const [form, setForm] = useState({
         nome: "",
@@ -33,6 +34,8 @@ export default function CriarTorneioPage() {
 
     const [passo, setPasso] = useState(1)
     const [enviado, setEnviado] = useState(false)
+    const [enviando, setEnviando] = useState(false)
+    const [erroEnvio, setErroEnvio] = useState<string | null>(null)
 
     const update = (campo: string, valor: string) => {
         setForm((prev) => ({ ...prev, [campo]: valor }))
@@ -49,8 +52,27 @@ export default function CriarTorneioPage() {
 
     const { total, comissao, organizador } = calcularComissao()
 
-    const handleSubmit = () => {
-        setEnviado(true)
+    const handleSubmit = async () => {
+        if (!isSignedIn) {
+            window.location.assign(`/sign-in?redirect_url=${encodeURIComponent(window.location.pathname)}`)
+            return
+        }
+        setEnviando(true)
+        setErroEnvio(null)
+        try {
+            await tournamentService.criar({
+                name: form.nome.trim(), description: form.descricao.trim(), modality: form.modalidade,
+                location: form.local.trim(), city: form.cidade.trim(), state: form.estado.trim().toUpperCase(),
+                startDate: form.dataInicio, endDate: form.dataFim, registrationDeadline: form.prazoInscricao,
+                maxParticipants: Number(form.maxParticipantes), minParticipants: Number(form.minParticipantes),
+                entryFee: Number(form.valorInscricao) || 0, prize: form.premiacao.trim(), rules: form.regras.trim(), bannerUrl: form.capa.trim(),
+            })
+            setEnviado(true)
+        } catch {
+            setErroEnvio("Não foi possível enviar o torneio. Confira os dados e tente novamente.")
+        } finally {
+            setEnviando(false)
+        }
     }
 
     const podeAvancar = () => {
@@ -62,7 +84,7 @@ export default function CriarTorneioPage() {
     if (enviado) {
         return (
             <div className="min-h-screen bg-background">
-                <Header onMenuClick={() => {}} cartCount={0} notificationCount={0} />
+                <Header onMenuClick={() => {}} notificationCount={0} />
                 <div className="flex flex-col items-center justify-center px-4 py-20 text-center">
                     <div className="size-16 rounded-full bg-green-100 flex items-center justify-center mb-4">
                         <Shield className="size-8 text-green-600" />
@@ -81,7 +103,7 @@ export default function CriarTorneioPage() {
 
     return (
         <div className="min-h-screen bg-background">
-            <Header onMenuClick={() => {}} cartCount={0} notificationCount={0} />
+            <Header onMenuClick={() => {}} notificationCount={0} />
 
             {/* Header */}
             <header className="sticky top-0 z-40 border-b border-border/60 bg-marble bg-cover bg-center shadow-sm" style={{ backgroundImage: "url(/images/marble-light.png)" }}>
@@ -328,11 +350,12 @@ export default function CriarTorneioPage() {
                             Continuar
                         </button>
                     ) : (
-                        <button onClick={handleSubmit} className="flex-1 rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">
+                        <button onClick={handleSubmit} disabled={enviando} className="flex-1 rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50">
                             Enviar para revisão
                         </button>
                     )}
                 </div>
+                {erroEnvio && <p role="alert" className="mt-4 text-sm text-destructive">{erroEnvio}</p>}
             </main>
 
             <div className="pb-24" />

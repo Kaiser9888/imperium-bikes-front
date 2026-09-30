@@ -1,49 +1,45 @@
-// app/checkout/sucesso/page.tsx
-"use client";
+"use client"
 
-import { Suspense } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { Suspense, useEffect, useState } from "react"
+import { useAuth } from "@clerk/nextjs"
+import { useSearchParams } from "next/navigation"
+import Link from "next/link"
+import { CheckCircle2, Loader2, XCircle } from "lucide-react"
+import { apiFetch } from "@/lib/apiClient"
+import type { PedidoResponse } from "@/types/pedido"
 
-export default function CheckoutSucessoPage() {
-  return (
-    <Suspense fallback={<div className="max-w-md mx-auto px-4 py-20 text-center text-sm text-muted-foreground">Carregando...</div>}>
-      <CheckoutSucessoContent />
-    </Suspense>
-  );
+function SuccessContent() {
+  const params = useSearchParams()
+  const orderId = params.get("orderId")
+  const { getToken, isLoaded } = useAuth()
+  const [status, setStatus] = useState<"LOADING" | "PAGO" | "FAILED" | "PENDING">("LOADING")
+
+  useEffect(() => {
+    if (!isLoaded || !orderId) return
+    let active = true
+    let attempts = 0
+    let timer: ReturnType<typeof setTimeout>
+    const check = async () => {
+      try {
+        const order = await apiFetch<PedidoResponse>(`/api/pedidos/${encodeURIComponent(orderId)}`, getToken)
+        if (!active) return
+        if (order.status === "PAGO" || order.status === "PAID") { setStatus("PAGO"); return }
+        if (["FAILED", "FALHOU", "CANCELADO", "CANCELED"].includes(order.status.toUpperCase())) { setStatus("FAILED"); return }
+        attempts += 1
+        if (attempts >= 10) { setStatus("PENDING"); return }
+        timer = setTimeout(check, 2000)
+      } catch {
+        if (active) setStatus("FAILED")
+      }
+    }
+    void check()
+    return () => { active = false; clearTimeout(timer) }
+  }, [getToken, isLoaded, orderId])
+
+  if (!orderId) return <main className="grid min-h-screen place-items-center px-6 text-center"><div><XCircle className="mx-auto size-12 text-[#a33c36]"/><h1 className="mt-5 font-serif text-3xl">Não foi possível confirmar</h1><p className="mt-2 text-sm text-muted-foreground">O pedido não foi informado.</p><Link href="/" className="mt-6 inline-block underline">Voltar ao marketplace</Link></div></main>
+  return <main className="grid min-h-screen place-items-center bg-[#f5f3ee] px-6 text-center text-[#1d282b]"><div className="max-w-md">{status === "LOADING" && <><Loader2 className="mx-auto size-10 animate-spin text-[#a33c36]"/><h1 className="mt-5 font-serif text-3xl">Confirmando pagamento...</h1><p className="mt-2 text-sm text-[#68737a]">Isso pode levar alguns segundos.</p></>}{status === "PAGO" && <><CheckCircle2 className="mx-auto size-12 text-green-700"/><h1 className="mt-5 font-serif text-3xl">Pagamento confirmado!</h1><p className="mt-2 text-sm text-[#68737a]">Seu pedido foi pago e o vendedor foi notificado.</p><Link href="/" className="mt-6 inline-block bg-[#1d282b] px-5 py-3 text-sm font-bold text-white">Voltar ao marketplace</Link></>}{status === "PENDING" && <><Loader2 className="mx-auto size-10 text-[#a33c36]"/><h1 className="mt-5 font-serif text-3xl">Pagamento em confirmação</h1><p className="mt-2 text-sm text-[#68737a]">O provedor ainda está atualizando o pedido. Consulte novamente em alguns instantes.</p><Link href="/" className="mt-6 inline-block underline">Voltar ao marketplace</Link></>}{status === "FAILED" && <><XCircle className="mx-auto size-12 text-[#a33c36]"/><h1 className="mt-5 font-serif text-3xl">Não foi possível confirmar</h1><p className="mt-2 text-sm text-[#68737a]">Não encontramos a confirmação do pedido. Verifique seu pedido ou tente novamente.</p><Link href="/" className="mt-6 inline-block underline">Voltar ao marketplace</Link></>}</div></main>
 }
 
-function CheckoutSucessoContent() {
-  const searchParams = useSearchParams();
-  const router = useRouter();
-  const orderId = searchParams.get("orderId");
-  const paymentIntentStatus = searchParams.get("redirect_status"); // vem do Stripe
-
-  const sucesso = paymentIntentStatus === "succeeded" || paymentIntentStatus === null;
-
-  return (
-    <div className="max-w-md mx-auto px-4 py-20 text-center">
-      {sucesso ? (
-        <>
-          <h1 className="font-heading text-2xl text-primary mb-2">Pagamento confirmado!</h1>
-          <p className="text-sm text-muted-foreground mb-6">
-            Seu pedido {orderId ? `#${orderId.slice(0, 8)}` : ""} foi recebido. O vendedor será notificado
-            para enviar o produto.
-          </p>
-        </>
-      ) : (
-        <>
-          <h1 className="font-heading text-2xl text-foreground mb-2">Pagamento não concluído</h1>
-          <p className="text-sm text-muted-foreground mb-6">
-            Algo deu errado ao confirmar o pagamento. Nenhum valor foi cobrado com sucesso.
-          </p>
-        </>
-      )}
-      <button
-        onClick={() => router.push("/")}
-        className="px-4 py-2.5 rounded-md bg-primary text-primary-foreground text-sm font-medium"
-      >
-        Voltar ao início
-      </button>
-    </div>
-  );
+export default function CheckoutSuccessPage() {
+  return <Suspense fallback={<main className="grid min-h-screen place-items-center"><Loader2 className="size-8 animate-spin"/></main>}><SuccessContent/></Suspense>
 }

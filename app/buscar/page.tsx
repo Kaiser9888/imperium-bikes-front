@@ -4,11 +4,13 @@
 
 import { Search, Package, User, X, TrendingUp, MapPin, Star } from "lucide-react"
 import Link from "next/link"
+import { Suspense } from "react"
+import { useSearchParams } from "next/navigation"
 import { useState, useEffect, useRef } from "react"
-import { searchProducts, searchUsers } from "@/lib/meilisearch"
+import { searchProducts, searchUsers, searchList } from "@/lib/meilisearch"
 
 interface ProdutoResult {
-    id: number
+    id: number | string
     title?: string
     nome?: string
     price?: number
@@ -33,12 +35,14 @@ interface PessoaResult {
     estado?: string
 }
 
-export default function BuscarPage() {
-    const [query, setQuery] = useState("")
+function BuscarPageContent() {
+    const searchParams = useSearchParams()
+    const [query, setQuery] = useState(searchParams.get("q") ?? "")
     const [aba, setAba] = useState<"produtos" | "pessoas">("produtos")
     const [produtos, setProdutos] = useState<ProdutoResult[]>([])
     const [pessoas, setPessoas] = useState<PessoaResult[]>([])
     const [loading, setLoading] = useState(false)
+    const [erro, setErro] = useState<string | null>(null)
     const [historico, setHistorico] = useState<string[]>([])
     const inputRef = useRef<HTMLInputElement>(null)
 
@@ -50,27 +54,36 @@ export default function BuscarPage() {
         if (query.trim().length < 2) {
             setProdutos([])
             setPessoas([])
+            setErro(null)
+            setLoading(false)
             return
         }
 
+        const controller = new AbortController()
         const timer = setTimeout(async () => {
             setLoading(true)
+            setErro(null)
+            setProdutos([])
+            setPessoas([])
             try {
                 if (aba === "produtos") {
                     const results = await searchProducts(query)
-                    setProdutos(results as ProdutoResult[])
+                    if (!controller.signal.aborted) setProdutos(searchList(results) as ProdutoResult[])
                 } else {
                     const results = await searchUsers(query)
-                    setPessoas(results as PessoaResult[])
+                    if (!controller.signal.aborted) setPessoas(searchList(results) as PessoaResult[])
                 }
             } catch (error) {
-                console.error("Erro na busca:", error)
+                if (!controller.signal.aborted) {
+                    console.error("Erro na busca:", error)
+                    setErro("A busca está indisponível. Tente novamente.")
+                }
             } finally {
-                setLoading(false)
+                if (!controller.signal.aborted) setLoading(false)
             }
         }, 300)
 
-        return () => clearTimeout(timer)
+        return () => { clearTimeout(timer); controller.abort() }
     }, [query, aba])
 
     const salvarHistorico = (termo: string) => {
@@ -106,7 +119,7 @@ export default function BuscarPage() {
                                 onKeyDown={(e) => {
                                     if (e.key === "Enter") salvarHistorico(query)
                                 }}
-                                placeholder="Buscar produtos e pessoas..."
+                                placeholder={aba === "produtos" ? "Buscar produtos..." : "Buscar pessoas..."}
                                 className="w-full rounded-xl border border-border bg-card pl-10 pr-4 py-2.5 text-sm outline-none focus:border-primary/30"
                             />
                             {query && (
@@ -162,7 +175,9 @@ export default function BuscarPage() {
                     </div>
                 )}
 
-                {!loading && aba === "produtos" && query.trim().length >= 2 && (
+                {erro && <p role="alert" className="py-10 text-center text-sm text-destructive">{erro}</p>}
+
+                {!erro && !loading && aba === "produtos" && query.trim().length >= 2 && (
                     <>
                         {produtos.length === 0 ? (
                             <div className="text-center py-16">
@@ -175,7 +190,7 @@ export default function BuscarPage() {
                                 <p className="text-xs text-muted-foreground mb-3">{produtos.length} produto{produtos.length > 1 ? 's' : ''} encontrado{produtos.length > 1 ? 's' : ''}</p>
                                 <div className="grid grid-cols-2 gap-3">
                                     {produtos.map((p) => (
-                                        <Link key={p.id} href={`/produto/${p.id}`} className="group rounded-xl border border-border bg-card overflow-hidden hover:shadow-md transition-all hover:border-primary/20">
+                                        <Link key={p.id} href={`/produtos/${p.id}`} className="group rounded-xl border border-border bg-card overflow-hidden hover:shadow-md transition-all hover:border-primary/20">
                                             <div className="aspect-square bg-secondary relative overflow-hidden">
                                                 <img src={p.img || p.imageUrl || "/placeholder.svg"} alt={p.title || p.nome || ""} className="size-full object-cover group-hover:scale-105 transition-transform duration-300" />
                                             </div>
@@ -196,7 +211,7 @@ export default function BuscarPage() {
                     </>
                 )}
 
-                {!loading && aba === "pessoas" && query.trim().length >= 2 && (
+                {!erro && !loading && aba === "pessoas" && query.trim().length >= 2 && (
                     <>
                         {pessoas.length === 0 ? (
                             <div className="text-center py-16">
@@ -238,4 +253,8 @@ export default function BuscarPage() {
             </main>
         </div>
     )
+}
+
+export default function BuscarPage() {
+    return <Suspense fallback={<main className="min-h-screen py-16 text-center text-sm text-muted-foreground">Carregando busca...</main>}><BuscarPageContent /></Suspense>
 }

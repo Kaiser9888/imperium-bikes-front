@@ -1,109 +1,153 @@
-import { Router, Request, Response } from "express"
+import { Router, type Request, type Response } from "express"
 import { StreamChat } from "stream-chat"
 
-// Troque por importar seu client de banco de verdade (ex.: import { db } from "../db")
-// As funções abaixo são o "contrato" esperado — implemente com Prisma/Knex/etc.
-declare const db: {
-  anuncios: {
-    findById(id: string): Promise<{ id: string; vendedorId: string; titulo: string; preco: number } | null>
-  }
+export type OfertaTipo = "padrao" | "frete_gratis" | "frete_gratis_desconto" | "desconto_produto"
+export type OfertaStatus = "pendente" | "aceita" | "recusada" | "expirada"
+
+interface AnuncioRecord {
+  id: string
+  vendedorId: string
+  titulo: string
+  preco: number
+}
+
+interface OfertaRecord {
+  id: string
+  anuncioId: string
+  compradorId: string
+  vendedorId: string
+  tipo: OfertaTipo
+  cepDestino: string
+  transportadora: string
+  valorFrete: number
+  valorDesconto: number
+  valorTotalComprador: number
+  mensagem: string | null
+  status: OfertaStatus
+  expiraEm: Date | string
+  respondidaEm?: Date
+  streamChannelId: string
+  streamMessageId: string
+}
+
+type NovaOferta = Omit<OfertaRecord, "id" | "streamChannelId" | "streamMessageId">
+type OfertaUpdate = Partial<Pick<OfertaRecord, "status" | "respondidaEm" | "streamChannelId" | "streamMessageId">>
+
+export interface OfertaDatabase {
+  anuncios: { findById(id: string): Promise<AnuncioRecord | null> }
   ofertas: {
-    findById(id: string): Promise<any | null>
-    findPendentePorCompradorEAnuncio(compradorId: string, anuncioId: string): Promise<any | null>
-    create(data: any): Promise<{ id: string }>
-    update(id: string, data: any): Promise<void>
+    findById(id: string): Promise<OfertaRecord | null>
+    findPendentePorCompradorEAnuncio(compradorId: string, anuncioId: string): Promise<OfertaRecord | null>
+    create(data: NovaOferta): Promise<{ id: string }>
+    update(id: string, data: OfertaUpdate): Promise<void>
     recusarOutrasPendentes(anuncioId: string, exceptOfertaId: string): Promise<void>
   }
 }
 
-const streamClient = StreamChat.getInstance(
-  process.env.STREAM_API_KEY!,
-  process.env.STREAM_API_SECRET!
-)
+type AuthenticatedRequest = Request & {
+  auth?: { userId?: string }
+  user?: { id?: string }
+}
 
-const router = Router()
+let database: OfertaDatabase | null = null
+let streamClient: StreamChat | null = null
 
-const HORAS_VALIDADE_OFERTA = 48
+/** O backend deve injetar o adapter real antes de montar este router. */
+export function configureOfertaDatabase(adapter: OfertaDatabase) {
+  database = adapter
+}
 
-type StatusOferta = "pendente" | "aceita" | "recusada" | "expirada"
+function getAuthenticatedUserId(request: Request): string | null {
+  const authenticatedRequest = request as AuthenticatedRequest
+  return authenticatedRequest.auth?.userId ?? authenticatedRequest.user?.id ?? null
+}
 
-// Normaliza params de rota que o TypeScript pode inferir como string | string[]
-// (acontece dependendo da versão do Express/@types/express instalada)
+function getDatabase(): OfertaDatabase | null {
+  return database
+}
+
+function getStreamClient(): StreamChat {
+  if (streamClient) return streamClient
+  const apiKey = process.env.STREAM_API_KEY
+  const apiSecret = process.env.STREAM_API_SECRET
+  if (!apiKey || !apiSecret) throw new Error("Stream Chat não está configurado no servidor")
+  streamClient = StreamChat.getInstance(apiKey, apiSecret)
+  return streamClient
+}
+
 function paramString(value: string | string[] | undefined): string {
   return Array.isArray(value) ? value[0] ?? "" : value ?? ""
 }
 
-// Canal único por anúncio + comprador, assim cada negociação tem sua própria conversa
 function getChannelId(anuncioId: string, compradorId: string) {
   return `oferta-${anuncioId}-${compradorId}`
 }
 
-/**
- * POST /api/anuncios/:anuncioId/ofertas
- * Cria a oferta no banco (fonte da verdade) e a publica no Stream Chat
- * como uma mensagem customizada, visível pros dois usuários em tempo real.
- *
- * IMPORTANTE: compradorId deveria vir do usuário autenticado (ex.: req.user.id),
- * nunca do body — aqui está explícito só pra facilitar a leitura do fluxo.
- */
+const TIPOS_OFERTA = new Set<OfertaTipo>(["padrao", "frete_gratis", "frete_gratis_desconto", "desconto_produto"])
+const HORAS_VALIDADE_OFERTA = 48
+const router = Router()
+
 router.post("/anuncios/:anuncioId/ofertas", async (req: Request, res: Response) => {
+  const compradorId = getAuthenticatedUserId(req)
+  if (!compradorId) return res.status(401).json({ error: "Autenticação necessária" })
+  const db = getDatabase()
+  if (!db) return res.status(503).json({ error: "Serviço de ofertas indisponível" })
+
   const anuncioId = paramString(req.params.anuncioId)
-  const {
-    compradorId,
-    tipo,
-    cepDestino,
-    transportadora,
-    valorFrete,
-    valorDesconto,
-    valorTotalComprador,
-    mensagem,
-  } = req.body
+  const body = req.body && typeof req.body === "object" ? req.body as Record<string, unknown> : {}
+  const tipo = body.tipo
+  const cepDestino = typeof body.cepDestino === "string" ? body.cepDestino.replace(/\D/g, "") : ""
+  const transportadora = typeof body.transportadora === "string" ? body.transportadora.trim() : ""
+  const valorFrete = Number(body.valorFrete)
+  const valorDesconto = Number(body.valorDesconto ?? 0)
+  const mensagem = typeof body.mensagem === "string" ? body.mensagem.trim().slice(0, 500) : ""
+
+  if (!anuncioId || !TIPOS_OFERTA.has(tipo as OfertaTipo) || cepDestino.length !== 8 || !transportadora ||
+      !Number.isFinite(valorFrete) || valorFrete < 0 || !Number.isFinite(valorDesconto) || valorDesconto < 0) {
+    return res.status(400).json({ error: "Dados da oferta inválidos" })
+  }
 
   try {
     const anuncio = await db.anuncios.findById(anuncioId)
     if (!anuncio) return res.status(404).json({ error: "Anúncio não encontrado" })
+    if (compradorId === anuncio.vendedorId) return res.status(400).json({ error: "Você não pode fazer oferta no seu próprio anúncio" })
+    if (valorDesconto > anuncio.preco) return res.status(400).json({ error: "O desconto excede o preço do anúncio" })
 
-    const vendedorId = anuncio.vendedorId
+    const existingOffer = await db.ofertas.findPendentePorCompradorEAnuncio(compradorId, anuncioId)
+    if (existingOffer) return res.status(409).json({ error: "Você já tem uma oferta pendente nesse anúncio" })
 
-    if (compradorId === vendedorId) {
-      return res.status(400).json({ error: "Você não pode fazer oferta no seu próprio anúncio" })
-    }
+    const valorTotalComprador = tipo === "frete_gratis"
+      ? anuncio.preco
+      : tipo === "frete_gratis_desconto"
+        ? anuncio.preco - valorDesconto
+        : tipo === "desconto_produto"
+          ? anuncio.preco - valorDesconto + valorFrete
+          : anuncio.preco + valorFrete
 
-    // Impede oferta nova enquanto já existe uma pendente do mesmo comprador nesse anúncio
-    const ofertaPendente = await db.ofertas.findPendentePorCompradorEAnuncio(compradorId, anuncioId)
-    if (ofertaPendente) {
-      return res.status(409).json({ error: "Você já tem uma oferta pendente nesse anúncio" })
-    }
-
-    // 1. Cria a oferta no banco
-    const expiraEm = new Date(Date.now() + HORAS_VALIDADE_OFERTA * 60 * 60 * 1000)
     const oferta = await db.ofertas.create({
       anuncioId,
       compradorId,
-      vendedorId,
-      tipo,
+      vendedorId: anuncio.vendedorId,
+      tipo: tipo as OfertaTipo,
       cepDestino,
       transportadora,
       valorFrete,
-      valorDesconto: valorDesconto ?? 0,
+      valorDesconto,
       valorTotalComprador,
-      mensagem: mensagem ?? null,
-      status: "pendente" as StatusOferta,
-      expiraEm,
+      mensagem: mensagem || null,
+      status: "pendente",
+      expiraEm: new Date(Date.now() + HORAS_VALIDADE_OFERTA * 60 * 60 * 1000),
     })
 
-    // 2. Garante que o canal 1:1 entre comprador e vendedor existe
     const channelId = getChannelId(anuncioId, compradorId)
-    const channel = streamClient.channel("messaging", channelId, {
-      members: [compradorId, vendedorId],
+    const stream = getStreamClient()
+    const channel = stream.channel("messaging", channelId, {
+      members: [compradorId, anuncio.vendedorId],
       created_by_id: compradorId,
     })
     await channel.create()
 
-    // 3. Publica a oferta como mensagem customizada no canal
-    // OBS: `custom_type` e `oferta` são campos customizados nossos — a API do Stream
-    // aceita normalmente, mas a tipagem do SDK só conhece os campos padrão, daí o cast.
-    const { message } = await channel.sendMessage({
+    const messagePayload = {
       user_id: compradorId,
       text: mensagem || "Nova proposta de frete",
       custom_type: "oferta",
@@ -113,90 +157,63 @@ router.post("/anuncios/:anuncioId/ofertas", async (req: Request, res: Response) 
         tipo,
         transportadora,
         valorFrete,
-        valorDesconto: valorDesconto ?? 0,
+        valorDesconto,
         valorTotalComprador,
         status: "pendente",
         produtoNome: anuncio.titulo,
         produtoPreco: anuncio.preco,
       },
-    } as any)
-
-    // 4. Guarda a referência da mensagem, necessária pra atualizar o status depois
-    await db.ofertas.update(oferta.id, {
-      streamChannelId: channelId,
-      streamMessageId: message.id,
-    })
-
-    res.status(201).json({ oferta, channelId })
-  } catch (err) {
-    console.error("Erro ao criar oferta:", err)
-    res.status(500).json({ error: "Não foi possível criar a oferta agora" })
+    }
+    const { message } = await channel.sendMessage(messagePayload as unknown as Parameters<typeof channel.sendMessage>[0])
+    await db.ofertas.update(oferta.id, { streamChannelId: channelId, streamMessageId: message.id })
+    return res.status(201).json({ oferta: { ...oferta, streamChannelId: channelId, streamMessageId: message.id }, channelId })
+  } catch (error) {
+    console.error("Erro ao criar oferta:", error)
+    return res.status(500).json({ error: "Não foi possível criar a oferta agora" })
   }
 })
 
-/**
- * PATCH /api/ofertas/:ofertaId/aceitar
- * PATCH /api/ofertas/:ofertaId/recusar
- *
- * Só o vendedor dono do anúncio pode responder. Atualiza o banco e sincroniza
- * a mensagem no Stream via partialUpdateMessage — isso propaga em tempo real
- * pros dois clientes conectados ao canal, sem precisar de refresh.
- */
-router.patch("/ofertas/:ofertaId/aceitar", async (req: Request, res: Response) => {
-  await responderOferta(req, res, "aceita")
-})
-
-router.patch("/ofertas/:ofertaId/recusar", async (req: Request, res: Response) => {
-  await responderOferta(req, res, "recusada")
-})
+router.patch("/ofertas/:ofertaId/aceitar", async (req: Request, res: Response) => responderOferta(req, res, "aceita"))
+router.patch("/ofertas/:ofertaId/recusar", async (req: Request, res: Response) => responderOferta(req, res, "recusada"))
 
 async function responderOferta(req: Request, res: Response, novoStatus: "aceita" | "recusada") {
+  const vendedorId = getAuthenticatedUserId(req)
+  if (!vendedorId) return res.status(401).json({ error: "Autenticação necessária" })
+  const db = getDatabase()
+  if (!db) return res.status(503).json({ error: "Serviço de ofertas indisponível" })
   const ofertaId = paramString(req.params.ofertaId)
-  const { vendedorId } = req.body // idealmente req.user.id, vindo de autenticação
 
   try {
     const oferta = await db.ofertas.findById(ofertaId)
     if (!oferta) return res.status(404).json({ error: "Oferta não encontrada" })
-    if (oferta.vendedorId !== vendedorId) {
-      return res.status(403).json({ error: "Você não tem permissão para responder essa oferta" })
-    }
-    if (oferta.status !== "pendente") {
-      return res.status(409).json({ error: "Essa oferta já foi respondida" })
-    }
-    if (oferta.expiraEm && new Date() > new Date(oferta.expiraEm)) {
-      await db.ofertas.update(ofertaId, { status: "expirada" as StatusOferta })
-      await streamClient.partialUpdateMessage(oferta.streamMessageId, {
+    if (oferta.vendedorId !== vendedorId) return res.status(403).json({ error: "Você não tem permissão para responder essa oferta" })
+    if (oferta.status !== "pendente") return res.status(409).json({ error: "Essa oferta já foi respondida" })
+
+    if (new Date() > new Date(oferta.expiraEm)) {
+      await db.ofertas.update(ofertaId, { status: "expirada" })
+      await getStreamClient().partialUpdateMessage(oferta.streamMessageId, {
         set: { "oferta.status": "expirada" },
-      } as any)
+      } as unknown as Parameters<StreamChat["partialUpdateMessage"]>[1])
       return res.status(410).json({ error: "Essa oferta expirou" })
     }
 
     await db.ofertas.update(ofertaId, { status: novoStatus, respondidaEm: new Date() })
-
-    // Sincroniza o card no chat pros dois usuários
-    await streamClient.partialUpdateMessage(oferta.streamMessageId, {
+    const stream = getStreamClient()
+    await stream.partialUpdateMessage(oferta.streamMessageId, {
       set: { "oferta.status": novoStatus },
-    } as any)
+    } as unknown as Parameters<StreamChat["partialUpdateMessage"]>[1])
 
-    // Mensagem de sistema anunciando o resultado da negociação
-    const channel = streamClient.channel("messaging", oferta.streamChannelId)
+    const channel = stream.channel("messaging", oferta.streamChannelId)
     await channel.sendMessage({
-      text:
-        novoStatus === "aceita"
-          ? "✅ Oferta aceita. Combinem os próximos passos por aqui."
-          : "❌ Oferta recusada.",
+      text: novoStatus === "aceita" ? "Oferta aceita. Combinem os próximos passos por aqui." : "Oferta recusada.",
       type: "system",
     })
 
-    if (novoStatus === "aceita") {
-      // Evita duas ofertas "aceitas" pro mesmo anúncio ao mesmo tempo
-      await db.ofertas.recusarOutrasPendentes(oferta.anuncioId, ofertaId)
-    }
-
-    res.json({ status: novoStatus })
-  } catch (err) {
-    console.error("Erro ao responder oferta:", err)
-    res.status(500).json({ error: "Não foi possível responder a oferta agora" })
+    if (novoStatus === "aceita") await db.ofertas.recusarOutrasPendentes(oferta.anuncioId, ofertaId)
+    return res.json({ status: novoStatus })
+  } catch (error) {
+    console.error("Erro ao responder oferta:", error)
+    return res.status(500).json({ error: "Não foi possível responder a oferta agora" })
   }
 }
 

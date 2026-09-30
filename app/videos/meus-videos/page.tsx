@@ -5,7 +5,9 @@ import { useAuth } from "@clerk/nextjs";
 import Link from "next/link";
 import { Trash2, Eye, Heart, Clock, Plus, Film, BarChart3, Copy } from "lucide-react";
 
-const API_URL = "https://imperium-bikes.onrender.com";
+import { API_BASE_URL } from "@/lib/api-config";
+
+const API_URL = API_BASE_URL;
 
 interface MyVideo {
   id: string;

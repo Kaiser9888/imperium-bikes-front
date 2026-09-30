@@ -1,9 +1,12 @@
 "use client"
 
 import { useState } from "react"
+import { useAuth } from "@clerk/nextjs"
 import { Check, Clock, Loader2, X } from "lucide-react"
 
-const API_URL = "https://imperium-bikes.onrender.com"
+import { API_BASE_URL } from "@/lib/api-config"
+
+const API_URL = API_BASE_URL
 
 interface OfertaCustomData {
   id: string
@@ -40,6 +43,7 @@ interface OfertaMessageProps {
 }
 
 export function OfertaMessage({ message, currentUserId }: OfertaMessageProps) {
+  const { getToken } = useAuth()
   const oferta = message.oferta
   const [respondendo, setRespondendo] = useState<"aceitar" | "recusar" | null>(null)
   const [erro, setErro] = useState<string | null>(null)
@@ -53,10 +57,11 @@ export function OfertaMessage({ message, currentUserId }: OfertaMessageProps) {
     setRespondendo(acao)
     setErro(null)
     try {
+      const token = await getToken()
+      if (!token) throw new Error("Autenticação necessária")
       const res = await fetch(`${API_URL}/api/ofertas/${oferta!.id}/${acao}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ vendedorId: currentUserId }),
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       })
       if (!res.ok) throw new Error()
       // Não precisa atualizar o estado aqui: o partialUpdateMessage feito pelo

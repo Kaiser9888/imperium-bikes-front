@@ -17,6 +17,7 @@ import {
   PackageCheck,
   ShieldCheck,
   ShoppingBag,
+  ShoppingCart,
   Star,
   Truck,
   User,
@@ -29,6 +30,7 @@ import type {
 } from "@/types/publish/product"
 
 import { iniciarConversa } from "@/lib/stream"
+import { addToCart } from "@/lib/cart"
 
 function ProdutoPage() {
   const params = useParams<{ id: string }>()
@@ -68,6 +70,7 @@ function ProdutoPage() {
 
   const [abrindoChat, setAbrindoChat] =
     useState(false)
+  const [adicionadoAoCarrinho, setAdicionadoAoCarrinho] = useState(false)
 
   useEffect(() => {
     if (!id) return
@@ -728,14 +731,27 @@ function ProdutoPage() {
                 onClick={() => {
                   if (!id) return
 
-                  router.push(
-                    `/produtos/${id}/comprar`,
-)
+                  router.push(`/checkout?productId=${encodeURIComponent(id)}`)
 }}
 className="flex items-center justify-center gap-2 bg-[#a33c36] px-5 py-4 text-sm font-bold text-white transition hover:bg-[#812f2b]"
   >
   <ShoppingBag className="size-5" />
   Comprar agora
+</button>
+
+<button
+  type="button"
+  onClick={() => {
+    if (!produto) return
+    addToCart(produto)
+    setAdicionadoAoCarrinho(true)
+    window.setTimeout(() => setAdicionadoAoCarrinho(false), 2500)
+  }}
+  disabled={!produto}
+  className="flex items-center justify-center gap-2 border border-[#1d282b] px-5 py-4 text-sm font-bold hover:bg-white disabled:opacity-50"
+>
+  <ShoppingCart className="size-5" />
+  {adicionadoAoCarrinho ? "Adicionado ao carrinho" : "Adicionar ao carrinho"}
 </button>
 
 <button

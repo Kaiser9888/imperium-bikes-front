@@ -4,30 +4,51 @@
 import { BottomNav } from "@/components/layout/bottom-nav"
 import { Search, Plus, Trophy, MapPin, Calendar, Users, Flame, ChevronRight } from "lucide-react"
 import Link from "next/link"
-import { useState } from "react"
+import { useEffect, useState } from "react"
+import { tournamentService } from "@/services/tournamentService"
 
-const torneiosFake = [
-    {
-        id: "1", nome: "Downhill Cup 2026", modalidade: "Downhill", data: "15 Ago 2026", local: "Campos do Jordão, SP",
-        participantes: 32, maxParticipantes: 48, valor: "R$ 89,90", status: "aberto", banner: "/images/torneio-1.png",
-        organizador: "@pedalpesado", premiacao: "R$ 5.000",
-    },
-    {
-        id: "2", nome: "Mountain Challenge", modalidade: "Mountain Bike", data: "03 Set 2026", local: "Monte Verde, MG",
-        participantes: 18, maxParticipantes: 30, valor: "Grátis", status: "aberto", banner: "/images/torneio-2.png",
-        organizador: "@trilheirapro", premiacao: "R$ 3.000",
-    },
-    {
-        id: "3", nome: "Speed Elite Race", modalidade: "Speed", data: "22 Out 2026", local: "Rio de Janeiro, RJ",
-        participantes: 45, maxParticipantes: 50, valor: "R$ 120,00", status: "quase_cheio", banner: "/images/torneio-3.png",
-        organizador: "@velocista", premiacao: "R$ 8.000",
-    },
-    {
-        id: "4", nome: "Urban Street Session", modalidade: "Urbana", data: "10 Jul 2026", local: "São Paulo, SP",
-        participantes: 24, maxParticipantes: 40, valor: "R$ 49,90", status: "encerrado", banner: "/images/torneio-4.png",
-        organizador: "@urbanrider", premiacao: "R$ 2.500",
-    },
-]
+interface TournamentCard {
+    id: string
+    nome: string
+    modalidade: string
+    data: string
+    local: string
+    participantes: number
+    maxParticipantes: number
+    valor: string
+    status: string
+    banner: string
+    organizador: string
+    premiacao: string
+}
+
+function tournamentCards(payload: unknown): TournamentCard[] {
+    const root = payload && typeof payload === "object" ? payload as Record<string, unknown> : {}
+    const rawItems = Array.isArray(payload) ? payload : [root.content, root.items, root.data].find(Array.isArray) ?? []
+    return rawItems.flatMap((value): TournamentCard[] => {
+        if (!value || typeof value !== "object") return []
+        const item = value as Record<string, unknown>
+        const id = item.id
+        const name = item.name ?? item.nome ?? item.title
+        if (id == null || typeof name !== "string") return []
+        const rawStatus = String(item.status ?? "open").toLowerCase()
+        const status = /closed|ended|encerr|finaliz/.test(rawStatus) ? "encerrado" : /progress|live|andamento/.test(rawStatus) ? "andamento" : "aberto"
+        const dateValue = item.startDate ?? item.dataInicio ?? item.date ?? item.data
+        const parsedDate = dateValue ? new Date(String(dateValue)) : null
+        const date = parsedDate && !Number.isNaN(parsedDate.getTime()) ? parsedDate.toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" }) : "Data a confirmar"
+        const price = Number(item.entryFee ?? item.valorInscricao ?? item.price ?? 0)
+        return [{
+            id: String(id), nome: name, modalidade: String(item.modality ?? item.modalidade ?? "Ciclismo"), data: date,
+            local: String(item.location ?? item.local ?? item.city ?? "Local a confirmar"),
+            participantes: Number(item.participantsCount ?? item.participantes ?? item.participants ?? 0),
+            maxParticipantes: Math.max(1, Number(item.maxParticipants ?? item.maxParticipantes ?? 1)),
+            valor: price > 0 ? price.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : "Grátis",
+            status, banner: String(item.bannerUrl ?? item.banner ?? "/placeholder.svg"),
+            organizador: String(item.organizerUsername ?? item.organizer ?? item.organizador ?? "Organizador"),
+            premiacao: String(item.prize ?? item.premiacao ?? "Premiação a confirmar"),
+        }]
+    })
+}
 
 type FiltroStatus = "todos" | "aberto" | "andamento" | "encerrado"
 
@@ -35,12 +56,25 @@ export default function TorneiosPage() {
     const [filtro, setFiltro] = useState<FiltroStatus>("todos")
     const [busca, setBusca] = useState("")
     const [modalidadeFiltro, setModalidadeFiltro] = useState<string>("todas")
+    const [torneios, setTorneios] = useState<TournamentCard[]>([])
+    const [carregando, setCarregando] = useState(true)
+    const [erro, setErro] = useState<string | null>(null)
+
+    useEffect(() => {
+        let active = true
+        tournamentService.listar({ page: 0 }).then((result) => {
+            if (active) setTorneios(tournamentCards(result))
+        }).catch(() => {
+            if (active) setErro("Não foi possível carregar os torneios. Tente novamente mais tarde.")
+        }).finally(() => { if (active) setCarregando(false) })
+        return () => { active = false }
+    }, [])
 
     const modalidades = ["todas", "Downhill", "Mountain Bike", "Speed", "BMX", "Urbana"]
 
-    const torneiosFiltrados = torneiosFake.filter((t) => {
+    const torneiosFiltrados = torneios.filter((t) => {
         const matchStatus = filtro === "todos" ||
-            (filtro === "aberto" && t.status !== "encerrado") ||
+            (filtro === "aberto" && t.status === "aberto") ||
             (filtro === "andamento" && t.status === "andamento") ||
             (filtro === "encerrado" && t.status === "encerrado")
         const matchBusca = t.nome.toLowerCase().includes(busca.toLowerCase())
@@ -102,8 +136,10 @@ export default function TorneiosPage() {
                 </div>
 
                 {/* Lista */}
+                {erro && <p role="alert" className="mb-4 rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">{erro}</p>}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {torneiosFiltrados.length === 0 && (
+                    {carregando && <p className="col-span-full py-12 text-center text-sm text-muted-foreground">Carregando torneios...</p>}
+                    {!carregando && !erro && torneiosFiltrados.length === 0 && (
                         <div className="col-span-full text-center py-12">
                             <Trophy className="size-12 text-muted-foreground mx-auto mb-3" />
                             <p className="text-muted-foreground">Nenhum torneio encontrado</p>

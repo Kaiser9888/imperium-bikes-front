@@ -16,8 +16,7 @@ export default function Page() {
         <div className="min-h-screen bg-background">
             <Header
                 onMenuClick={() => setMenuOpen(true)}
-                cartCount={2}
-                notificationCount={3}
+                notificationCount={0}
             />
 
             <MenuDrawer open={menuOpen} onClose={() => setMenuOpen(false)} />
