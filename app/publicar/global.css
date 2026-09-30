@@ -252,6 +252,16 @@
     border-bottom: 1px solid var(--imperium-line);
 }
 
+.imperium-header::after,
+.publish-header::after {
+    content: "";
+    display: block;
+    flex: 0 0 56px;
+    width: 56px;
+    height: 30px;
+    background: url("/logo1.png") center / contain no-repeat;
+}
+
 .header-back {
     color: var(--imperium-muted);
     font-size: 12px;

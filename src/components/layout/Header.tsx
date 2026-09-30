@@ -92,7 +92,7 @@ export function Header({
                         width={100}
                         height={50}
                         priority
-                        className="h-auto w-[80px] object-contain"
+                        className="h-auto w-16 object-contain"
                       />
 
                       <span className="mt-0.5 font-Norse text-[11px] font-semibold tracking-[0.18em] text-#A33C36">

@@ -2,9 +2,10 @@
 
 import { useState, useRef, useCallback } from "react";
 import { useAuth } from "@clerk/nextjs";
+import { API_BASE_URL } from "@/lib/api-config";
 import { useRouter } from "next/navigation";
 import {
-    UploadCloud, Film, X, Loader2, CheckCircle2, AlertTriangle,
+    Film, X, Loader2, CheckCircle2, AlertTriangle,
     Clock, ArrowRight, Sparkles
 } from "lucide-react";
 
@@ -69,7 +70,7 @@ export default function MementoUploadPage() {
         setProgress(0);
         try {
             const token = await getToken();
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/videos/upload-url`, {
+            const res = await fetch(`${API_BASE_URL}/api/videos/upload-url`, {
                 method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
             });
             if (!res.ok) throw new Error("Erro ao criar upload");
@@ -88,14 +89,14 @@ export default function MementoUploadPage() {
             let ready = false, attempts = 0;
             while (!ready && attempts < 60) {
                 await new Promise((r) => setTimeout(r, 3000)); attempts++;
-                const assetRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/videos/asset-status?uploadId=${data.uploadId}`, {
+                const assetRes = await fetch(`${API_BASE_URL}/api/videos/asset-status?uploadId=${encodeURIComponent(data.uploadId)}`, {
                     headers: { Authorization: `Bearer ${token}` },
                 });
                 const assetData = await assetRes.json();
                 if (assetData.status === "ready") {
                     ready = true;
                     const thumbUrl = `https://image.mux.com/${assetData.playbackId}/thumbnail.jpg`;
-                    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/videos/mux-callback`, {
+                    await fetch(`${API_BASE_URL}/api/videos/mux-callback`, {
                         method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
                         body: JSON.stringify({
                             muxAssetId: assetData.assetId, muxPlaybackId: assetData.playbackId,
@@ -109,7 +110,7 @@ export default function MementoUploadPage() {
                 }
             }
             if (!ready) { setError("Processamento demorou. O vídeo ficará disponível em breve."); setStatus("idle"); }
-        } catch (err) { setError("Erro no upload. Tente novamente."); setStatus("idle"); }
+        } catch { setError("Erro no upload. Tente novamente."); setStatus("idle"); }
     };
 
     const resetForm = () => {

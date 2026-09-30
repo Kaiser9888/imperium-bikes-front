@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
+import Image from "next/image"
 import { useParams, useRouter } from "next/navigation"
 import { useAuth } from "@clerk/nextjs"
 
@@ -24,6 +25,7 @@ import {
 } from "lucide-react"
 
 import { productService } from "@/services/publish/product.service"
+import { ProductImage } from "@/components/marketplace/ProductImage"
 import type {
   ProductResponse,
   ShippingQuote,
@@ -31,13 +33,14 @@ import type {
 
 import { iniciarConversa } from "@/lib/stream"
 import { addToCart } from "@/lib/cart"
+import { isFavoriteProduct, toggleFavorite } from "@/lib/favorites"
 
 function ProdutoPage() {
   const params = useParams<{ id: string }>()
   const router = useRouter()
   const id = params?.id
 
-  const { isSignedIn } = useAuth()
+  const { getToken, isSignedIn } = useAuth()
 
   const [produto, setProduto] =
     useState<ProductResponse | null>(null)
@@ -65,11 +68,9 @@ function ProdutoPage() {
   const [erroFrete, setErroFrete] =
     useState<string | null>(null)
 
-  const [bought, setBought] =
-    useState(false)
-
   const [abrindoChat, setAbrindoChat] =
     useState(false)
+  const [erroChat, setErroChat] = useState<string | null>(null)
   const [adicionadoAoCarrinho, setAdicionadoAoCarrinho] = useState(false)
 
   useEffect(() => {
@@ -94,6 +95,7 @@ function ProdutoPage() {
         )
 
         setProduto(data)
+        setFavorite(isFavoriteProduct(data.id))
 
       } catch (error) {
 
@@ -118,7 +120,7 @@ function ProdutoPage() {
 
   async function falarComVendedor() {
     if (!isSignedIn) {
-      router.push("/sign-in")
+      router.push(`/sign-in?redirect_url=${encodeURIComponent(`/produtos/${id}`)}`)
       return
     }
 
@@ -143,6 +145,7 @@ function ProdutoPage() {
       )
 
     if (!vendedorId || !id) {
+      setErroChat("O anúncio não informa o identificador do vendedor. Entre em contato com o suporte.")
       console.error(
         "Não foi possível identificar o vendedor.",
       )
@@ -150,22 +153,22 @@ function ProdutoPage() {
     }
 
     try {
+      setErroChat(null)
       setAbrindoChat(true)
 
       const canalId =
         await iniciarConversa(
           String(vendedorId),
           String(id),
+          getToken,
         )
 
       router.push(`/chat/${canalId}`)
 
     } catch (error) {
 
-      console.error(
-        "Erro ao iniciar conversa com vendedor:",
-        error,
-      )
+      console.error("Erro ao iniciar conversa com vendedor:", error)
+      setErroChat(error instanceof Error ? error.message : "Não foi possível iniciar a conversa. O serviço de chat pode estar indisponível.")
 
     } finally {
 
@@ -468,9 +471,7 @@ function ProdutoPage() {
 
           <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em]">
 
-            <span className="grid size-8 place-items-center border border-[#1d282b] text-[10px]">
-              IB
-            </span>
+            <Image src="/logo1.png" alt="Imperium Bikes" width={64} height={32} className="h-7 w-14 object-contain" />
 
             <span className="hidden sm:block">
               Imperium
@@ -515,7 +516,7 @@ function ProdutoPage() {
 
               {imagens.length > 0 ? (
 
-                <img
+                <ProductImage
                   src={imagens[activeImage]}
                   alt={`${marca} ${titulo}`}
                   className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.02]"
@@ -588,7 +589,7 @@ function ProdutoPage() {
                       aria-label={`Ver foto ${index + 1}`}
                     >
 
-                      <img
+                      <ProductImage
                         src={image}
                         alt=""
                         className="h-full w-full object-cover"
@@ -627,9 +628,9 @@ function ProdutoPage() {
               </div>
 
               <button
-                onClick={() =>
-                  setFavorite(!favorite)
-                }
+                onClick={() => {
+                  if (produto) setFavorite(toggleFavorite(produto))
+                }}
                 className="grid size-11 shrink-0 place-items-center border border-[#d3d0c7]"
                 aria-label={
                   favorite
@@ -776,6 +777,8 @@ className="flex items-center justify-center gap-2 bg-[#a33c36] px-5 py-4 text-sm
 </button>
 
 </div>
+
+{erroChat && <p role="alert" className="mt-3 text-sm font-semibold text-[#a33c36]">{erroChat}</p>}
 
 {/* FRETE */}
 

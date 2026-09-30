@@ -52,7 +52,7 @@ function CheckoutContent() {
       window.location.assign(payment.checkoutUrl)
     } catch (cause) {
       console.error("Falha ao iniciar pagamento:", cause)
-      setError("Não foi possível iniciar o pagamento. Tente novamente.")
+      setError(cause instanceof Error ? cause.message : "Não foi possível iniciar o pagamento. Tente novamente.")
       setSending(false)
     }
   }

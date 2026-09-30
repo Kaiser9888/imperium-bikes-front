@@ -1,7 +1,9 @@
 // lib/apiClient.ts
 "use client";
 
-export const API_URL = process.env.NEXT_PUBLIC_API_URL!; // ex: http://localhost:8080
+import { API_BASE_URL } from "@/lib/api-config";
+
+export const API_URL = API_BASE_URL;
 
 export async function apiFetch<T>(
   path: string,
@@ -21,7 +23,16 @@ export async function apiFetch<T>(
 
   if (!res.ok) {
     const errorBody = await res.text().catch(() => "");
-    throw new Error(`Erro ${res.status}: ${errorBody || res.statusText}`);
+    let detail = errorBody || res.statusText;
+    try {
+      const parsed = JSON.parse(errorBody) as { message?: unknown; traceId?: unknown; error?: unknown };
+      const message = typeof parsed.message === "string" ? parsed.message : typeof parsed.error === "string" ? parsed.error : "";
+      const trace = typeof parsed.traceId === "string" ? ` (referência: ${parsed.traceId})` : "";
+      if (message) detail = `${message}${trace}`;
+    } catch {
+      // Mantém o corpo textual enviado pela API quando ele não é JSON.
+    }
+    throw new Error(`Erro ${res.status}: ${detail}`);
   }
 
   const contentType = res.headers.get("content-type");

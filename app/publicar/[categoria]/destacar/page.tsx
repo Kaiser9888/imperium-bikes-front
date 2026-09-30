@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import Link from 'next/link'
 import { ArrowLeft, Check, Loader2, X } from 'lucide-react'
 import { useParams, useRouter } from 'next/navigation'
 import { useAuth } from '@clerk/nextjs'
@@ -124,6 +123,8 @@ export default function DestacarPage() {
 return
 }
 
+// Hydrate values saved by the previous publishing steps.
+// eslint-disable-next-line react-hooks/set-state-in-effect
 setPrecoCentavos(
   draft.preco.valor_centavos,
 )
@@ -221,16 +222,17 @@ async function uploadFoto(
 
   const data = await res.json()
 
-  const publicUrlRelativa: string =
-    data?.data?.publicUrl
+  const publicUrl =
+    data?.data?.publicUrl ?? data?.data?.url ?? data?.publicUrl ?? data?.url
 
-  if (!publicUrlRelativa) {
+  if (typeof publicUrl !== 'string' || !publicUrl.trim()) {
     throw new Error(
       `Resposta inesperada ao enviar foto ${indice + 1}`,
     )
   }
 
-  return `${API_URL}${publicUrlRelativa}`
+  if (/^https?:\/\//i.test(publicUrl)) return publicUrl
+  return `${API_URL}${publicUrl.startsWith('/') ? '' : '/'}${publicUrl}`
 }
 
 async function handlePublicar() {

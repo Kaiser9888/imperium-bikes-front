@@ -42,6 +42,7 @@ export default function MementoPage() {
 
     const [loading, setLoading] = useState(true);
     const [loadingMore, setLoadingMore] = useState(false);
+    const [feedError, setFeedError] = useState<string | null>(null);
 
     const [liked, setLiked] = useState<Record<string, boolean>>({});
     const [likeCounts, setLikeCounts] = useState<Record<string, number>>({});
@@ -62,6 +63,7 @@ export default function MementoPage() {
         const load = async () => {
             try {
                 setLoading(true);
+                setFeedError(null);
                 const data = await fetchVideoPage(0, true);
                 if (cancelled) return;
 
@@ -80,6 +82,8 @@ export default function MementoPage() {
 
                 setLikeCounts(counts);
                 setLiked(states);
+            } catch (error) {
+                if (!cancelled) setFeedError(error instanceof Error ? error.message : "Não foi possível carregar os Mementos.");
             } finally {
                 if (!cancelled) setLoading(false);
             }
@@ -158,7 +162,7 @@ export default function MementoPage() {
             player.removeEventListener("canplay", handleCanPlay);
             try { player.pause(); } catch {}
         };
-    }, [currentIndex, currentVideo?.id]);
+    }, [currentIndex, currentVideo]);
 
     useEffect(() => {
         const player = playerRef.current;
@@ -268,7 +272,9 @@ export default function MementoPage() {
                 return;
             }
             await navigator.clipboard.writeText(url);
-        } catch {}
+        } catch (error) {
+            setFeedError(error instanceof Error ? error.message : "Não foi possível carregar mais Mementos.");
+        }
     }, [currentVideo]);
 
     const formatNumber = (value: number) => {
@@ -289,7 +295,7 @@ export default function MementoPage() {
         return (
           <main className="fixed inset-0 flex items-center justify-center bg-background px-6">
               <div className="text-center">
-                  <p className="text-lg text-muted-foreground">Nenhum Memento ainda</p>
+                  <p role={feedError ? "alert" : undefined} className="text-lg text-muted-foreground">{feedError ?? "Nenhum Memento ainda"}</p>
                   <Link href="/videos/memento/upload" className="mt-4 inline-flex rounded-full bg-primary px-6 py-2 text-sm font-medium text-primary-foreground transition hover:bg-primary/90">
                       Publicar Memento
                   </Link>
@@ -302,9 +308,10 @@ export default function MementoPage() {
       <main className="fixed inset-0 flex flex-col overflow-hidden bg-black">
           {/* ===== HEADER ===== */}
           <header className="relative z-50 flex h-14 shrink-0 items-center border-b border-white/10 bg-black/80 px-4 backdrop-blur-xl">
-              <Link href="/videos" className="text-lg tracking-wide"
+              <Link href="/videos" className="flex items-center gap-2 tracking-wide"
                     style={{ fontFamily: "var(--font-caesar)", color: "#FFFFFF" }}>
-                  Imperium
+                  <img src="/logo1.png" alt="" className="h-6 w-auto" />
+                  <span>Imperium</span>
               </Link>
 
               <div className="ml-auto flex items-center gap-1">

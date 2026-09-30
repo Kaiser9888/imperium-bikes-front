@@ -1,7 +1,7 @@
 import { API_BASE_URL } from "@/lib/api-config"
 
-async function getJson<T>(path: string): Promise<T> {
-    const response = await fetch(`${API_BASE_URL}${path}`)
+async function getJson<T>(path: string, signal?: AbortSignal): Promise<T> {
+    const response = await fetch(`${API_BASE_URL}${path}`, { signal, cache: "no-store" })
     if (!response.ok) throw new Error(`Busca indisponível (${response.status})`)
     return response.json() as Promise<T>
 }
@@ -17,12 +17,8 @@ export function searchList(payload: unknown): unknown[] {
     return []
 }
 
-export function searchProducts(query: string) {
-    return getJson<unknown[]>(`/api/search/products?q=${encodeURIComponent(query)}`)
-}
-
-export function searchUsers(query: string) {
-    return getJson<unknown[]>(`/api/search/users?q=${encodeURIComponent(query)}`)
+export function searchProducts(query: string, signal?: AbortSignal) {
+    return getJson<unknown[]>(`/api/search/products?q=${encodeURIComponent(query)}`, signal)
 }
 
 export function searchVideos(query: string) {

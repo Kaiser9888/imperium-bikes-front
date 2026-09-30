@@ -222,11 +222,14 @@ export function readDraft(categoria: string): PublishDraft {
   if (typeof window === "undefined") return {}
 
   const raw = sessionStorage.getItem(draftKey(categoria))
+    ?? sessionStorage.getItem("imperium_bikes_publish")
   if (!raw) return {}
 
   try {
     const parsed = JSON.parse(raw)
-    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {}
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return {}
+    const draft = parsed as PublishDraft
+    return !draft.categoryId || draft.categoryId === categoria ? draft : {}
   } catch {
     return {}
   }
@@ -244,6 +247,8 @@ export function writeDraft(categoria: string, patch: Partial<PublishDraft>): Pub
 export function clearDraft(categoria: string): void {
   if (typeof window === "undefined") return
   sessionStorage.removeItem(draftKey(categoria))
+  const legacy = readDraft(categoria)
+  if (legacy.categoryId === categoria) sessionStorage.removeItem("imperium_bikes_publish")
 }
 
 // ============================================================

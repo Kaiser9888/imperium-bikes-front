@@ -1,12 +1,14 @@
 "use client"
 
 import Link from "next/link"
-import { Heart, Star } from "lucide-react"
+import { Heart } from "lucide-react"
 import { useState, useEffect } from "react"
 import api from "@/lib/api"
+import { ProductImage } from "@/components/marketplace/ProductImage"
+import { FAVORITES_UPDATED_EVENT, readFavorites, toggleFavorite, type FavoriteProduct } from "@/lib/favorites"
 
 interface Produto {
-    id: number
+    id: string | number
     nome?: string
     title?: string
     modalidade?: string
@@ -17,8 +19,8 @@ interface Produto {
     oldPrice?: number
     img?: string
     imageUrl?: string
-    nota?: number
-    rating?: number
+    images?: { url: string; isMain?: boolean; displayOrder?: number }[]
+    photos?: string[]
 }
 
 function formatPreco(valor: number) {
@@ -32,7 +34,18 @@ function formatPreco(valor: number) {
 export function ProdutosDestaque() {
     const [produtos, setProdutos] = useState<Produto[]>([])
     const [loading, setLoading] = useState(true)
-    const [favoritos, setFavoritos] = useState<number[]>([])
+    const [favoritos, setFavoritos] = useState<string[]>([])
+
+    useEffect(() => {
+        const atualizarFavoritos = () => setFavoritos(readFavorites().map((product) => product.id))
+        atualizarFavoritos()
+        window.addEventListener(FAVORITES_UPDATED_EVENT, atualizarFavoritos)
+        window.addEventListener("storage", atualizarFavoritos)
+        return () => {
+            window.removeEventListener(FAVORITES_UPDATED_EVENT, atualizarFavoritos)
+            window.removeEventListener("storage", atualizarFavoritos)
+        }
+    }, [])
 
     useEffect(() => {
         async function loadProdutos() {
@@ -60,20 +73,12 @@ export function ProdutosDestaque() {
         loadProdutos()
     }, [])
 
-    const toggleFavorito = (id: number) => {
-        setFavoritos((prev) =>
-            prev.includes(id)
-                ? prev.filter((f) => f !== id)
-                : [...prev, id]
-        )
-    }
-
     if (loading) {
         return (
             <section className="flex flex-col gap-3">
                 <div className="flex items-center justify-between px-4">
                     <h2 className="font-heading text-lg font-bold uppercase tracking-wide text-foreground">
-                        Produtos em destaque
+                        Produtos recentes
                     </h2>
                 </div>
 
@@ -109,7 +114,7 @@ export function ProdutosDestaque() {
                     id="destaque-title"
                     className="font-heading text-lg font-bold uppercase tracking-wide text-foreground"
                 >
-                    Produtos em destaque
+                    Produtos recentes
                 </h2>
 
                 <Link
@@ -122,17 +127,15 @@ export function ProdutosDestaque() {
 
             <div className="grid grid-cols-2 gap-3 px-4">
                 {produtos.map((produto) => {
-                    const isFav = favoritos.includes(produto.id)
-
+                    const isFav = favoritos.includes(String(produto.id))
                     const nome =
                         produto.nome ||
                         produto.title ||
-                        "Sem nome"
+                        "Produto"
 
                     const modalidade =
                         produto.modalidade ||
-                        produto.category ||
-                        "Geral"
+                        produto.category || ""
 
                     const preco =
                         produto.preco ??
@@ -145,19 +148,24 @@ export function ProdutosDestaque() {
                         null
 
                     const img =
-                        produto.img ||
-                        produto.imageUrl ||
-                        "/placeholder.svg"
+                        produto.photos?.[0] || produto.images?.find((image) => image.isMain)?.url || produto.images?.[0]?.url || produto.img || produto.imageUrl || "/placeholder.svg"
 
-                    const nota =
-                        produto.nota ??
-                        produto.rating ??
-                        0
+                    const produtoParaFavorito: FavoriteProduct = {
+                        id: String(produto.id),
+                        title: nome,
+                        price: preco,
+                        images: produto.images?.map((image, index) => ({
+                            id: String((image as { id?: string }).id ?? index),
+                            url: image.url,
+                            isMain: Boolean(image.isMain),
+                            displayOrder: image.displayOrder ?? index,
+                        })) ?? (img && img !== "/placeholder.svg" ? [{ id: "legacy-image", url: img, isMain: true, displayOrder: 0 }] : []),
+                    }
 
                     return (
                         <article
                             key={produto.id}
-                            className="flex flex-col overflow-hidden rounded-xl border border-border bg-card transition-shadow hover:shadow-md"
+                            className="relative flex flex-col overflow-hidden rounded-xl border border-border bg-card transition-shadow hover:shadow-md"
                         >
                             <Link
                                 href={`/produtos/${produto.id}`}
@@ -165,7 +173,7 @@ export function ProdutosDestaque() {
                                 aria-label={`Ver anúncio: ${nome}`}
                             >
                                 <div className="relative aspect-square bg-secondary">
-                                    <img
+                                    <ProductImage
                                         src={img}
                                         alt={nome}
                                         className="size-full object-cover"
@@ -184,23 +192,11 @@ export function ProdutosDestaque() {
                                 </div>
 
                                 <div className="flex flex-1 flex-col gap-1 p-3">
-                                    <span className="font-heading text-[0.6rem] font-semibold uppercase tracking-widest text-muted-foreground">
-                                        {modalidade}
-                                    </span>
+                                    {modalidade && <span className="font-heading text-[0.6rem] font-semibold uppercase tracking-widest text-muted-foreground">{modalidade}</span>}
 
                                     <h3 className="text-sm font-semibold leading-tight text-card-foreground">
                                         {nome}
                                     </h3>
-
-                                    {nota > 0 && (
-                                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                                            <Star className="size-3 fill-accent text-accent" />
-
-                                            {nota.toLocaleString("pt-BR", {
-                                                minimumFractionDigits: 1,
-                                            })}
-                                        </div>
-                                    )}
 
                                     <div className="mt-auto flex flex-col pt-1">
                                         {precoAntigo && (
@@ -218,23 +214,14 @@ export function ProdutosDestaque() {
 
                             <button
                                 type="button"
-                                onClick={() => toggleFavorito(produto.id)}
-                                aria-label={
-                                    isFav
-                                        ? "Remover dos favoritos"
-                                        : "Adicionar aos favoritos"
-                                }
+                                onClick={() => toggleFavorite(produtoParaFavorito)}
+                                aria-label={isFav ? "Remover dos favoritos" : "Adicionar aos favoritos"}
                                 aria-pressed={isFav}
                                 className="absolute right-2 top-2 z-10 flex size-8 items-center justify-center rounded-full bg-card/90 text-foreground shadow-sm backdrop-blur transition-colors hover:bg-card"
                             >
-                                <Heart
-                                    className={`size-4 ${
-    isFav
-      ? "fill-primary text-primary"
-      : ""
-}`}
-                                />
+                                <Heart className={`size-4 ${isFav ? "fill-primary text-primary" : ""}`} />
                             </button>
+
                         </article>
                     )
                 })}

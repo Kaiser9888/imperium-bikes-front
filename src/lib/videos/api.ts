@@ -10,33 +10,6 @@ export const API_URL = API_BASE_URL;
 export const PAGE_SIZE = 12;
 
 /* ================================================================
- * DADOS DE DEMONSTRAÇÃO
- * ================================================================ */
-
-const DEMO_TITLES = [
-    "Trilha completa na Serra do Cipó — 42km de puro MTB",
-    "Como regular suspensão dianteira em 10 minutos",
-    "Speed no amanhecer: 80km pela estrada velha",
-    "Gravel: a rota secreta entre as fazendas",
-    "Manutenção de transmissão sem oficina",
-    "Downhill técnico — leitura de linha na pedreira",
-    "Urbano noturno: pedal seguro na cidade",
-    "Review: bike elétrica na subida mais dura da região",
-    "BMX street — sessão de 3 horas no centro",
-    "Bikepacking de fim de semana com pouco peso",
-    "Treino de cadência para ganhar fôlego",
-    "Reparo de pneu tubeless na trilha",
-];
-
-const DEMO_AUTHORS = [
-    "Rafael Moura",
-    "Bianca Torres",
-    "Imperium Crew",
-    "Lucas Prado",
-    "Marina Reis",
-];
-
-/* ================================================================
  * HELPERS
  * ================================================================ */
 
@@ -196,89 +169,6 @@ function normalizeVideo(
 }
 
 /* ================================================================
- * DEMO
- * ================================================================ */
-
-function demoPage(
-  page: number,
-  isShort: boolean
-): VideoPage {
-    const content: VideoItem[] = Array.from({
-        length: PAGE_SIZE,
-    }).map((_, i) => {
-        const n = page * PAGE_SIZE + i;
-
-        const mins = 3 + (n % 22);
-
-        return {
-            id: `${isShort ? "m" : "v"}-${n}`,
-
-            title:
-              DEMO_TITLES[
-              n % DEMO_TITLES.length
-                ]!,
-
-            description:
-              "Registro completo do pedal, com detalhes de rota, equipamento utilizado e as passagens mais técnicas do percurso.",
-
-            /*
-             * Não inventamos URL Mux para os dados de demonstração.
-             */
-            videoUrl: undefined,
-
-            thumbnailUrl: "",
-
-            formattedDuration: isShort
-              ? `0:${String(
-                20 + (n % 39)
-              ).padStart(2, "0")}`
-              : `${mins}:${String(
-                10 + (n % 49)
-              ).padStart(2, "0")}`,
-
-            durationSeconds: isShort
-              ? 20 + (n % 39)
-              : mins * 60,
-
-            viewCount: 320 + n * 617,
-
-            likesCount: 12 + n * 7,
-
-            commentsCount: 0,
-
-            dislikesCount: 0,
-
-            liked: false,
-
-            disliked: false,
-
-            hashtags: [],
-
-            userName:
-              DEMO_AUTHORS[
-              n % DEMO_AUTHORS.length
-                ]!,
-
-            userAvatarUrl: undefined,
-
-            createdAt: new Date(
-              Date.now() -
-              n *
-              86_400_000 *
-              2
-            ).toISOString(),
-
-            isShort,
-        };
-    });
-
-    return {
-        content,
-        last: page >= 2,
-    };
-}
-
-/* ================================================================
  * LISTAR VÍDEOS
  * ================================================================ */
 
@@ -287,8 +177,8 @@ function demoPage(
  *
  * Mantém o endpoint original.
  *
- * Se a API estiver temporariamente indisponível,
- * retorna dados de demonstração.
+ * Se a API estiver indisponível, propaga o erro para a tela exibir
+ * o estado de falha em vez de inventar vídeos.
  */
 export async function fetchVideoPage(
   page: number,
@@ -350,12 +240,8 @@ export async function fetchVideoPage(
               normalizeVideo
             ),
         };
-    } catch {
-        /*
-         * Mantemos o fallback para o restante do
-         * frontend não quebrar.
-         */
-        return demoPage(page, isShort);
+    } catch (error) {
+        throw error instanceof Error ? error : new Error("Não foi possível carregar os vídeos.");
     }
 }
 
@@ -396,15 +282,7 @@ export async function fetchVideo(
 
         return normalizeVideo(data);
     } catch {
-        /*
-         * Só usa o fallback para IDs de demonstração.
-         */
-        const fallback =
-          demoPage(0, false).content.find(
-            (video) => video.id === id
-          );
-
-        return fallback ?? null;
+        return null;
     }
 }
 

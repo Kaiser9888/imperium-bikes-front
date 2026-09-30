@@ -8,7 +8,6 @@ import {
   Plus,
   Play,
   Video,
-  Bell,
 } from "lucide-react";
 import {
   SignInButton,
@@ -80,7 +79,7 @@ export default function VideosLayout({
           <div className={`flex h-full items-center px-3 sm:px-6 lg:px-8 ${isMemento ? "justify-start" : "gap-2"}`}>
             {/* LOGO */}
             <Link href="/videos" className="flex shrink-0 items-center gap-2" aria-label="Página inicial de vídeos">
-              <img src="/logo.png" alt="Imperium" className="h-7 w-auto sm:h-8" />
+              <img src="/logo1.png" alt="Imperium" className="h-6 w-auto sm:h-7" />
               <span
                 className="font-blackletter text-sm tracking-wide sm:text-2xl"
                 style={{
@@ -111,14 +110,6 @@ export default function VideosLayout({
               {/* NOTIFICAÇÕES + LOGIN */}
               {!isMemento && (
                 <>
-                  <button
-                    type="button"
-                    className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                    aria-label="Notificações"
-                  >
-                    <Bell className="h-5 w-5" aria-hidden="true" />
-                  </button>
-
                   {isSignedIn ? (
                     <UserButton />
                   ) : (

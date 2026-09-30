@@ -3,6 +3,7 @@
 
 import { useEffect, useState } from "react"
 import { StreamChat } from "stream-chat"
+import axios from "axios"
 import { useUser } from "@clerk/nextjs"
 import api from "@/lib/api"
 
@@ -95,7 +96,32 @@ export function useStreamClient() {
  * Abre (ou cria) a conversa com outro usuário e devolve o id do canal.
  * O backend cria o canal no Stream com os dois membros.
  */
-export async function iniciarConversa(otherUserId: string, produtoId?: string): Promise<string> {
-  const { data } = await api.post("/api/chat/start", { otherUserId, produtoId })
-  return String(data.channelId)
+export async function iniciarConversa(
+  otherUserId: string,
+  produtoId: string | undefined,
+  getToken: () => Promise<string | null>,
+): Promise<string> {
+  const token = await getToken()
+  if (!token) throw new Error("Sua sessão expirou. Entre novamente para falar com o vendedor.")
+
+  try {
+    const { data } = await api.post(
+      "/api/chat/start",
+      { otherUserId, produtoId },
+      { headers: { Authorization: `Bearer ${token}` } },
+    )
+    const channelId = data?.channelId ?? data?.channel_id ?? data?.channel?.id ?? data?.id
+    if (typeof channelId !== "string" || !channelId.trim()) {
+      throw new Error("A API de chat não retornou o identificador da conversa.")
+    }
+    return channelId
+  } catch (cause) {
+    if (axios.isAxiosError(cause)) {
+      const body = cause.response?.data as { message?: unknown; traceId?: unknown } | undefined
+      const message = typeof body?.message === "string" ? body.message : cause.message
+      const traceId = typeof body?.traceId === "string" ? ` (referência: ${body.traceId})` : ""
+      throw new Error(`${message}${traceId}`)
+    }
+    throw cause
+  }
 }

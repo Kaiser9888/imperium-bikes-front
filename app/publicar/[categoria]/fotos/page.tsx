@@ -25,6 +25,7 @@ export default function FotosPage() {
   const input = useRef<HTMLInputElement>(null)
 
   const [fotos, setFotos] = useState<string[]>([])
+  const [erro, setErro] = useState<string | null>(null)
 
   useEffect(() => {
     if (!categoria) {
@@ -33,6 +34,8 @@ export default function FotosPage() {
 
     const draft = getDraft(categoria)
 
+    // The draft is browser storage and must hydrate after mounting.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setFotos(
       Array.isArray(draft.photos)
         ? draft.photos
@@ -40,7 +43,38 @@ export default function FotosPage() {
     )
   }, [categoria])
 
-  function adicionar(
+  async function compactarImagem(file: File): Promise<string> {
+    if (!file.type.startsWith('image/')) throw new Error('Selecione apenas arquivos de imagem.')
+    if (file.size > 15 * 1024 * 1024) throw new Error('Cada imagem deve ter no máximo 15 MB.')
+
+    const bitmap = await createImageBitmap(file)
+    const scale = Math.min(1, 1600 / Math.max(bitmap.width, bitmap.height))
+    const canvas = document.createElement('canvas')
+    canvas.width = Math.max(1, Math.round(bitmap.width * scale))
+    canvas.height = Math.max(1, Math.round(bitmap.height * scale))
+    const context = canvas.getContext('2d')
+    if (!context) throw new Error('Não foi possível preparar esta imagem.')
+    context.drawImage(bitmap, 0, 0, canvas.width, canvas.height)
+    bitmap.close()
+
+    let quality = 0.82
+    let blob: Blob | null = null
+    while (quality >= 0.5) {
+      blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', quality))
+      if (blob && blob.size <= 600 * 1024) break
+      quality -= 0.08
+    }
+    if (!blob || blob.size > 600 * 1024) throw new Error('A imagem não pôde ser compactada para o tamanho permitido.')
+
+    return await new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () => typeof reader.result === 'string' ? resolve(reader.result) : reject(new Error('Falha ao ler a imagem.'))
+      reader.onerror = () => reject(new Error('Falha ao ler a imagem.'))
+      reader.readAsDataURL(blob)
+    })
+  }
+
+  async function adicionar(
     event: React.ChangeEvent<HTMLInputElement>,
   ) {
     const files = Array.from(
@@ -51,32 +85,20 @@ export default function FotosPage() {
       return
     }
 
-    files.forEach((file) => {
-      if (!file.type.startsWith('image/')) {
-        return
-      }
-
-      const reader = new FileReader()
-
-      reader.onload = () => {
-        const resultado = String(
-          reader.result ?? '',
-        )
-
-        if (!resultado) {
-          return
-        }
-
-        setFotos((atual) => [
-          ...atual,
-          resultado,
-        ])
-      }
-
-      reader.readAsDataURL(file)
-    })
-
     event.target.value = ''
+    setErro(null)
+    const disponiveis = Math.max(0, 5 - fotos.length)
+    if (disponiveis === 0) {
+      setErro('O limite é de 5 fotos por anúncio.')
+      return
+    }
+    try {
+      const escolhidos = await Promise.all(files.slice(0, disponiveis).map(compactarImagem))
+      setFotos((atual) => [...atual, ...escolhidos].slice(0, 5))
+      if (files.length > disponiveis) setErro('O anúncio aceita até 5 fotos. As imagens excedentes não foram adicionadas.')
+    } catch (error) {
+      setErro(error instanceof Error ? error.message : 'Não foi possível preparar as fotos.')
+    }
   }
 
   function remover(indexRemover: number) {
@@ -85,6 +107,7 @@ export default function FotosPage() {
         (_, index) => index !== indexRemover,
       ),
     )
+    setErro(null)
   }
 
   function voltar() {
@@ -181,6 +204,8 @@ export default function FotosPage() {
           multiple
           onChange={adicionar}
         />
+
+        {erro && <p role="alert" className="mb-4 text-sm font-semibold text-red-700">{erro}</p>}
 
         {!fotos.length ? (
           <button
