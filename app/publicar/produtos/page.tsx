@@ -172,19 +172,6 @@ const TIPOS_BY_CATEGORY: Record<
   ],
 }
 
-const CONDICAO_OPTIONS = [
-  {
-    id: "novo",
-    label: "Novo",
-    description: "Nunca usado",
-  },
-  {
-    id: "usado",
-    label: "Usado",
-    description: "Já foi utilizado",
-  },
-] as const
-
 const TAMANHO_OPTIONS = [
   "PP",
   "P",
@@ -201,14 +188,12 @@ const TAMANHO_OPTIONS = [
 type Answers = {
   subcategoryId: ProdutoCategoryId | ""
   tipo: string
-  condicao: string
   tamanho: string
 }
 
 const EMPTY_ANSWERS: Answers = {
   subcategoryId: "",
   tipo: "",
-  condicao: "",
   tamanho: "",
 }
 
@@ -327,22 +312,6 @@ export default function PublicarProdutosPage() {
       },
 
       {
-        key: "condicao",
-        title: "Estado",
-        subtitle:
-          "Condição do produto",
-        options:
-          CONDICAO_OPTIONS.map(
-            (item) => ({
-              id: item.id,
-              label: item.label,
-              description:
-              item.description,
-            })
-          ),
-      },
-
-      {
         key: "tamanho",
         title: "Tamanho",
         subtitle:
@@ -394,15 +363,6 @@ export default function PublicarProdutosPage() {
         answers.tipo
       )
     }
-
-    if (stepNumber === 4) {
-      return Boolean(
-        answers.subcategoryId &&
-        answers.tipo &&
-        answers.condicao
-      )
-    }
-
     return false
   }
 
@@ -731,11 +691,6 @@ export default function PublicarProdutosPage() {
                   "Produtos",
                   selectedCategory?.label,
                   answers.tipo,
-                  CONDICAO_OPTIONS.find(
-                    (item) =>
-                      item.id ===
-                      answers.condicao
-                  )?.label,
                   answers.tamanho,
                 ]
                   .filter(Boolean)

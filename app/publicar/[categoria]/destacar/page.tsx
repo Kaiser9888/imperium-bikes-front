@@ -259,6 +259,16 @@ async function handlePublicar() {
     const draftFinal =
       getDraft(categoria)
 
+    const originPostalCode =
+      draftFinal.frete?.localizacao?.cep
+        ?.replace(/\D/g, '')
+
+    if (!originPostalCode || originPostalCode.length !== 8) {
+      throw new Error(
+        'Informe um CEP de origem válido na etapa de frete antes de publicar.',
+      )
+    }
+
     const tier =
       TIERS.find(
         (item) =>
@@ -389,6 +399,8 @@ async function handlePublicar() {
           draftFinal.frete
             ?.localizacao
             ?.estado,
+
+          originPostalCode,
 
           highlightTier:
           tier.backendId,

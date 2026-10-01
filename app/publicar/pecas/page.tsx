@@ -343,23 +343,6 @@ const TIPOS_BY_CATEGORY: Record<
   ],
 }
 
-/* ------------------------------------------------------------------ */
-/* OPÇÕES                                                              */
-/* ------------------------------------------------------------------ */
-
-const CONDICAO_OPTIONS = [
-  {
-    id: "novo",
-    label: "Novo",
-    description: "Nunca usado",
-  },
-  {
-    id: "usado",
-    label: "Usado",
-    description: "Já foi utilizado",
-  },
-] as const
-
 const COMPATIBILIDADE_OPTIONS = [
   "Shimano",
   "SRAM",
@@ -376,14 +359,12 @@ const COMPATIBILIDADE_OPTIONS = [
 type Answers = {
   subcategoryId: PecaSubcategoryId | ""
   tipo: string
-  condicao: string
   compatibilidade: string
 }
 
 const EMPTY_ANSWERS: Answers = {
   subcategoryId: "",
   tipo: "",
-  condicao: "",
   compatibilidade: "",
 }
 
@@ -518,22 +499,6 @@ export default function PublicarPecasPage() {
       },
 
       {
-        key: "condicao",
-        title: "Estado",
-        subtitle:
-          "Condição da peça",
-        options:
-          CONDICAO_OPTIONS.map(
-            (item) => ({
-              id: item.id,
-              label: item.label,
-              description:
-              item.description,
-            })
-          ),
-      },
-
-      {
         key: "compatibilidade",
         title: "Compatibilidade",
         subtitle:
@@ -580,15 +545,6 @@ export default function PublicarPecasPage() {
         answers.tipo
       )
     }
-
-    if (stepNumber === 4) {
-      return Boolean(
-        answers.subcategoryId &&
-        answers.tipo &&
-        answers.condicao
-      )
-    }
-
     return false
   }
 
@@ -914,11 +870,6 @@ export default function PublicarPecasPage() {
                   selectedParentCategory?.label,
                   selectedSubcategory?.label,
                   answers.tipo,
-                  CONDICAO_OPTIONS.find(
-                    (item) =>
-                      item.id ===
-                      answers.condicao
-                  )?.label,
                   answers.compatibilidade,
                 ]
                   .filter(Boolean)

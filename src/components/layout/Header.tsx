@@ -89,8 +89,8 @@ export function Header({
                       <Image
                         src="/logo1.png"
                         alt="Imperium Bikes"
-                        width={100}
-                        height={50}
+                        width={80}
+                        height={40}
                         priority
                         className="h-auto w-16 object-contain"
                       />
