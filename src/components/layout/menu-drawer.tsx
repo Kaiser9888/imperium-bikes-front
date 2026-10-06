@@ -55,7 +55,7 @@ export function MenuDrawer({ open, onClose }: MenuDrawerProps) {
   return (
     <>
       <button type="button" aria-label="Fechar menu" onClick={onClose} className={`fixed inset-0 z-40 cursor-default bg-[#17150f]/45 backdrop-blur-[3px] transition-opacity duration-300 ${open ? 'opacity-100' : 'pointer-events-none opacity-0'}`} />
-      <aside role="dialog" aria-modal="true" aria-label="Menu principal" aria-hidden={!open} className={`fixed inset-y-0 left-0 z-50 flex w-[min(92vw,390px)] flex-col overflow-hidden rounded-r-[2.25rem] bg-[#faf8f2] text-[#25231d] shadow-[24px_0_70px_rgba(32,27,16,0.22)] transition-[transform,visibility] duration-500 ease-[cubic-bezier(.22,1,.36,1)] ${open ? 'visible translate-x-0' : 'invisible -translate-x-full'}`}>
+      <aside role="dialog" aria-modal="true" aria-label="Menu principal" aria-hidden={!open} className={`fixed inset-y-0 right-0 z-50 flex w-[min(92vw,390px)] flex-col overflow-hidden rounded-l-[2.25rem] bg-[#faf8f2] text-[#25231d] shadow-[-24px_0_70px_rgba(32,27,16,0.22)] transition-[transform,visibility] duration-500 ease-[cubic-bezier(.22,1,.36,1)] ${open ? 'visible translate-x-0' : 'invisible translate-x-full'}`}>
         <div className="relative px-7 pb-6 pt-7">
           <div className="pointer-events-none absolute -left-16 -top-24 size-64 rounded-full bg-[#d9b56b]/30 blur-3xl" />
           <div className="relative flex items-start justify-between">
