@@ -1,4 +1,3 @@
-// components/layout/menu-drawer.tsx
 "use client"
 
 import { useEffect } from "react"
@@ -6,20 +5,20 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { SignInButton, SignUpButton, SignOutButton, useUser, useAuth } from "@clerk/nextjs"
 import {
-  Home,
   Bell,
-  Heart,
-  ShoppingBag,
-  Wallet,
-  Tag,
-  History,
-  User,
-  Headphones,
-  LayoutGrid,
-  Store,
-  X,
   ChevronRight,
+  Headphones,
+  Heart,
+  History,
+  Home,
+  LayoutGrid,
   LogOut,
+  ShoppingBag,
+  Store,
+  Tag,
+  User,
+  Wallet,
+  X,
   type LucideIcon,
 } from "lucide-react"
 
@@ -41,9 +40,7 @@ type MenuSection = {
 }
 
 const menuSections: MenuSection[] = [
-  {
-    items: [{ icon: Home, label: "Início", href: "/" }],
-  },
+  { items: [{ icon: Home, label: "Início", href: "/" }] },
   {
     title: "Comprar",
     items: [
@@ -63,17 +60,13 @@ const menuSections: MenuSection[] = [
       { icon: User, label: "Configurações da conta", href: "/conta" },
     ],
   },
-  {
-    title: "Ajuda",
-    items: [{ icon: Headphones, label: "Contato", href: "/contato", hint: "Ajuda em geral" }],
-  },
+  { title: "Ajuda", items: [{ icon: Headphones, label: "Contato", href: "/contato", hint: "Ajuda em geral" }] },
 ]
 
 export function MenuDrawer({ open, onClose }: MenuDrawerProps) {
   const { isSignedIn } = useAuth()
   const pathname = usePathname()
 
-  // Trava o scroll da página enquanto o menu está aberto
   useEffect(() => {
     document.body.style.overflow = open ? "hidden" : ""
     return () => {
@@ -81,126 +74,102 @@ export function MenuDrawer({ open, onClose }: MenuDrawerProps) {
     }
   }, [open])
 
-  // Fecha com a tecla Esc
   useEffect(() => {
     if (!open) return
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose()
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose()
     }
-    window.addEventListener("keydown", onKey)
-    return () => window.removeEventListener("keydown", onKey)
+    window.addEventListener("keydown", onKeyDown)
+    return () => window.removeEventListener("keydown", onKeyDown)
   }, [open, onClose])
 
-  const ativo = (href: string) => (href === "/" ? pathname === "/" : pathname?.startsWith(href))
+  const isActive = (href: string) => (href === "/" ? pathname === "/" : pathname?.startsWith(href))
 
   return (
     <>
-      {/* Fundo escuro */}
-      <div
-        aria-hidden="true"
+      <button
+        type="button"
+        aria-label="Fechar menu"
         onClick={onClose}
-        className={`fixed inset-0 z-50 bg-foreground/40 transition-opacity duration-300 ${
+        className={`fixed inset-0 z-40 cursor-default bg-black/55 backdrop-blur-[3px] transition-opacity duration-300 ${
           open ? "opacity-100" : "pointer-events-none opacity-0"
         }`}
       />
 
-      {/* Painel */}
       <aside
         role="dialog"
         aria-modal="true"
         aria-label="Menu principal"
         aria-hidden={!open}
-        className={`fixed inset-y-0 right-0 z-50 flex w-[85%] max-w-sm flex-col bg-sidebar shadow-2xl transition-[transform,visibility] duration-300 ease-out ${
+        className={`fixed inset-y-0 right-0 z-50 flex w-[min(88vw,390px)] flex-col overflow-hidden border-l border-white/10 bg-[#101110] text-white shadow-[-24px_0_80px_rgba(0,0,0,0.28)] transition-[transform,visibility] duration-300 ease-[cubic-bezier(.22,1,.36,1)] ${
           open ? "visible translate-x-0" : "invisible translate-x-full"
         }`}
       >
-        {/* Cabeçalho (mármore) */}
-        <div className="relative bg-cover bg-center" style={{ backgroundImage: "url(/images/marble-light.png)" }}>
-          <div className="bg-marble/70 px-5 py-6 backdrop-blur-[2px]">
-            <button
-              type="button"
-              onClick={onClose}
-              aria-label="Fechar menu"
-              className="absolute right-3 top-3 flex size-9 items-center justify-center rounded-md text-marble-foreground transition-colors hover:bg-marble-foreground/10"
-            >
-              <X className="size-5" />
-            </button>
-            <p className="font-blackletter text-3xl leading-none text-primary">Imperium</p>
-            <p className="mt-1 font-heading text-[0.65rem] font-semibold uppercase tracking-[0.35em] text-marble-foreground/70">
-              Bikes
-            </p>
-          </div>
+        <div className="relative overflow-hidden border-b border-white/10 px-6 pb-6 pt-7">
+          <div className="pointer-events-none absolute -right-20 -top-24 size-64 rounded-full bg-[#c9a86a]/15 blur-3xl" />
+          <div className="pointer-events-none absolute bottom-0 left-8 h-px w-24 bg-[#c9a86a]" />
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Fechar menu"
+            className="absolute right-4 top-4 flex size-9 items-center justify-center rounded-full border border-white/10 text-white/60 transition-colors hover:border-[#c9a86a]/50 hover:bg-white/5 hover:text-[#e2c58b] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c9a86a]"
+          >
+            <X className="size-4" />
+          </button>
+          <p className="relative font-serif text-[2.1rem] font-semibold tracking-[-0.04em] text-[#e2c58b]">Imperium</p>
         </div>
 
-        {/* Conta */}
         <ProfileBar onClose={onClose} />
 
-        {/* Navegação */}
-        <nav className="flex-1 overflow-y-auto px-3 py-4" aria-label="Navegação principal">
-          {/* Destaque: Central do vendedor */}
+        <nav className="flex-1 overflow-y-auto px-4 py-5" aria-label="Navegação principal">
           <Link
             href="/vendedor"
             onClick={onClose}
-            className={`mb-5 flex items-center gap-3 rounded-xl border px-3.5 py-3 transition-colors ${
-              ativo("/vendedor")
-                ? "border-primary bg-primary text-primary-foreground"
-                : "border-primary/30 bg-primary/5 text-foreground hover:bg-primary/10"
+            className={`group mb-6 flex items-center gap-3 rounded-2xl border p-3 transition-all ${
+              isActive("/vendedor")
+                ? "border-[#c9a86a] bg-[#c9a86a] text-[#101110]"
+                : "border-[#c9a86a]/35 bg-[#c9a86a]/[0.07] text-white hover:border-[#c9a86a]/70 hover:bg-[#c9a86a]/[0.13]"
             }`}
           >
-                        <span
-                          className={`flex size-10 shrink-0 items-center justify-center rounded-lg ${
-                            ativo("/vendedor") ? "bg-primary-foreground/15" : "bg-primary text-primary-foreground"
-                          }`}
-                        >
-                            <Store className="size-5" />
-                        </span>
+            <span className={`flex size-11 shrink-0 items-center justify-center rounded-xl ${isActive("/vendedor") ? "bg-black/10" : "bg-[#c9a86a] text-[#101110]"}`}>
+              <Store className="size-5" />
+            </span>
             <span className="flex min-w-0 flex-1 flex-col">
-                            <span className="text-sm font-semibold">Central do vendedor</span>
-                            <span
-                              className={`text-xs ${
-                                ativo("/vendedor") ? "text-primary-foreground/80" : "text-muted-foreground"
-                              }`}
-                            >
-                                Publique e gerencie seus anúncios
-                            </span>
-                        </span>
-            <ChevronRight className="size-4 shrink-0 opacity-60" />
+              <span className="text-sm font-semibold">Central do vendedor</span>
+              <span className={`mt-0.5 truncate text-xs ${isActive("/vendedor") ? "text-[#101110]/65" : "text-white/50"}`}>
+                Publique e gerencie seus anúncios
+              </span>
+            </span>
+            <ChevronRight className="size-4 shrink-0 opacity-60 transition-transform group-hover:translate-x-0.5" />
           </Link>
 
-          <div className="flex flex-col gap-5">
-            {menuSections.map((section, i) => (
-              <section key={section.title ?? i}>
-                {section.title && (
-                  <h2 className="mb-1.5 px-3 font-heading text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-                    {section.title}
-                  </h2>
-                )}
-                <ul className="flex flex-col gap-0.5">
+          <div className="flex flex-col gap-6">
+            {menuSections.map((section, index) => (
+              <section key={section.title ?? index}>
+                {section.title && <h2 className="mb-2 px-3 text-[0.65rem] font-semibold uppercase tracking-[0.22em] text-white/35">{section.title}</h2>}
+                <ul className="flex flex-col gap-1">
                   {section.items.map(({ icon: Icon, label, href, hint }) => {
-                    const selecionado = ativo(href)
+                    const selected = isActive(href)
                     return (
                       <li key={href}>
                         <Link
                           href={href}
                           prefetch={false}
                           onClick={onClose}
-                          aria-current={selecionado ? "page" : undefined}
-                          className={`flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors ${
-                            selecionado
-                              ? "bg-sidebar-accent text-primary"
-                              : "text-sidebar-foreground hover:bg-sidebar-accent"
+                          aria-current={selected ? "page" : undefined}
+                          className={`group relative flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c9a86a] ${
+                            selected ? "bg-white/[0.09] text-[#e2c58b]" : "text-white/72 hover:bg-white/[0.06] hover:text-white"
                           }`}
                         >
-                                                    <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-secondary text-primary">
-                                                        <Icon className="size-[1.1rem]" />
-                                                    </span>
+                          {selected && <span className="absolute inset-y-2 left-0 w-0.5 rounded-full bg-[#c9a86a]" />}
+                          <span className={`flex size-9 shrink-0 items-center justify-center rounded-lg transition-colors ${selected ? "bg-[#c9a86a]/15" : "bg-white/[0.06] group-hover:bg-[#c9a86a]/10"}`}>
+                            <Icon className="size-[1.05rem]" />
+                          </span>
                           <span className="flex min-w-0 flex-1 flex-col">
-                                                        <span className="truncate text-sm font-medium">{label}</span>
-                            {hint && (
-                              <span className="truncate text-xs text-muted-foreground">{hint}</span>
-                            )}
-                                                    </span>
-                          <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
+                            <span className="truncate text-sm font-medium">{label}</span>
+                            {hint && <span className="truncate text-xs text-white/35">{hint}</span>}
+                          </span>
+                          <ChevronRight className="size-4 shrink-0 text-white/25 transition-transform group-hover:translate-x-0.5 group-hover:text-[#c9a86a]" />
                         </Link>
                       </li>
                     )
@@ -211,23 +180,16 @@ export function MenuDrawer({ open, onClose }: MenuDrawerProps) {
           </div>
         </nav>
 
-        {/* Rodapé */}
-        <div className="border-t border-sidebar-border px-5 py-4">
+        <div className="border-t border-white/10 px-5 py-4">
           {isSignedIn && (
             <SignOutButton>
-              <button
-                type="button"
-                onClick={onClose}
-                className="mb-3 flex w-full items-center justify-center gap-2 rounded-lg border border-sidebar-border py-2.5 text-sm font-medium text-sidebar-foreground transition-colors hover:bg-sidebar-accent"
-              >
+              <button type="button" onClick={onClose} className="mb-3 flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 py-2.5 text-sm font-medium text-white/65 transition-colors hover:border-[#c9a86a]/40 hover:bg-white/[0.05] hover:text-white">
                 <LogOut className="size-4" />
                 Sair da conta
               </button>
             </SignOutButton>
           )}
-          <p className="font-heading text-xs uppercase tracking-widest text-muted-foreground">
-            Imperium Bikes · 2026
-          </p>
+          <p className="text-center text-[0.65rem] uppercase tracking-[0.24em] text-white/30">Imperium · 2026</p>
         </div>
       </aside>
     </>
@@ -240,29 +202,15 @@ function ProfileBar({ onClose }: { onClose: () => void }) {
 
   if (!isSignedIn) {
     return (
-      <div className="border-b border-sidebar-border bg-secondary/50 px-5 py-4">
-        <p className="text-sm font-medium text-sidebar-foreground">Entre na sua conta</p>
-        <p className="mb-3 mt-0.5 text-xs text-muted-foreground">
-          Acesse compras, favoritos e ofertas exclusivas.
-        </p>
+      <div className="border-b border-white/10 bg-white/[0.025] px-6 py-5">
+        <p className="text-sm font-semibold text-white">Entre na sua conta</p>
+        <p className="mb-4 mt-1 text-xs leading-relaxed text-white/45">Acesse compras, favoritos e ofertas exclusivas.</p>
         <div className="flex gap-2">
           <SignInButton mode="modal">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 rounded-lg bg-primary py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
-            >
-              Entrar
-            </button>
+            <button type="button" onClick={onClose} className="flex-1 rounded-xl bg-[#c9a86a] py-2.5 text-sm font-semibold text-[#101110] transition-colors hover:bg-[#e2c58b] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e2c58b]">Entrar</button>
           </SignInButton>
           <SignUpButton mode="modal">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 rounded-lg border border-sidebar-border py-2.5 text-sm font-semibold text-sidebar-foreground transition-colors hover:bg-sidebar-accent"
-            >
-              Cadastrar
-            </button>
+            <button type="button" onClick={onClose} className="flex-1 rounded-xl border border-white/15 py-2.5 text-sm font-semibold text-white/80 transition-colors hover:border-[#c9a86a]/50 hover:bg-white/[0.05] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e2c58b]">Cadastrar</button>
           </SignUpButton>
         </div>
       </div>
@@ -270,32 +218,21 @@ function ProfileBar({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <Link
-      href="/perfil"
-      onClick={onClose}
-      className="flex items-center gap-3 border-b border-sidebar-border bg-secondary/50 px-5 py-4 transition-colors hover:bg-secondary"
-    >
-            <span className="flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary text-primary-foreground">
-                {user?.imageUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={user.imageUrl}
-                    alt={user.fullName ?? "Foto de perfil"}
-                    className="size-full object-cover"
-                  />
-                ) : (
-                  <User className="size-5" />
-                )}
-            </span>
+    <Link href="/perfil" onClick={onClose} className="flex items-center gap-3 border-b border-white/10 bg-white/[0.025] px-6 py-4 transition-colors hover:bg-white/[0.06]">
+      <span className="flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#c9a86a] text-[#101110]">
+        {user?.imageUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={user.imageUrl} alt={user.fullName ?? "Foto de perfil"} className="size-full object-cover" />
+        ) : <User className="size-5" />}
+      </span>
       <span className="flex min-w-0 flex-1 flex-col">
-                <span className="truncate text-sm font-semibold text-sidebar-foreground">
-                    {user?.fullName ?? user?.username ?? "Bem-vindo"}
-                </span>
-                <span className="truncate text-xs text-muted-foreground">
-                    {user?.primaryEmailAddress?.emailAddress ?? "Sua conta Imperium"}
-                </span>
-            </span>
-      <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
+        <span className="truncate text-sm font-semibold text-white">{user?.fullName ?? user?.username ?? "Bem-vindo"}</span>
+        <span className="truncate text-xs text-white/40">{user?.primaryEmailAddress?.emailAddress ?? "Sua conta Imperium"}</span>
+      </span>
+      <ChevronRight className="size-4 shrink-0 text-white/35" />
     </Link>
   )
 }
+
+// Rotas preservadas: apenas a linguagem visual e o nome da marca foram atualizados.
+export default MenuDrawer
