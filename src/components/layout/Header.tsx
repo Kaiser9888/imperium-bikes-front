@@ -18,7 +18,7 @@ type HeaderProps = {
   Celular:
   ┌────────────────────────────────────┐
   │ [logo] Imperium      🔔 🛒 👤  ☰   │
-  │ ( 🔍 Buscar bikes, peças, marcas ) │
+  │ ( 🔍 Buscar produtos, esportes, marcas ) │
   └────────────────────────────────────┘
 
   PC / tablet (md+), uma linha só:
@@ -152,7 +152,7 @@ export function Header({ onMenuClick, notificationCount }: HeaderProps) {
             type="search"
             value={searchTerm}
             onChange={(event) => setSearchTerm(event.target.value)}
-            placeholder="Buscar bikes, peças, marcas"
+            placeholder="Buscar produtos, esportes, marcas"
             className="w-full bg-transparent text-base text-[#2B2A22] outline-none placeholder:text-[#7A7260] md:text-sm"
           />
         </form>
@@ -166,8 +166,8 @@ export function Header({ onMenuClick, notificationCount }: HeaderProps) {
               <p className="mt-1 text-sm text-[#7A7260]">
                 {hasNotificationCount
                   ? `Você tem ${notificationCount} ${
-                      notificationCount === 1 ? "notificação não lida" : "notificações não lidas"
-                    }.`
+                    notificationCount === 1 ? "notificação não lida" : "notificações não lidas"
+                  }.`
                   : "Tudo em dia por aqui."}
               </p>
             </div>
