@@ -35,7 +35,7 @@ import {
   Paleta (creme como cor principal)
   fundo   #F5EEDC   superfície #FBF7EC   linha #E4D9BF
   texto   #2B2A22   apagado    #7A7260
-  ação    #2E3B2B (verde-oliva escuro)   ação suave #E3E8D3
+  ação    #A33C36 (vermelho da marca, igual ao logo)   ação suave #F3DDD3
 */
 
 const categoriasPublicar = [
@@ -157,15 +157,15 @@ export default function CentralVendedorPage() {
       <div className="min-h-screen bg-[#F5EEDC]">
         {Topo}
         <div className="flex flex-col items-center px-6 py-24 text-center">
-          <div className="mb-5 grid size-16 place-items-center rounded-full bg-[#E3E8D3]">
-            <Package className="size-7 text-[#2E3B2B]" />
+          <div className="mb-5 grid size-16 place-items-center rounded-full bg-[#F3DDD3]">
+            <Package className="size-7 text-[#A33C36]" />
           </div>
           <p className="font-heading text-lg font-bold text-[#2B2A22]">Entre para vender</p>
           <p className="mt-1 max-w-xs text-sm text-[#7A7260]">
             Acesse sua conta para publicar e gerenciar seus anúncios.
           </p>
           <SignInButton mode="modal">
-            <button className="mt-6 rounded-full bg-[#2E3B2B] px-8 py-3 text-sm font-semibold text-[#F5EEDC] active:scale-[0.98]">
+            <button className="mt-6 rounded-full bg-[#A33C36] px-8 py-3 text-sm font-semibold text-[#F5EEDC] active:scale-[0.98]">
               Entrar
             </button>
           </SignInButton>
@@ -198,7 +198,7 @@ export default function CentralVendedorPage() {
                   onClick={() => setFiltro(f.id)}
                   className={`flex shrink-0 items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium transition-colors ${
                     ativo
-                      ? "bg-[#2E3B2B] text-[#F5EEDC]"
+                      ? "bg-[#A33C36] text-[#F5EEDC]"
                       : "border border-[#E4D9BF] bg-[#FBF7EC] text-[#2B2A22]"
                   }`}
                 >
@@ -223,8 +223,8 @@ export default function CentralVendedorPage() {
             </div>
           ) : produtos.length === 0 ? (
             <div className="flex flex-col items-center px-6 py-20 text-center">
-              <div className="mb-5 grid size-20 place-items-center rounded-full bg-[#E3E8D3]">
-                <Bike className="size-9 text-[#2E3B2B]" />
+              <div className="mb-5 grid size-20 place-items-center rounded-full bg-[#F3DDD3]">
+                <Bike className="size-9 text-[#A33C36]" />
               </div>
               <p className="font-heading text-lg font-bold">Sua vitrine está vazia</p>
               <p className="mt-1 max-w-xs text-sm text-[#7A7260]">
@@ -232,7 +232,7 @@ export default function CentralVendedorPage() {
               </p>
               <button
                 onClick={() => setPublicando(true)}
-                className="mt-6 inline-flex items-center gap-2 rounded-full bg-[#2E3B2B] px-6 py-3 text-sm font-semibold text-[#F5EEDC] active:scale-[0.98]"
+                className="mt-6 inline-flex items-center gap-2 rounded-full bg-[#A33C36] px-6 py-3 text-sm font-semibold text-[#F5EEDC] active:scale-[0.98]"
               >
                 <Plus className="size-4" />
                 Publicar anúncio
@@ -260,7 +260,7 @@ export default function CentralVendedorPage() {
                       </div>
                       <div className="min-w-0">
                         <p className="line-clamp-2 text-sm font-semibold leading-snug">{p.title}</p>
-                        <p className="mt-0.5 text-base font-bold text-[#2E3B2B]">{formatarPreco(p.price)}</p>
+                        <p className="mt-0.5 text-base font-bold text-[#A33C36]">{formatarPreco(p.price)}</p>
                         <p className="mt-0.5 flex items-center gap-1.5 text-xs text-[#7A7260]">
                           {ocupado === p.id ? (
                             <Loader2 className="size-3 animate-spin" />
@@ -290,7 +290,7 @@ export default function CentralVendedorPage() {
       {produtos.length > 0 && (
         <button
           onClick={() => setPublicando(true)}
-          className="fixed bottom-24 right-4 z-30 inline-flex items-center gap-2 rounded-full bg-[#2E3B2B] px-5 py-3.5 text-sm font-semibold text-[#F5EEDC] shadow-[0_8px_24px_-6px_rgba(46,59,43,0.55)] active:scale-[0.97]"
+          className="fixed bottom-24 right-4 z-30 inline-flex items-center gap-2 rounded-full bg-[#A33C36] px-5 py-3.5 text-sm font-semibold text-[#F5EEDC] shadow-[0_8px_24px_-6px_rgba(163,60,54,0.45)] active:scale-[0.97]"
         >
           <Plus className="size-5" />
           Publicar
@@ -305,9 +305,9 @@ export default function CentralVendedorPage() {
               <li key={href}>
                 <Link
                   href={href}
-                  className="flex items-center gap-3 rounded-2xl border border-[#E4D9BF] bg-[#FBF7EC] px-4 py-3.5 active:bg-[#E3E8D3]"
+                  className="flex items-center gap-3 rounded-2xl border border-[#E4D9BF] bg-[#FBF7EC] px-4 py-3.5 active:bg-[#F3DDD3]"
                 >
-                  <span className="grid size-10 place-items-center rounded-full bg-[#E3E8D3] text-[#2E3B2B]">
+                  <span className="grid size-10 place-items-center rounded-full bg-[#F3DDD3] text-[#A33C36]">
                     <Icon className="size-5" />
                   </span>
                   <span className="flex-1 text-sm font-semibold">{label}</span>
@@ -378,7 +378,7 @@ export default function CentralVendedorPage() {
             <button
               onClick={confirmarExclusao}
               disabled={ocupado === excluindo.id}
-              className="flex flex-1 items-center justify-center gap-2 rounded-full bg-[#8F2F1D] py-3 text-sm font-semibold text-white disabled:opacity-50"
+              className="flex flex-1 items-center justify-center gap-2 rounded-full bg-[#5C1A14] py-3 text-sm font-semibold text-white disabled:opacity-50"
             >
               {ocupado === excluindo.id && <Loader2 className="size-3.5 animate-spin" />}
               Excluir
@@ -395,10 +395,10 @@ export default function CentralVendedorPage() {
 /* ---------- componentes auxiliares ---------- */
 
 function Sheet({
-                 titulo,
-                 onClose,
-                 children,
-               }: {
+  titulo,
+  onClose,
+  children,
+}: {
   titulo: string
   onClose: () => void
   children: React.ReactNode
@@ -425,12 +425,12 @@ function Sheet({
 }
 
 function LinhaAcao({
-                     icon: Icon,
-                     texto,
-                     onClick,
-                     href,
-                     perigo,
-                   }: {
+  icon: Icon,
+  texto,
+  onClick,
+  href,
+  perigo,
+}: {
   icon: React.ComponentType<{ className?: string }>
   texto: string
   onClick?: () => void
@@ -458,10 +458,10 @@ function LinhaAcao({
 }
 
 function EditarModal({
-                       produto,
-                       onClose,
-                       onSaved,
-                     }: {
+  produto,
+  onClose,
+  onSaved,
+}: {
   produto: ProdutoItem
   onClose: () => void
   onSaved: (p: ProdutoItem) => void
@@ -498,7 +498,7 @@ function EditarModal({
   }
 
   const campo =
-    "mt-1.5 w-full rounded-2xl border border-[#E4D9BF] bg-[#FBF7EC] px-4 py-3 text-base outline-none focus:border-[#2E3B2B]"
+    "mt-1.5 w-full rounded-2xl border border-[#E4D9BF] bg-[#FBF7EC] px-4 py-3 text-base outline-none focus:border-[#A33C36]"
   const rotulo = "text-xs font-medium text-[#7A7260]"
 
   return (
@@ -541,7 +541,7 @@ function EditarModal({
         <button
           onClick={salvar}
           disabled={saving}
-          className="flex flex-[1.4] items-center justify-center gap-2 rounded-full bg-[#2E3B2B] py-3 text-sm font-semibold text-[#F5EEDC] disabled:opacity-50"
+          className="flex flex-[1.4] items-center justify-center gap-2 rounded-full bg-[#A33C36] py-3 text-sm font-semibold text-[#F5EEDC] disabled:opacity-50"
         >
           {saving && <Loader2 className="size-3.5 animate-spin" />}
           Salvar alterações
