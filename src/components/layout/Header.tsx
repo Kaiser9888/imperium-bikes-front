@@ -2,14 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import {
-    Bell,
-    Menu,
-    ShoppingCart,
-    Search,
-    User,
-    X,
-} from "lucide-react"
+import { Bell, Menu, Search, ShoppingCart, User, X } from "lucide-react"
 import { SignInButton, UserButton } from "@clerk/nextjs"
 import { Authed, Guest } from "@/components/auth/auth-gates"
 import Link from "next/link"
@@ -21,15 +14,25 @@ type HeaderProps = {
     notificationCount?: number
 }
 
-export function Header({
-                           onMenuClick,
-                           notificationCount,
-                       }: HeaderProps) {
+/*
+  Layout (mobile):
+  ┌──────────────────────────────────┐
+  │ ☰        [logo] Imperium     🔔 🛒 👤 │
+  │ ( 🔍 Buscar bikes, peças... )    │
+  └──────────────────────────────────┘
+  Menu à esquerda (navegar), marca ao centro, ações à direita.
+*/
+
+const iconBtn =
+  "relative flex size-10 items-center justify-center rounded-full text-[#2B2A22] transition-colors active:bg-[#E4D9BF]/70"
+
+const badge =
+  "absolute right-0.5 top-0.5 flex min-w-4 items-center justify-center rounded-full bg-[#2E3B2B] px-1 text-[0.6rem] font-bold leading-4 text-[#F5EEDC]"
+
+export function Header({ onMenuClick, notificationCount }: HeaderProps) {
     const router = useRouter()
     const [searchTerm, setSearchTerm] = useState("")
-    const [activeCard, setActiveCard] = useState<
-      "notifications" | "cart" | null
-    >(null)
+    const [activeCard, setActiveCard] = useState<"notifications" | "cart" | null>(null)
     const [cartCount, setCartCount] = useState(0)
 
     useEffect(() => {
@@ -43,203 +46,134 @@ export function Header({
         }
     }, [])
 
-    function handleNotifications() {
-        setActiveCard((current) =>
-          current === "notifications"
-            ? null
-            : "notifications"
-        )
-    }
+    const toggle = (card: "notifications" | "cart") =>
+      setActiveCard((current) => (current === card ? null : card))
+    const closeCard = () => setActiveCard(null)
 
-    function handleCart() {
-        setActiveCard((current) =>
-          current === "cart" ? null : "cart"
-        )
-    }
-
-    function closeCard() {
-        setActiveCard(null)
-    }
-
-    const hasNotificationCount =
-      typeof notificationCount === "number" &&
-      notificationCount > 0
-
-    const hasCartCount =
-      cartCount > 0
+    const hasNotificationCount = typeof notificationCount === "number" && notificationCount > 0
+    const hasCartCount = cartCount > 0
 
     return (
-      <header
-        className="sticky top-0 z-40 border-b border-border/60 bg-marble bg-cover bg-center shadow-sm"
-        style={{
-            backgroundImage:
-              "url(/images/marble-light.png)",
-        }}
-      >
-          <div className="bg-marble/1 backdrop-blur-[2px]">
+      <header className="sticky top-0 z-40 border-b border-[#E4D9BF] bg-[#F5EEDC]">
+          {/* Fecha o card ao tocar fora */}
+          {activeCard && (
+            <button
+              type="button"
+              aria-label="Fechar"
+              onClick={closeCard}
+              className="fixed inset-0 -z-10 cursor-default"
+            />
+          )}
 
-              <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-3 px-4 py-3">
+          <div className="mx-auto w-full max-w-7xl px-3">
+              {/* LINHA 1 */}
+              <div className="grid grid-cols-[1fr_auto_1fr] items-center py-2">
+                  {/* Menu */}
+                  <div className="flex justify-start">
+                      <button type="button" onClick={onMenuClick} aria-label="Abrir menu" className={iconBtn}>
+                          <Menu className="size-6" />
+                      </button>
+                  </div>
 
-                  {/* LOGO + NOME */}
-                  <Link
-                    href="/"
-                    className="flex shrink-0 flex-col items-center justify-center"
-                    aria-label="Imperium Bikes - início"
-                  >
+                  {/* Marca */}
+                  <Link href="/" aria-label="Imperium Bikes - início" className="flex items-center gap-2">
                       <Image
                         src="/logo1.png"
-                        alt="Imperium Bikes"
+                        alt=""
                         width={80}
                         height={40}
                         priority
-                        className="h-auto w-16 object-contain"
+                        className="h-auto w-9 object-contain"
                       />
-
-                      <span className="mt-0.5 font-Norse text-[11px] font-semibold tracking-[0.18em] text-#A33C36">
-                            IMPERIUM BIKES
-                        </span>
+                      <span className="font-heading text-[15px] font-bold tracking-wide text-[#A33C36]">
+              Imperium Bikes
+            </span>
                   </Link>
 
-                  {/* AÇÕES DO HEADER */}
-                  <div className="flex items-center gap-1">
-
-                      {/* NOTIFICAÇÕES */}
+                  {/* Ações */}
+                  <div className="flex items-center justify-end">
                       <button
                         type="button"
-                        onClick={handleNotifications}
+                        onClick={() => toggle("notifications")}
                         aria-label="Notificações"
-                        aria-expanded={
-                          activeCard === "notifications"
-                        }
-                        className="relative flex size-10 items-center justify-center rounded-md text-marble-foreground transition-colors hover:bg-marble-foreground/10"
+                        aria-expanded={activeCard === "notifications"}
+                        className={iconBtn}
                       >
-                          <Bell className="size-5" />
-
+                          <Bell className="size-[22px]" />
                           {hasNotificationCount && (
-                            <span className="absolute right-1 top-1 flex min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[0.6rem] font-bold leading-4 text-primary-foreground">
-                                    {notificationCount! > 9
-                                      ? "9+"
-                                      : notificationCount}
-                                </span>
+                            <span className={badge}>{notificationCount! > 9 ? "9+" : notificationCount}</span>
                           )}
                       </button>
 
-                      {/* CARRINHO */}
                       <button
                         type="button"
-                        onClick={handleCart}
+                        onClick={() => toggle("cart")}
                         aria-label="Carrinho"
-                        aria-expanded={
-                          activeCard === "cart"
-                        }
-                        className="relative flex size-10 items-center justify-center rounded-md text-marble-foreground transition-colors hover:bg-marble-foreground/10"
+                        aria-expanded={activeCard === "cart"}
+                        className={iconBtn}
                       >
-                          <ShoppingCart className="size-5" />
-
-                          {hasCartCount && (
-                            <span className="absolute right-1 top-1 flex min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[0.6rem] font-bold leading-4 text-primary-foreground">
-                                    {cartCount! > 9
-                                      ? "9+"
-                                      : cartCount}
-                                </span>
-                          )}
+                          <ShoppingCart className="size-[22px]" />
+                          {hasCartCount && <span className={badge}>{cartCount > 9 ? "9+" : cartCount}</span>}
                       </button>
 
-                      {/* USUÁRIO NÃO LOGADO */}
                       <Guest>
                           <SignInButton mode="modal">
-                              <button
-                                type="button"
-                                aria-label="Entrar"
-                                className="flex size-10 items-center justify-center rounded-md text-marble-foreground transition-colors hover:bg-marble-foreground/10"
-                              >
-                                  <User className="size-5" />
+                              <button type="button" aria-label="Entrar" className={iconBtn}>
+                                  <User className="size-[22px]" />
                               </button>
                           </SignInButton>
                       </Guest>
 
-                      {/* USUÁRIO LOGADO */}
                       <Authed>
                           <div className="flex size-10 items-center justify-center">
-                              <UserButton
-                                appearance={{
-                                    elements: {
-                                        avatarBox:
-                                          "size-7",
-                                    },
-                                }}
-                              />
+                              <UserButton appearance={{ elements: { avatarBox: "size-8" } }} />
                           </div>
                       </Authed>
-
-                      {/* MENU */}
-                      <button
-                        type="button"
-                        onClick={onMenuClick}
-                        aria-label="Abrir menu"
-                        className="flex size-10 items-center justify-center rounded-md text-marble-foreground transition-colors hover:bg-marble-foreground/10"
-                      >
-                          <Menu className="size-5" />
-                      </button>
                   </div>
               </div>
 
-              {/* BUSCA */}
-              <div className="mx-auto w-full max-w-7xl px-4 pb-3">
+              {/* LINHA 2: busca */}
+              <div className="pb-3">
                   <form
                     role="search"
-                    className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2.5 shadow-sm focus-within:ring-2 focus-within:ring-ring/40"
+                    className="flex items-center gap-2.5 rounded-full border border-[#E4D9BF] bg-[#FBF7EC] px-4 py-3 focus-within:border-[#2E3B2B]"
                     onSubmit={(event) => {
-                      event.preventDefault()
-                      const term = searchTerm.trim()
-                      if (term) router.push(`/buscar?q=${encodeURIComponent(term)}`)
+                        event.preventDefault()
+                        const term = searchTerm.trim()
+                        if (term) router.push(`/buscar?q=${encodeURIComponent(term)}`)
                     }}
                   >
-                      <Search className="size-4 shrink-0 text-muted-foreground" />
-
+                      <Search className="size-[18px] shrink-0 text-[#7A7260]" />
                       <input
                         type="search"
                         value={searchTerm}
                         onChange={(event) => setSearchTerm(event.target.value)}
-                        placeholder="Buscar bikes, peças, marcas..."
-                        className="w-full bg-transparent text-sm text-card-foreground outline-none placeholder:text-muted-foreground"
+                        placeholder="Buscar bikes, peças, marcas"
+                        className="w-full bg-transparent text-base text-[#2B2A22] outline-none placeholder:text-[#7A7260]"
                       />
                   </form>
               </div>
           </div>
 
-          {/* CARD DE NOTIFICAÇÕES */}
+          {/* NOTIFICAÇÕES */}
           {activeCard === "notifications" && (
-            <div className="absolute right-20 top-full mt-2 w-[320px] max-w-[calc(100vw-2rem)] rounded-xl border border-border bg-card p-4 shadow-lg">
-                <div className="flex items-center justify-between">
-
+            <div className="absolute inset-x-3 top-full mt-2 rounded-2xl border border-[#E4D9BF] bg-[#FBF7EC] p-4 shadow-lg sm:left-auto sm:right-4 sm:w-80">
+                <div className="flex items-start justify-between gap-3">
                     <div>
-                        <h2 className="font-heading text-base font-semibold text-card-foreground">
-                            Notificações
-                        </h2>
-
-                        {hasNotificationCount ? (
-                          <p className="mt-1 text-sm text-muted-foreground">
-                              Você tem{" "}
-                              {notificationCount}{" "}
-                              {notificationCount === 1
-                                ? "notificação"
-                                : "notificações"}{" "}
-                              não lidas.
-                          </p>
-                        ) : (
-                          <p className="mt-1 text-sm text-muted-foreground">
-                              Você não possui novas
-                              notificações.
-                          </p>
-                        )}
+                        <h2 className="font-heading text-base font-bold text-[#2B2A22]">Notificações</h2>
+                        <p className="mt-1 text-sm text-[#7A7260]">
+                            {hasNotificationCount
+                              ? `Você tem ${notificationCount} ${
+                                notificationCount === 1 ? "notificação não lida" : "notificações não lidas"
+                              }.`
+                              : "Tudo em dia por aqui."}
+                        </p>
                     </div>
-
                     <button
                       type="button"
                       onClick={closeCard}
                       aria-label="Fechar notificações"
-                      className="flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                      className="flex size-9 shrink-0 items-center justify-center rounded-full text-[#7A7260] active:bg-[#E4D9BF]/70"
                     >
                         <X className="size-4" />
                     </button>
@@ -247,50 +181,37 @@ export function Header({
             </div>
           )}
 
-          {/* CARD DO CARRINHO */}
+          {/* CARRINHO */}
           {activeCard === "cart" && (
-            <div className="absolute right-16 top-full mt-2 w-[340px] max-w-[calc(100vw-2rem)] rounded-xl border border-border bg-card p-4 shadow-lg">
-
-                <div className="flex items-center justify-between">
-
+            <div className="absolute inset-x-3 top-full mt-2 rounded-2xl border border-[#E4D9BF] bg-[#FBF7EC] p-4 shadow-lg sm:left-auto sm:right-4 sm:w-80">
+                <div className="flex items-start justify-between gap-3">
                     <div>
-                        <h2 className="font-heading text-base font-semibold text-card-foreground">
-                            Carrinho
-                        </h2>
-
-                        {hasCartCount ? (
-                          <p className="mt-1 text-sm text-muted-foreground">
-                              Você possui{" "}
-                              {cartCount}{" "}
-                              {cartCount === 1
-                                ? "item"
-                                : "itens"}{" "}
-                              no carrinho.
-                          </p>
-                        ) : (
-                          <p className="mt-1 text-sm text-muted-foreground">
-                              Seu carrinho está vazio.
-                          </p>
-                        )}
+                        <h2 className="font-heading text-base font-bold text-[#2B2A22]">Carrinho</h2>
+                        <p className="mt-1 text-sm text-[#7A7260]">
+                            {hasCartCount
+                              ? `${cartCount} ${cartCount === 1 ? "item" : "itens"} no carrinho.`
+                              : "Seu carrinho está vazio."}
+                        </p>
                     </div>
-
                     <button
                       type="button"
                       onClick={closeCard}
                       aria-label="Fechar carrinho"
-                      className="flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                      className="flex size-9 shrink-0 items-center justify-center rounded-full text-[#7A7260] active:bg-[#E4D9BF]/70"
                     >
                         <X className="size-4" />
                     </button>
                 </div>
 
-                <Link
-                  href="/carrinho"
-                  onClick={closeCard}
-                  className="mt-4 block rounded-lg border border-border px-4 py-2.5 text-center text-sm font-medium text-card-foreground transition-colors hover:bg-muted"
-                >
-                    Ver carrinho
-                </Link>
+                {hasCartCount && (
+                  <Link
+                    href="/carrinho"
+                    onClick={closeCard}
+                    className="mt-4 block rounded-full bg-[#2E3B2B] py-3 text-center text-sm font-semibold text-[#F5EEDC] active:scale-[0.98]"
+                  >
+                      Ver carrinho
+                  </Link>
+                )}
             </div>
           )}
       </header>
