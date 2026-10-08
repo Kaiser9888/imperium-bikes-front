@@ -1,13 +1,17 @@
 "use client"
-import { Button } from "@/components/ui/button"
 
 import Link from "next/link"
-import { Heart } from "lucide-react"
-import { useState, useEffect } from "react"
+import { Package } from "lucide-react"
+import { useEffect, useState } from "react"
+
+import { HomeSection } from "@/components/home/home-section"
+import { ProductCard } from "@/components/marketplace/ProductCard"
+import { Button } from "@/components/ui/button"
+import { EmptyState } from "@/components/ui/empty-state"
+import { ErrorState } from "@/components/ui/error-state"
+import { Skeleton } from "@/components/ui/skeleton"
 import api from "@/lib/api"
-import { ProductImage } from "@/components/marketplace/ProductImage"
 import { FAVORITES_UPDATED_EVENT, readFavorites, toggleFavorite, type FavoriteProduct } from "@/lib/favorites"
-import { formatarPreco } from "@/lib/format"
 
 interface Produto {
     id: string | number
@@ -21,14 +25,16 @@ interface Produto {
     oldPrice?: number
     img?: string
     imageUrl?: string
-    images?: { url: string; isMain?: boolean; displayOrder?: number }[]
+    images?: { id?: string; url: string; isMain?: boolean; displayOrder?: number }[]
     photos?: string[]
 }
 
+type Estado = { status: "loading" } | { status: "error" } | { status: "ok"; produtos: Produto[] }
+
+const gridClasses = "grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
 
 export function ProdutosDestaque() {
-    const [produtos, setProdutos] = useState<Produto[]>([])
-    const [loading, setLoading] = useState(true)
+    const [estado, setEstado] = useState<Estado>({ status: "loading" })
     const [favoritos, setFavoritos] = useState<string[]>([])
 
     useEffect(() => {
@@ -42,186 +48,109 @@ export function ProdutosDestaque() {
         }
     }, [])
 
+    const [tentativa, setTentativa] = useState(0)
+
     useEffect(() => {
-        async function loadProdutos() {
-            try {
-                const response = await api.get("/api/products", {
-                    params: {
-                        page: 0,
-                        size: 10,
-                        sort: "createdAt,desc",
-                    },
-                })
-
-                const data = response.data.content || response.data || []
-
-                console.log("Produtos carregados na home:", data)
-
-                setProdutos(data)
-            } catch (error) {
-                console.error("Erro ao carregar produtos:", error)
-            } finally {
-                setLoading(false)
-            }
+        let ativo = true
+        api
+            .get("/api/products", { params: { page: 0, size: 10, sort: "createdAt,desc" } })
+            .then((response) => response.data?.content ?? response.data)
+            .then((dados) => {
+                if (ativo) setEstado({ status: "ok", produtos: Array.isArray(dados) ? dados : [] })
+            })
+            .catch(() => {
+                if (ativo) setEstado({ status: "error" })
+            })
+        return () => {
+            ativo = false
         }
+    }, [tentativa])
 
-        loadProdutos()
-    }, [])
-
-    if (loading) {
-        return (
-            <section className="flex flex-col gap-3">
-                <div className="flex items-center justify-between px-4">
-                    <h2 className="font-heading text-lg font-bold uppercase tracking-wide text-foreground">
-                        Produtos recentes
-                    </h2>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3 px-4">
-                    {[1, 2, 3, 4].map((i) => (
-                        <div
-                            key={i}
-                            className="aspect-[3/4] animate-pulse rounded-xl bg-secondary"
-                        />
-                    ))}
-                </div>
-            </section>
-        )
-    }
-
-    if (produtos.length === 0) {
-        return (
-            <section className="flex flex-col gap-3 px-4 py-10 text-center">
-                <p className="text-muted-foreground">
-                    Nenhum produto cadastrado ainda.
-                </p>
-            </section>
-        )
+    const tentarNovamente = () => {
+        setEstado({ status: "loading" })
+        setTentativa((n) => n + 1)
     }
 
     return (
-        <section
-            aria-labelledby="destaque-title"
-            className="flex flex-col gap-3"
-        >
-            <div className="flex items-center justify-between px-4">
-                <h2
-                    id="destaque-title"
-                    className="font-heading text-lg font-bold uppercase tracking-wide text-foreground"
-                >
-                    Produtos recentes
-                </h2>
+        <HomeSection id="marketplace" title="Marketplace" description="Anúncios mais recentes." href="/produtos">
+            {estado.status === "loading" && (
+                <div className={gridClasses} aria-busy="true">
+                    {Array.from({ length: 4 }, (_, i) => (
+                        <div key={i} className="flex flex-col gap-3">
+                            <Skeleton className="aspect-square rounded-xl" />
+                            <Skeleton className="h-4 w-4/5" />
+                            <Skeleton className="h-5 w-2/5" />
+                        </div>
+                    ))}
+                </div>
+            )}
 
-                <Link
-                    href="/produtos"
-                    className="text-xs font-medium text-primary hover:underline"
-                >
-                    Ver tudo
-                </Link>
-            </div>
+            {estado.status === "error" && (
+                <ErrorState
+                    title="Não foi possível carregar os produtos"
+                    onRetry={tentarNovamente}
+                    className="rounded-xl bg-surface-secondary"
+                />
+            )}
 
-            <div className="grid grid-cols-2 gap-3 px-4">
-                {produtos.map((produto) => {
-                    const isFav = favoritos.includes(String(produto.id))
-                    const nome =
-                        produto.nome ||
-                        produto.title ||
-                        "Produto"
-
-                    const modalidade =
-                        produto.modalidade ||
-                        produto.category || ""
-
-                    const preco =
-                        produto.preco ??
-                        produto.price ??
-                        0
-
-                    const precoAntigo =
-                        produto.precoAntigo ??
-                        produto.oldPrice ??
-                        null
-
-                    const img =
-                        produto.photos?.[0] || produto.images?.find((image) => image.isMain)?.url || produto.images?.[0]?.url || produto.img || produto.imageUrl || "/placeholder.svg"
-
-                    const produtoParaFavorito: FavoriteProduct = {
-                        id: String(produto.id),
-                        title: nome,
-                        price: preco,
-                        images: produto.images?.map((image, index) => ({
-                            id: String((image as { id?: string }).id ?? index),
-                            url: image.url,
-                            isMain: Boolean(image.isMain),
-                            displayOrder: image.displayOrder ?? index,
-                        })) ?? (img && img !== "/placeholder.svg" ? [{ id: "legacy-image", url: img, isMain: true, displayOrder: 0 }] : []),
+            {estado.status === "ok" && estado.produtos.length === 0 && (
+                <EmptyState
+                    icon={Package}
+                    title="Nenhum produto anunciado ainda"
+                    description="Os anúncios publicados aparecem aqui."
+                    className="rounded-xl bg-surface-secondary"
+                    action={
+                        <Button asChild variant="outline">
+                            <Link href="/vendedor">Anunciar um produto</Link>
+                        </Button>
                     }
+                />
+            )}
 
-                    return (
-                        <article
-                            key={produto.id}
-                            className="relative flex flex-col overflow-hidden rounded-xl border border-border bg-card transition-shadow hover:shadow-md"
-                        >
-                            <Link
-                                href={`/produtos/${produto.id}`}
-                                className="block"
-                                aria-label={`Ver anúncio: ${nome}`}
-                            >
-                                <div className="relative aspect-square bg-secondary">
-                                    <ProductImage
-                                        src={img}
-                                        alt={nome}
-                                        className="size-full object-cover"
-                                    />
+            {estado.status === "ok" && estado.produtos.length > 0 && (
+                <ul className={gridClasses}>
+                    {estado.produtos.map((produto) => {
+                        const id = String(produto.id)
+                        const nome = produto.nome || produto.title || "Produto"
+                        const preco = produto.preco ?? produto.price ?? 0
+                        const img =
+                            produto.photos?.[0] ||
+                            produto.images?.find((image) => image.isMain)?.url ||
+                            produto.images?.[0]?.url ||
+                            produto.img ||
+                            produto.imageUrl ||
+                            null
 
-                                    <div
-                                        className="absolute inset-0 bg-transparent transition-colors hover:bg-black/[0.02]"
-                                        aria-hidden="true"
-                                    />
+                        const produtoParaFavorito: FavoriteProduct = {
+                            id,
+                            title: nome,
+                            price: preco,
+                            images:
+                                produto.images?.map((image, index) => ({
+                                    id: String(image.id ?? index),
+                                    url: image.url,
+                                    isMain: Boolean(image.isMain),
+                                    displayOrder: image.displayOrder ?? index,
+                                })) ?? (img ? [{ id: "legacy-image", url: img, isMain: true, displayOrder: 0 }] : []),
+                        }
 
-                                    {precoAntigo && (
-                                        <span className="absolute left-2 top-2 rounded-md bg-primary px-1.5 py-0.5 font-heading text-[0.6rem] font-bold uppercase text-primary-foreground">
-                                            Oferta
-                                        </span>
-                                    )}
-                                </div>
-
-                                <div className="flex flex-1 flex-col gap-1 p-3">
-                                    {modalidade && <span className="font-heading text-[0.6rem] font-semibold uppercase tracking-widest text-muted-foreground">{modalidade}</span>}
-
-                                    <h3 className="text-sm font-semibold leading-tight text-card-foreground">
-                                        {nome}
-                                    </h3>
-
-                                    <div className="mt-auto flex flex-col pt-1">
-                                        {precoAntigo && (
-                                            <span className="text-xs text-muted-foreground line-through">
-                                                {formatarPreco(precoAntigo)}
-                                            </span>
-                                        )}
-
-                                        <span className="font-heading text-base font-bold text-foreground">
-                                            {formatarPreco(preco)}
-                                        </span>
-                                    </div>
-                                </div>
-                            </Link>
-
-                            <Button
-                                type="button"
-                                onClick={() => toggleFavorite(produtoParaFavorito)}
-                                aria-label={isFav ? "Remover dos favoritos" : "Adicionar aos favoritos"}
-                                aria-pressed={isFav}
-                                variant="ghost" size="icon" className="absolute right-2 top-2 z-10"
-                            >
-                                <Heart className={`size-4 ${isFav ? "fill-primary text-primary" : ""}`} />
-                            </Button>
-
-                        </article>
-                    )
-                })}
-            </div>
-        </section>
+                        return (
+                            <li key={id}>
+                                <ProductCard
+                                    id={id}
+                                    title={nome}
+                                    price={preco}
+                                    oldPrice={produto.precoAntigo ?? produto.oldPrice}
+                                    category={produto.modalidade || produto.category}
+                                    image={img}
+                                    favorite={favoritos.includes(id)}
+                                    onToggleFavorite={() => toggleFavorite(produtoParaFavorito)}
+                                />
+                            </li>
+                        )
+                    })}
+                </ul>
+            )}
+        </HomeSection>
     )
 }
-
