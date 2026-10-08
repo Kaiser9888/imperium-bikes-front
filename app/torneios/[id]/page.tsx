@@ -1,5 +1,6 @@
 // app/torneios/[id]/page.tsx
 "use client"
+import { Button } from "@/components/ui/button"
 
 import { BottomNav } from "@/components/layout/bottom-nav"
 import { useUser } from "@clerk/nextjs"
@@ -117,9 +118,9 @@ export default function TorneioDetalhesPage() {
                             <span className="text-sm">Torneios</span>
                         </Link>
                         <h1 className="font-heading text-sm font-bold uppercase tracking-widest text-marble-foreground">Detalhes</h1>
-                        <button className="size-10 flex items-center justify-center rounded-md text-marble-foreground hover:bg-marble-foreground/10">
+                        <Button variant="ghost" size="icon">
                             <Share2 className="size-5" />
-                        </button>
+                        </Button>
                     </div>
                 </div>
             </header>
@@ -278,9 +279,9 @@ export default function TorneioDetalhesPage() {
                                 <span className="text-xs text-muted-foreground">Sua inscrição foi enviada.</span>
                             </div>
                         ) : (
-                            <button disabled={inscrevendo} onClick={handleInscrever} className="w-full rounded-2xl bg-primary py-4 text-sm font-bold text-primary-foreground hover:bg-primary/90 transition-colors shadow-lg shadow-primary/20 disabled:opacity-50">
+                            <Button disabled={inscrevendo} onClick={handleInscrever} size="lg" className="w-full">
                                 {inscrevendo ? "Enviando inscrição..." : `Inscrever-se • ${torneio.valorInscricao > 0 ? `R$ ${torneio.valorInscricao.toFixed(2)}` : "Grátis"}`}
-                            </button>
+                            </Button>
                         )}
                         {erroInscricao && <p role="alert" className="mt-2 text-center text-sm text-destructive">{erroInscricao}</p>}
                     </div>

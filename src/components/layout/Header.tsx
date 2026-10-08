@@ -29,13 +29,13 @@ type HeaderProps = {
 */
 
 const iconBtn =
-  "relative flex size-10 items-center justify-center rounded-full text-[#2B2A22] transition-colors hover:bg-[#E4D9BF]/60 active:bg-[#E4D9BF]/80"
+  "relative flex size-10 items-center justify-center rounded-full text-foreground transition-colors hover:bg-surface-muted active:bg-surface-muted"
 
 const badge =
-  "absolute right-0.5 top-0.5 flex min-w-4 items-center justify-center rounded-full bg-[#A33C36] px-1 text-[0.6rem] font-bold leading-4 text-[#F5EEDC]"
+  "absolute right-0.5 top-0.5 flex min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[0.6rem] font-bold leading-4 text-primary-foreground"
 
 const popover =
-  "absolute inset-x-3 top-full mt-2 rounded-2xl border border-[#E4D9BF] bg-[#FBF7EC] p-4 shadow-lg md:left-auto md:right-6 md:w-80"
+  "absolute inset-x-3 top-full mt-2 rounded-2xl border border-border bg-surface p-4 shadow-lg md:left-auto md:right-6 md:w-80"
 
 export function Header({ onMenuClick, notificationCount }: HeaderProps) {
   const router = useRouter()
@@ -62,7 +62,7 @@ export function Header({ onMenuClick, notificationCount }: HeaderProps) {
   const hasCartCount = cartCount > 0
 
   return (
-    <header className="sticky top-0 z-40 border-b border-[#E4D9BF] bg-[#F5EEDC]">
+    <header className="sticky top-0 z-40 border-b border-border bg-background">
       {activeCard && (
         <button
           type="button"
@@ -87,7 +87,7 @@ export function Header({ onMenuClick, notificationCount }: HeaderProps) {
             priority
             className="h-auto w-10 object-contain md:w-12"
           />
-          <span className="font-heading text-lg font-bold tracking-wide text-[#A33C36] md:text-xl">
+          <span className="font-heading text-lg font-bold tracking-wide text-primary md:text-xl">
             Imperium
           </span>
         </Link>
@@ -140,20 +140,20 @@ export function Header({ onMenuClick, notificationCount }: HeaderProps) {
         {/* BUSCA: linha própria no celular, centralizada no PC */}
         <form
           role="search"
-          className="order-3 mt-2 flex w-full items-center gap-2.5 rounded-full border border-[#E4D9BF] bg-[#FBF7EC] px-4 py-2.5 focus-within:border-[#A33C36] md:order-2 md:mx-auto md:mt-0 md:max-w-xl md:flex-1"
+          className="order-3 mt-2 flex w-full items-center gap-2.5 rounded-full border border-border bg-surface px-4 py-2.5 focus-within:border-primary md:order-2 md:mx-auto md:mt-0 md:max-w-xl md:flex-1"
           onSubmit={(event) => {
             event.preventDefault()
             const term = searchTerm.trim()
             if (term) router.push(`/buscar?q=${encodeURIComponent(term)}`)
           }}
         >
-          <Search className="size-[18px] shrink-0 text-[#7A7260]" />
+          <Search className="size-[18px] shrink-0 text-muted-foreground" />
           <input
             type="search"
             value={searchTerm}
             onChange={(event) => setSearchTerm(event.target.value)}
             placeholder="Buscar produtos, esportes, marcas"
-            className="w-full bg-transparent text-base text-[#2B2A22] outline-none placeholder:text-[#7A7260] md:text-sm"
+            className="w-full bg-transparent text-base text-foreground outline-none placeholder:text-muted-foreground md:text-sm"
           />
         </form>
       </div>
@@ -162,8 +162,8 @@ export function Header({ onMenuClick, notificationCount }: HeaderProps) {
         <div className={popover}>
           <div className="flex items-start justify-between gap-3">
             <div>
-              <h2 className="font-heading text-base font-bold text-[#2B2A22]">Notificações</h2>
-              <p className="mt-1 text-sm text-[#7A7260]">
+              <h2 className="font-heading text-base font-bold text-foreground">Notificações</h2>
+              <p className="mt-1 text-sm text-muted-foreground">
                 {hasNotificationCount
                   ? `Você tem ${notificationCount} ${
                     notificationCount === 1 ? "notificação não lida" : "notificações não lidas"
@@ -175,7 +175,7 @@ export function Header({ onMenuClick, notificationCount }: HeaderProps) {
               type="button"
               onClick={closeCard}
               aria-label="Fechar notificações"
-              className="flex size-9 shrink-0 items-center justify-center rounded-full text-[#7A7260] hover:bg-[#E4D9BF]/60"
+              className="flex size-9 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-surface-muted"
             >
               <X className="size-4" />
             </button>
@@ -187,8 +187,8 @@ export function Header({ onMenuClick, notificationCount }: HeaderProps) {
         <div className={popover}>
           <div className="flex items-start justify-between gap-3">
             <div>
-              <h2 className="font-heading text-base font-bold text-[#2B2A22]">Carrinho</h2>
-              <p className="mt-1 text-sm text-[#7A7260]">
+              <h2 className="font-heading text-base font-bold text-foreground">Carrinho</h2>
+              <p className="mt-1 text-sm text-muted-foreground">
                 {hasCartCount
                   ? `${cartCount} ${cartCount === 1 ? "item" : "itens"} no carrinho.`
                   : "Seu carrinho está vazio."}
@@ -198,7 +198,7 @@ export function Header({ onMenuClick, notificationCount }: HeaderProps) {
               type="button"
               onClick={closeCard}
               aria-label="Fechar carrinho"
-              className="flex size-9 shrink-0 items-center justify-center rounded-full text-[#7A7260] hover:bg-[#E4D9BF]/60"
+              className="flex size-9 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-surface-muted"
             >
               <X className="size-4" />
             </button>
@@ -208,7 +208,7 @@ export function Header({ onMenuClick, notificationCount }: HeaderProps) {
             <Link
               href="/carrinho"
               onClick={closeCard}
-              className="mt-4 block rounded-full bg-[#A33C36] py-3 text-center text-sm font-semibold text-[#F5EEDC] hover:bg-[#8C312C] active:scale-[0.98]"
+              className="mt-4 block rounded-full bg-primary py-3 text-center text-sm font-semibold text-primary-foreground hover:bg-primary-hover active:scale-[0.98]"
             >
               Ver carrinho
             </Link>

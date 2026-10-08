@@ -1,5 +1,6 @@
 // components/carteira/ConnectStripeButton.tsx
 "use client";
+import { Button } from "@/components/ui/button"
 
 import { useAuth } from "@clerk/nextjs";
 import { useState } from "react";
@@ -31,13 +32,13 @@ export default function ConnectStripeButton() {
 
   return (
     <div className="flex flex-col gap-2">
-      <button
+      <Button
         onClick={handleConectar}
         disabled={carregando}
-        className="px-4 py-2.5 rounded-md bg-primary text-primary-foreground text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-opacity"
+       
       >
         {carregando ? "Redirecionando..." : "Conectar conta para receber pagamentos"}
-      </button>
+      </Button>
       {erro && <p className="text-xs text-destructive">{erro}</p>}
     </div>
   );

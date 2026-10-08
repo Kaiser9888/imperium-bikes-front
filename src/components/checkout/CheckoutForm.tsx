@@ -1,5 +1,6 @@
 // components/checkout/CheckoutForm.tsx
 "use client";
+import { Button } from "@/components/ui/button"
 
 import { useState } from "react";
 import { PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
@@ -52,13 +53,13 @@ export default function CheckoutForm({ orderId, valorProduto }: CheckoutFormProp
         </p>
       )}
 
-      <button
+      <Button
         type="submit"
         disabled={!stripe || loading}
-        className="w-full px-4 py-3 rounded-md bg-primary text-primary-foreground text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+        size="lg" className="w-full"
       >
         {loading ? "Processando..." : `Pagar R$ ${valorProduto.toFixed(2).replace(".", ",")}`}
-      </button>
+      </Button>
     </form>
   );
 }

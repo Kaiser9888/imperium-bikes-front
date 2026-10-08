@@ -1,4 +1,5 @@
 "use client"
+import { Button } from "@/components/ui/button"
 
 import { Suspense, useEffect, useRef, useState } from "react"
 import { useSearchParams } from "next/navigation"
@@ -122,7 +123,7 @@ function BuscarPageContent() {
       </header>
 
       <main className="mx-auto max-w-5xl px-4 py-5">
-        {!query && history.length > 0 && <section aria-label="Buscas recentes"><h2 className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">Buscas recentes</h2><div className="flex flex-wrap gap-2">{history.map((term) => <button key={term} type="button" onClick={() => saveSearch(term)} className="rounded-full border border-border px-3 py-1.5 text-sm text-muted-foreground hover:bg-card">{term}</button>)}</div></section>}
+        {!query && history.length > 0 && <section aria-label="Buscas recentes"><h2 className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">Buscas recentes</h2><div className="flex flex-wrap gap-2">{history.map((term) => <Button key={term} type="button" onClick={() => saveSearch(term)} variant="outline" size="sm">{term}</Button>)}</div></section>}
         {loading && <p className="py-12 text-center text-sm text-muted-foreground" role="status">Buscando produtos…</p>}
         {error && <p role="alert" className="py-12 text-center text-sm text-destructive">{error}</p>}
         {!loading && !error && query.trim().length >= 2 && products.length === 0 && <div className="py-16 text-center"><Package className="mx-auto mb-4 size-12 text-muted-foreground/40" /><p className="text-sm font-medium text-muted-foreground">Nenhum produto encontrado</p><p className="mt-1 text-xs text-muted-foreground/60">Tente outro termo de busca</p></div>}

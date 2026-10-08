@@ -1,4 +1,5 @@
 "use client";
+import { Button } from "@/components/ui/button"
 
 import { useState, useRef, useCallback } from "react";
 import { useAuth } from "@clerk/nextjs";
@@ -242,12 +243,12 @@ export default function MementoUploadPage() {
                                               className="w-full resize-none rounded-lg border border-border bg-card px-4 py-3 transition-colors placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-60" maxLength={150} />
                                 </div>
                                 {status === "idle" && (
-                                    <button onClick={handleUpload} className="group flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-7 py-3.5 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/25 transition-all hover:bg-primary/90 active:scale-[0.98]">
+                                    <Button onClick={handleUpload} size="lg" className="group w-full">
                                         Publicar Memento <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-                                    </button>
+                                    </Button>
                                 )}
                                 {status === "idle" && (
-                                    <button onClick={resetForm} className="w-full rounded-lg border border-border py-3 text-sm font-medium text-muted-foreground hover:bg-secondary hover:text-foreground">Cancelar</button>
+                                    <Button onClick={resetForm} variant="outline" size="lg" className="w-full">Cancelar</Button>
                                 )}
                             </div>
                         </div>

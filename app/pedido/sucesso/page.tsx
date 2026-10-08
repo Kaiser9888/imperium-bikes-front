@@ -71,18 +71,18 @@ function PedidoSucessoContent() {
   }, [paymentId, getToken])
 
   return (
-    <main className="grid min-h-screen place-items-center bg-[#f5f3ee] px-6 text-center text-[#1d282b]">
+    <main className="grid min-h-screen place-items-center bg-background px-6 text-center text-foreground">
       <div className="max-w-md">
 
         {status === "LOADING" && (
           <>
-            <Loader2 className="mx-auto size-10 animate-spin text-[#a33c36]" />
+            <Loader2 className="mx-auto size-10 animate-spin text-primary" />
 
             <h1 className="mt-5 font-serif text-3xl">
               Confirmando pagamento...
             </h1>
 
-            <p className="mt-2 text-sm text-[#68737a]">
+            <p className="mt-2 text-sm text-muted-foreground">
               Isso pode levar alguns segundos.
             </p>
           </>
@@ -90,20 +90,20 @@ function PedidoSucessoContent() {
 
         {status === "PAID" && (
           <>
-            <CheckCircle2 className="mx-auto size-12 text-[#386148]" />
+            <CheckCircle2 className="mx-auto size-12 text-success" />
 
             <h1 className="mt-5 font-serif text-3xl">
               Pagamento confirmado!
             </h1>
 
-            <p className="mt-2 text-sm text-[#68737a]">
+            <p className="mt-2 text-sm text-muted-foreground">
               O vendedor foi notificado e vai preparar o envio.
               O valor fica protegido até a entrega ser confirmada.
             </p>
 
             <Link
               href="/"
-              className="mt-6 inline-block bg-[#1d282b] px-5 py-3 text-sm font-bold text-white"
+              className="mt-6 inline-block bg-foreground px-5 py-3 text-sm font-bold text-white"
             >
               Voltar ao marketplace
             </Link>
@@ -112,20 +112,20 @@ function PedidoSucessoContent() {
 
         {(status === "FAILED" || status === "CANCELED") && (
           <>
-            <XCircle className="mx-auto size-12 text-[#a33c36]" />
+            <XCircle className="mx-auto size-12 text-primary" />
 
             <h1 className="mt-5 font-serif text-3xl">
               Algo deu errado
             </h1>
 
-            <p className="mt-2 text-sm text-[#68737a]">
+            <p className="mt-2 text-sm text-muted-foreground">
               Não conseguimos confirmar seu pagamento. Nenhum valor foi
               cobrado indevidamente — tente novamente.
             </p>
 
             <Link
               href="/"
-              className="mt-6 inline-block border border-[#1d282b] px-5 py-3 text-sm font-bold"
+              className="mt-6 inline-block border border-foreground px-5 py-3 text-sm font-bold"
             >
               Voltar
             </Link>
@@ -139,15 +139,15 @@ function PedidoSucessoContent() {
 
 function PedidoSucessoLoading() {
   return (
-    <main className="grid min-h-screen place-items-center bg-[#f5f3ee] px-6 text-center text-[#1d282b]">
+    <main className="grid min-h-screen place-items-center bg-background px-6 text-center text-foreground">
       <div className="max-w-md">
-        <Loader2 className="mx-auto size-10 animate-spin text-[#a33c36]" />
+        <Loader2 className="mx-auto size-10 animate-spin text-primary" />
 
         <h1 className="mt-5 font-serif text-3xl">
           Confirmando pagamento...
         </h1>
 
-        <p className="mt-2 text-sm text-[#68737a]">
+        <p className="mt-2 text-sm text-muted-foreground">
           Isso pode levar alguns segundos.
         </p>
       </div>

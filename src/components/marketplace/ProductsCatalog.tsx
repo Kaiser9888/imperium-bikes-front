@@ -1,4 +1,5 @@
 "use client"
+import { Button } from "@/components/ui/button"
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 import Link from "next/link"
@@ -59,7 +60,7 @@ export function ProductsCatalog({ category, condition, minPrice, maxPrice, subca
 
   if (loading) return <p className="py-12 text-center text-sm text-muted-foreground">Carregando produtos...</p>
   if (error) return <div className="py-12 text-center"><p role="alert" className="text-sm text-destructive">{error}</p><button onClick={() => void load(0, false)} className="mt-3 text-sm font-medium text-primary underline">Tentar novamente</button></div>
-  if (!filteredByOptions.length) return <div className="py-12 text-center"><p className="text-sm text-muted-foreground">{category ? "Nenhum produto encontrado com esses filtros nesta modalidade." : "Nenhum produto disponível no momento."}</p>{page + 1 < totalPages && <button disabled={loadingMore} onClick={() => void load(page + 1, true)} className="mt-4 rounded-lg border border-border px-5 py-2.5 text-sm font-medium disabled:opacity-50">{loadingMore ? "Carregando..." : "Buscar em mais produtos"}</button>}</div>
+  if (!filteredByOptions.length) return <div className="py-12 text-center"><p className="text-sm text-muted-foreground">{category ? "Nenhum produto encontrado com esses filtros nesta modalidade." : "Nenhum produto disponível no momento."}</p>{page + 1 < totalPages && <Button disabled={loadingMore} onClick={() => void load(page + 1, true)} variant="outline" className="mt-4">{loadingMore ? "Carregando..." : "Buscar em mais produtos"}</Button>}</div>
 
   return <>
     <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
@@ -70,6 +71,6 @@ export function ProductsCatalog({ category, condition, minPrice, maxPrice, subca
         </Link>
       ))}
     </div>
-    {page + 1 < totalPages && <div className="mt-8 text-center"><button disabled={loadingMore} onClick={() => void load(page + 1, true)} className="rounded-lg border border-border px-5 py-2.5 text-sm font-medium disabled:opacity-50">{loadingMore ? "Carregando..." : "Carregar mais"}</button></div>}
+    {page + 1 < totalPages && <div className="mt-8 text-center"><Button disabled={loadingMore} onClick={() => void load(page + 1, true)} variant="outline">{loadingMore ? "Carregando..." : "Carregar mais"}</Button></div>}
   </>
 }

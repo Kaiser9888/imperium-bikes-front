@@ -1,4 +1,5 @@
 ﻿"use client";
+import { Button } from "@/components/ui/button"
 
 import { useMemo, useState } from "react";
 import { useVideoFeed } from "@/hooks/useVideoFeed";
@@ -68,10 +69,10 @@ export default function VideosPage() {
 
           {hasMore && (
             <div className="mt-8 flex justify-center">
-              <button
+              <Button
                 onClick={loadMore}
                 disabled={loadingMore}
-                className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-6 py-2.5 text-sm font-medium transition-colors hover:border-primary/40 hover:text-primary disabled:opacity-60"
+                variant="outline"
               >
                 {loadingMore ? (
                   <>
@@ -84,7 +85,7 @@ export default function VideosPage() {
                     <ArrowRight className="h-4 w-4" />
                   </>
                 )}
-              </button>
+              </Button>
             </div>
           )}
         </>

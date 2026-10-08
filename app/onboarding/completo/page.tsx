@@ -1,5 +1,6 @@
 // app/onboarding/completo/page.tsx
 "use client";
+import { Button } from "@/components/ui/button"
 
 import { useAuth } from "@clerk/nextjs";
 import { useEffect, useState } from "react";
@@ -45,12 +46,12 @@ export default function OnboardingCompletoPage() {
         <p className="text-sm text-muted-foreground mb-6">
           Tivemos um problema ao confirmar seus dados com a Stripe. Tente novamente pela carteira.
         </p>
-        <button
+        <Button
           onClick={() => router.push("/carteira")}
-          className="px-4 py-2.5 rounded-md bg-secondary text-secondary-foreground text-sm font-medium"
+          variant="secondary"
         >
           Voltar à carteira
-        </button>
+        </Button>
       </div>
     );
   }
@@ -74,12 +75,12 @@ export default function OnboardingCompletoPage() {
           <p className="text-sm text-muted-foreground mb-6">
             Você já pode vender e receber pagamentos na plataforma.
           </p>
-          <button
+          <Button
             onClick={() => router.push("/carteira")}
-            className="px-4 py-2.5 rounded-md bg-primary text-primary-foreground text-sm font-medium"
+           
           >
             Ir para minha carteira
-          </button>
+          </Button>
         </>
       ) : (
         <>
@@ -87,12 +88,12 @@ export default function OnboardingCompletoPage() {
           <p className="text-sm text-muted-foreground mb-6">
             A Stripe ainda precisa de algumas informações. Volte à carteira para continuar.
           </p>
-          <button
+          <Button
             onClick={() => router.push("/carteira")}
-            className="px-4 py-2.5 rounded-md bg-secondary text-secondary-foreground text-sm font-medium"
+            variant="secondary"
           >
             Voltar à carteira
-          </button>
+          </Button>
         </>
       )}
     </div>

@@ -1,5 +1,6 @@
 // app/configuracoes/patrocinadores/page.tsx
 "use client"
+import { Button } from "@/components/ui/button"
 
 import { useUser } from "@clerk/nextjs"
 import { ArrowLeft, Plus, Trash2, Upload, Image, AlertCircle } from "lucide-react"
@@ -139,18 +140,18 @@ export default function PatrocinadoresPage() {
                             </p>
                         )}
                         <div className="flex gap-2">
-                            <button
+                            <Button
                                 onClick={() => { setMostrarForm(false); setErro("") }}
-                                className="flex-1 rounded-xl border border-border py-2.5 text-sm font-medium hover:bg-secondary transition-colors"
+                                variant="outline" className="flex-1"
                             >
                                 Cancelar
-                            </button>
-                            <button
+                            </Button>
+                            <Button
                                 onClick={adicionarBanner}
-                                className="flex-1 rounded-xl bg-primary py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+                                className="flex-1"
                             >
                                 Adicionar
-                            </button>
+                            </Button>
                         </div>
                     </div>
                 ) : (

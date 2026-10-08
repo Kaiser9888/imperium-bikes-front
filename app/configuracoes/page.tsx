@@ -1,5 +1,6 @@
 // app/configuracoes/page.tsx
 "use client"
+import { Button } from "@/components/ui/button"
 
 import { useUser } from "@clerk/nextjs"
 import { ArrowLeft, Save } from "lucide-react"
@@ -126,9 +127,9 @@ export default function ConfiguracoesPage() {
 
                 {erro && <p role="alert" className="text-sm text-destructive">{erro}</p>}
                 {salvo && <p role="status" className="text-sm text-green-700">Perfil salvo com sucesso.</p>}
-                <button onClick={salvar} disabled={salvando || carregandoPerfil || !perfilCarregado} className="w-full rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90 flex items-center justify-center gap-2 transition-colors disabled:opacity-60">
+                <Button onClick={salvar} disabled={salvando || carregandoPerfil || !perfilCarregado} size="lg" className="w-full">
                     {carregandoPerfil ? "Carregando perfil…" : salvando ? "Salvando…" : <><Save className="size-4" />Salvar alterações</>}
-                </button>
+                </Button>
             </main>
         </div>
     )

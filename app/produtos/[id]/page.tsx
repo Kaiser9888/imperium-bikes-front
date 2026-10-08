@@ -1,4 +1,5 @@
 "use client"
+import { Button } from "@/components/ui/button"
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
@@ -180,7 +181,7 @@ function ProdutoPage() {
 
   if (loading) {
     return (
-      <main className="grid min-h-screen place-items-center bg-[#f5f3ee] text-[#68737a]">
+      <main className="grid min-h-screen place-items-center bg-background text-muted-foreground">
         <div className="flex items-center gap-3 text-sm">
           <Loader2 className="size-5 animate-spin" />
           Carregando anúncio...
@@ -193,10 +194,10 @@ function ProdutoPage() {
 
   if (erro || !produto) {
     return (
-      <main className="grid min-h-screen place-items-center bg-[#f5f3ee] px-6 text-center">
+      <main className="grid min-h-screen place-items-center bg-background px-6 text-center">
         <div>
 
-          <p className="text-xs font-bold uppercase tracking-[.2em] text-[#a33c36]">
+          <p className="text-xs font-bold uppercase tracking-[.2em] text-primary">
             Imperium Bikes
           </p>
 
@@ -204,14 +205,14 @@ function ProdutoPage() {
             Anúncio não encontrado
           </h1>
 
-          <p className="mt-3 text-[#68737a]">
+          <p className="mt-3 text-muted-foreground">
             {erro ??
               "Este produto não está disponível."}
           </p>
 
           <Link
             href="/"
-            className="mt-6 inline-flex items-center gap-2 bg-[#1d282b] px-5 py-3 text-sm font-bold text-white"
+            className="mt-6 inline-flex items-center gap-2 bg-foreground px-5 py-3 text-sm font-bold text-white"
           >
             <ArrowLeft className="size-4" />
             Voltar ao marketplace
@@ -445,9 +446,9 @@ function ProdutoPage() {
   // ---------- RENDER ----------
 
   return (
-    <main className="min-h-screen bg-[#f5f3ee] text-[#1d282b]">
+    <main className="min-h-screen bg-background text-foreground">
 
-      <header className="border-b border-[#dedbd2] bg-[#f8f7f3]/95">
+      <header className="border-b border-border bg-background/95">
 
         <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-5 lg:px-8">
 
@@ -455,15 +456,15 @@ function ProdutoPage() {
 
             <Link
               href="/"
-              className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.14em] text-[#68737a] hover:text-[#a33c36]"
+              className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground hover:text-primary"
             >
               <ArrowLeft className="size-4" />
               Voltar
             </Link>
 
-            <span className="hidden h-5 w-px bg-[#dedbd2] sm:block" />
+            <span className="hidden h-5 w-px bg-border sm:block" />
 
-            <span className="hidden text-xs uppercase tracking-[0.18em] text-[#68737a] sm:block">
+            <span className="hidden text-xs uppercase tracking-[0.18em] text-muted-foreground sm:block">
               Imperium Bikes / Marketplace
             </span>
 
@@ -486,7 +487,7 @@ function ProdutoPage() {
       <div className="mx-auto max-w-7xl px-5 py-8 lg:px-8 lg:py-12">
 
         <nav
-          className="mb-8 flex flex-wrap items-center gap-2 text-xs text-[#68737a]"
+          className="mb-8 flex flex-wrap items-center gap-2 text-xs text-muted-foreground"
           aria-label="Breadcrumb"
         >
           <span>Marketplace</span>
@@ -494,13 +495,13 @@ function ProdutoPage() {
           <span>Bicicletas</span>
           <span>/</span>
 
-          <span className="text-[#1d282b]">
+          <span className="text-foreground">
             {marca}
           </span>
 
           <span>/</span>
 
-          <span className="text-[#1d282b]">
+          <span className="text-foreground">
             {titulo}
           </span>
 
@@ -512,7 +513,7 @@ function ProdutoPage() {
 
           <div>
 
-            <div className="group relative aspect-[4/3] overflow-hidden bg-[#e6e3dc]">
+            <div className="group relative aspect-[4/3] overflow-hidden bg-surface-muted">
 
               {imagens.length > 0 ? (
 
@@ -524,7 +525,7 @@ function ProdutoPage() {
 
               ) : (
 
-                <div className="grid h-full place-items-center text-sm text-[#68737a]">
+                <div className="grid h-full place-items-center text-sm text-muted-foreground">
                   Sem imagem disponível
                 </div>
 
@@ -561,7 +562,7 @@ function ProdutoPage() {
                     <ChevronRight />
                   </button>
 
-                  <span className="absolute bottom-4 left-4 bg-[#1d282b]/85 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.16em] text-white">
+                  <span className="absolute bottom-4 left-4 bg-foreground/85 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.16em] text-white">
                     {activeImage + 1} / {imagens.length}
                   </span>
 
@@ -581,9 +582,9 @@ function ProdutoPage() {
                       onClick={() =>
                         setActiveImage(index)
                       }
-                      className={`aspect-[4/3] overflow-hidden border-2 bg-[#e6e3dc] ${
+                      className={`aspect-[4/3] overflow-hidden border-2 bg-surface-muted ${
   activeImage === index
-    ? "border-[#a33c36]"
+    ? "border-primary"
     : "border-transparent opacity-70 hover:opacity-100"
 }`}
                       aria-label={`Ver foto ${index + 1}`}
@@ -614,7 +615,7 @@ function ProdutoPage() {
               <div>
 
                 {(marca || ano) && (
-                  <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.2em] text-[#a33c36]">
+                  <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.2em] text-primary">
                     {marca}{" "}
                     {ano &&
                       `· ${ano}`}
@@ -627,11 +628,11 @@ function ProdutoPage() {
 
               </div>
 
-              <button
+              <Button
                 onClick={() => {
                   if (produto) setFavorite(toggleFavorite(produto))
                 }}
-                className="grid size-11 shrink-0 place-items-center border border-[#d3d0c7]"
+                variant="outline" size="icon" className="shrink-0"
                 aria-label={
                   favorite
                     ? "Remover dos favoritos"
@@ -642,20 +643,20 @@ function ProdutoPage() {
                 <Heart
                   className={`size-5 ${
   favorite
-    ? "fill-[#a33c36] text-[#a33c36]"
-    : "text-[#68737a]"
+    ? "fill-primary text-primary"
+    : "text-muted-foreground"
 }`}
                 />
 
-              </button>
+              </Button>
 
             </div>
 
-            <div className="mt-7 flex items-end justify-between border-b border-[#dedbd2] pb-7">
+            <div className="mt-7 flex items-end justify-between border-b border-border pb-7">
 
               <div>
 
-                <p className="mb-1 text-xs text-[#68737a]">
+                <p className="mb-1 text-xs text-muted-foreground">
                   Preço anunciado
                 </p>
 
@@ -665,7 +666,7 @@ function ProdutoPage() {
 
               </div>
 
-              <span className="inline-flex items-center gap-1.5 bg-[#e5eee7] px-3 py-2 text-[11px] font-bold uppercase tracking-[0.12em] text-[#386148]">
+              <span className="inline-flex items-center gap-1.5 bg-success/10 px-3 py-2 text-[11px] font-bold uppercase tracking-[0.12em] text-success">
                 <ShieldCheck className="size-4" />
                 Compra segura
               </span>
@@ -675,7 +676,7 @@ function ProdutoPage() {
             {/* SPECS */}
 
             {specs.length > 0 && (
-              <div className="grid grid-cols-2 gap-x-8 gap-y-5 border-b border-[#dedbd2] py-6 text-sm sm:grid-cols-3">
+              <div className="grid grid-cols-2 gap-x-8 gap-y-5 border-b border-border py-6 text-sm sm:grid-cols-3">
 
                 {specs
                   .slice(0, 3)
@@ -684,7 +685,7 @@ function ProdutoPage() {
 
                       <div key={label}>
 
-                        <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.14em] text-[#68737a]">
+                        <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
                           {label}
                         </p>
 
@@ -705,7 +706,7 @@ function ProdutoPage() {
             {(localizacao || bairro) && (
               <div className="mt-6 flex items-start gap-3 text-sm">
 
-                <MapPin className="mt-0.5 size-5 text-[#a33c36]" />
+                <MapPin className="mt-0.5 size-5 text-primary" />
 
                 <div>
 
@@ -714,7 +715,7 @@ function ProdutoPage() {
                   </p>
 
                   {bairro && (
-                    <p className="mt-1 text-xs text-[#68737a]">
+                    <p className="mt-1 text-xs text-muted-foreground">
                       {bairro} · Retirada ou envio disponível
                     </p>
                   )}
@@ -728,19 +729,18 @@ function ProdutoPage() {
 
             <div className="mt-7 grid gap-3 sm:grid-cols-[1fr_auto]">
 
-              <button
+              <Button
                 onClick={() => {
                   if (!id) return
 
                   router.push(`/checkout?productId=${encodeURIComponent(id)}`)
-}}
-className="flex items-center justify-center gap-2 bg-[#a33c36] px-5 py-4 text-sm font-bold text-white transition hover:bg-[#812f2b]"
+}} size="lg"
   >
   <ShoppingBag className="size-5" />
   Comprar agora
-</button>
+</Button>
 
-<button
+<Button
   type="button"
   onClick={() => {
     if (!produto) return
@@ -749,17 +749,17 @@ className="flex items-center justify-center gap-2 bg-[#a33c36] px-5 py-4 text-sm
     window.setTimeout(() => setAdicionadoAoCarrinho(false), 2500)
   }}
   disabled={!produto}
-  className="flex items-center justify-center gap-2 border border-[#1d282b] px-5 py-4 text-sm font-bold hover:bg-white disabled:opacity-50"
+  variant="outline" size="lg"
 >
   <ShoppingCart className="size-5" />
   {adicionadoAoCarrinho ? "Adicionado ao carrinho" : "Adicionar ao carrinho"}
-</button>
+</Button>
 
-<button
+<Button
   type="button"
   onClick={falarComVendedor}
   disabled={abrindoChat}
-  className="flex items-center justify-center gap-2 border border-[#1d282b] px-5 py-4 text-sm font-bold hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
+  variant="outline" size="lg"
 >
 
   {abrindoChat ? (
@@ -774,19 +774,19 @@ className="flex items-center justify-center gap-2 bg-[#a33c36] px-5 py-4 text-sm
     </>
   )}
 
-</button>
+</Button>
 
 </div>
 
-{erroChat && <p role="alert" className="mt-3 text-sm font-semibold text-[#a33c36]">{erroChat}</p>}
+{erroChat && <p role="alert" className="mt-3 text-sm font-semibold text-primary">{erroChat}</p>}
 
 {/* FRETE */}
 
-<div className="mt-5 border border-[#dedbd2] bg-[#faf9f5] p-5">
+<div className="mt-5 border border-border bg-background p-5">
 
   <div className="mb-4 flex items-center gap-3">
 
-    <Calculator className="size-5 text-[#a33c36]" />
+    <Calculator className="size-5 text-primary" />
 
     <div>
 
@@ -794,7 +794,7 @@ className="flex items-center justify-center gap-2 bg-[#a33c36] px-5 py-4 text-sm
         Calcule o frete
       </p>
 
-      <p className="text-xs text-[#68737a]">
+      <p className="text-xs text-muted-foreground">
         Informe seu CEP para ver opções de entrega.
       </p>
 
@@ -814,13 +814,13 @@ className="flex items-center justify-center gap-2 bg-[#a33c36] px-5 py-4 text-sm
       inputMode="numeric"
       placeholder="00000-000"
       aria-label="CEP para cálculo do frete"
-      className="min-w-0 flex-1 border border-[#d3d0c7] bg-white px-3 py-3 text-sm outline-none focus:border-[#a33c36]"
+      className="min-w-0 flex-1 border border-border bg-white px-3 py-3 text-sm outline-none focus:border-primary"
     />
 
-    <button
+    <Button
       onClick={calculateShipping}
       disabled={calculandoFrete}
-      className="flex min-w-[105px] items-center justify-center gap-2 bg-[#1d282b] px-4 text-xs font-bold uppercase tracking-[0.08em] text-white hover:bg-[#a33c36] disabled:cursor-not-allowed disabled:opacity-60"
+      className="min-w-[105px]"
     >
 
       {calculandoFrete ? (
@@ -832,12 +832,12 @@ className="flex items-center justify-center gap-2 bg-[#a33c36] px-5 py-4 text-sm
         "Calcular"
       )}
 
-    </button>
+    </Button>
 
   </div>
 
   {erroFrete && (
-    <p className="mt-3 text-xs font-semibold text-[#a33c36]">
+    <p className="mt-3 text-xs font-semibold text-primary">
       {erroFrete}
     </p>
   )}
@@ -845,7 +845,7 @@ className="flex items-center justify-center gap-2 bg-[#a33c36] px-5 py-4 text-sm
   {shipping.length > 0 && (
     <div className="mt-4 space-y-2">
 
-      <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#68737a]">
+      <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
         Opções de entrega
       </p>
 
@@ -854,7 +854,7 @@ className="flex items-center justify-center gap-2 bg-[#a33c36] px-5 py-4 text-sm
 
           <div
             key={opcao.id}
-            className="flex items-center justify-between gap-4 border border-[#dedbd2] bg-white p-3"
+            className="flex items-center justify-between gap-4 border border-border bg-white p-3"
           >
 
             <div className="min-w-0">
@@ -863,7 +863,7 @@ className="flex items-center justify-center gap-2 bg-[#a33c36] px-5 py-4 text-sm
                 {opcao.transportadora}
               </p>
 
-              <p className="mt-1 text-xs text-[#68737a]">
+              <p className="mt-1 text-xs text-muted-foreground">
                 {opcao.servico} ·{" "}
                 {opcao.prazoDias}{" "}
                 {opcao.prazoDias === 1
@@ -891,13 +891,13 @@ className="flex items-center justify-center gap-2 bg-[#a33c36] px-5 py-4 text-sm
 
 {/* VENDEDOR */}
 
-<div className="mt-6 border border-[#dedbd2] bg-[#faf9f5] p-5">
+<div className="mt-6 border border-border bg-background p-5">
 
   <div className="flex items-center justify-between gap-4">
 
     <div className="flex items-center gap-3">
 
-      <div className="grid size-12 place-items-center rounded-full bg-[#d9d8d1] text-sm font-bold">
+      <div className="grid size-12 place-items-center rounded-full bg-surface-muted text-sm font-bold">
         {iniciais || (
           <User className="size-5" />
         )}
@@ -910,7 +910,7 @@ className="flex items-center justify-center gap-2 bg-[#a33c36] px-5 py-4 text-sm
         </p>
 
         {sellerSince && (
-          <p className="mt-1 text-xs text-[#68737a]">
+          <p className="mt-1 text-xs text-muted-foreground">
             Vendedor desde{" "}
             {sellerSince}
           </p>
@@ -922,18 +922,18 @@ className="flex items-center justify-center gap-2 bg-[#a33c36] px-5 py-4 text-sm
 
     <a
       href="#vendedor"
-      className="text-xs font-bold uppercase tracking-[0.1em] text-[#a33c36] hover:underline"
+      className="text-xs font-bold uppercase tracking-[0.1em] text-primary hover:underline"
     >
       Ver perfil
     </a>
 
   </div>
 
-  <div className="mt-4 flex items-center gap-5 border-t border-[#dedbd2] pt-4 text-xs text-[#68737a]">
+  <div className="mt-4 flex items-center gap-5 border-t border-border pt-4 text-xs text-muted-foreground">
 
                 <span className="flex items-center gap-1.5">
 
-                  <Star className="size-4 fill-[#a33c36] text-[#a33c36]" />
+                  <Star className="size-4 fill-primary text-primary" />
 
                   {rating} (
                   {reviews} avaliações)
@@ -954,11 +954,11 @@ className="flex items-center justify-center gap-2 bg-[#a33c36] px-5 py-4 text-sm
 
 {/* DESCRIÇÃO + FICHA TÉCNICA */}
 
-<section className="mt-16 grid gap-10 border-t border-[#dedbd2] pt-12 lg:grid-cols-[1.35fr_0.65fr]">
+<section className="mt-16 grid gap-10 border-t border-border pt-12 lg:grid-cols-[1.35fr_0.65fr]">
 
   <div>
 
-    <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.2em] text-[#a33c36]">
+    <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.2em] text-primary">
       Sobre este anúncio
     </p>
 
@@ -966,15 +966,15 @@ className="flex items-center justify-center gap-2 bg-[#a33c36] px-5 py-4 text-sm
       Detalhes do produto.
     </h2>
 
-    <p className="mt-5 max-w-2xl whitespace-pre-line text-[15px] leading-7 text-[#68737a]">
+    <p className="mt-5 max-w-2xl whitespace-pre-line text-[15px] leading-7 text-muted-foreground">
       {descricao}
     </p>
 
     <div className="mt-8 grid gap-3 sm:grid-cols-2">
 
-      <div className="flex gap-3 border-t border-[#dedbd2] pt-4">
+      <div className="flex gap-3 border-t border-border pt-4">
 
-        <PackageCheck className="size-5 text-[#a33c36]" />
+        <PackageCheck className="size-5 text-primary" />
 
         <div>
 
@@ -982,7 +982,7 @@ className="flex items-center justify-center gap-2 bg-[#a33c36] px-5 py-4 text-sm
             Envio protegido
           </p>
 
-          <p className="mt-1 text-xs leading-5 text-[#68737a]">
+          <p className="mt-1 text-xs leading-5 text-muted-foreground">
             Embalagem segura e acompanhamento da entrega.
           </p>
 
@@ -990,9 +990,9 @@ className="flex items-center justify-center gap-2 bg-[#a33c36] px-5 py-4 text-sm
 
       </div>
 
-      <div className="flex gap-3 border-t border-[#dedbd2] pt-4">
+      <div className="flex gap-3 border-t border-border pt-4">
 
-        <ShieldCheck className="size-5 text-[#a33c36]" />
+        <ShieldCheck className="size-5 text-primary" />
 
         <div>
 
@@ -1000,7 +1000,7 @@ className="flex items-center justify-center gap-2 bg-[#a33c36] px-5 py-4 text-sm
             Anúncio verificado
           </p>
 
-          <p className="mt-1 text-xs leading-5 text-[#68737a]">
+          <p className="mt-1 text-xs leading-5 text-muted-foreground">
             Dados e vendedor conferidos pela equipe.
           </p>
 
@@ -1013,9 +1013,9 @@ className="flex items-center justify-center gap-2 bg-[#a33c36] px-5 py-4 text-sm
   </div>
 
   {specs.length > 0 && (
-    <aside className="border-l border-[#dedbd2] pl-0 lg:pl-8">
+    <aside className="border-l border-border pl-0 lg:pl-8">
 
-      <p className="mb-4 text-[11px] font-bold uppercase tracking-[0.2em] text-[#a33c36]">
+      <p className="mb-4 text-[11px] font-bold uppercase tracking-[0.2em] text-primary">
         Ficha técnica
       </p>
 
@@ -1026,10 +1026,10 @@ className="flex items-center justify-center gap-2 bg-[#a33c36] px-5 py-4 text-sm
 
             <div
               key={label}
-              className="flex justify-between gap-4 border-b border-[#dedbd2] pb-3"
+              className="flex justify-between gap-4 border-b border-border pb-3"
             >
 
-              <dt className="text-[#68737a]">
+              <dt className="text-muted-foreground">
                 {label}
               </dt>
 
@@ -1051,13 +1051,13 @@ className="flex items-center justify-center gap-2 bg-[#a33c36] px-5 py-4 text-sm
 
 {/* RODAPÉ */}
 
-<section className="mt-16 border-t border-[#dedbd2] pt-12">
+<section className="mt-16 border-t border-border pt-12">
 
   <div className="flex items-center gap-3">
 
-    <Truck className="size-5 text-[#a33c36]" />
+    <Truck className="size-5 text-primary" />
 
-    <p className="text-sm text-[#68737a]">
+    <p className="text-sm text-muted-foreground">
       Envio para todo o Brasil · Pagamento protegido pelo Imperium Bikes
     </p>
 

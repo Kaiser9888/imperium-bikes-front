@@ -1,5 +1,6 @@
 // src/components/videos/VideoActions.tsx
 "use client";
+import { Button } from "@/components/ui/button"
 
 import { ThumbsUp, ThumbsDown, Share2 } from "lucide-react";
 import { formatViews } from "@/lib/videos/format";
@@ -80,19 +81,14 @@ export function VideoActions({
         </button>
       </div>
 
-      <button
+      <Button
         type="button"
         onClick={handleShare}
-        className="
-                    flex items-center gap-2 px-4 py-2.5 text-sm font-medium
-                    rounded-full bg-muted/50 border border-border
-                    text-muted-foreground transition-all duration-200
-                    hover:bg-muted/80 hover:text-foreground
-                "
+        variant="outline"
       >
         <Share2 className="size-5" aria-hidden="true" />
         <span className="hidden sm:inline">Compartilhar</span>
-      </button>
+      </Button>
     </div>
   );
 }

@@ -1,6 +1,7 @@
 ﻿/* eslint-disable react-hooks/set-state-in-effect, @typescript-eslint/no-explicit-any */
 // app/perfil/page.tsx
 "use client"
+import { Button } from "@/components/ui/button"
 
 import { useUser, SignInButton, UserProfile } from "@clerk/nextjs"
 import { Camera, Trophy, Grid3X3, ShoppingBag, Settings, MapPin, X, Pencil, Loader2, Check, Store } from "lucide-react"
@@ -113,7 +114,7 @@ export default function PerfilPage() {
                   <h1 className="font-blackletter text-3xl text-primary mb-4">Imperium</h1>
                   <p className="text-muted-foreground mb-6">Entre para acessar seu perfil</p>
                   <SignInButton mode="modal">
-                      <button className="rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">Entrar</button>
+                      <Button size="lg">Entrar</Button>
                   </SignInButton>
               </div>
               <BottomNav onMenuClick={() => {}} />
@@ -174,9 +175,9 @@ export default function PerfilPage() {
                       </div>
                       {bio && <p className="text-sm text-foreground mt-2 bg-secondary/50 rounded-lg p-3 italic">&ldquo;{bio}&rdquo;</p>}
                       <div className="mt-3 flex flex-wrap gap-2">
-                          <button onClick={abrirModalEdit} className="inline-flex items-center gap-1.5 rounded-lg border border-border px-4 py-2 text-xs font-medium text-foreground hover:bg-secondary transition-colors">
+                          <Button onClick={abrirModalEdit} variant="outline">
                               <Pencil className="size-3" />Editar perfil
-                          </button>
+                          </Button>
                           <Link href="/vendedor" className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">
                               <Store className="size-3" />Central do vendedor
                           </Link>
@@ -211,9 +212,9 @@ export default function PerfilPage() {
                         <Camera className="size-16 text-muted-foreground/30 mx-auto mb-4" />
                         <p className="text-sm font-medium text-muted-foreground">Fotos em breve</p>
                         <p className="text-xs text-muted-foreground/60 mt-1">Compartilhe momentos com a comunidade</p>
-                        <button disabled className="mt-6 inline-flex items-center gap-2 rounded-full bg-primary/50 px-5 py-2.5 text-sm font-medium text-primary-foreground/50 cursor-not-allowed">
+                        <Button disabled className="mt-6">
                             <Camera className="size-4" />Postar foto
-                        </button>
+                        </Button>
                     </div>
                   )}
 
@@ -224,9 +225,9 @@ export default function PerfilPage() {
                         <Trophy className="size-16 text-muted-foreground/30 mx-auto mb-4" />
                         <p className="text-sm font-medium text-muted-foreground">Torneios em breve</p>
                         <p className="text-xs text-muted-foreground/60 mt-1">Participe de competições e ganhe prêmios</p>
-                        <button disabled className="mt-6 inline-flex items-center gap-2 rounded-full bg-primary/50 px-5 py-2.5 text-sm font-medium text-primary-foreground/50 cursor-not-allowed">
+                        <Button disabled className="mt-6">
                             <Trophy className="size-4" />Inscrever-se
-                        </button>
+                        </Button>
                     </div>
                   )}
               </div>
@@ -241,7 +242,7 @@ export default function PerfilPage() {
                 <div className="relative bg-background rounded-t-2xl sm:rounded-2xl w-full sm:max-w-md p-6 shadow-2xl">
                     <div className="flex items-center justify-between mb-6">
                         <h3 className="font-heading text-base font-bold">Editar perfil</h3>
-                        <button onClick={() => setModalEditOpen(false)} className="size-8 flex items-center justify-center rounded-md hover:bg-secondary"><X className="size-4" /></button>
+                        <Button onClick={() => setModalEditOpen(false)} variant="ghost" size="icon"><X className="size-4" /></Button>
                     </div>
                     {savedMsg ? (
                       <div className="flex flex-col items-center justify-center py-8 gap-2">
@@ -274,11 +275,11 @@ export default function PerfilPage() {
                     )}
                     {!savedMsg && (
                       <div className="flex gap-2 mt-6">
-                          <button onClick={() => setModalEditOpen(false)} className="flex-1 rounded-xl border border-border py-2.5 text-sm font-medium hover:bg-secondary">Cancelar</button>
-                          <button onClick={salvarEditRapido} disabled={saving} className="flex-1 rounded-xl bg-primary py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50 flex items-center justify-center gap-2">
+                          <Button onClick={() => setModalEditOpen(false)} variant="outline" className="flex-1">Cancelar</Button>
+                          <Button onClick={salvarEditRapido} disabled={saving} className="flex-1">
                               {saving && <Loader2 className="size-3 animate-spin" />}
                               Salvar
-                          </button>
+                          </Button>
                       </div>
                     )}
                 </div>

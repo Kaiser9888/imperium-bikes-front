@@ -1,4 +1,5 @@
 "use client"
+import { Button } from "@/components/ui/button"
 
 import { useState } from "react"
 import { useAuth } from "@clerk/nextjs"
@@ -98,24 +99,24 @@ export function OfertaMessage({ message, currentUserId }: OfertaMessageProps) {
 
       {statusAtual === "pendente" && souVendedor && (
         <div className="mt-3 flex gap-2">
-          <button
+          <Button
             type="button"
             onClick={() => responder("recusar")}
             disabled={respondendo !== null}
-            className="flex flex-1 items-center justify-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-foreground transition hover:bg-muted/50 disabled:opacity-40"
+            variant="outline" size="sm" className="flex-1"
           >
             {respondendo === "recusar" ? <Loader2 className="size-3.5 animate-spin" /> : <X className="size-3.5" />}
             Recusar
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
             onClick={() => responder("aceitar")}
             disabled={respondendo !== null}
-            className="flex flex-1 items-center justify-center gap-1 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground transition hover:opacity-90 disabled:opacity-40"
+            size="sm" className="flex-1"
           >
             {respondendo === "aceitar" ? <Loader2 className="size-3.5 animate-spin" /> : <Check className="size-3.5" />}
             Aceitar
-          </button>
+          </Button>
         </div>
       )}
 

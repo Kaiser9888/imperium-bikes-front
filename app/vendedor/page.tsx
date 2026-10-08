@@ -1,5 +1,6 @@
 // app/vendedor/page.tsx  →  Central do Vendedor
 "use client"
+import { Button } from "@/components/ui/button"
 
 import { useEffect, useMemo, useState, useCallback } from "react"
 import Link from "next/link"
@@ -133,12 +134,12 @@ export default function CentralVendedorPage() {
 
   /* Voltar vai para a página principal */
   const Topo = (
-    <header className="sticky top-0 z-40 border-b border-[#E4D9BF] bg-[#F5EEDC]/90 backdrop-blur">
+    <header className="sticky top-0 z-40 border-b border-border bg-background/90 backdrop-blur">
       <div className="mx-auto flex max-w-5xl items-center gap-2 px-3 py-2.5 md:px-6">
         <Link
           href="/"
           aria-label="Voltar para o início"
-          className="flex size-10 items-center justify-center rounded-full hover:bg-[#E4D9BF]/60 active:bg-[#E4D9BF]"
+          className="flex size-10 items-center justify-center rounded-full hover:bg-surface-muted active:bg-border"
         >
           <ArrowLeft className="size-5" />
         </Link>
@@ -149,28 +150,28 @@ export default function CentralVendedorPage() {
 
   if (!isLoaded) {
     return (
-      <div className="grid min-h-screen place-items-center bg-[#F5EEDC]">
-        <Loader2 className="size-6 animate-spin text-[#7A7260]" />
+      <div className="grid min-h-screen place-items-center bg-background">
+        <Loader2 className="size-6 animate-spin text-muted-foreground" />
       </div>
     )
   }
 
   if (!isSignedIn) {
     return (
-      <div className="min-h-screen bg-[#F5EEDC] text-[#2B2A22]">
+      <div className="min-h-screen bg-background text-foreground">
         {Topo}
         <div className="flex flex-col items-center px-6 py-24 text-center">
-          <div className="mb-5 grid size-16 place-items-center rounded-full bg-[#F3DDD3]">
-            <Trophy className="size-7 text-[#A33C36]" />
+          <div className="mb-5 grid size-16 place-items-center rounded-full bg-primary/10">
+            <Trophy className="size-7 text-primary" />
           </div>
           <p className="font-heading text-xl font-bold">Venda para quem vive esporte</p>
-          <p className="mt-1 max-w-xs text-sm text-[#7A7260]">
+          <p className="mt-1 max-w-xs text-sm text-muted-foreground">
             Entre na sua conta para publicar e gerenciar seus anúncios.
           </p>
           <SignInButton mode="modal">
-            <button className="mt-6 rounded-full bg-[#A33C36] px-8 py-3 text-sm font-semibold text-[#F5EEDC] hover:bg-[#8C312C] active:scale-[0.98]">
+            <Button size="lg" className="mt-6">
               Entrar
-            </button>
+            </Button>
           </SignInButton>
         </div>
         <BottomNav onMenuClick={() => {}} />
@@ -189,23 +190,23 @@ export default function CentralVendedorPage() {
   ]
 
   const botaoNovo =
-    "items-center gap-2 rounded-full bg-[#F5EEDC] px-5 py-3 text-sm font-semibold text-[#A33C36] active:scale-[0.97]"
+    "items-center gap-2 rounded-full bg-background px-5 py-3 text-sm font-semibold text-primary active:scale-[0.97]"
 
   return (
-    <div className="min-h-screen bg-[#F5EEDC] text-[#2B2A22]">
+    <div className="min-h-screen bg-background text-foreground">
       {Topo}
 
       <main className="mx-auto max-w-5xl px-4 pb-44 pt-4 md:px-6 md:pt-6">
         {/* ---------- RESUMO ---------- */}
-        <section className="relative overflow-hidden rounded-3xl bg-[#A33C36] p-5 text-[#F5EEDC] md:p-7">
-          <div className="pointer-events-none absolute -right-12 -top-12 size-44 rounded-full bg-[#F5EEDC]/10" />
-          <div className="pointer-events-none absolute -bottom-16 right-16 size-40 rounded-full bg-[#F5EEDC]/5" />
+        <section className="relative overflow-hidden rounded-3xl bg-primary p-5 text-primary-foreground md:p-7">
+          <div className="pointer-events-none absolute -right-12 -top-12 size-44 rounded-full bg-background/10" />
+          <div className="pointer-events-none absolute -bottom-16 right-16 size-40 rounded-full bg-background/5" />
 
           <div className="relative flex items-end justify-between gap-4">
             <div>
-              <p className="text-sm text-[#F5EEDC]/80">Olá, {nome}</p>
+              <p className="text-sm text-primary-foreground/80">Olá, {nome}</p>
               <p className="mt-2 font-heading text-6xl font-bold leading-none">{contagem.ATIVO}</p>
-              <p className="mt-1.5 text-sm text-[#F5EEDC]/90">
+              <p className="mt-1.5 text-sm text-primary-foreground/90">
                 {contagem.ATIVO === 1 ? "anúncio no ar" : "anúncios no ar"}
               </p>
             </div>
@@ -216,19 +217,19 @@ export default function CentralVendedorPage() {
           </div>
 
           <div className="relative mt-6">
-            <div className="flex h-2 overflow-hidden rounded-full bg-[#F5EEDC]/20">
+            <div className="flex h-2 overflow-hidden rounded-full bg-background/20">
               {contagem.TODOS > 0 && (
                 <>
-                  <span className="bg-[#F5EEDC]" style={{ width: `${(contagem.ATIVO / total) * 100}%` }} />
-                  <span className="bg-[#F2B866]" style={{ width: `${(contagem.PAUSADO / total) * 100}%` }} />
-                  <span className="bg-[#9CC3E0]" style={{ width: `${(contagem.VENDIDO / total) * 100}%` }} />
+                  <span className="bg-background" style={{ width: `${(contagem.ATIVO / total) * 100}%` }} />
+                  <span className="bg-primary" style={{ width: `${(contagem.PAUSADO / total) * 100}%` }} />
+                  <span className="bg-info" style={{ width: `${(contagem.VENDIDO / total) * 100}%` }} />
                 </>
               )}
             </div>
-            <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-xs text-[#F5EEDC]/90">
-              <Legenda cor="bg-[#F5EEDC]" texto="No ar" n={contagem.ATIVO} />
-              <Legenda cor="bg-[#F2B866]" texto="Pausados" n={contagem.PAUSADO} />
-              <Legenda cor="bg-[#9CC3E0]" texto="Vendidos" n={contagem.VENDIDO} />
+            <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-xs text-primary-foreground/90">
+              <Legenda cor="bg-background" texto="No ar" n={contagem.ATIVO} />
+              <Legenda cor="bg-primary" texto="Pausados" n={contagem.PAUSADO} />
+              <Legenda cor="bg-info" texto="Vendidos" n={contagem.VENDIDO} />
             </div>
           </div>
         </section>
@@ -246,32 +247,32 @@ export default function CentralVendedorPage() {
                       onClick={() => setFiltro(f.id)}
                       className={`flex shrink-0 items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium transition-colors ${
                         ativo
-                          ? "bg-[#2B2A22] text-[#F5EEDC]"
-                          : "border border-[#E4D9BF] bg-[#FBF7EC] hover:border-[#2B2A22]/40"
+                          ? "bg-foreground text-primary-foreground"
+                          : "border border-border bg-surface hover:border-foreground/40"
                       }`}
                     >
                       {f.label}
-                      <span className={ativo ? "text-[#F5EEDC]/60" : "text-[#7A7260]"}>{contagem[f.id]}</span>
+                      <span className={ativo ? "text-primary-foreground/60" : "text-muted-foreground"}>{contagem[f.id]}</span>
                     </button>
                   )
                 })}
               </div>
             </div>
 
-            <label className="flex items-center gap-2 rounded-full border border-[#E4D9BF] bg-[#FBF7EC] px-4 py-2.5 focus-within:border-[#A33C36] md:w-72">
-              <Search className="size-4 shrink-0 text-[#7A7260]" />
+            <label className="flex items-center gap-2 rounded-full border border-border bg-surface px-4 py-2.5 focus-within:border-primary md:w-72">
+              <Search className="size-4 shrink-0 text-muted-foreground" />
               <input
                 value={busca}
                 onChange={(e) => setBusca(e.target.value)}
                 placeholder="Buscar nos seus anúncios"
-                className="w-full bg-transparent text-base outline-none placeholder:text-[#7A7260] md:text-sm"
+                className="w-full bg-transparent text-base outline-none placeholder:text-muted-foreground md:text-sm"
               />
             </label>
           </div>
         )}
 
         {erro && (
-          <div className="mt-4 flex items-center justify-between gap-3 rounded-2xl bg-[#A33C36]/10 px-4 py-3 text-sm text-[#7A2A25]">
+          <div className="mt-4 flex items-center justify-between gap-3 rounded-2xl bg-primary/10 px-4 py-3 text-sm text-destructive">
             <span>{erro}</span>
             <button onClick={carregar} className="shrink-0 font-semibold underline underline-offset-2">
               Tentar de novo
@@ -284,7 +285,7 @@ export default function CentralVendedorPage() {
           {loading ? (
             <ul className="grid gap-3 md:grid-cols-2">
               {[0, 1, 2, 3].map((i) => (
-                <li key={i} className="h-[112px] animate-pulse rounded-2xl border border-[#E4D9BF] bg-[#FBF7EC]" />
+                <li key={i} className="h-[112px] animate-pulse rounded-2xl border border-border bg-surface" />
               ))}
             </ul>
           ) : produtos.length === 0 ? (
@@ -293,8 +294,8 @@ export default function CentralVendedorPage() {
                 {[Dumbbell, Trophy, Zap].map((Icon, i) => (
                   <span
                     key={i}
-                    className={`grid size-16 place-items-center rounded-full border-4 border-[#F5EEDC] ${
-                      i === 1 ? "z-10 -mx-3 size-[72px] bg-[#A33C36] text-[#F5EEDC]" : "bg-[#F3DDD3] text-[#A33C36]"
+                    className={`grid size-16 place-items-center rounded-full border-4 border-background ${
+                      i === 1 ? "z-10 -mx-3 size-[72px] bg-primary text-primary-foreground" : "bg-primary/10 text-primary"
                     }`}
                   >
                     <Icon className="size-7" />
@@ -302,19 +303,19 @@ export default function CentralVendedorPage() {
                 ))}
               </div>
               <p className="font-heading text-xl font-bold">Sua vitrine está pronta</p>
-              <p className="mt-1 max-w-xs text-sm text-[#7A7260]">
+              <p className="mt-1 max-w-xs text-sm text-muted-foreground">
                 Publique o primeiro anúncio e comece a vender para a comunidade esportiva.
               </p>
-              <button
+              <Button
                 onClick={() => setPublicando(true)}
-                className="mt-6 inline-flex items-center gap-2 rounded-full bg-[#A33C36] px-6 py-3 text-sm font-semibold text-[#F5EEDC] hover:bg-[#8C312C] active:scale-[0.98]"
+                size="lg" className="mt-6"
               >
                 <Plus className="size-4" />
                 Criar anúncio
-              </button>
+              </Button>
             </div>
           ) : visiveis.length === 0 ? (
-            <p className="py-16 text-center text-sm text-[#7A7260]">Nada encontrado com esse filtro.</p>
+            <p className="py-16 text-center text-sm text-muted-foreground">Nada encontrado com esse filtro.</p>
           ) : (
             <ul className="grid gap-3 md:grid-cols-2">
               {visiveis.map((p) => {
@@ -323,17 +324,17 @@ export default function CentralVendedorPage() {
                 const vendido = st === "VENDIDO"
                 const noAr = st === "ATIVO"
                 return (
-                  <li key={p.id} className="flex gap-3 rounded-2xl border border-[#E4D9BF] bg-[#FBF7EC] p-3">
+                  <li key={p.id} className="flex gap-3 rounded-2xl border border-border bg-surface p-3">
                     <Link
                       href={`/produtos/${p.id}`}
-                      className="size-[88px] shrink-0 overflow-hidden rounded-xl bg-[#EFE6CE]"
+                      className="size-[88px] shrink-0 overflow-hidden rounded-xl bg-surface-muted"
                     >
                       {capa ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img src={capa} alt={p.title} className="h-full w-full object-cover" />
                       ) : (
                         <div className="grid h-full place-items-center">
-                          <Package className="size-6 text-[#7A7260]/50" />
+                          <Package className="size-6 text-muted-foreground/50" />
                         </div>
                       )}
                     </Link>
@@ -343,25 +344,25 @@ export default function CentralVendedorPage() {
                         <Link href={`/produtos/${p.id}`} className="line-clamp-2 text-sm font-semibold leading-snug">
                           {p.title}
                         </Link>
-                        <button
+                        <Button
                           onClick={() => setAcoes(p)}
                           aria-label={`Mais ações de ${p.title}`}
-                          className="-mr-1 -mt-1 flex size-9 shrink-0 items-center justify-center rounded-full text-[#7A7260] hover:bg-[#E4D9BF]/60 active:bg-[#E4D9BF]"
+                          variant="ghost" size="icon" className="-mr-1 -mt-1 shrink-0"
                         >
                           <MoreVertical className="size-5" />
-                        </button>
+                        </Button>
                       </div>
 
-                      <p className="text-base font-bold text-[#A33C36]">{formatarPreco(p.price)}</p>
+                      <p className="text-base font-bold text-primary">{formatarPreco(p.price)}</p>
 
                       <div className="mt-auto flex items-center justify-between pt-2">
                         {vendido ? (
-                          <span className="rounded-full bg-[#4A6A8A]/10 px-2.5 py-1 text-xs font-semibold text-[#3E5A76]">
+                          <span className="rounded-full bg-info/10 px-2.5 py-1 text-xs font-semibold text-info">
                             Vendido
                           </span>
                         ) : (
                           <>
-                            <span className="flex items-center gap-1.5 text-xs text-[#7A7260]">
+                            <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
                               {ocupado === p.id && <Loader2 className="size-3 animate-spin" />}
                               {noAr ? "No ar" : "Pausado"}
                             </span>
@@ -372,7 +373,7 @@ export default function CentralVendedorPage() {
                               disabled={ocupado === p.id}
                               onClick={() => alternarStatus(p)}
                               className={`relative h-6 w-11 shrink-0 rounded-full transition-colors disabled:opacity-60 ${
-                                noAr ? "bg-[#A33C36]" : "bg-[#D9CDB0]"
+                                noAr ? "bg-primary" : "bg-surface-muted"
                               }`}
                             >
                               <span
@@ -395,13 +396,13 @@ export default function CentralVendedorPage() {
 
       {/* Botão flutuante (só no celular; no PC o botão fica no resumo) */}
       {produtos.length > 0 && (
-        <button
+        <Button
           onClick={() => setPublicando(true)}
-          className="fixed bottom-24 right-4 z-30 inline-flex items-center gap-2 rounded-full bg-[#A33C36] px-5 py-3.5 text-sm font-semibold text-[#F5EEDC] shadow-[0_8px_24px_-6px_rgba(163,60,54,0.5)] active:scale-[0.97] md:hidden"
+          size="lg" className="fixed bottom-24 right-4 z-30 md:hidden rounded-full shadow-lg"
         >
           <Plus className="size-5" />
           Novo anúncio
-        </button>
+        </Button>
       )}
 
       {/* ---------- O QUE VAI VENDER ---------- */}
@@ -412,16 +413,16 @@ export default function CentralVendedorPage() {
               <li key={href}>
                 <Link
                   href={href}
-                  className="flex items-center gap-3 rounded-2xl border border-[#E4D9BF] bg-[#FBF7EC] px-4 py-3.5 hover:border-[#A33C36]/40 active:bg-[#F3DDD3]"
+                  className="flex items-center gap-3 rounded-2xl border border-border bg-surface px-4 py-3.5 hover:border-primary/40 active:bg-primary/10"
                 >
-                  <span className="grid size-11 shrink-0 place-items-center rounded-full bg-[#F3DDD3] text-[#A33C36]">
+                  <span className="grid size-11 shrink-0 place-items-center rounded-full bg-primary/10 text-primary">
                     <Icon className="size-5" />
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="block text-sm font-semibold">{label}</span>
-                    <span className="block truncate text-xs text-[#7A7260]">{desc}</span>
+                    <span className="block truncate text-xs text-muted-foreground">{desc}</span>
                   </span>
-                  <ChevronRight className="size-4 shrink-0 text-[#7A7260]" />
+                  <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
                 </Link>
               </li>
             ))}
@@ -468,25 +469,25 @@ export default function CentralVendedorPage() {
 
       {excluindo && (
         <Sheet titulo="Excluir anúncio?" onClose={() => setExcluindo(null)}>
-          <p className="text-sm text-[#7A7260]">
+          <p className="text-sm text-muted-foreground">
             “{excluindo.title}” sai do marketplace e não dá para desfazer. Se só quer dar uma pausa, use o
             interruptor na lista.
           </p>
           <div className="mt-6 flex gap-2">
-            <button
+            <Button
               onClick={() => setExcluindo(null)}
-              className="flex-1 rounded-full border border-[#E4D9BF] py-3 text-sm font-semibold"
+              variant="outline" size="lg" className="flex-1"
             >
               Manter
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={confirmarExclusao}
               disabled={ocupado === excluindo.id}
-              className="flex flex-1 items-center justify-center gap-2 rounded-full bg-[#5C1A14] py-3 text-sm font-semibold text-white disabled:opacity-50"
+              variant="destructive" size="lg" className="flex-1"
             >
               {ocupado === excluindo.id && <Loader2 className="size-3.5 animate-spin" />}
               Excluir
-            </button>
+            </Button>
           </div>
         </Sheet>
       )}
@@ -518,18 +519,18 @@ function Sheet({
 }) {
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
-      <div className="absolute inset-0 bg-[#2B2A22]/45" onClick={onClose} />
-      <div className="relative max-h-[88vh] w-full overflow-y-auto rounded-t-3xl bg-[#F5EEDC] px-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-3 shadow-2xl sm:max-w-md sm:rounded-3xl sm:pb-6">
-        <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-[#E4D9BF] sm:hidden" />
+      <div className="absolute inset-0 bg-foreground/45" onClick={onClose} />
+      <div className="relative max-h-[88vh] w-full overflow-y-auto rounded-t-3xl bg-background px-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-3 shadow-2xl sm:max-w-md sm:rounded-3xl sm:pb-6">
+        <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-border sm:hidden" />
         <div className="mb-4 flex items-center justify-between gap-3">
           <h2 className="line-clamp-1 font-heading text-base font-bold">{titulo}</h2>
-          <button
+          <Button
             onClick={onClose}
             aria-label="Fechar"
-            className="flex size-9 shrink-0 items-center justify-center rounded-full hover:bg-[#E4D9BF]/60 active:bg-[#E4D9BF]"
+            variant="ghost" size="icon" className="shrink-0"
           >
             <X className="size-4" />
-          </button>
+          </Button>
         </div>
         {children}
       </div>
@@ -550,8 +551,8 @@ function LinhaAcao({
   href?: string
   perigo?: boolean
 }) {
-  const cls = `flex w-full items-center gap-3 rounded-2xl px-3 py-3.5 text-left text-sm font-medium hover:bg-[#E4D9BF]/50 active:bg-[#E4D9BF] ${
-    perigo ? "text-[#8F2F1D]" : "text-[#2B2A22]"
+  const cls = `flex w-full items-center gap-3 rounded-2xl px-3 py-3.5 text-left text-sm font-medium hover:bg-surface-muted active:bg-border ${
+    perigo ? "text-destructive" : "text-foreground"
   }`
   const conteudo = (
     <>
@@ -611,8 +612,8 @@ function EditarModal({
   }
 
   const campo =
-    "mt-1.5 w-full rounded-2xl border border-[#E4D9BF] bg-[#FBF7EC] px-4 py-3 text-base outline-none focus:border-[#A33C36]"
-  const rotulo = "text-xs font-medium text-[#7A7260]"
+    "mt-1.5 w-full rounded-2xl border border-border bg-surface px-4 py-3 text-base outline-none focus:border-primary"
+  const rotulo = "text-xs font-medium text-muted-foreground"
 
   return (
     <Sheet titulo="Editar anúncio" onClose={onClose}>
@@ -644,21 +645,21 @@ function EditarModal({
             className={`${campo} resize-none`}
           />
         </div>
-        {erro && <p className="text-sm font-medium text-[#8F2F1D]">{erro}</p>}
+        {erro && <p className="text-sm font-medium text-destructive">{erro}</p>}
       </div>
 
       <div className="mt-6 flex gap-2">
-        <button onClick={onClose} className="flex-1 rounded-full border border-[#E4D9BF] py-3 text-sm font-semibold">
+        <Button onClick={onClose} variant="outline" size="lg" className="flex-1">
           Cancelar
-        </button>
-        <button
+        </Button>
+        <Button
           onClick={salvar}
           disabled={saving}
-          className="flex flex-[1.4] items-center justify-center gap-2 rounded-full bg-[#A33C36] py-3 text-sm font-semibold text-[#F5EEDC] hover:bg-[#8C312C] disabled:opacity-50"
+          size="lg" className="flex-[1.4]"
         >
           {saving && <Loader2 className="size-3.5 animate-spin" />}
           Salvar alterações
-        </button>
+        </Button>
       </div>
     </Sheet>
   )

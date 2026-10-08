@@ -1,5 +1,6 @@
 // app/torneios/criar/page.tsx
 "use client"
+import { Button } from "@/components/ui/button"
 
 import { Header } from "@/components/layout/Header"
 import { BottomNav } from "@/components/layout/bottom-nav"
@@ -341,18 +342,18 @@ export default function CriarTorneioPage() {
                 {/* Navegação */}
                 <div className="flex gap-3 mt-8">
                     {passo > 1 && (
-                        <button onClick={() => setPasso(passo - 1)} className="flex-1 rounded-xl border border-border py-3 text-sm font-medium hover:bg-secondary transition-colors">
+                        <Button onClick={() => setPasso(passo - 1)} variant="outline" size="lg" className="flex-1">
                             Voltar
-                        </button>
+                        </Button>
                     )}
                     {passo < 3 ? (
-                        <button onClick={() => setPasso(passo + 1)} disabled={!podeAvancar()} className="flex-1 rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                        <Button onClick={() => setPasso(passo + 1)} disabled={!podeAvancar()} size="lg" className="flex-1">
                             Continuar
-                        </button>
+                        </Button>
                     ) : (
-                        <button onClick={handleSubmit} disabled={enviando} className="flex-1 rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50">
+                        <Button onClick={handleSubmit} disabled={enviando} size="lg" className="flex-1">
                             Enviar para revisão
-                        </button>
+                        </Button>
                     )}
                 </div>
                 {erroEnvio && <p role="alert" className="mt-4 text-sm text-destructive">{erroEnvio}</p>}

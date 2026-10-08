@@ -1,6 +1,7 @@
 /* eslint-disable react-hooks/set-state-in-effect, @typescript-eslint/no-explicit-any */
 // app/chat/[id]/page.tsx
 "use client"
+import { Button } from "@/components/ui/button"
 
 import { useUser } from "@clerk/nextjs"
 import { ArrowLeft, Loader2, Send } from "lucide-react"
@@ -194,14 +195,14 @@ export default function ConversaPage() {
                     placeholder="Mensagem..."
                     className="flex-1 rounded-full border border-border bg-card px-5 py-3 text-sm outline-none focus:border-primary/30"
                   />
-                  <button
+                  <Button
                     onClick={enviar}
                     disabled={!texto.trim() || enviando}
                     aria-label="Enviar mensagem"
-                    className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
+                    size="icon" className="shrink-0"
                   >
                       {enviando ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
-                  </button>
+                  </Button>
               </div>
           </div>
       </div>

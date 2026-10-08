@@ -1,4 +1,5 @@
 "use client"
+import { Button } from "@/components/ui/button"
 
 import { Suspense, useEffect, useState } from "react"
 import { useAuth } from "@clerk/nextjs"
@@ -65,8 +66,8 @@ function CheckoutContent() {
   const loadingPage = !isLoaded || (Boolean(isSignedIn) && Boolean(productId) && loading)
   if (loadingPage) {
     return (
-      <main className="grid min-h-screen place-items-center bg-[#f5f3ee]">
-        <Loader2 className="size-8 animate-spin text-[#a33c36]" aria-label="Carregando checkout" />
+      <main className="grid min-h-screen place-items-center bg-background">
+        <Loader2 className="size-8 animate-spin text-primary" aria-label="Carregando checkout" />
       </main>
     )
   }
@@ -79,19 +80,19 @@ function CheckoutContent() {
   }
 
   return (
-    <main className="min-h-screen bg-[#f5f3ee] px-6 py-12 text-[#1d282b]">
+    <main className="min-h-screen bg-background px-6 py-12 text-foreground">
       <div className="mx-auto max-w-lg">
         <h1 className="font-serif text-3xl">Finalizar compra</h1>
 
         {product && (
-          <div className="mt-6 flex items-baseline justify-between border-b border-[#1d282b]/20 pb-4">
+          <div className="mt-6 flex items-baseline justify-between border-b border-border pb-4">
             <span className="text-sm">{product.title}</span>
             <span className="font-serif text-xl">{formatarPreco(product.price)}</span>
           </div>
         )}
 
         {belowMinimum ? (
-          <div role="alert" className="mt-5 border border-[#a33c36]/40 bg-[#a33c36]/5 px-4 py-3 text-sm text-[#a33c36]">
+          <div role="alert" className="mt-5 border border-primary/40 bg-primary/5 px-4 py-3 text-sm text-primary">
             <p className="font-semibold">Valor abaixo do mínimo para pagamento online</p>
             <p className="mt-1">
               O valor mínimo por compra é {formatarPreco(MIN_AMOUNT)}. Este anúncio custa {formatarPreco(product.price)}
@@ -99,23 +100,23 @@ function CheckoutContent() {
             </p>
           </div>
         ) : (
-          <p className="mt-5 text-sm text-[#68737a]">
+          <p className="mt-5 text-sm text-muted-foreground">
             O pagamento será processado com segurança pelo provedor de pagamentos.
           </p>
         )}
 
-        {error && <p role="alert" className="mt-4 text-sm text-[#a33c36]">{error}</p>}
+        {error && <p role="alert" className="mt-4 text-sm text-primary">{error}</p>}
 
-        <button
+        <Button
           onClick={startPayment}
           disabled={!product || sending || belowMinimum}
-          className="mt-6 flex w-full items-center justify-center gap-2 bg-[#1d282b] px-5 py-3 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
+          size="lg" className="mt-6 w-full"
         >
           {sending && <Loader2 className="size-4 animate-spin" />}
           {sending ? "Redirecionando..." : "Continuar para pagamento"}
-        </button>
+        </Button>
 
-        <Link href={productId ? `/produtos/${productId}` : "/produtos"} className="mt-4 block text-center text-sm text-[#68737a] underline">
+        <Link href={productId ? `/produtos/${productId}` : "/produtos"} className="mt-4 block text-center text-sm text-muted-foreground underline">
           Voltar ao anúncio
         </Link>
       </div>
@@ -125,7 +126,7 @@ function CheckoutContent() {
 
 export default function CheckoutPage() {
   return (
-    <Suspense fallback={<main className="grid min-h-screen place-items-center bg-[#f5f3ee]"><Loader2 className="size-8 animate-spin text-[#a33c36]" /></main>}>
+    <Suspense fallback={<main className="grid min-h-screen place-items-center bg-background"><Loader2 className="size-8 animate-spin text-primary" /></main>}>
       <CheckoutContent />
     </Suspense>
   )

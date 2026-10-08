@@ -1,4 +1,5 @@
 "use client"
+import { Button } from "@/components/ui/button"
 
 import Link from "next/link"
 import { Heart } from "lucide-react"
@@ -206,15 +207,15 @@ export function ProdutosDestaque() {
                                 </div>
                             </Link>
 
-                            <button
+                            <Button
                                 type="button"
                                 onClick={() => toggleFavorite(produtoParaFavorito)}
                                 aria-label={isFav ? "Remover dos favoritos" : "Adicionar aos favoritos"}
                                 aria-pressed={isFav}
-                                className="absolute right-2 top-2 z-10 flex size-8 items-center justify-center rounded-full bg-card/90 text-foreground shadow-sm backdrop-blur transition-colors hover:bg-card"
+                                variant="ghost" size="icon" className="absolute right-2 top-2 z-10"
                             >
                                 <Heart className={`size-4 ${isFav ? "fill-primary text-primary" : ""}`} />
-                            </button>
+                            </Button>
 
                         </article>
                     )

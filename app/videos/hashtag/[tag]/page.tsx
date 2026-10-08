@@ -1,4 +1,5 @@
 "use client";
+import { Button } from "@/components/ui/button"
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
@@ -91,10 +92,10 @@ export default function HashtagPage() {
 
             {hasMore && (
               <div className="mt-10 flex justify-center">
-                <button
+                <Button
                   onClick={loadMore}
                   disabled={loadingMore}
-                  className="inline-flex items-center gap-2 rounded-md border border-border bg-card px-7 py-2.5 text-sm font-medium transition-colors hover:border-primary/60 disabled:opacity-60"
+                  variant="outline"
                 >
                   {loadingMore ? (
                     <>
@@ -107,7 +108,7 @@ export default function HashtagPage() {
                       <ArrowRight className="size-4" />
                     </>
                   )}
-                </button>
+                </Button>
               </div>
             )}
           </>

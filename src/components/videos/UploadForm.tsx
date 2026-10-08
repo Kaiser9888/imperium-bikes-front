@@ -1,4 +1,5 @@
 "use client";
+import { Button } from "@/components/ui/button"
 
 import { useCallback, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -261,16 +262,16 @@ export function UploadForm({ mode }: { mode: UploadMode }) {
                 {tagList.length > 0 && (
                   <div className="mt-3 flex flex-wrap gap-2">
                     {tagList.map((tag) => (
-                      <button
+                      <Button
                         key={tag}
                         type="button"
                         disabled={busy}
                         onClick={() => setHashtags((p) => p.split(/\s+/).filter((t) => t !== tag).join(" "))}
-                        className="flex items-center gap-1.5 rounded-md border border-primary/40 bg-secondary px-2.5 py-1 text-xs font-medium text-primary transition-colors hover:border-destructive/50 hover:text-destructive"
+                        variant="secondary" size="sm"
                       >
                         {tag.startsWith("#") ? tag : `#${tag}`}
                         <X className="size-3" />
-                      </button>
+                      </Button>
                     ))}
                   </div>
                 )}
@@ -278,23 +279,23 @@ export function UploadForm({ mode }: { mode: UploadMode }) {
             )}
 
             <div className="flex items-center gap-3">
-              <button
+              <Button
                 type="button"
                 onClick={reset}
                 disabled={busy}
-                className="rounded-lg border border-border px-5 py-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground disabled:opacity-40"
+                variant="outline" size="lg"
               >
                 Descartar
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
                 onClick={handleUpload}
                 disabled={!canPublish}
-                className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg bg-primary px-7 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40"
+                size="lg" className="flex-1"
               >
                 Publicar
                 <ArrowRight className="size-4" />
-              </button>
+              </Button>
             </div>
           </div>
         </div>

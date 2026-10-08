@@ -1,4 +1,5 @@
 "use client"
+import { Button } from "@/components/ui/button"
 
 import { useState } from "react"
 import { useAuth } from "@clerk/nextjs"
@@ -191,14 +192,14 @@ export default function ProdutoFreteOferta({ anuncioId, precoProduto, cepOrigemV
           placeholder="Seu CEP"
           className="flex-1 rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
         />
-        <button
+        <Button
           type="button"
           onClick={handleCalcularFrete}
           disabled={cepDestino.length !== 8 || buscandoFrete}
-          className="flex shrink-0 items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+          className="shrink-0"
         >
           {buscandoFrete ? <Loader2 className="size-4 animate-spin" /> : "Calcular"}
-        </button>
+        </Button>
       </div>
 
       {erroFrete && <p className="mt-2 text-xs text-destructive">{erroFrete}</p>}
@@ -331,11 +332,11 @@ export default function ProdutoFreteOferta({ anuncioId, precoProduto, cepOrigemV
                   Oferta enviada! O vendedor costuma responder em até 48h.
                 </div>
               ) : (
-                <button
+                <Button
                   type="button"
                   onClick={handleEnviarOferta}
                   disabled={!podeEnviarOferta || enviandoOferta}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+                  size="lg" className="w-full"
                 >
                   {enviandoOferta ? (
                     <Loader2 className="size-4 animate-spin" />
@@ -345,7 +346,7 @@ export default function ProdutoFreteOferta({ anuncioId, precoProduto, cepOrigemV
                       Enviar oferta ao vendedor
                     </>
                   )}
-                </button>
+                </Button>
               )}
             </div>
           )}

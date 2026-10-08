@@ -1,6 +1,7 @@
 ﻿/* eslint-disable react-hooks/set-state-in-effect, @typescript-eslint/no-explicit-any */
 // app/chat/page.tsx
 "use client"
+import { Button } from "@/components/ui/button"
 
 import { BottomNav } from "@/components/layout/bottom-nav"
 import { SignInButton, useUser } from "@clerk/nextjs"
@@ -96,7 +97,7 @@ export default function ChatPage() {
               <div className="flex flex-col items-center px-4 py-20 text-center">
                   <p className="text-muted-foreground mb-6">Entre para ver suas mensagens</p>
                   <SignInButton mode="modal">
-                      <button className="rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground">Entrar</button>
+                      <Button size="lg">Entrar</Button>
                   </SignInButton>
               </div>
               <BottomNav onMenuClick={() => {}} />

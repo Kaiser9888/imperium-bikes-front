@@ -1,5 +1,6 @@
 // app/modalidades/downhill/page.tsx
 "use client"
+import { Button } from "@/components/ui/button"
 
 import { Header } from "@/components/layout/Header"
 import { BottomNav } from "@/components/layout/bottom-nav"
@@ -109,9 +110,9 @@ export default function DownhillPage() {
                     <h2 className="font-heading text-lg font-bold uppercase tracking-wide text-foreground">
                         Explorar Downhill
                     </h2>
-                    <button
+                    <Button
                         onClick={() => setFiltroAberto(true)}
-                        className="relative flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2 text-sm font-medium text-foreground hover:border-primary/30 transition-colors"
+                        variant="outline" className="relative"
                     >
                         <SlidersHorizontal className="size-4" />
                         Filtros
@@ -120,7 +121,7 @@ export default function DownhillPage() {
                                 {filtrosAtivos}
                             </span>
                         )}
-                    </button>
+                    </Button>
                 </div>
 
                 {/* Tags de filtros ativos */}
@@ -180,12 +181,12 @@ export default function DownhillPage() {
                             <h3 className="font-heading text-base font-bold uppercase tracking-wide text-sidebar-foreground">
                                 Filtros
                             </h3>
-                            <button
+                            <Button
                                 onClick={() => setFiltroAberto(false)}
-                                className="flex size-8 items-center justify-center rounded-md text-sidebar-foreground hover:bg-sidebar-accent"
+                                variant="ghost" size="icon"
                             >
                                 <X className="size-5" />
-                            </button>
+                            </Button>
                         </div>
 
                         {/* Corpo */}
@@ -255,18 +256,18 @@ export default function DownhillPage() {
 
                         {/* Rodapé */}
                         <div className="border-t border-sidebar-border px-5 py-4 flex gap-2">
-                            <button
+                            <Button
                                 onClick={limparFiltros}
-                                className="flex-1 rounded-lg border border-sidebar-border py-2.5 text-sm font-medium text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
+                                variant="outline" className="flex-1"
                             >
                                 Limpar
-                            </button>
-                            <button
+                            </Button>
+                            <Button
                                 onClick={() => setFiltroAberto(false)}
-                                className="flex-1 rounded-lg bg-primary py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+                                className="flex-1"
                             >
                                 Aplicar
-                            </button>
+                            </Button>
                         </div>
                     </div>
                 </div>
