@@ -181,7 +181,7 @@ export default function TorneiosPage() {
             </main>
 
             <div className="pb-24" />
-            <BottomNav onMenuClick={() => {}} />
+            <BottomNav />
         </div>
     )
 }

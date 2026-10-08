@@ -85,7 +85,7 @@ export default function CriarTorneioPage() {
     if (enviado) {
         return (
             <div className="min-h-screen bg-background">
-                <Header onMenuClick={() => {}} notificationCount={0} />
+                <Header />
                 <div className="flex flex-col items-center justify-center px-4 py-20 text-center">
                     <div className="size-16 rounded-full bg-green-100 flex items-center justify-center mb-4">
                         <Shield className="size-8 text-green-600" />
@@ -97,14 +97,14 @@ export default function CriarTorneioPage() {
                         Ver torneios
                     </Link>
                 </div>
-                <BottomNav onMenuClick={() => {}} />
+                <BottomNav />
             </div>
         )
     }
 
     return (
         <div className="min-h-screen bg-background">
-            <Header onMenuClick={() => {}} notificationCount={0} />
+            <Header />
 
             {/* Header */}
             <header className="sticky top-0 z-40 border-b border-border/60 bg-marble bg-cover bg-center shadow-sm" style={{ backgroundImage: "url(/images/marble-light.png)" }}>
@@ -360,7 +360,7 @@ export default function CriarTorneioPage() {
             </main>
 
             <div className="pb-24" />
-            <BottomNav onMenuClick={() => {}} />
+            <BottomNav />
         </div>
     )
 }

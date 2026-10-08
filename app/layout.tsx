@@ -3,6 +3,7 @@ import { ClerkProvider } from '@clerk/nextjs'
 import { ptBR } from '@clerk/localizations'
 import type { Metadata } from 'next'
 import { Geist } from 'next/font/google'
+import { AppShellProvider } from '@/components/layout/app-shell'
 import { UserSyncProvider } from '@/lib/UserSyncContext'
 import './globals.css'
 
@@ -27,7 +28,9 @@ export default function RootLayout({
       {/* A variável da fonte fica no <html> para os tokens do :root conseguirem lê-la */}
       <html lang="pt-BR" className={geistSans.variable} suppressHydrationWarning>
         <body className="antialiased">
-          <UserSyncProvider>{children}</UserSyncProvider>
+          <UserSyncProvider>
+            <AppShellProvider>{children}</AppShellProvider>
+          </UserSyncProvider>
           <Analytics />
         </body>
       </html>

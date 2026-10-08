@@ -5,6 +5,8 @@ import { MotionConfig, motion } from "framer-motion"
 import { Menu, Search, Plus, Clapperboard, User, type LucideIcon } from "lucide-react"
 import { useRouter, usePathname } from "next/navigation"
 
+import { useAppShell } from "@/components/layout/app-shell"
+import { isRouteActive } from "@/lib/navigation"
 import { cn } from "@/lib/utils"
 
 type NavItem = { icon: LucideIcon; label: string; key: string; href?: string }
@@ -22,16 +24,13 @@ const CREATE_HREF = "/torneios/criar"
 
 const spring = { type: "spring", stiffness: 420, damping: 32 } as const
 
-type BottomNavProps = {
-    onMenuClick: () => void
-}
-
-export function BottomNav({ onMenuClick }: BottomNavProps) {
+export function BottomNav() {
+    const { openMenu } = useAppShell()
     const router = useRouter()
     const pathname = usePathname()
 
     // Rotas filhas (/videos/watch/1) mantêm a seção ativa
-    const isActiveRoute = (href?: string) => !!href && (pathname === href || !!pathname?.startsWith(`${href}/`))
+    const isActiveRoute = (href?: string) => !!href && isRouteActive(pathname, href)
 
     const renderItem = ({ icon: Icon, label, key, href }: NavItem) => {
         const isActive = isActiveRoute(href)
@@ -40,7 +39,7 @@ export function BottomNav({ onMenuClick }: BottomNavProps) {
                 <motion.button
                     type="button"
                     whileTap={{ scale: 0.9 }}
-                    onClick={() => (href ? router.push(href) : onMenuClick())}
+                    onClick={() => (href ? router.push(href) : openMenu())}
                     aria-label={label}
                     aria-current={isActive ? "page" : undefined}
                     className={cn(

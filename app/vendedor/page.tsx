@@ -174,7 +174,7 @@ export default function CentralVendedorPage() {
             </Button>
           </SignInButton>
         </div>
-        <BottomNav onMenuClick={() => {}} />
+        <BottomNav />
       </div>
     )
   }
@@ -492,7 +492,7 @@ export default function CentralVendedorPage() {
         </Sheet>
       )}
 
-      <BottomNav onMenuClick={() => {}} />
+      <BottomNav />
     </div>
   )
 }

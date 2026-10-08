@@ -289,7 +289,7 @@ export default function TorneioDetalhesPage() {
             </main>
 
             <div className="pb-32 md:pb-24" />
-            <BottomNav onMenuClick={() => {}} />
+            <BottomNav />
         </div>
     )
 }

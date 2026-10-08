@@ -46,7 +46,7 @@ export default function MountainPage() {
 
     return (
         <div className="min-h-screen bg-background">
-            <Header onMenuClick={() => {}} notificationCount={0} />
+            <Header />
 
             {/* Hero com vídeo */}
             <section className="relative h-[60vh] min-h-[400px] overflow-hidden">
@@ -174,7 +174,7 @@ export default function MountainPage() {
             </section>
 
             <div className="pb-24" />
-            <BottomNav onMenuClick={() => {}} />
+            <BottomNav />
 
             {/* Drawer do Filtro */}
             {filtroAberto && (

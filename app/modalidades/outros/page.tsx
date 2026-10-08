@@ -48,7 +48,7 @@ export default function OutrosPage() {
 
     return (
         <div className="min-h-screen bg-background">
-            <Header onMenuClick={() => {}} notificationCount={0} />
+            <Header />
 
             {/* Hero sem vídeo (imagem de fundo) */}
             <section className="relative h-[40vh] min-h-[300px] overflow-hidden bg-secondary">
@@ -144,7 +144,7 @@ export default function OutrosPage() {
             </section>
 
             <div className="pb-24" />
-            <BottomNav onMenuClick={() => {}} />
+            <BottomNav />
 
             {/* Drawer do Filtro */}
             {filtroAberto && (

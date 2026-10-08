@@ -117,7 +117,7 @@ export default function PerfilPage() {
                       <Button size="lg">Entrar</Button>
                   </SignInButton>
               </div>
-              <BottomNav onMenuClick={() => {}} />
+              <BottomNav />
           </div>
         )
     }
@@ -233,7 +233,7 @@ export default function PerfilPage() {
               </div>
           </main>
 
-          <div className="pb-24" /><BottomNav onMenuClick={() => {}} />
+          <div className="pb-24" /><BottomNav />
 
           {/* Modal Editar Perfil */}
           {modalEditOpen && (

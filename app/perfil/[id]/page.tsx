@@ -87,7 +87,7 @@ export default function PerfilPublicoPage() {
           <div className="min-h-screen bg-background">
               {header()}
               <div className="flex items-center justify-center py-20"><p className="text-muted-foreground">Carregando...</p></div>
-              <BottomNav onMenuClick={() => {}} />
+              <BottomNav />
           </div>
         )
     }
@@ -97,7 +97,7 @@ export default function PerfilPublicoPage() {
           <div className="min-h-screen bg-background">
               {header()}
               <div className="flex items-center justify-center py-20"><p className="text-muted-foreground">Usuário não encontrado</p></div>
-              <BottomNav onMenuClick={() => {}} />
+              <BottomNav />
           </div>
         )
     }
@@ -160,7 +160,7 @@ export default function PerfilPublicoPage() {
           </main>
 
           <div className="pb-24" />
-          <BottomNav onMenuClick={() => {}} />
+          <BottomNav />
       </div>
     )
 }
