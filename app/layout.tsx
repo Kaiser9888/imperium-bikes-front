@@ -2,12 +2,7 @@ import { Analytics } from '@vercel/analytics/next'
 import { ClerkProvider } from '@clerk/nextjs'
 import { ptBR } from '@clerk/localizations'
 import type { Metadata } from 'next'
-import {
-  Geist,
-  Cinzel,
-  UnifrakturCook,
-  Caesar_Dressing,
-} from 'next/font/google'
+import { Geist } from 'next/font/google'
 import { UserSyncProvider } from '@/lib/UserSyncContext'
 import './globals.css'
 
@@ -16,55 +11,25 @@ const geistSans = Geist({
   subsets: ['latin'],
 })
 
-const cinzel = Cinzel({
-  variable: '--font-cinzel',
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700', '800', '900'],
-})
-
-const blackletter = UnifrakturCook({
-  variable: '--font-blackletter',
-  subsets: ['latin'],
-  weight: ['700'],
-})
-
-const caesar = Caesar_Dressing({
-  variable: '--font-caesar',
-  subsets: ['latin'],
-  weight: '400',
-})
-
 export const metadata: Metadata = {
-  title: 'Imperium',
+  title: 'Imperium Sports',
+  description: 'Eventos, atletas, vídeos e marketplace esportivo em um só lugar.',
   icons: { icon: '/favicon.ico' },
 }
 
 export default function RootLayout({
-                                     children,
-                                   }: Readonly<{
+  children,
+}: Readonly<{
   children: React.ReactNode
 }>) {
   return (
     <ClerkProvider localization={ptBR}>
-      <html
-        lang="pt-BR"
-        suppressHydrationWarning
-      >
-      <body
-        className={`
-                        ${geistSans.variable}
-                        ${cinzel.variable}
-                        ${blackletter.variable}
-                        ${caesar.variable}
-                        antialiased
-                    `}
-      >
-      <UserSyncProvider>
-        {children}
-      </UserSyncProvider>
-
-      <Analytics />
-      </body>
+      {/* A variável da fonte fica no <html> para os tokens do :root conseguirem lê-la */}
+      <html lang="pt-BR" className={geistSans.variable} suppressHydrationWarning>
+        <body className="antialiased">
+          <UserSyncProvider>{children}</UserSyncProvider>
+          <Analytics />
+        </body>
       </html>
     </ClerkProvider>
   )
