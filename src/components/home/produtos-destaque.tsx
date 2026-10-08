@@ -6,6 +6,7 @@ import { useState, useEffect } from "react"
 import api from "@/lib/api"
 import { ProductImage } from "@/components/marketplace/ProductImage"
 import { FAVORITES_UPDATED_EVENT, readFavorites, toggleFavorite, type FavoriteProduct } from "@/lib/favorites"
+import { formatarPreco } from "@/lib/format"
 
 interface Produto {
     id: string | number
@@ -23,13 +24,6 @@ interface Produto {
     photos?: string[]
 }
 
-function formatPreco(valor: number) {
-    return valor.toLocaleString("pt-BR", {
-        style: "currency",
-        currency: "BRL",
-        minimumFractionDigits: 0,
-    })
-}
 
 export function ProdutosDestaque() {
     const [produtos, setProdutos] = useState<Produto[]>([])
@@ -201,12 +195,12 @@ export function ProdutosDestaque() {
                                     <div className="mt-auto flex flex-col pt-1">
                                         {precoAntigo && (
                                             <span className="text-xs text-muted-foreground line-through">
-                                                {formatPreco(precoAntigo)}
+                                                {formatarPreco(precoAntigo)}
                                             </span>
                                         )}
 
                                         <span className="font-heading text-base font-bold text-foreground">
-                                            {formatPreco(preco)}
+                                            {formatarPreco(preco)}
                                         </span>
                                     </div>
                                 </div>

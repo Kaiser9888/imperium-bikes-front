@@ -5,6 +5,7 @@ import { useAuth } from "@clerk/nextjs"
 import { Check, ChevronDown, Loader2, Send, Tag, Truck } from "lucide-react"
 
 import { API_BASE_URL } from "@/lib/api-config"
+import { formatarPreco } from "@/lib/format"
 
 const API_URL = API_BASE_URL
 
@@ -51,9 +52,6 @@ const TIPOS_OFERTA: TipoOfertaConfig[] = [
   },
 ]
 
-function formatarReal(valor: number) {
-  return valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
-}
 
 function calcularTotais(tipo: TipoOferta, precoProduto: number, valorFrete: number, desconto: number) {
   switch (tipo) {
@@ -224,7 +222,7 @@ export default function ProdutoFreteOferta({ anuncioId, precoProduto, cepOrigemV
                   {opcao.servico} · {opcao.prazo_dias} dias úteis
                 </span>
               </span>
-              <span className="text-sm font-semibold">{formatarReal(opcao.valor)}</span>
+              <span className="text-sm font-semibold">{formatarPreco(opcao.valor)}</span>
             </button>
           ))}
         </div>
@@ -235,15 +233,15 @@ export default function ProdutoFreteOferta({ anuncioId, precoProduto, cepOrigemV
         <div className="mt-4 border-t border-border pt-4">
           <div className="flex items-center justify-between text-sm">
             <span className="text-muted-foreground">Produto</span>
-            <span>{formatarReal(precoProduto)}</span>
+            <span>{formatarPreco(precoProduto)}</span>
           </div>
           <div className="mt-1 flex items-center justify-between text-sm">
             <span className="text-muted-foreground">Frete</span>
-            <span>{formatarReal(freteSelecionado.valor)}</span>
+            <span>{formatarPreco(freteSelecionado.valor)}</span>
           </div>
           <div className="mt-1 flex items-center justify-between text-sm font-semibold">
             <span>Total</span>
-            <span>{formatarReal(precoProduto + freteSelecionado.valor)}</span>
+            <span>{formatarPreco(precoProduto + freteSelecionado.valor)}</span>
           </div>
 
           {!mostrarOferta ? (
@@ -306,11 +304,11 @@ export default function ProdutoFreteOferta({ anuncioId, precoProduto, cepOrigemV
               <div className="rounded-lg bg-muted/50 px-3 py-2.5 text-sm">
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Você pagaria</span>
-                  <span className="font-semibold">{formatarReal(Math.max(totais.compradorPaga, 0))}</span>
+                  <span className="font-semibold">{formatarPreco(Math.max(totais.compradorPaga, 0))}</span>
                 </div>
                 <div className="mt-1 flex items-center justify-between text-xs text-muted-foreground">
                   <span>O vendedor receberia (estimativa)</span>
-                  <span>{formatarReal(Math.max(totais.vendedorRecebe, 0))}</span>
+                  <span>{formatarPreco(Math.max(totais.vendedorRecebe, 0))}</span>
                 </div>
               </div>
 

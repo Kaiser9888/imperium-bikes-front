@@ -1,5 +1,6 @@
 // services/publish/seller-products.service.ts
 import api from "@/lib/api"
+import { formatarPreco as formatarReais } from "@/lib/format"
 
 export interface ProdutoItem {
   id: string | number
@@ -22,7 +23,7 @@ export function capaDoProduto(p: ProdutoItem): string | null {
 
 export function formatarPreco(v?: number) {
   return typeof v === "number"
-    ? v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
+    ? formatarReais(v)
     : "Sob consulta"
 }
 

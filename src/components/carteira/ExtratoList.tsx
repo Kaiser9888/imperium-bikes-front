@@ -1,5 +1,6 @@
 // components/carteira/ExtratoList.tsx
 import type { TransacaoResponse } from "@/types/carteira";
+import { formatarPreco } from "@/lib/format";
 
 const LABELS_TIPO: Record<TransacaoResponse["tipo"], string> = {
   VENDA_PENDENTE: "Venda (aguardando liberação)",
@@ -8,9 +9,6 @@ const LABELS_TIPO: Record<TransacaoResponse["tipo"], string> = {
   SAQUE: "Saque",
 };
 
-function formatarMoeda(valor: number): string {
-  return valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-}
 
 function formatarData(iso: string): string {
   return new Date(iso).toLocaleDateString("pt-BR", {
@@ -51,7 +49,7 @@ export default function ExtratoList({ transacoes }: { transacoes: TransacaoRespo
               t.valor < 0 ? "text-destructive" : "text-verdigris"
             }`}
           >
-            {t.valor < 0 ? "-" : "+"} {formatarMoeda(Math.abs(t.valor))}
+            {t.valor < 0 ? "-" : "+"} {formatarPreco(Math.abs(t.valor))}
           </span>
         </li>
       ))}

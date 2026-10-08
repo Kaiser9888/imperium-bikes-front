@@ -5,9 +5,9 @@ import Link from "next/link"
 import { productService } from "@/services/publish/product.service"
 import type { ProductResponse } from "@/types/publish/product"
 import { ProductImage } from "@/components/marketplace/ProductImage"
+import { formatarPreco } from "@/lib/format"
 
 const PAGE_SIZE = 24
-const money = (value: number) => value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
 
 function normalize(value: string) {
   return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase()
@@ -66,7 +66,7 @@ export function ProductsCatalog({ category, condition, minPrice, maxPrice, subca
       {filteredByOptions.map((product) => (
         <Link key={product.id} href={`/produtos/${product.id}`} className="overflow-hidden rounded-xl border border-border bg-card transition hover:border-primary/40 hover:shadow-md">
           <div className="aspect-square bg-secondary"><ProductImage src={product.images?.find((image) => image.isMain)?.url ?? product.images?.[0]?.url} alt={product.title} className="size-full object-cover" /></div>
-          <div className="p-3"><p className="line-clamp-2 min-h-10 text-sm font-semibold">{product.title}</p><p className="mt-2 font-heading text-base font-bold text-primary">{money(product.price)}</p><p className="mt-1 truncate text-xs text-muted-foreground">{product.city}{product.state ? `, ${product.state}` : ""}</p></div>
+          <div className="p-3"><p className="line-clamp-2 min-h-10 text-sm font-semibold">{product.title}</p><p className="mt-2 font-heading text-base font-bold text-primary">{formatarPreco(product.price)}</p><p className="mt-1 truncate text-xs text-muted-foreground">{product.city}{product.state ? `, ${product.state}` : ""}</p></div>
         </Link>
       ))}
     </div>

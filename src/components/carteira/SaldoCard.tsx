@@ -1,9 +1,7 @@
 // components/carteira/SaldoCard.tsx
 import type { CarteiraResponse } from "@/types/carteira";
+import { formatarPreco } from "@/lib/format";
 
-function formatarMoeda(valor: number): string {
-  return valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-}
 
 export default function SaldoCard({ carteira }: { carteira: CarteiraResponse }) {
   return (
@@ -13,7 +11,7 @@ export default function SaldoCard({ carteira }: { carteira: CarteiraResponse }) 
           Disponível
         </span>
         <span className="font-heading text-3xl text-primary">
-          {formatarMoeda(carteira.saldoDisponivel)}
+          {formatarPreco(carteira.saldoDisponivel)}
         </span>
         <span className="text-xs text-muted-foreground mt-1">
           Já liberado, cai na sua conta automaticamente
@@ -25,7 +23,7 @@ export default function SaldoCard({ carteira }: { carteira: CarteiraResponse }) 
           Pendente
         </span>
         <span className="font-heading text-3xl text-accent-foreground">
-          {formatarMoeda(carteira.saldoPendente)}
+          {formatarPreco(carteira.saldoPendente)}
         </span>
         <span className="text-xs text-muted-foreground mt-1">
           Liberado 7 dias após a entrega confirmada

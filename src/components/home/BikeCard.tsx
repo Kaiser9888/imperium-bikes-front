@@ -2,6 +2,7 @@
 
 import { Heart, MapPin, Star } from 'lucide-react'
 import { useState } from 'react'
+import { formatarPreco } from "@/lib/format"
 
 interface BikeCardProps {
     id: number
@@ -36,12 +37,6 @@ export function BikeCard({
                          }: BikeCardProps) {
     const [isFavorito, setIsFavorito] = useState(favorito)
 
-    const formatarPreco = (valor: number) => {
-        return new Intl.NumberFormat('pt-BR', {
-            style: 'currency',
-            currency: 'BRL',
-        }).format(valor)
-    }
 
     return (
         <div

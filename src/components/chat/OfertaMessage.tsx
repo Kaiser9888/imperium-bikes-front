@@ -5,6 +5,7 @@ import { useAuth } from "@clerk/nextjs"
 import { Check, Clock, Loader2, X } from "lucide-react"
 
 import { API_BASE_URL } from "@/lib/api-config"
+import { formatarPreco } from "@/lib/format"
 
 const API_URL = API_BASE_URL
 
@@ -28,9 +29,6 @@ const ROTULOS_TIPO: Record<OfertaCustomData["tipo"], string> = {
   desconto_produto: "Pediu desconto no produto",
 }
 
-function formatarReal(valor: number) {
-  return valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
-}
 
 interface OfertaMessageProps {
   // Recebido como prop em vez de via hook de contexto, pra não depender
@@ -82,17 +80,17 @@ export function OfertaMessage({ message, currentUserId }: OfertaMessageProps) {
       <div className="mt-2 space-y-1 text-xs text-muted-foreground">
         <div className="flex justify-between">
           <span>Frete ({oferta.transportadora})</span>
-          <span>{formatarReal(oferta.valorFrete)}</span>
+          <span>{formatarPreco(oferta.valorFrete)}</span>
         </div>
         {oferta.valorDesconto > 0 && (
           <div className="flex justify-between">
             <span>Desconto pedido</span>
-            <span>-{formatarReal(oferta.valorDesconto)}</span>
+            <span>-{formatarPreco(oferta.valorDesconto)}</span>
           </div>
         )}
         <div className="flex justify-between text-sm font-semibold text-foreground">
           <span>Total do comprador</span>
-          <span>{formatarReal(oferta.valorTotalComprador)}</span>
+          <span>{formatarPreco(oferta.valorTotalComprador)}</span>
         </div>
       </div>
 

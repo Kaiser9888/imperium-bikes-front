@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
+import { formatarPreco } from '@/lib/format'
 import {
   ArrowLeft,
   ArrowRight,
@@ -52,13 +53,7 @@ function parseMoney(value: string): number {
 }
 
 function money(valueInCents: number): string {
-  return new Intl.NumberFormat(
-    'pt-BR',
-    {
-      style: 'currency',
-      currency: 'BRL',
-    },
-  ).format(valueInCents / 100)
+  return formatarPreco(valueInCents / 100)
 }
 
 export default function PrecoPage() {

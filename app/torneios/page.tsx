@@ -6,6 +6,7 @@ import { Search, Plus, Trophy, MapPin, Calendar, Users, Flame, ChevronRight } fr
 import Link from "next/link"
 import { useEffect, useState } from "react"
 import { tournamentService } from "@/services/tournamentService"
+import { formatarPreco } from "@/lib/format"
 
 interface TournamentCard {
     id: string
@@ -42,7 +43,7 @@ function tournamentCards(payload: unknown): TournamentCard[] {
             local: String(item.location ?? item.local ?? item.city ?? "Local a confirmar"),
             participantes: Number(item.participantsCount ?? item.participantes ?? item.participants ?? 0),
             maxParticipantes: Math.max(1, Number(item.maxParticipants ?? item.maxParticipantes ?? 1)),
-            valor: price > 0 ? price.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : "Grátis",
+            valor: price > 0 ? formatarPreco(price) : "Grátis",
             status, banner: String(item.bannerUrl ?? item.banner ?? "/placeholder.svg"),
             organizador: String(item.organizerUsername ?? item.organizer ?? item.organizador ?? "Organizador"),
             premiacao: String(item.prize ?? item.premiacao ?? "Premiação a confirmar"),

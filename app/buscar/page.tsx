@@ -6,6 +6,7 @@ import Link from "next/link"
 import { Package, Search, X } from "lucide-react"
 import { ProductImage } from "@/components/marketplace/ProductImage"
 import { searchList, searchProducts } from "@/lib/meilisearch"
+import { formatarPreco } from "@/lib/format"
 
 type SearchProduct = {
   id: string | number
@@ -103,7 +104,6 @@ function BuscarPageContent() {
     }
   }
 
-  const currency = (value: number) => value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
 
   return (
     <div className="min-h-screen bg-background">
@@ -135,7 +135,7 @@ function BuscarPageContent() {
               const price = product.price ?? product.preco
               return <Link key={product.id} href={`/produtos/${product.id}`} className="group overflow-hidden rounded-xl border border-border bg-card transition hover:border-primary/20 hover:shadow-md">
                 <div className="aspect-square overflow-hidden bg-secondary"><ProductImage src={image} alt={title} className="size-full object-cover transition-transform duration-300 group-hover:scale-105" /></div>
-                <div className="p-3">{product.category && <span className="text-[0.6rem] uppercase tracking-widest text-muted-foreground">{product.category}</span>}<h2 className="mt-1 line-clamp-2 text-sm font-semibold group-hover:text-primary">{title}</h2>{typeof price === "number" && <p className="mt-2 font-heading text-base font-bold">{currency(price)}</p>}</div>
+                <div className="p-3">{product.category && <span className="text-[0.6rem] uppercase tracking-widest text-muted-foreground">{product.category}</span>}<h2 className="mt-1 line-clamp-2 text-sm font-semibold group-hover:text-primary">{title}</h2>{typeof price === "number" && <p className="mt-2 font-heading text-base font-bold">{formatarPreco(price)}</p>}</div>
               </Link>
             })}
           </div>

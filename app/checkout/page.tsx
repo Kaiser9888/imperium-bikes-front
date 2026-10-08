@@ -8,11 +8,11 @@ import { Loader2 } from "lucide-react"
 import { paymentService } from "@/services/publish/payment.service"
 import { productService } from "@/services/publish/product.service"
 import type { ProductResponse } from "@/types/publish/product"
+import { formatarPreco } from "@/lib/format"
 
 // Valor mínimo aceito pelo Stripe em BRL. Mantenha igual ao MIN_AMOUNT do PaymentService.
 const MIN_AMOUNT = 0.5
 
-const money = (value: number) => value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
 
 function CheckoutContent() {
   const { getToken, isLoaded, isSignedIn } = useAuth()
@@ -86,7 +86,7 @@ function CheckoutContent() {
         {product && (
           <div className="mt-6 flex items-baseline justify-between border-b border-[#1d282b]/20 pb-4">
             <span className="text-sm">{product.title}</span>
-            <span className="font-serif text-xl">{money(product.price)}</span>
+            <span className="font-serif text-xl">{formatarPreco(product.price)}</span>
           </div>
         )}
 
@@ -94,7 +94,7 @@ function CheckoutContent() {
           <div role="alert" className="mt-5 border border-[#a33c36]/40 bg-[#a33c36]/5 px-4 py-3 text-sm text-[#a33c36]">
             <p className="font-semibold">Valor abaixo do mínimo para pagamento online</p>
             <p className="mt-1">
-              O valor mínimo por compra é {money(MIN_AMOUNT)}. Este anúncio custa {money(product.price)}
+              O valor mínimo por compra é {formatarPreco(MIN_AMOUNT)}. Este anúncio custa {formatarPreco(product.price)}
               e não pode ser comprado pelo site no momento.
             </p>
           </div>
