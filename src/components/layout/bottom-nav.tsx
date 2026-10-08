@@ -1,17 +1,26 @@
 // src/components/layout/bottom-nav.tsx
 "use client"
 
-import { Home, Search, Trophy, MessageCircle, User } from "lucide-react"
-import { useState } from "react"
+import { MotionConfig, motion } from "framer-motion"
+import { Menu, Search, Plus, Clapperboard, User, type LucideIcon } from "lucide-react"
 import { useRouter, usePathname } from "next/navigation"
 
-const navItems = [
-    { icon: Home, label: "Menu", key: "menu", href: "/" },
-    { icon: Search, label: "Pesquisa", key: "pesquisa", href: "/buscar" },
-    { icon: Trophy, label: "Torneio", key: "torneio", href: "/torneios" },
-    { icon: MessageCircle, label: "Chat", key: "chat", href: "/chat" },
+import { cn } from "@/lib/utils"
+
+type NavItem = { icon: LucideIcon; label: string; key: string; href?: string }
+
+// O botão central (Criar evento) fica entre os dois grupos
+const leftItems: NavItem[] = [
+    { icon: Menu, label: "Menu", key: "menu" },
+    { icon: Search, label: "Busca", key: "busca", href: "/buscar" },
+]
+const rightItems: NavItem[] = [
+    { icon: Clapperboard, label: "Vídeos", key: "videos", href: "/videos" },
     { icon: User, label: "Perfil", key: "perfil", href: "/perfil" },
 ]
+const CREATE_HREF = "/torneios/criar"
+
+const spring = { type: "spring", stiffness: 420, damping: 32 } as const
 
 type BottomNavProps = {
     onMenuClick: () => void
@@ -21,37 +30,83 @@ export function BottomNav({ onMenuClick }: BottomNavProps) {
     const router = useRouter()
     const pathname = usePathname()
 
+    // Rotas filhas (/videos/watch/1) mantêm a seção ativa
+    const isActiveRoute = (href?: string) => !!href && (pathname === href || !!pathname?.startsWith(`${href}/`))
+
+    const renderItem = ({ icon: Icon, label, key, href }: NavItem) => {
+        const isActive = isActiveRoute(href)
+        return (
+            <li key={key}>
+                <motion.button
+                    type="button"
+                    whileTap={{ scale: 0.9 }}
+                    onClick={() => (href ? router.push(href) : onMenuClick())}
+                    aria-label={label}
+                    aria-current={isActive ? "page" : undefined}
+                    className={cn(
+                        "relative flex h-12 w-16 cursor-pointer flex-col items-center justify-center gap-0.5 rounded-full transition-colors",
+                        isActive ? "text-foreground" : "text-background/65 hover:text-background",
+                    )}
+                >
+                    {/* A pílula desliza de um item para o outro; os botões não saem do lugar */}
+                    {isActive && (
+                        <motion.span
+                            layoutId="bottom-nav-pill"
+                            transition={spring}
+                            className="absolute inset-0 rounded-full bg-background"
+                        />
+                    )}
+                    <motion.span
+                        className="relative flex"
+                        animate={isActive ? { y: [0, -3, 0] } : { y: 0 }}
+                        transition={{ duration: 0.35 }}
+                    >
+                        <Icon className="size-5" strokeWidth={isActive ? 2.3 : 1.9} aria-hidden="true" />
+                    </motion.span>
+                    <span aria-hidden="true" className="type-caption relative font-semibold">
+                        {label}
+                    </span>
+                </motion.button>
+            </li>
+        )
+    }
+
+    const creating = isActiveRoute(CREATE_HREF)
+
     return (
-        <nav
-            aria-label="Navegação inferior"
-            className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card/95 backdrop-blur-md"
-        >
-            <ul className="mx-auto flex w-full max-w-7xl items-stretch justify-between px-2">
-                {navItems.map(({ icon: Icon, label, key, href }) => {
-                    const isActive = pathname === href
-                    return (
-                        <li key={key} className="flex-1">
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    if (key === "menu") {
-                                        onMenuClick()
-                                    } else {
-                                        router.push(href)
-                                    }
-                                }}
-                                aria-current={isActive ? "page" : undefined}
-                                className={`flex w-full flex-col items-center gap-1 py-2.5 text-[0.65rem] font-medium transition-colors ${
-                                    isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
-                                }`}
-                            >
-                                <Icon className="size-5" strokeWidth={isActive ? 2.4 : 1.8} />
-                                {label}
-                            </button>
-                        </li>
-                    )
-                })}
-            </ul>
-        </nav>
+        <MotionConfig reducedMotion="user">
+            <nav
+                aria-label="Navegação inferior"
+                className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center px-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]"
+            >
+                <motion.ul
+                    initial={{ y: 80, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 26 }}
+                    className="pointer-events-auto flex h-16 items-center gap-1 rounded-full bg-foreground px-2.5 shadow-lg"
+                >
+                    {leftItems.map(renderItem)}
+
+                    <li className="px-1.5">
+                        <motion.button
+                            type="button"
+                            whileTap={{ scale: 0.9 }}
+                            whileHover={{ y: -22 }}
+                            initial={false}
+                            animate={{ y: -18, rotate: creating ? 45 : 0 }}
+                            transition={spring}
+                            onClick={() => router.push(CREATE_HREF)}
+                            aria-label="Criar evento"
+                            aria-current={creating ? "page" : undefined}
+                            className="flex size-14 cursor-pointer items-center justify-center rounded-full bg-accent text-accent-foreground shadow-lg ring-4 ring-background hover:bg-accent-hover"
+                        >
+                            <Plus className="size-7" strokeWidth={2.4} aria-hidden="true" />
+                        </motion.button>
+                    </li>
+
+                    {rightItems.map(renderItem)}
+                </motion.ul>
+            </nav>
+        </MotionConfig>
     )
 }
