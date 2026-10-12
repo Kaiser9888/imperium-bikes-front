@@ -1,111 +1,63 @@
-// src/components/layout/bottom-nav.tsx
 "use client"
 
-import { MotionConfig, motion } from "framer-motion"
-import { Menu, Search, Plus, Clapperboard, User, type LucideIcon } from "lucide-react"
-import { useRouter, usePathname } from "next/navigation"
+import Link from "next/link"
+import { Clapperboard, Menu, Plus, Search, User, type LucideIcon } from "lucide-react"
+import { usePathname } from "next/navigation"
 
 import { useAppShell } from "@/components/layout/app-shell"
 import { isRouteActive } from "@/lib/navigation"
 import { cn } from "@/lib/utils"
 
-type NavItem = { icon: LucideIcon; label: string; key: string; href?: string }
+const itemClasses =
+    "type-caption flex size-full cursor-pointer flex-col items-center justify-center gap-1 font-medium transition-colors focus-visible:-outline-offset-2 active:bg-surface-muted"
 
-// O botão central (Criar evento) fica entre os dois grupos
-const leftItems: NavItem[] = [
-    { icon: Menu, label: "Menu", key: "menu" },
-    { icon: Search, label: "Busca", key: "busca", href: "/buscar" },
-]
-const rightItems: NavItem[] = [
-    { icon: Clapperboard, label: "Vídeos", key: "videos", href: "/videos" },
-    { icon: User, label: "Perfil", key: "perfil", href: "/perfil" },
-]
-const CREATE_HREF = "/torneios/criar"
-
-const spring = { type: "spring", stiffness: 420, damping: 32 } as const
+function NavLink({ href, label, icon: Icon }: { href: string; label: string; icon: LucideIcon }) {
+    // Rotas filhas (/videos/watch/1) mantêm a seção ativa
+    const active = isRouteActive(usePathname(), href)
+    return (
+        <Link
+            href={href}
+            aria-current={active ? "page" : undefined}
+            className={cn(itemClasses, active ? "text-primary" : "text-muted-foreground")}
+        >
+            <Icon className="size-6" strokeWidth={active ? 2.2 : 1.8} aria-hidden="true" />
+            {label}
+        </Link>
+    )
+}
 
 export function BottomNav() {
     const { openMenu } = useAppShell()
-    const router = useRouter()
-    const pathname = usePathname()
-
-    // Rotas filhas (/videos/watch/1) mantêm a seção ativa
-    const isActiveRoute = (href?: string) => !!href && isRouteActive(pathname, href)
-
-    const renderItem = ({ icon: Icon, label, key, href }: NavItem) => {
-        const isActive = isActiveRoute(href)
-        return (
-            <li key={key}>
-                <motion.button
-                    type="button"
-                    whileTap={{ scale: 0.9 }}
-                    onClick={() => (href ? router.push(href) : openMenu())}
-                    aria-label={label}
-                    aria-current={isActive ? "page" : undefined}
-                    className={cn(
-                        "relative flex h-12 w-16 cursor-pointer flex-col items-center justify-center gap-0.5 rounded-full transition-colors",
-                        isActive ? "text-foreground" : "text-background/65 hover:text-background",
-                    )}
-                >
-                    {/* A pílula desliza de um item para o outro; os botões não saem do lugar */}
-                    {isActive && (
-                        <motion.span
-                            layoutId="bottom-nav-pill"
-                            transition={spring}
-                            className="absolute inset-0 rounded-full bg-background"
-                        />
-                    )}
-                    <motion.span
-                        className="relative flex"
-                        animate={isActive ? { y: [0, -3, 0] } : { y: 0 }}
-                        transition={{ duration: 0.35 }}
-                    >
-                        <Icon className="size-5" strokeWidth={isActive ? 2.3 : 1.9} aria-hidden="true" />
-                    </motion.span>
-                    <span aria-hidden="true" className="type-caption relative font-semibold">
-                        {label}
-                    </span>
-                </motion.button>
-            </li>
-        )
-    }
-
-    const creating = isActiveRoute(CREATE_HREF)
 
     return (
-        <MotionConfig reducedMotion="user">
-            <nav
-                aria-label="Navegação inferior"
-                className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center px-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]"
-            >
-                <motion.ul
-                    initial={{ y: 80, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    transition={{ type: "spring", stiffness: 300, damping: 26 }}
-                    className="pointer-events-auto flex h-16 items-center gap-1 rounded-full bg-foreground px-2.5 shadow-lg"
-                >
-                    {leftItems.map(renderItem)}
-
-                    <li className="px-1.5">
-                        <motion.button
-                            type="button"
-                            whileTap={{ scale: 0.9 }}
-                            whileHover={{ y: -22 }}
-                            initial={false}
-                            animate={{ y: -18, rotate: creating ? 45 : 0 }}
-                            transition={spring}
-                            onClick={() => router.push(CREATE_HREF)}
-                            aria-label="Criar evento"
-                            aria-current={creating ? "page" : undefined}
-                            className="flex size-14 cursor-pointer items-center justify-center rounded-full bg-accent text-accent-foreground shadow-lg ring-4 ring-background hover:bg-accent-hover"
-                        >
-                            <Plus className="size-7" strokeWidth={2.4} aria-hidden="true" />
-                        </motion.button>
-                    </li>
-
-                    {rightItems.map(renderItem)}
-                </motion.ul>
-            </nav>
-        </MotionConfig>
+        <nav
+            aria-label="Navegação inferior"
+            className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-surface pb-[env(safe-area-inset-bottom)] md:hidden"
+        >
+            <ul className="mx-auto grid h-16 max-w-md grid-cols-5">
+                <li>
+                    <button type="button" onClick={openMenu} className={cn(itemClasses, "text-muted-foreground")}>
+                        <Menu className="size-6" strokeWidth={1.8} aria-hidden="true" />
+                        Menu
+                    </button>
+                </li>
+                <li>
+                    <NavLink href="/buscar" label="Busca" icon={Search} />
+                </li>
+                <li>
+                    <Link href="/torneios/criar" aria-label="Criar evento" className={itemClasses}>
+                        <span className="flex size-11 items-center justify-center rounded-full bg-accent text-accent-foreground">
+                            <Plus className="size-6" strokeWidth={2.2} aria-hidden="true" />
+                        </span>
+                    </Link>
+                </li>
+                <li>
+                    <NavLink href="/videos" label="Vídeos" icon={Clapperboard} />
+                </li>
+                <li>
+                    <NavLink href="/perfil" label="Perfil" icon={User} />
+                </li>
+            </ul>
+        </nav>
     )
 }
