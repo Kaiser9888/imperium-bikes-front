@@ -1,303 +1,318 @@
-﻿/* eslint-disable react-hooks/set-state-in-effect, @typescript-eslint/no-explicit-any */
-// app/perfil/page.tsx
 "use client"
-import { Button } from "@/components/ui/button"
 
-import { useUser, SignInButton, UserProfile } from "@clerk/nextjs"
-import { Camera, Trophy, Grid3X3, ShoppingBag, Settings, MapPin, X, Pencil, Loader2, Check, Store } from "lucide-react"
+import axios from "axios"
 import Link from "next/link"
-import { useState, useEffect } from "react"
-import api from "@/lib/api"
-import { BottomNav } from "@/components/layout/bottom-nav"
+import { useCallback, useEffect, useRef, useState } from "react"
+import { useUser } from "@clerk/nextjs"
+import { Camera, MapPin, Pencil, Settings, Store, UserRound } from "lucide-react"
+
+import { AppShell } from "@/components/layout/app-shell"
 import { ProdutoGrid } from "@/components/perfil/ProdutoGrid"
+import { Button } from "@/components/ui/button"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { EmptyState } from "@/components/ui/empty-state"
+import { ErrorState } from "@/components/ui/error-state"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Skeleton } from "@/components/ui/skeleton"
+import { Textarea } from "@/components/ui/textarea"
+import api from "@/lib/api"
 import { sellerProductService, type ProdutoItem } from "@/services/publish/seller-products.service"
 
-type Aba = "fotos" | "produtos" | "torneios"
+type Perfil = { fullName: string; bio: string; city: string; state: string; country: string }
+type Estado = { status: "loading" } | { status: "error" } | { status: "ok"; perfil: Perfil; produtos: ProdutoItem[] }
+
+/** Mostra o motivo real da falha (status e mensagem do backend) em vez de engolir o erro. */
+function motivoDaFalha(cause: unknown): string {
+    if (axios.isAxiosError(cause)) {
+        const data = cause.response?.data as { message?: unknown } | undefined
+        const detalhe = typeof data?.message === "string" ? data.message : cause.message
+        return cause.response ? `Erro ${cause.response.status}: ${detalhe}` : "Sem resposta do servidor. Tente novamente."
+    }
+    return cause instanceof Error ? cause.message : "Não foi possível concluir."
+}
 
 export default function PerfilPage() {
     const { user, isSignedIn, isLoaded } = useUser()
+    const userId = user?.id
+    const [estado, setEstado] = useState<Estado>({ status: "loading" })
+    const [editando, setEditando] = useState<Perfil | null>(null)
+    const [salvando, setSalvando] = useState(false)
+    const [erroSalvar, setErroSalvar] = useState<string | null>(null)
+    const [erroFoto, setErroFoto] = useState<string | null>(null)
+    const [enviandoFoto, setEnviandoFoto] = useState(false)
+    const fotoInput = useRef<HTMLInputElement>(null)
 
-    const [bio, setBio] = useState("")
-    const [cidade, setCidade] = useState("")
-    const [estado, setEstado] = useState("")
-    const [pais, setPais] = useState("Brasil")
-    const [produtos, setProdutos] = useState<ProdutoItem[]>([])
-    const [loading, setLoading] = useState(true)
-    const [aba, setAba] = useState<Aba>("fotos")
-    const [modalEditOpen, setModalEditOpen] = useState(false)
-    const [editBio, setEditBio] = useState("")
-    const [editCidade, setEditCidade] = useState("")
-    const [editEstado, setEditEstado] = useState("")
-    const [editPais, setEditPais] = useState("Brasil")
-    const [showClerkProfile, setShowClerkProfile] = useState(false)
-    const [saving, setSaving] = useState(false)
-    const [savedMsg, setSavedMsg] = useState(false)
-
-    const carregarPerfil = async () => {
-        if (!user) return
-        setLoading(true)
+    const carregar = useCallback(async () => {
+        setEstado({ status: "loading" })
         try {
-            const syncRes = await api.post("/api/users/sync")
-            const meuId = syncRes.data.id
-            const perfilRes = await api.get(`/api/users/${meuId}`)
-            const d = perfilRes.data
-            setBio(d.bio || "")
-            setCidade(d.city || "")
-            setEstado(d.state || "")
-            setPais(d.country || "Brasil")
-        } catch (e) {
-            console.error("Erro ao carregar perfil:", e)
+            const sync = await api.post("/api/users/sync")
+            const { data } = await api.get(`/api/users/${sync.data.id}`)
+            // Anúncios em try separado: se falharem, o perfil continua aparecendo
+            const produtos = await sellerProductService.listMine().catch(() => [])
+            setEstado({
+                status: "ok",
+                produtos,
+                perfil: {
+                    fullName: data.fullName ?? "",
+                    bio: data.bio ?? "",
+                    city: data.city ?? "",
+                    state: data.state ?? "",
+                    country: data.country ?? "Brasil",
+                },
+            })
+        } catch {
+            setEstado({ status: "error" })
         }
-
-        // Produtos em try separado: se falhar, o perfil continua funcionando
-        try {
-            setProdutos(await sellerProductService.listMine())
-        } catch (e) {
-            console.error("Erro ao carregar produtos:", e)
-            setProdutos([])
-        }
-
-        setLoading(false)
-    }
+    }, [])
 
     useEffect(() => {
-        if (isSignedIn) carregarPerfil()
-    }, [isSignedIn, user])
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- carga inicial ao entrar na conta
+        if (userId) void carregar()
+    }, [userId, carregar])
 
-    const abrirModalEdit = () => {
-        setEditBio(bio)
-        setEditCidade(cidade)
-        setEditEstado(estado)
-        setEditPais(pais)
-        setSavedMsg(false)
-        setModalEditOpen(true)
-    }
-
-    const salvarEditRapido = async () => {
-        setSaving(true)
-        try {
-            await api.put(`/api/users/me`, {
-                fullName: user?.fullName,
-                bio: editBio,
-                city: editCidade,
-                state: editEstado,
-                country: editPais,
-            })
-            setBio(editBio)
-            setCidade(editCidade)
-            setEstado(editEstado)
-            setPais(editPais)
-            setSavedMsg(true)
-            setTimeout(() => setModalEditOpen(false), 800)
-        } catch (e) {
-            console.error("Erro ao salvar:", e)
+    async function salvar(event: React.FormEvent) {
+        event.preventDefault()
+        if (!editando || !user) return
+        setSalvando(true)
+        setErroSalvar(null)
+        const perfil: Perfil = {
+            fullName: editando.fullName.trim(),
+            bio: editando.bio.trim(),
+            city: editando.city.trim(),
+            state: editando.state.trim(),
+            country: editando.country.trim(),
         }
-        setSaving(false)
+        try {
+            await api.put("/api/users/me", perfil)
+            setEstado((atual) => (atual.status === "ok" ? { ...atual, perfil } : atual))
+            setEditando(null)
+        } catch (cause) {
+            setErroSalvar(motivoDaFalha(cause))
+        } finally {
+            setSalvando(false)
+        }
     }
 
-    if (!isLoaded) return <div className="min-h-screen bg-background flex items-center justify-center"><Loader2 className="size-6 animate-spin text-muted-foreground" /></div>
+    async function trocarFoto(event: React.ChangeEvent<HTMLInputElement>) {
+        const file = event.target.files?.[0]
+        event.target.value = ""
+        if (!file || !user) return
+        setErroFoto(null)
+        setEnviandoFoto(true)
+        try {
+            await user.setProfileImage({ file })
+        } catch {
+            setErroFoto("Não foi possível trocar a foto. Use uma imagem JPG ou PNG de até 10 MB.")
+        } finally {
+            setEnviandoFoto(false)
+        }
+    }
 
-    if (!isSignedIn) {
+    if (isLoaded && !isSignedIn) {
         return (
-          <div className="min-h-screen bg-background">
-              <header className="sticky top-0 z-40 border-b border-border/60 bg-marble bg-cover bg-center shadow-sm" style={{ backgroundImage: "url(/images/marble-light.png)" }}>
-                  <div className="bg-marble/15 backdrop-blur-[2px]">
-                      <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 py-3">
-                          <Link href="/" className="flex shrink-0 flex-col leading-none">
-                              <span className="font-blackletter text-2xl leading-none text-primary">Imperium</span>
-                              <span className="font-heading text-[0.6rem] font-semibold uppercase tracking-[0.35em] text-marble-foreground/70">Bikes</span>
-                          </Link>
-                      </div>
-                  </div>
-              </header>
-              <div className="flex flex-col items-center justify-center px-4 py-20 text-center">
-                  <h1 className="font-blackletter text-3xl text-primary mb-4">Imperium</h1>
-                  <p className="text-muted-foreground mb-6">Entre para acessar seu perfil</p>
-                  <SignInButton mode="modal">
-                      <Button size="lg">Entrar</Button>
-                  </SignInButton>
-              </div>
-              <BottomNav />
-          </div>
+            <AppShell>
+                <main className="mx-auto max-w-3xl px-4 py-10">
+                    <EmptyState
+                        icon={UserRound}
+                        title="Entre para ver seu perfil"
+                        description="Seu perfil reúne seus dados e seus anúncios."
+                        action={
+                            <Button asChild size="lg">
+                                <Link href="/sign-in?redirect_url=%2Fperfil">Entrar</Link>
+                            </Button>
+                        }
+                    />
+                </main>
+            </AppShell>
         )
     }
-
-    if (loading) {
-        return (
-          <div className="min-h-screen bg-background flex items-center justify-center">
-              <Loader2 className="size-6 animate-spin text-muted-foreground" />
-          </div>
-        )
-    }
-
-    const stats: { key: Aba; label: string; valor: number }[] = [
-        { key: "fotos", label: "Fotos", valor: 0 },
-        { key: "produtos", label: "Produtos", valor: produtos.length },
-        { key: "torneios", label: "Torneios", valor: 0 },
-    ]
-
-    const abas: { key: Aba; label: string; icon: typeof Grid3X3 }[] = [
-        { key: "fotos", label: "Fotos", icon: Grid3X3 },
-        { key: "produtos", label: "Produtos", icon: ShoppingBag },
-        { key: "torneios", label: "Torneios", icon: Trophy },
-    ]
 
     return (
-      <div className="min-h-screen bg-background">
-          <header className="sticky top-0 z-40 border-b border-border/60 bg-marble bg-cover bg-center shadow-sm" style={{ backgroundImage: "url(/images/marble-light.png)" }}>
-              <div className="bg-marble/15 backdrop-blur-[2px]">
-                  <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 py-3">
-                      <Link href="/" className="flex shrink-0 flex-col leading-none">
-                          <span className="font-blackletter text-2xl leading-none text-primary">Imperium</span>
-                          <span className="font-heading text-[0.6rem] font-semibold uppercase tracking-[0.35em] text-marble-foreground/70">Bikes</span>
-                      </Link>
-                      <Link href="/configuracoes" className="flex size-10 items-center justify-center rounded-md text-marble-foreground hover:bg-marble-foreground/10 transition-colors">
-                          <Settings className="size-5" />
-                      </Link>
-                  </div>
-              </div>
-          </header>
-
-          <main className="mx-auto max-w-2xl px-4 py-8">
-              <div className="flex items-start gap-5">
-                  <button onClick={() => setShowClerkProfile(true)} className="relative shrink-0 group">
-                      <img src={user.imageUrl || "/placeholder.svg"} alt={user.fullName || "Perfil"} className="size-20 rounded-xl border-2 border-primary/20 object-cover md:size-24 group-hover:border-primary/50 transition-all" />
-                      <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Camera className="size-5 text-white" />
-                      </div>
-                  </button>
-                  <div className="flex-1 min-w-0">
-                      <h1 className="font-heading text-xl font-bold text-foreground">{user.fullName || "Usuário Imperium"}</h1>
-                      <p className="text-sm text-muted-foreground">@{user.username || "usuario"}</p>
-                      <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
-                          <MapPin className="size-3" />
-                          {[cidade, estado, pais !== "Brasil" ? pais : null].filter(Boolean).join(", ") || "Brasil"}
-                      </div>
-                      {bio && <p className="text-sm text-foreground mt-2 bg-secondary/50 rounded-lg p-3 italic">&ldquo;{bio}&rdquo;</p>}
-                      <div className="mt-3 flex flex-wrap gap-2">
-                          <Button onClick={abrirModalEdit} variant="outline">
-                              <Pencil className="size-3" />Editar perfil
-                          </Button>
-                          <Link href="/vendedor" className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">
-                              <Store className="size-3" />Central do vendedor
-                          </Link>
-                      </div>
-                  </div>
-              </div>
-
-              {/* Estatísticas */}
-              <div className="mt-8 grid grid-cols-3 gap-2">
-                  {stats.map((stat) => (
-                    <button key={stat.key} onClick={() => setAba(stat.key)}
-                            className="rounded-xl bg-card border border-border p-4 text-center hover:border-primary/30 transition-colors">
-                        <p className="font-heading text-2xl font-bold text-foreground">{stat.valor}</p>
-                        <p className="text-[0.65rem] text-muted-foreground uppercase tracking-wider mt-1">{stat.label}</p>
-                    </button>
-                  ))}
-              </div>
-
-              {/* Abas */}
-              <div className="mt-8 flex border-b border-border">
-                  {abas.map(({ key, label, icon: Icon }) => (
-                    <button key={key} onClick={() => setAba(key)} className={`flex flex-1 items-center justify-center gap-1.5 py-3 text-sm font-medium transition-colors border-b-2 ${aba === key ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
-                        <Icon className="size-4" />{label}
-                    </button>
-                  ))}
-              </div>
-
-              {/* Conteúdo das abas */}
-              <div className="py-6">
-                  {aba === "fotos" && (
-                    <div className="text-center py-16">
-                        <Camera className="size-16 text-muted-foreground/30 mx-auto mb-4" />
-                        <p className="text-sm font-medium text-muted-foreground">Fotos em breve</p>
-                        <p className="text-xs text-muted-foreground/60 mt-1">Compartilhe momentos com a comunidade</p>
-                        <Button disabled className="mt-6">
-                            <Camera className="size-4" />Postar foto
-                        </Button>
+        <AppShell>
+            <main className="mx-auto w-full max-w-3xl px-4 pb-16 pt-6 sm:px-6 lg:pt-10">
+                {(!isLoaded || estado.status === "loading") && (
+                    <div className="flex items-center gap-5" aria-busy="true">
+                        <Skeleton className="size-24 rounded-full" />
+                        <div className="flex flex-1 flex-col gap-3">
+                            <Skeleton className="h-6 w-1/2" />
+                            <Skeleton className="h-4 w-1/3" />
+                            <Skeleton className="h-4 w-2/3" />
+                        </div>
                     </div>
-                  )}
+                )}
 
-                  {aba === "produtos" && <ProdutoGrid produtos={produtos} dono />}
+                {isLoaded && estado.status === "error" && (
+                    <ErrorState title="Não foi possível carregar seu perfil" onRetry={carregar} />
+                )}
 
-                  {aba === "torneios" && (
-                    <div className="text-center py-16">
-                        <Trophy className="size-16 text-muted-foreground/30 mx-auto mb-4" />
-                        <p className="text-sm font-medium text-muted-foreground">Torneios em breve</p>
-                        <p className="text-xs text-muted-foreground/60 mt-1">Participe de competições e ganhe prêmios</p>
-                        <Button disabled className="mt-6">
-                            <Trophy className="size-4" />Inscrever-se
-                        </Button>
-                    </div>
-                  )}
-              </div>
-          </main>
+                {isLoaded && user && estado.status === "ok" && (
+                    <>
+                        <section aria-label="Seus dados" className="flex flex-col gap-5 sm:flex-row sm:items-start">
+                            <div className="relative size-24 shrink-0">
+                                {/* eslint-disable-next-line @next/next/no-img-element -- avatar vem do domínio do Clerk */}
+                                <img
+                                    src={user.imageUrl}
+                                    alt=""
+                                    className="size-24 rounded-full bg-surface-muted object-cover"
+                                />
+                                <Button
+                                    type="button"
+                                    size="icon"
+                                    variant="outline"
+                                    loading={enviandoFoto}
+                                    onClick={() => fotoInput.current?.click()}
+                                    aria-label="Trocar foto de perfil"
+                                    className="absolute -bottom-1 -right-1 rounded-full shadow-sm"
+                                >
+                                    {!enviandoFoto && <Camera aria-hidden="true" />}
+                                </Button>
+                                <input
+                                    ref={fotoInput}
+                                    type="file"
+                                    accept="image/png,image/jpeg,image/webp"
+                                    onChange={trocarFoto}
+                                    className="sr-only"
+                                    tabIndex={-1}
+                                    aria-hidden="true"
+                                />
+                            </div>
 
-          <div className="pb-24" /><BottomNav />
+                            <div className="min-w-0 flex-1">
+                                <h1 className="type-h1 truncate text-foreground">
+                                    {estado.perfil.fullName || user.fullName || user.username || "Seu perfil"}
+                                </h1>
+                                {user.username && <p className="type-body-small text-muted-foreground">@{user.username}</p>}
+                                {(estado.perfil.city || estado.perfil.state) && (
+                                    <p className="type-body-small mt-2 flex items-center gap-1.5 text-muted-foreground">
+                                        <MapPin className="size-4 shrink-0" aria-hidden="true" />
+                                        {[estado.perfil.city, estado.perfil.state, estado.perfil.country].filter(Boolean).join(", ")}
+                                    </p>
+                                )}
+                                {estado.perfil.bio && (
+                                    <p className="type-body mt-3 whitespace-pre-line text-pretty text-foreground">{estado.perfil.bio}</p>
+                                )}
+                                {erroFoto && (
+                                    <p role="alert" className="type-body-small mt-3 text-destructive">
+                                        {erroFoto}
+                                    </p>
+                                )}
 
-          {/* Modal Editar Perfil */}
-          {modalEditOpen && (
-            <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
-                <div className="absolute inset-0 bg-black/40" onClick={() => setModalEditOpen(false)} />
-                <div className="relative bg-background rounded-t-2xl sm:rounded-2xl w-full sm:max-w-md p-6 shadow-2xl">
-                    <div className="flex items-center justify-between mb-6">
-                        <h3 className="font-heading text-base font-bold">Editar perfil</h3>
-                        <Button onClick={() => setModalEditOpen(false)} variant="ghost" size="icon"><X className="size-4" /></Button>
-                    </div>
-                    {savedMsg ? (
-                      <div className="flex flex-col items-center justify-center py-8 gap-2">
-                          <div className="size-12 rounded-full bg-green-500/10 flex items-center justify-center">
-                              <Check className="size-6 text-green-500" />
-                          </div>
-                          <p className="font-medium text-foreground">Perfil atualizado!</p>
-                      </div>
-                    ) : (
-                      <div className="space-y-4">
-                          <div>
-                              <label className="text-[10px] text-muted-foreground uppercase">Bio</label>
-                              <textarea value={editBio} onChange={(e) => setEditBio(e.target.value)} rows={2} placeholder="Conte um pouco sobre você..." className="w-full rounded-xl border border-border bg-card px-4 py-3 text-sm mt-1 outline-none focus:border-primary/30 resize-none" />
-                          </div>
-                          <div className="grid grid-cols-2 gap-3">
-                              <div>
-                                  <label className="text-[10px] text-muted-foreground uppercase">Cidade</label>
-                                  <input value={editCidade} onChange={(e) => setEditCidade(e.target.value)} placeholder="São Paulo" className="w-full rounded-xl border border-border bg-card px-3 py-2.5 text-sm mt-1 outline-none focus:border-primary/30" />
-                              </div>
-                              <div>
-                                  <label className="text-[10px] text-muted-foreground uppercase">Estado</label>
-                                  <input value={editEstado} onChange={(e) => setEditEstado(e.target.value)} placeholder="SP" className="w-full rounded-xl border border-border bg-card px-3 py-2.5 text-sm mt-1 outline-none focus:border-primary/30" />
-                              </div>
-                          </div>
-                          <div>
-                              <label className="text-[10px] text-muted-foreground uppercase">País</label>
-                              <input value={editPais} onChange={(e) => setEditPais(e.target.value)} className="w-full rounded-xl border border-border bg-card px-4 py-2.5 text-sm mt-1 outline-none focus:border-primary/30" />
-                          </div>
-                      </div>
+                                <div className="mt-5 flex flex-wrap gap-2">
+                                    <Button
+                                        onClick={() => {
+                                            setErroSalvar(null)
+                                            setEditando({ ...estado.perfil, fullName: estado.perfil.fullName || user.fullName || "" })
+                                        }}
+                                    >
+                                        <Pencil aria-hidden="true" />
+                                        Editar perfil
+                                    </Button>
+                                    <Button asChild variant="outline">
+                                        <Link href="/vendedor">
+                                            <Store aria-hidden="true" />
+                                            Central do vendedor
+                                        </Link>
+                                    </Button>
+                                    <Button asChild variant="ghost" size="icon" aria-label="Configurações">
+                                        <Link href="/configuracoes">
+                                            <Settings aria-hidden="true" />
+                                        </Link>
+                                    </Button>
+                                </div>
+                            </div>
+                        </section>
+
+                        <section aria-labelledby="anuncios-title" className="mt-10">
+                            <h2 id="anuncios-title" className="type-h2 border-b border-border pb-3 text-foreground">
+                                Meus anúncios
+                            </h2>
+                            <div className="pt-6">
+                                <ProdutoGrid produtos={estado.produtos} dono />
+                            </div>
+                        </section>
+                    </>
+                )}
+            </main>
+
+            <Dialog open={editando !== null} onOpenChange={(open) => !open && !salvando && setEditando(null)}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Editar perfil</DialogTitle>
+                        <DialogDescription>Essas informações aparecem no seu perfil público.</DialogDescription>
+                    </DialogHeader>
+                    {editando && (
+                        <form onSubmit={salvar} className="flex flex-col gap-4">
+                            <div className="flex flex-col gap-2">
+                                <Label htmlFor="perfil-nome">Nome</Label>
+                                <Input
+                                    id="perfil-nome"
+                                    autoComplete="name"
+                                    required
+                                    value={editando.fullName}
+                                    onChange={(event) => setEditando({ ...editando, fullName: event.target.value })}
+                                />
+                            </div>
+                            <div className="flex flex-col gap-2">
+                                <Label htmlFor="perfil-bio">Bio</Label>
+                                <Textarea
+                                    id="perfil-bio"
+                                    rows={3}
+                                    maxLength={300}
+                                    placeholder="Conte um pouco sobre você"
+                                    value={editando.bio}
+                                    onChange={(event) => setEditando({ ...editando, bio: event.target.value })}
+                                />
+                            </div>
+                            <div className="grid grid-cols-[1fr_5rem] gap-3">
+                                <div className="flex flex-col gap-2">
+                                    <Label htmlFor="perfil-cidade">Cidade</Label>
+                                    <Input
+                                        id="perfil-cidade"
+                                        autoComplete="address-level2"
+                                        value={editando.city}
+                                        onChange={(event) => setEditando({ ...editando, city: event.target.value })}
+                                    />
+                                </div>
+                                <div className="flex flex-col gap-2">
+                                    <Label htmlFor="perfil-estado">UF</Label>
+                                    <Input
+                                        id="perfil-estado"
+                                        autoComplete="address-level1"
+                                        maxLength={2}
+                                        value={editando.state}
+                                        onChange={(event) => setEditando({ ...editando, state: event.target.value.toUpperCase() })}
+                                    />
+                                </div>
+                            </div>
+                            <div className="flex flex-col gap-2">
+                                <Label htmlFor="perfil-pais">País</Label>
+                                <Input
+                                    id="perfil-pais"
+                                    autoComplete="country-name"
+                                    value={editando.country}
+                                    onChange={(event) => setEditando({ ...editando, country: event.target.value })}
+                                />
+                            </div>
+
+                            {erroSalvar && (
+                                <p role="alert" className="type-body-small rounded-lg bg-destructive/10 px-3 py-2.5 text-destructive">
+                                    Não foi possível salvar. {erroSalvar}
+                                </p>
+                            )}
+
+                            <DialogFooter>
+                                <Button type="button" variant="outline" onClick={() => setEditando(null)} disabled={salvando}>
+                                    Cancelar
+                                </Button>
+                                <Button type="submit" loading={salvando} disabled={!editando.fullName.trim()}>
+                                    Salvar
+                                </Button>
+                            </DialogFooter>
+                        </form>
                     )}
-                    {!savedMsg && (
-                      <div className="flex gap-2 mt-6">
-                          <Button onClick={() => setModalEditOpen(false)} variant="outline" className="flex-1">Cancelar</Button>
-                          <Button onClick={salvarEditRapido} disabled={saving} className="flex-1">
-                              {saving && <Loader2 className="size-3 animate-spin" />}
-                              Salvar
-                          </Button>
-                      </div>
-                    )}
-                </div>
-            </div>
-          )}
-
-          {/* Modal Clerk - Foto, Nome, Email, Senha */}
-          {showClerkProfile && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center">
-                <div className="absolute inset-0 bg-black/40" onClick={() => setShowClerkProfile(false)} />
-                <div className="relative bg-background rounded-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
-                    <button onClick={() => setShowClerkProfile(false)} className="absolute top-3 right-3 z-10 size-8 flex items-center justify-center rounded-full bg-background/80 hover:bg-secondary">
-                        <X className="size-4" />
-                    </button>
-                    <UserProfile />
-                </div>
-            </div>
-          )}
-      </div>
+                </DialogContent>
+            </Dialog>
+        </AppShell>
     )
 }
