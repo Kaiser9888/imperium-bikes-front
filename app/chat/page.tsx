@@ -4,7 +4,7 @@
 import { Button } from "@/components/ui/button"
 
 import { BottomNav } from "@/components/layout/bottom-nav"
-import { SignInButton, useUser } from "@clerk/nextjs"
+import { useUser } from "@clerk/nextjs"
 import { Loader2, MessageCircle, Search } from "lucide-react"
 import Link from "next/link"
 import { useEffect, useState } from "react"
@@ -96,9 +96,7 @@ export default function ChatPage() {
               {Header}
               <div className="flex flex-col items-center px-4 py-20 text-center">
                   <p className="text-muted-foreground mb-6">Entre para ver suas mensagens</p>
-                  <SignInButton mode="modal">
-                      <Button size="lg">Entrar</Button>
-                  </SignInButton>
+                  <Button asChild size="lg"><Link href="/sign-in">Entrar</Link></Button>
               </div>
               <BottomNav />
           </div>

@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button"
 
 import { useEffect, useMemo, useState, useCallback } from "react"
 import Link from "next/link"
-import { useUser, SignInButton } from "@clerk/nextjs"
+import { useUser } from "@clerk/nextjs"
 import {
   ArrowLeft,
   ChevronRight,
@@ -168,11 +168,9 @@ export default function CentralVendedorPage() {
           <p className="mt-1 max-w-xs text-sm text-muted-foreground">
             Entre na sua conta para publicar e gerenciar seus anúncios.
           </p>
-          <SignInButton mode="modal">
-            <Button size="lg" className="mt-6">
+          <Button asChild size="lg" className="mt-6"><Link href="/sign-in">
               Entrar
-            </Button>
-          </SignInButton>
+            </Link></Button>
         </div>
         <BottomNav />
       </div>

@@ -10,7 +10,6 @@ import {
   Video,
 } from "lucide-react";
 import {
-  SignInButton,
   UserButton,
   useAuth,
 } from "@clerk/nextjs";
@@ -113,9 +112,7 @@ export default function VideosLayout({
                   {isSignedIn ? (
                     <UserButton />
                   ) : (
-                    <SignInButton mode="modal">
-                      <button
-                        type="button"
+                    <Link href="/sign-in"
                         className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary"
                         aria-label="Entrar"
                       >
@@ -123,8 +120,7 @@ export default function VideosLayout({
                           <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                           <circle cx="12" cy="7" r="4" />
                         </svg>
-                      </button>
-                    </SignInButton>
+                      </Link>
                   )}
                 </>
               )}
