@@ -11,12 +11,12 @@ type HomeSectionProps = {
     children: React.ReactNode
 }
 
-/** Cabeçalho padrão das seções da Home: título, descrição curta e "Ver todos". */
+/** Cabeçalho padrão das seções da Home: título sobre um filete e o atalho "Ver todos". */
 export function HomeSection({ id, title, description, href, hrefLabel = "Ver todos", children }: HomeSectionProps) {
     const titleId = `${id}-title`
     return (
         <section aria-labelledby={titleId} className="flex flex-col gap-5">
-            <div className="flex items-end justify-between gap-4">
+            <div className="flex items-center justify-between gap-4 border-b border-border pb-3">
                 <div className="min-w-0">
                     <h2 id={titleId} className="type-h2 text-foreground">
                         {title}
@@ -26,7 +26,7 @@ export function HomeSection({ id, title, description, href, hrefLabel = "Ver tod
                 {href && (
                     <Link
                         href={href}
-                        className="type-label group inline-flex h-11 shrink-0 items-center gap-1 rounded-lg text-primary hover:text-primary-hover"
+                        className="type-label group inline-flex h-10 shrink-0 items-center gap-1.5 rounded-full border border-border px-4 text-foreground transition-colors hover:bg-surface-muted"
                     >
                         {hrefLabel}
                         <ArrowRight
