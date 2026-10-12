@@ -1,20 +1,16 @@
 import { AppShell } from "@/components/layout/app-shell"
 import { Footer } from "@/components/layout/footer"
-import { Banner } from "@/components/home/banner"
-import { ModalidadesSection } from "@/components/home/modalidades-section"
-import { EventosSection } from "@/components/home/eventos-section"
-import { VideosSection } from "@/components/home/videos-section"
+import { Banners } from "@/components/home/banner"
+import { EsportesSection } from "@/components/home/esportes-section"
 import { ProdutosDestaque } from "@/components/home/produtos-destaque"
 
 export default function Page() {
     return (
         <AppShell>
-            {/* Atletas e Notícias entram aqui quando houver fonte real de dados */}
-            <main className="mx-auto flex w-full max-w-7xl flex-col gap-14 px-4 pb-16 pt-5 sm:px-6 lg:gap-20 lg:px-8 lg:pt-8">
-                <Banner />
-                <ModalidadesSection />
-                <EventosSection />
-                <VideosSection />
+            <main className="mx-auto flex w-full max-w-7xl flex-col gap-10 px-4 pb-16 pt-5 sm:px-6 lg:gap-14 lg:px-8 lg:pt-8">
+                <h1 className="sr-only">Imperium Sports</h1>
+                <Banners />
+                <EsportesSection />
                 <ProdutosDestaque />
             </main>
 
