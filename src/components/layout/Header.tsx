@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { Menu, ShoppingCart, User } from "lucide-react"
-import { SignInButton, UserButton } from "@clerk/nextjs"
+import { UserButton } from "@clerk/nextjs"
 import Link from "next/link"
 import Image from "next/image"
 
@@ -13,9 +13,9 @@ import { Button } from "@/components/ui/button"
 import { CART_UPDATED_EVENT, cartItemCount } from "@/lib/cart"
 
 /*
-  Celular:  [logo] Imperium Sports              carrinho  conta  menu
+  Celular:  [logo] Imperium Bikes              carrinho  conta  menu
             ( busca em linha própria )
-  md+:      [logo] Imperium Sports   ( busca central )   carrinho  conta  menu
+  md+:      [logo] Imperium Bikes   ( busca central )   carrinho  conta  menu
 
   Sem sino de notificações: ainda não existe backend, e contagem fixa seria dado falso.
 */
@@ -40,7 +40,7 @@ export function Header() {
     return (
         <header className="sticky top-0 z-40 border-b border-border bg-background/95 pt-[env(safe-area-inset-top)] backdrop-blur-md">
             <div className="mx-auto flex w-full max-w-7xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-2.5 sm:px-6 md:flex-nowrap md:py-3 lg:px-8">
-                <Link href="/" aria-label="Imperium Sports — início" className="order-1 flex shrink-0 items-center gap-2.5 rounded-lg">
+                <Link href="/" aria-label="Imperium Bikes — início" className="order-1 flex shrink-0 items-center gap-2.5 rounded-lg">
                     <Image
                         src="/logo1.png"
                         alt=""
@@ -50,7 +50,7 @@ export function Header() {
                         className="h-8 w-auto mix-blend-multiply dark:invert dark:mix-blend-screen"
                     />
                     <span className="text-lg font-bold tracking-tight text-foreground">
-                        Imperium <span className="text-primary">Sports</span>
+                        Imperium <span className="text-primary">Bikes</span>
                     </span>
                 </Link>
 
@@ -70,11 +70,9 @@ export function Header() {
                     </Button>
 
                     <Guest>
-                        <SignInButton mode="modal">
-                            <Button variant="ghost" size="icon" className="rounded-full" aria-label="Entrar">
+                        <Button asChild variant="ghost" size="icon" className="rounded-full" aria-label="Entrar"><Link href="/sign-in">
                                 <User className="size-[22px]" aria-hidden="true" />
-                            </Button>
-                        </SignInButton>
+                            </Link></Button>
                     </Guest>
 
                     <Authed>

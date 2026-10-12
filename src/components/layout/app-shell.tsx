@@ -42,7 +42,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <Header />
             {children}
             {/* Reserva a altura da BottomNav fixa para ela não cobrir o fim da página */}
-            <div className="h-[calc(4rem+env(safe-area-inset-bottom))] md:hidden" aria-hidden="true" />
+            <div className="h-[calc(4rem+env(safe-area-inset-bottom))]" aria-hidden="true" />
             <BottomNav />
         </div>
     )

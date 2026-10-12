@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { Clapperboard, Menu, Plus, Search, User, type LucideIcon } from "lucide-react"
+import { Clapperboard, House, Plus, Search, User, type LucideIcon } from "lucide-react"
 import { usePathname } from "next/navigation"
 
 import { useAppShell } from "@/components/layout/app-shell"
@@ -32,12 +32,12 @@ export function BottomNav() {
     return (
         <nav
             aria-label="Navegação inferior"
-            className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-surface pb-[env(safe-area-inset-bottom)] md:hidden"
+            className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-surface pb-[env(safe-area-inset-bottom)]"
         >
             <ul className="mx-auto grid h-16 max-w-md grid-cols-5">
                 <li>
                     <button type="button" onClick={openMenu} className={cn(itemClasses, "text-muted-foreground")}>
-                        <Menu className="size-6" strokeWidth={1.8} aria-hidden="true" />
+                        <House className="size-6" strokeWidth={1.8} aria-hidden="true" />
                         Menu
                     </button>
                 </li>

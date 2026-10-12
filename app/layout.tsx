@@ -13,8 +13,8 @@ const geistSans = Geist({
 })
 
 export const metadata: Metadata = {
-  title: 'Imperium Sports',
-  description: 'Eventos, atletas, vídeos e marketplace esportivo em um só lugar.',
+  title: 'Imperium Bikes',
+  description: 'Bikes, peças, eventos e vídeos de ciclismo em um só lugar.',
   icons: { icon: '/favicon.ico' },
 }
 
@@ -24,7 +24,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <ClerkProvider localization={ptBR}>
+    <ClerkProvider localization={ptBR} signInUrl="/sign-in" signUpUrl="/sign-up">
       {/* A variável da fonte fica no <html> para os tokens do :root conseguirem lê-la */}
       <html lang="pt-BR" className={geistSans.variable} suppressHydrationWarning>
         <body className="antialiased">

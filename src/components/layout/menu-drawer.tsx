@@ -3,7 +3,7 @@
 import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { SignInButton, SignOutButton, SignUpButton, useAuth, useUser } from "@clerk/nextjs"
+import { SignOutButton, useAuth, useUser } from "@clerk/nextjs"
 import {
     Clapperboard,
     Heart,
@@ -95,7 +95,7 @@ export function MenuDrawer({ open, onOpenChange }: MenuDrawerProps) {
                         height={331}
                         className="h-8 w-auto mix-blend-multiply dark:invert dark:mix-blend-screen"
                     />
-                    <SheetTitle className="type-h3">Imperium Sports</SheetTitle>
+                    <SheetTitle className="type-h3">Imperium Bikes</SheetTitle>
                     <SheetDescription className="sr-only">Menu principal</SheetDescription>
                 </div>
 
@@ -163,16 +163,12 @@ function ProfileBar({ onNavigate }: { onNavigate: () => void }) {
                     Para se inscrever em eventos, comprar e vender.
                 </p>
                 <div className="mt-4 flex gap-2">
-                    <SignInButton mode="modal">
-                        <Button className="flex-1" onClick={onNavigate}>
+                    <Button asChild className="flex-1" onClick={onNavigate}><Link href="/sign-in">
                             Entrar
-                        </Button>
-                    </SignInButton>
-                    <SignUpButton mode="modal">
-                        <Button variant="outline" className="flex-1" onClick={onNavigate}>
+                        </Link></Button>
+                    <Button asChild variant="outline" className="flex-1" onClick={onNavigate}><Link href="/sign-up">
                             Cadastrar
-                        </Button>
-                    </SignUpButton>
+                        </Link></Button>
                 </div>
             </div>
         )

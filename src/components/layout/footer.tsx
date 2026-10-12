@@ -34,10 +34,10 @@ export function Footer() {
                             height={331}
                             className="h-8 w-auto mix-blend-multiply dark:invert dark:mix-blend-screen"
                         />
-                        <span className="type-h3 text-foreground">Imperium Sports</span>
+                        <span className="type-h3 text-foreground">Imperium Bikes</span>
                     </Link>
                     <p className="type-body-small mt-3 text-muted-foreground">
-                        Eventos, vídeos e produtos esportivos em um só lugar.
+                        Bikes, peças, eventos e vídeos de ciclismo em um só lugar.
                     </p>
                 </div>
 
