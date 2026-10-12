@@ -7,6 +7,7 @@ import { BottomNav } from "@/components/layout/bottom-nav"
 import { useUser } from "@clerk/nextjs"
 import { ArrowLeft, Calendar, MapPin, Users, DollarSign, Trophy, Image, X, Info, Shield } from "lucide-react"
 import Link from "next/link"
+import { Logo } from "@/components/layout/logo"
 import { useState } from "react"
 import { tournamentService } from "@/services/tournamentService"
 
@@ -107,15 +108,15 @@ export default function CriarTorneioPage() {
             <Header />
 
             {/* Header */}
-            <header className="sticky top-0 z-40 border-b border-border/60 bg-marble bg-cover bg-center shadow-sm" style={{ backgroundImage: "url(/images/marble-light.png)" }}>
-                <div className="bg-marble/15 backdrop-blur-[2px]">
+            <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur-md">
+                <div>
                     <div className="mx-auto flex w-full max-w-3xl items-center justify-between px-4 py-3">
                         <Link href="/torneios" className="flex items-center gap-2 text-marble-foreground hover:text-foreground">
                             <ArrowLeft className="size-5" />
                             <span className="text-sm">Voltar</span>
                         </Link>
                         <h1 className="font-heading text-sm font-bold uppercase tracking-widest text-marble-foreground">Criar Torneio</h1>
-                        <div className="w-16" />
+                        <Logo compact />
                     </div>
                 </div>
             </header>

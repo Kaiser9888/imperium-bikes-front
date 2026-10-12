@@ -108,7 +108,7 @@ function BuscarPageContent() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-40 border-b border-border/60 bg-marble bg-cover bg-center shadow-sm" style={{ backgroundImage: "url(/images/marble-light.png)" }}>
+      <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur-md">
         <div className="bg-marble/15 px-4 py-3 backdrop-blur-[2px]">
           <div className="mx-auto flex w-full max-w-7xl items-center gap-3">
             <Link href="/" className="flex shrink-0 items-center text-marble-foreground hover:text-foreground" aria-label="Voltar ao início"><X className="size-5" /></Link>

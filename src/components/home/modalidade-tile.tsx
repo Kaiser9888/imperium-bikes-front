@@ -19,7 +19,7 @@ export function ModalidadeTile({ label, image, href }: Modalidade) {
                 height={96}
                 className="size-12 shrink-0 rounded-lg object-cover transition-transform group-hover:scale-105"
             />
-            <span className="type-label min-w-0 flex-1 truncate text-foreground group-hover:text-primary">{label}</span>
+            <span className="type-label min-w-0 flex-1 text-foreground group-hover:text-primary">{label}</span>
         </Link>
     )
 }

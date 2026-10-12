@@ -1,10 +1,26 @@
-import Link from "next/link"
+import type { Metadata } from "next"
 
-const modalities = [
-  ["Downhill", "downhill"], ["BMX", "bmx"], ["Mountain Bike", "mountain"],
-  ["Speed", "speed"], ["Urbana", "urbana"], ["Outros", "outros"],
-]
+import { ModalidadeTile, tileGridClasses } from "@/components/home/modalidade-tile"
+import { PageHeading } from "@/components/layout/page-heading"
+import { modalidades } from "@/lib/esportes"
 
-export default function ModalitiesPage() {
-  return <main className="mx-auto min-h-screen max-w-5xl px-4 py-10"><Link href="/" className="text-sm text-muted-foreground hover:text-foreground">← Início</Link><h1 className="mt-4 font-heading text-3xl font-bold">Modalidades</h1><p className="mt-2 text-muted-foreground">Explore produtos por modalidade.</p><div className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-3">{modalities.map(([name, slug]) => <Link key={slug} href={`/modalidades/${slug}`} className="rounded-xl border border-border bg-card p-6 font-heading text-lg font-semibold transition hover:border-primary/40 hover:shadow-md">{name}<span className="mt-2 block text-sm font-normal text-muted-foreground">Ver produtos →</span></Link>)}</div></main>
+export const metadata: Metadata = { title: "Modalidades | Imperium Bikes" }
+
+export default function ModalidadesPage() {
+    return (
+        <main className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 pb-16 pt-3 sm:px-6 lg:px-8 lg:pt-6">
+            <PageHeading
+                title="Modalidades"
+                description="Escolha uma modalidade para ver os produtos."
+                back={{ href: "/", label: "Início" }}
+            />
+            <ul className={tileGridClasses}>
+                {modalidades.map((modalidade) => (
+                    <li key={modalidade.slug}>
+                        <ModalidadeTile {...modalidade} />
+                    </li>
+                ))}
+            </ul>
+        </main>
+    )
 }

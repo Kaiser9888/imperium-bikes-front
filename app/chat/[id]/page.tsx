@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { useUser } from "@clerk/nextjs"
 import { ArrowLeft, Loader2, Send } from "lucide-react"
 import Link from "next/link"
+import { Logo } from "@/components/layout/logo"
 import { useParams } from "next/navigation"
 import { useEffect, useRef, useState } from "react"
 import type { Channel } from "stream-chat"
@@ -112,8 +113,8 @@ export default function ConversaPage() {
 
     return (
       <div className="flex min-h-screen flex-col bg-background">
-          <header className="sticky top-0 z-40 border-b border-border/60 bg-marble bg-cover bg-center shadow-sm" style={{ backgroundImage: "url(/images/marble-light.png)" }}>
-              <div className="bg-marble/15 backdrop-blur-[2px]">
+          <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur-md">
+              <div>
                   <div className="mx-auto flex w-full max-w-2xl items-center gap-3 px-4 py-3">
                       <Link href="/chat" className="flex items-center text-marble-foreground hover:text-foreground">
                           <ArrowLeft className="size-5" />
@@ -123,6 +124,7 @@ export default function ConversaPage() {
                           <p className="truncate text-sm font-semibold text-foreground">{outro?.name ?? "Conversa"}</p>
                           {produto && <p className="truncate text-xs text-muted-foreground">{produto}</p>}
                       </div>
+                      <Logo compact />
                   </div>
               </div>
           </header>

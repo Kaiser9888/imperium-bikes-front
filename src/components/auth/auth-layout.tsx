@@ -1,5 +1,5 @@
 import Image from "next/image"
-import Link from "next/link"
+import { Logo } from "@/components/layout/logo"
 
 type AuthLayoutProps = {
     title: string
@@ -15,19 +15,7 @@ export function AuthLayout({ title, description, image, children, footer }: Auth
     return (
         <div className="grid min-h-screen bg-background lg:grid-cols-2">
             <main className="flex flex-col px-6 py-8 sm:px-10">
-                <Link href="/" className="inline-flex items-center gap-2.5 self-start rounded-lg">
-                    <Image
-                        src="/logo1.png"
-                        alt=""
-                        width={446}
-                        height={331}
-                        priority
-                        className="h-8 w-auto mix-blend-multiply dark:invert dark:mix-blend-screen"
-                    />
-                    <span className="text-lg font-bold tracking-tight text-foreground">
-                        Imperium <span className="text-primary">Bikes</span>
-                    </span>
-                </Link>
+                <Logo className="self-start" />
 
                 <div className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center py-10">
                     <h1 className="type-h1 text-foreground">{title}</h1>

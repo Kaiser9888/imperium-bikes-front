@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { useUser } from "@clerk/nextjs"
 import { ArrowLeft, Save } from "lucide-react"
 import Link from "next/link"
+import { Logo } from "@/components/layout/logo"
 import { useEffect, useState } from "react"
 import api from "@/lib/api"
 import axios from "axios"
@@ -77,12 +78,12 @@ export default function ConfiguracoesPage() {
 
     return (
         <div className="min-h-screen bg-background">
-            <header className="sticky top-0 z-40 border-b border-border/60 bg-marble bg-cover bg-center shadow-sm" style={{ backgroundImage: "url(/images/marble-light.png)" }}>
-                <div className="bg-marble/15 backdrop-blur-[2px]">
+            <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur-md">
+                <div>
                     <div className="mx-auto flex w-full max-w-7xl items-center px-4 py-3">
                         <Link href="/perfil" className="flex items-center gap-2 text-marble-foreground hover:text-foreground"><ArrowLeft className="size-5" /><span className="text-sm">Voltar</span></Link>
                         <h1 className="flex-1 text-center font-heading text-sm font-bold uppercase tracking-widest text-marble-foreground">Configurações</h1>
-                        <div className="w-16" />
+                        <Logo compact />
                     </div>
                 </div>
             </header>

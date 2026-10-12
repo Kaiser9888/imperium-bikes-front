@@ -4,6 +4,7 @@
 
 import { ArrowLeft, Trophy, Grid3X3, ShoppingBag, MapPin, Camera } from "lucide-react"
 import Link from "next/link"
+import { Logo } from "@/components/layout/logo"
 import { useState, useEffect } from "react"
 import { useParams } from "next/navigation"
 import { BottomNav } from "@/components/layout/bottom-nav"
@@ -69,14 +70,14 @@ export default function PerfilPublicoPage() {
     }, [id])
 
     const header = (titulo?: string) => (
-      <header className="sticky top-0 z-40 border-b border-border/60 bg-marble bg-cover bg-center shadow-sm" style={{ backgroundImage: "url(/images/marble-light.png)" }}>
-          <div className="bg-marble/15 backdrop-blur-[2px]">
+      <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur-md">
+          <div>
               <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 py-3">
                   <div className="flex items-center gap-3 min-w-0">
                       <Link href="/buscar" className="flex shrink-0 items-center"><ArrowLeft className="size-5" /></Link>
                       {titulo && <span className="font-heading text-lg font-bold text-foreground truncate">{titulo}</span>}
                   </div>
-                  <div className="size-10" />
+                  <Logo compact />
               </div>
           </div>
       </header>

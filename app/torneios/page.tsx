@@ -4,6 +4,7 @@
 import { BottomNav } from "@/components/layout/bottom-nav"
 import { Search, Plus, Trophy, MapPin, Calendar, Users, Flame, ChevronRight } from "lucide-react"
 import Link from "next/link"
+import { Logo } from "@/components/layout/logo"
 import { useEffect, useState } from "react"
 import { tournamentService } from "@/services/tournamentService"
 import { formatarPreco } from "@/lib/format"
@@ -86,13 +87,10 @@ export default function TorneiosPage() {
     return (
         <div className="min-h-screen bg-background">
             {/* Header próprio do torneio (sem busca) */}
-            <header className="sticky top-0 z-40 border-b border-border/60 bg-marble bg-cover bg-center shadow-sm" style={{ backgroundImage: "url(/images/marble-light.png)" }}>
-                <div className="bg-marble/15 backdrop-blur-[2px]">
+            <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur-md">
+                <div>
                     <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 py-3">
-                        <Link href="/" className="flex shrink-0 flex-col leading-none">
-                            <span className="font-blackletter text-2xl leading-none text-primary">Imperium</span>
-                            <span className="font-heading text-[0.6rem] font-semibold uppercase tracking-[0.35em] text-marble-foreground/70">Bikes</span>
-                        </Link>
+                        <Logo />
                         <Link href="/torneios/criar" className="flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">
                             <Plus className="size-3.5" />
                             Criar torneio

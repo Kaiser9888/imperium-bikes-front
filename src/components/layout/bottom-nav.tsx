@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { Clapperboard, House, Plus, Search, User, type LucideIcon } from "lucide-react"
+import { Clapperboard, House, Search, Trophy, User, type LucideIcon } from "lucide-react"
 import { usePathname } from "next/navigation"
 
 import { useAppShell } from "@/components/layout/app-shell"
@@ -45,9 +45,9 @@ export function BottomNav() {
                     <NavLink href="/buscar" label="Busca" icon={Search} />
                 </li>
                 <li>
-                    <Link href="/torneios/criar" aria-label="Criar evento" className={itemClasses}>
+                    <Link href="/torneios" aria-label="Eventos" className={itemClasses}>
                         <span className="flex size-11 items-center justify-center rounded-full bg-accent text-accent-foreground">
-                            <Plus className="size-6" strokeWidth={2.2} aria-hidden="true" />
+                            <Trophy className="size-6" strokeWidth={2} aria-hidden="true" />
                         </span>
                     </Link>
                 </li>

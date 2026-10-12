@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button"
 
 import { useEffect, useMemo, useState, useCallback } from "react"
 import Link from "next/link"
+import { Logo } from "@/components/layout/logo"
 import { useUser } from "@clerk/nextjs"
 import {
   ArrowLeft,
@@ -144,6 +145,7 @@ export default function CentralVendedorPage() {
           <ArrowLeft className="size-5" />
         </Link>
         <h1 className="font-heading text-lg font-bold">Central do vendedor</h1>
+        <Logo compact className="ml-auto" />
       </div>
     </header>
   )

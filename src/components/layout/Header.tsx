@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { Menu, ShoppingCart, User } from "lucide-react"
 import { UserButton } from "@clerk/nextjs"
 import Link from "next/link"
-import Image from "next/image"
+import { Logo } from "@/components/layout/logo"
 
 import { Authed, Guest } from "@/components/auth/auth-gates"
 import { useAppShell } from "@/components/layout/app-shell"
@@ -40,19 +40,7 @@ export function Header() {
     return (
         <header className="sticky top-0 z-40 border-b border-border bg-background/95 pt-[env(safe-area-inset-top)] backdrop-blur-md">
             <div className="mx-auto flex w-full max-w-7xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-2.5 sm:px-6 md:flex-nowrap md:py-3 lg:px-8">
-                <Link href="/" aria-label="Imperium Bikes — início" className="order-1 flex shrink-0 items-center gap-2.5 rounded-lg">
-                    <Image
-                        src="/logo1.png"
-                        alt=""
-                        width={446}
-                        height={331}
-                        priority
-                        className="h-8 w-auto mix-blend-multiply dark:invert dark:mix-blend-screen"
-                    />
-                    <span className="text-lg font-bold tracking-tight text-foreground">
-                        Imperium <span className="text-primary">Bikes</span>
-                    </span>
-                </Link>
+                <Logo className="order-1" />
 
                 <div className="order-2 ml-auto flex items-center gap-1 md:order-3 md:ml-0">
                     <Button asChild variant="ghost" size="icon" className="relative rounded-full">
