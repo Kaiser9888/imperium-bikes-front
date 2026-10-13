@@ -31,6 +31,7 @@ export function SearchBar({ className }: { className?: string }) {
                 onChange={(event) => setTermo(event.target.value)}
                 placeholder="Buscar eventos, produtos e vídeos"
                 aria-label="Buscar"
+                data-plain
                 className="w-full bg-transparent text-base text-foreground outline-none placeholder:text-muted-foreground md:text-sm"
             />
         </form>

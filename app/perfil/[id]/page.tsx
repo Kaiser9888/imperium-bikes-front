@@ -2,16 +2,16 @@
 // app/perfil/[id]/page.tsx
 "use client"
 
-import { ArrowLeft, Trophy, Grid3X3, ShoppingBag, MapPin, Camera } from "lucide-react"
+import { ArrowLeft, MapPin } from "lucide-react"
 import Link from "next/link"
 import { Logo } from "@/components/layout/logo"
 import { useState, useEffect } from "react"
 import { useParams } from "next/navigation"
 import { BottomNav } from "@/components/layout/bottom-nav"
 import { ProdutoGrid } from "@/components/perfil/ProdutoGrid"
+import { SponsorBanners, type Sponsor } from "@/components/perfil/SponsorBanners"
+import { Loader } from "@/components/ui/loader"
 import { sellerProductService, type ProdutoItem } from "@/services/publish/seller-products.service"
-
-type Aba = "fotos" | "produtos" | "torneios"
 
 interface PerfilUsuario {
     userId: string
@@ -24,6 +24,7 @@ interface PerfilUsuario {
     reputationScore: number
     totalReviews: number
     totalSales: number
+    sponsors?: Sponsor[]
 }
 
 import { API_BASE_URL } from '@/lib/api-config'
@@ -36,7 +37,6 @@ export default function PerfilPublicoPage() {
     const [perfil, setPerfil] = useState<PerfilUsuario | null>(null)
     const [produtos, setProdutos] = useState<ProdutoItem[]>([])
     const [loading, setLoading] = useState(true)
-    const [aba, setAba] = useState<Aba>("fotos")
 
     useEffect(() => {
         if (!id) return
@@ -87,7 +87,7 @@ export default function PerfilPublicoPage() {
         return (
           <div className="min-h-screen bg-background">
               {header()}
-              <div className="flex items-center justify-center py-20"><p className="text-muted-foreground">Carregando...</p></div>
+              <Loader className="py-20" />
               <BottomNav />
           </div>
         )
@@ -102,18 +102,6 @@ export default function PerfilPublicoPage() {
           </div>
         )
     }
-
-    const stats: { key: Aba; label: string; valor: number }[] = [
-        { key: "fotos", label: "Fotos", valor: 0 },
-        { key: "produtos", label: "Produtos", valor: produtos.length },
-        { key: "torneios", label: "Torneios", valor: 0 },
-    ]
-
-    const abas: { key: Aba; label: string; icon: typeof Grid3X3 }[] = [
-        { key: "fotos", label: "Fotos", icon: Grid3X3 },
-        { key: "produtos", label: "Produtos", icon: ShoppingBag },
-        { key: "torneios", label: "Torneios", icon: Trophy },
-    ]
 
     return (
       <div className="min-h-screen bg-background">
@@ -135,28 +123,11 @@ export default function PerfilPublicoPage() {
                   </div>
               </div>
 
-              {/* Estatísticas reais */}
-              <div className="mt-8 grid grid-cols-3 gap-2">
-                  {stats.map((s) => (
-                    <button key={s.key} onClick={() => setAba(s.key)} className="rounded-xl bg-card border border-border p-4 text-center hover:border-primary/30 transition-colors">
-                        <p className="font-heading text-2xl font-bold text-foreground">{s.valor}</p>
-                        <p className="text-[0.65rem] text-muted-foreground uppercase tracking-wider mt-1">{s.label}</p>
-                    </button>
-                  ))}
-              </div>
+              <SponsorBanners sponsors={perfil.sponsors ?? []} />
 
-              <div className="mt-8 flex border-b border-border">
-                  {abas.map(({ key, label, icon: Icon }) => (
-                    <button key={key} onClick={() => setAba(key)} className={`flex flex-1 items-center justify-center gap-1.5 py-3 text-sm font-medium transition-colors border-b-2 ${aba === key ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
-                        <Icon className="size-4" />{label}
-                    </button>
-                  ))}
-              </div>
-
+              <h2 className="type-h2 mt-10 border-b border-border pb-3 text-foreground">Anúncios</h2>
               <div className="py-6">
-                  {aba === "fotos" && <div className="text-center py-12"><Camera className="size-12 text-muted-foreground mx-auto mb-3" /><p className="text-muted-foreground text-sm">Nenhuma foto postada</p></div>}
-                  {aba === "produtos" && <ProdutoGrid produtos={produtos} />}
-                  {aba === "torneios" && <div className="text-center py-12"><Trophy className="size-12 text-muted-foreground mx-auto mb-3" /><p className="text-muted-foreground text-sm">Nenhum torneio disputado</p></div>}
+                  <ProdutoGrid produtos={produtos} />
               </div>
           </main>
 

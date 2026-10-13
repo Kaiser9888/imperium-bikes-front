@@ -7,6 +7,7 @@ import { productService } from "@/services/publish/product.service"
 import type { ProductResponse } from "@/types/publish/product"
 import { ProductImage } from "@/components/marketplace/ProductImage"
 import { formatarPreco } from "@/lib/format"
+import { Loader } from "@/components/ui/loader"
 
 const PAGE_SIZE = 24
 
@@ -58,7 +59,7 @@ export function ProductsCatalog({ category, condition, minPrice, maxPrice, subca
     return categoryMatches && conditionMatches && minMatches && maxMatches
   })
 
-  if (loading) return <p className="py-12 text-center text-sm text-muted-foreground">Carregando produtos...</p>
+  if (loading) return <Loader className="py-12" />
   if (error) return <div className="py-12 text-center"><p role="alert" className="text-sm text-destructive">{error}</p><button onClick={() => void load(0, false)} className="mt-3 text-sm font-medium text-primary underline">Tentar novamente</button></div>
   if (!filteredByOptions.length) return <div className="py-12 text-center"><p className="text-sm text-muted-foreground">{category ? "Nenhum produto encontrado com esses filtros nesta modalidade." : "Nenhum produto disponível no momento."}</p>{page + 1 < totalPages && <Button disabled={loadingMore} onClick={() => void load(page + 1, true)} variant="outline" className="mt-4">{loadingMore ? "Carregando..." : "Buscar em mais produtos"}</Button>}</div>
 

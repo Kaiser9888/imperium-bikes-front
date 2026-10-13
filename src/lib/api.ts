@@ -3,8 +3,6 @@ import { API_BASE_URL } from '@/lib/api-config';
 
 const BASE_URL = API_BASE_URL.startsWith('http') ? API_BASE_URL : `https://${API_BASE_URL}`;
 
-console.log('🔧 API Base URL:', BASE_URL);
-
 const api = axios.create({
     baseURL: BASE_URL,
     headers: {
@@ -23,13 +21,11 @@ api.interceptors.request.use(async (config) => {
     } catch (e) {
         console.warn('Clerk token não disponível');
     }
-    console.log('🌐 Requisição para:', `${config.baseURL}${config.url}`);
     return config;
 });
 
 api.interceptors.response.use(
   (response) => {
-      console.log('✅ Resposta:', response.status, response.config.url);
       return response;
   },
   (error) => {

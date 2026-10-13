@@ -265,6 +265,7 @@ export default function CentralVendedorPage() {
                 value={busca}
                 onChange={(e) => setBusca(e.target.value)}
                 placeholder="Buscar nos seus anúncios"
+                data-plain
                 className="w-full bg-transparent text-base outline-none placeholder:text-muted-foreground md:text-sm"
               />
             </label>

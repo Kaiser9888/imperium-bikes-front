@@ -4,6 +4,7 @@ import { Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { ProductsCatalog } from "@/components/marketplace/ProductsCatalog"
+import { Loader } from "@/components/ui/loader"
 
 function ProductsContent() {
   const params = useSearchParams()
@@ -12,5 +13,5 @@ function ProductsContent() {
 }
 
 export default function ProductsPage() {
-  return <Suspense fallback={<p className="py-12 text-center text-sm text-muted-foreground">Carregando produtos...</p>}><ProductsContent /></Suspense>
+  return <Suspense fallback={<Loader className="py-12" />}><ProductsContent /></Suspense>
 }

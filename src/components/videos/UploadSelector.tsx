@@ -1,4 +1,5 @@
 import { Film, Clapperboard } from "lucide-react";
+import { RadioCard } from "@/components/ui/radio-group";
 
 export type UploadMode = "long" | "memento";
 
@@ -29,26 +30,22 @@ export function UploadSelector({ value, onChange }: UploadSelectorProps) {
             {OPTIONS.map((opt) => {
                 const active = value === opt.id;
                 return (
-                    <label
+                    <RadioCard
                         key={opt.id}
-                        className={`flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors ${
-                            active ? "border-primary bg-secondary" : "border-border bg-card hover:border-primary/40"
-                        }`}
+                        name="upload-mode"
+                        value={opt.id}
+                        checked={active}
+                        onChange={() => onChange(opt.id)}
+                        className="p-4"
                     >
-                        <input
-                            type="radio"
-                            name="upload-mode"
-                            value={opt.id}
-                            checked={active}
-                            onChange={() => onChange(opt.id)}
-                            className="sr-only"
-                        />
-                        <opt.icon className={`mt-0.5 size-5 ${active ? "text-primary" : "text-muted-foreground"}`} aria-hidden="true" />
+                      <span className="flex items-start gap-3">
+                        <opt.icon className={`mt-0.5 size-5 ${active ? "text-accent" : "text-muted-foreground"}`} aria-hidden="true" />
                         <span>
               <span className="block text-sm font-medium text-foreground">{opt.label}</span>
-              <span className="mt-1 block text-xs text-muted-foreground">{opt.hint}</span>
+              <span className="mt-1 block text-xs font-normal text-muted-foreground">{opt.hint}</span>
             </span>
-                    </label>
+                      </span>
+                    </RadioCard>
                 );
             })}
         </fieldset>

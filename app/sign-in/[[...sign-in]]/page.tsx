@@ -1,5 +1,7 @@
 import type { Metadata } from "next"
 import Link from "next/link"
+import { redirect } from "next/navigation"
+import { auth } from "@clerk/nextjs/server"
 
 import { AuthLayout } from "@/components/auth/auth-layout"
 import { SignInForm } from "@/components/auth/sign-in-form"
@@ -11,6 +13,7 @@ type Props = { searchParams: Promise<{ redirect_url?: string | string[] }> }
 
 export default async function SignInPage({ searchParams }: Props) {
     const redirectTo = destinoSeguro((await searchParams).redirect_url)
+    if ((await auth()).userId) redirect(redirectTo)
     return (
         <AuthLayout
             title="Entrar"

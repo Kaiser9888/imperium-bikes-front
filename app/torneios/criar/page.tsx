@@ -5,13 +5,11 @@ import { Button } from "@/components/ui/button"
 import { Header } from "@/components/layout/Header"
 import { BottomNav } from "@/components/layout/bottom-nav"
 import { useUser } from "@clerk/nextjs"
-import { ArrowLeft, Calendar, MapPin, Users, DollarSign, Trophy, Image, X, Info, Shield } from "lucide-react"
+import { ArrowLeft, Calendar, MapPin, Users, DollarSign, Trophy, Image, X, Shield } from "lucide-react"
 import Link from "next/link"
 import { Logo } from "@/components/layout/logo"
 import { useState } from "react"
-import { tournamentService } from "@/services/tournamentService"
-
-const MODALIDADES = ["Downhill", "Mountain Bike", "Speed", "BMX", "Urbana"]
+import { mensagemDaApi, tournamentService } from "@/services/tournamentService"
 
 export default function CriarTorneioPage() {
     const { isSignedIn } = useUser()
@@ -19,7 +17,6 @@ export default function CriarTorneioPage() {
     const [form, setForm] = useState({
         nome: "",
         descricao: "",
-        modalidade: "",
         local: "",
         cidade: "",
         estado: "",
@@ -35,24 +32,13 @@ export default function CriarTorneioPage() {
     })
 
     const [passo, setPasso] = useState(1)
-    const [enviado, setEnviado] = useState(false)
+    const [criadoId, setCriadoId] = useState<string | null>(null)
     const [enviando, setEnviando] = useState(false)
     const [erroEnvio, setErroEnvio] = useState<string | null>(null)
 
     const update = (campo: string, valor: string) => {
         setForm((prev) => ({ ...prev, [campo]: valor }))
     }
-
-    const calcularComissao = () => {
-        const valor = Number(form.valorInscricao) || 0
-        const max = Number(form.maxParticipantes) || 0
-        const total = valor * max
-        const comissao = total * 0.15
-        const organizador = total * 0.85
-        return { total, comissao, organizador }
-    }
-
-    const { total, comissao, organizador } = calcularComissao()
 
     const handleSubmit = async () => {
         if (!isSignedIn) {
@@ -62,41 +48,40 @@ export default function CriarTorneioPage() {
         setEnviando(true)
         setErroEnvio(null)
         try {
-            await tournamentService.criar({
-                name: form.nome.trim(), description: form.descricao.trim(), modality: form.modalidade,
+            const criado = await tournamentService.criar({
+                name: form.nome.trim(), description: form.descricao.trim(),
                 location: form.local.trim(), city: form.cidade.trim(), state: form.estado.trim().toUpperCase(),
-                startDate: form.dataInicio, endDate: form.dataFim, registrationDeadline: form.prazoInscricao,
+                startDate: form.dataInicio, endDate: form.dataFim || form.dataInicio, registrationDeadline: form.prazoInscricao,
                 maxParticipants: Number(form.maxParticipantes), minParticipants: Number(form.minParticipantes),
-                entryFee: Number(form.valorInscricao) || 0, prize: form.premiacao.trim(), rules: form.regras.trim(), bannerUrl: form.capa.trim(),
+                registrationFee: Number(form.valorInscricao) || 0, prizes: form.premiacao.trim(), rules: form.regras.trim(), coverImageUrl: form.capa.trim(),
             })
-            setEnviado(true)
-        } catch {
-            setErroEnvio("Não foi possível enviar o torneio. Confira os dados e tente novamente.")
+            setCriadoId(criado.id)
+        } catch (cause) {
+            setErroEnvio(mensagemDaApi(cause, "Não foi possível criar o evento. Confira os dados e tente novamente."))
         } finally {
             setEnviando(false)
         }
     }
 
     const podeAvancar = () => {
-        if (passo === 1) return form.nome && form.modalidade && form.dataInicio
+        if (passo === 1) return form.nome.trim().length >= 5 && form.dataInicio
         if (passo === 2) return form.local && form.maxParticipantes
         return true
     }
 
-    if (enviado) {
+    if (criadoId) {
         return (
             <div className="min-h-screen bg-background">
                 <Header />
                 <div className="flex flex-col items-center justify-center px-4 py-20 text-center">
-                    <div className="size-16 rounded-full bg-green-100 flex items-center justify-center mb-4">
-                        <Shield className="size-8 text-green-600" />
+                    <div className="size-16 rounded-full bg-success/15 flex items-center justify-center mb-4">
+                        <Shield className="size-8 text-success" />
                     </div>
-                    <h1 className="font-blackletter text-3xl text-primary mb-2">Torneio Enviado!</h1>
-                    <p className="text-muted-foreground mb-2">Seu torneio está em análise pela nossa equipe.</p>
-                    <p className="text-sm text-muted-foreground mb-6">Resposta em até 24 horas.</p>
-                    <Link href="/torneios" className="rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90">
-                        Ver torneios
-                    </Link>
+                    <h1 className="type-h1 mb-2 text-foreground">Evento publicado</h1>
+                    <p className="mb-6 text-muted-foreground">As inscrições já estão abertas.</p>
+                    <Button asChild size="lg">
+                        <Link href={`/torneios/${criadoId}`}>Ver evento</Link>
+                    </Button>
                 </div>
                 <BottomNav />
             </div>
@@ -180,19 +165,6 @@ export default function CriarTorneioPage() {
                             </div>
                         </div>
 
-                        <div>
-                            <label className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Modalidade *</label>
-                            <div className="flex flex-wrap gap-2 mt-1">
-                                {MODALIDADES.map((m) => (
-                                    <button key={m} onClick={() => update("modalidade", m)} className={`rounded-full px-4 py-2 text-xs font-medium transition-colors ${
-                                        form.modalidade === m ? "bg-primary text-primary-foreground" : "bg-card border border-border text-muted-foreground hover:text-foreground"
-                                    }`}>
-                                        {m}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-
                         <div className="grid grid-cols-2 gap-4">
                             <div>
                                 <label className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Data de início *</label>
@@ -263,17 +235,6 @@ export default function CriarTorneioPage() {
                             </div>
                         </div>
 
-                        <div className="rounded-xl border border-border bg-card p-4 space-y-2">
-                            <div className="flex items-center gap-2">
-                                <Info className="size-4 text-primary" />
-                                <span className="text-sm font-semibold text-foreground">Limites para novos organizadores</span>
-                            </div>
-                            <ul className="text-xs text-muted-foreground space-y-1">
-                                <li>• Máximo de 1 torneio ativo por vez</li>
-                                <li>• Seu torneio passará por aprovação (até 24h)</li>
-                                <li>• Mantenha as regras claras para evitar denúncias</li>
-                            </ul>
-                        </div>
                     </div>
                 )}
 
@@ -289,7 +250,7 @@ export default function CriarTorneioPage() {
                                     <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
                                     <input type="number" value={form.valorInscricao} onChange={(e) => update("valorInscricao", e.target.value)} min={0} max={500} step="0.01" placeholder="R$ 50,00" className="w-full rounded-xl border border-border bg-card pl-10 pr-4 py-3 text-sm outline-none focus:border-primary/30" />
                                 </div>
-                                <p className="text-[10px] text-muted-foreground mt-1">Deixe em branco ou R$ 0 para gratuito</p>
+                                <p className="text-[10px] text-muted-foreground mt-1">Deixe em branco ou R$ 0 para gratuito. Em evento pago, você recebe 90% de cada inscrição na sua Carteira depois de encerrar o evento; conecte sua conta de recebimento lá.</p>
                             </div>
                             <div>
                                 <label className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Premiação total</label>
@@ -300,43 +261,6 @@ export default function CriarTorneioPage() {
                             </div>
                         </div>
 
-                        {Number(form.valorInscricao) > 0 && Number(form.maxParticipantes) > 0 && (
-                            <div className="rounded-xl border border-border bg-card p-4 space-y-3">
-                                <h3 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Resumo financeiro</h3>
-                                <div className="space-y-2 text-sm">
-                                    <div className="flex justify-between">
-                                        <span className="text-muted-foreground">Inscrição</span>
-                                        <span>R$ {Number(form.valorInscricao).toFixed(2)} por pessoa</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span className="text-muted-foreground">Vagas</span>
-                                        <span>{form.maxParticipantes} participantes</span>
-                                    </div>
-                                    <div className="flex justify-between font-semibold">
-                                        <span>Total arrecadado</span>
-                                        <span className="text-green-600">R$ {total.toFixed(2)}</span>
-                                    </div>
-                                    <div className="border-t border-border pt-2 flex justify-between">
-                                        <span className="text-muted-foreground">Comissão Imperium (15%)</span>
-                                        <span className="text-primary">- R$ {comissao.toFixed(2)}</span>
-                                    </div>
-                                    <div className="flex justify-between font-bold text-base">
-                                        <span>Você recebe</span>
-                                        <span className="text-green-600">R$ {organizador.toFixed(2)}</span>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
-                        <div className="rounded-xl border border-border bg-amber-50 p-4">
-                            <div className="flex items-start gap-2">
-                                <Shield className="size-4 text-amber-600 mt-0.5 shrink-0" />
-                                <div className="text-xs text-amber-800">
-                                    <p className="font-semibold mb-1">Compromisso do organizador</p>
-                                    <p>Ao criar este torneio, você se compromete a realizá-lo na data e local informados. O cancelamento sem justificativa pode resultar em penalidades na plataforma. O valor das inscrições fica retido e só é liberado 24h após a conclusão do torneio.</p>
-                                </div>
-                            </div>
-                        </div>
                     </div>
                 )}
 
@@ -352,8 +276,8 @@ export default function CriarTorneioPage() {
                             Continuar
                         </Button>
                     ) : (
-                        <Button onClick={handleSubmit} disabled={enviando} size="lg" className="flex-1">
-                            Enviar para revisão
+                        <Button onClick={handleSubmit} loading={enviando} variant="accent" size="lg" className="flex-1">
+                            Publicar evento
                         </Button>
                     )}
                 </div>

@@ -107,8 +107,8 @@ export default function MeusVideosPage() {
         {/* CABEÇALHO */}
         <div className="mb-8">
           <h1
-            className="text-3xl tracking-wide"
-            style={{ fontFamily: 'var(--font-caesar)', color: '#212529' }}
+            className="text-3xl tracking-wide text-foreground"
+            style={{ fontFamily: 'var(--font-caesar)' }}
           >
             Central de Vídeos
           </h1>
@@ -126,7 +126,7 @@ export default function MeusVideosPage() {
               <p className="text-xs text-muted-foreground">Vídeos</p>
             </div>
             <div className="rounded-xl border border-border bg-card p-4">
-              <Eye className="h-5 w-5 text-blue-500" />
+              <Eye className="h-5 w-5 text-primary" />
               <p className="mt-2 text-2xl font-bold">{formatViews(totalViews)}</p>
               <p className="text-xs text-muted-foreground">Visualizações</p>
             </div>
@@ -283,7 +283,7 @@ export default function MeusVideosPage() {
                     <button
                       onClick={() => deleteVideo(video.id)}
                       disabled={deleting === video.id}
-                      className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
+                      className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive disabled:opacity-50"
                       title="Excluir vídeo"
                     >
                       {deleting === video.id ? (

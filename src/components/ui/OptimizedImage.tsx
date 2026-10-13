@@ -19,7 +19,7 @@ export function OptimizedImage({ src, alt, style, className, fallback }: Optimiz
     const imagemFinal = erro && fallback ? fallback : src
 
     return (
-        <div ref={ref} style={{ ...style, backgroundColor: '#e5e5e5', overflow: 'hidden' }} className={className}>
+        <div ref={ref} style={{ ...style, backgroundColor: 'var(--surface-muted)', overflow: 'hidden' }} className={className}>
             {isVisible && (
                 <img
                     src={imagemFinal}

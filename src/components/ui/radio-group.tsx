@@ -33,4 +33,22 @@ const RadioGroupItem = React.forwardRef<
 });
 RadioGroupItem.displayName = RadioGroupPrimitive.Item.displayName;
 
-export { RadioGroup, RadioGroupItem };
+/**
+ * Opção em cartão (Uiverse.io, ImQwertyOk): um rádio nativo dentro do <label>,
+ * e o :has(:checked) pinta o cartão. Use type="checkbox" para seleção múltipla.
+ */
+function RadioCard({ className, children, type = "radio", ...props }: React.ComponentProps<"input">) {
+    return (
+        <label
+            className={cn(
+                "relative flex cursor-pointer items-center justify-between gap-3 rounded-lg border border-border bg-surface p-3 transition-all duration-300 hover:bg-surface-muted has-[:checked]:border-accent has-[:checked]:bg-accent/10 has-[:checked]:font-bold has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-ring has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-50",
+                className,
+            )}
+        >
+            <span className="min-w-0 flex-1">{children}</span>
+            <input type={type} className="size-4 shrink-0 accent-[var(--accent)]" {...props} />
+        </label>
+    );
+}
+
+export { RadioGroup, RadioGroupItem, RadioCard };

@@ -8,6 +8,7 @@ import { Package, Search, X } from "lucide-react"
 import { ProductImage } from "@/components/marketplace/ProductImage"
 import { searchList, searchProducts } from "@/lib/meilisearch"
 import { formatarPreco } from "@/lib/format"
+import { Loader } from "@/components/ui/loader"
 
 type SearchProduct = {
   id: string | number
@@ -148,5 +149,5 @@ function BuscarPageContent() {
 }
 
 export default function BuscarPage() {
-  return <Suspense fallback={<main className="min-h-screen py-16 text-center text-sm text-muted-foreground">Carregando busca...</main>}><BuscarPageContent /></Suspense>
+  return <Suspense fallback={<Loader fullPage />}><BuscarPageContent /></Suspense>
 }

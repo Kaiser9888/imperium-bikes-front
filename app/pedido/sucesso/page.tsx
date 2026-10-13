@@ -103,7 +103,7 @@ function PedidoSucessoContent() {
 
             <Link
               href="/"
-              className="mt-6 inline-block bg-foreground px-5 py-3 text-sm font-bold text-white"
+              className="mt-6 inline-block bg-foreground px-5 py-3 text-sm font-bold text-background"
             >
               Voltar ao marketplace
             </Link>

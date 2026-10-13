@@ -4,10 +4,11 @@ import axios from "axios"
 import Link from "next/link"
 import { useCallback, useEffect, useRef, useState } from "react"
 import { useUser } from "@clerk/nextjs"
-import { Camera, MapPin, Pencil, Settings, Store, UserRound } from "lucide-react"
+import { Camera, MapPin, Megaphone, Pencil, Settings, Store, UserRound } from "lucide-react"
 
 import { AppShell } from "@/components/layout/app-shell"
 import { ProdutoGrid } from "@/components/perfil/ProdutoGrid"
+import { SponsorBanners, type Sponsor } from "@/components/perfil/SponsorBanners"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { EmptyState } from "@/components/ui/empty-state"
@@ -20,7 +21,7 @@ import api from "@/lib/api"
 import { sellerProductService, type ProdutoItem } from "@/services/publish/seller-products.service"
 
 type Perfil = { fullName: string; bio: string; city: string; state: string; country: string }
-type Estado = { status: "loading" } | { status: "error" } | { status: "ok"; perfil: Perfil; produtos: ProdutoItem[] }
+type Estado = { status: "loading" } | { status: "error" } | { status: "ok"; perfil: Perfil; produtos: ProdutoItem[]; sponsors: Sponsor[] }
 
 /** Mostra o motivo real da falha (status e mensagem do backend) em vez de engolir o erro. */
 function motivoDaFalha(cause: unknown): string {
@@ -53,6 +54,7 @@ export default function PerfilPage() {
             setEstado({
                 status: "ok",
                 produtos,
+                sponsors: data.sponsors ?? [],
                 perfil: {
                     fullName: data.fullName ?? "",
                     bio: data.bio ?? "",
@@ -214,6 +216,12 @@ export default function PerfilPage() {
                                             Central do vendedor
                                         </Link>
                                     </Button>
+                                    <Button asChild variant="outline">
+                                        <Link href="/configuracoes/patrocinadores">
+                                            <Megaphone aria-hidden="true" />
+                                            Patrocinadores
+                                        </Link>
+                                    </Button>
                                     <Button asChild variant="ghost" size="icon" aria-label="Configurações">
                                         <Link href="/configuracoes">
                                             <Settings aria-hidden="true" />
@@ -222,6 +230,8 @@ export default function PerfilPage() {
                                 </div>
                             </div>
                         </section>
+
+                        <SponsorBanners sponsors={estado.sponsors} />
 
                         <section aria-labelledby="anuncios-title" className="mt-10">
                             <h2 id="anuncios-title" className="type-h2 border-b border-border pb-3 text-foreground">

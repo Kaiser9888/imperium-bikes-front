@@ -1,76 +1,138 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useAuth } from "@clerk/nextjs"
 import { useParams } from "next/navigation"
-import Link from "next/link"
-import { ArrowLeft, Calendar, MapPin, Users, Video } from "lucide-react"
-import { tournamentService } from "@/services/tournamentService"
+
+import { PageHeading } from "@/components/layout/page-heading"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import { Button } from "@/components/ui/button"
+import { ErrorState } from "@/components/ui/error-state"
+import { Loader } from "@/components/ui/loader"
+import api from "@/lib/api"
 import { formatarPreco } from "@/lib/format"
+import { mensagemDaApi, tournamentService, type Tournament } from "@/services/tournamentService"
 
-interface Participant { id: string; name: string }
-interface TournamentManagementData {
-  name: string
-  status: string
-  modality: string
-  date: string
-  location: string
-  participants: Participant[]
-  participantCount: number
-  maxParticipants: number
-  entryFee: number
-}
-
-function normalizeTournament(value: unknown): TournamentManagementData {
-  const outer = value && typeof value === "object" ? value as Record<string, unknown> : {}
-  const raw = outer.data && typeof outer.data === "object" ? outer.data as Record<string, unknown> : outer
-  const participantsValue = raw.participants ?? raw.inscritos
-  const rawParticipants: unknown[] = Array.isArray(participantsValue) ? participantsValue : []
-  const participants = rawParticipants.flatMap((participant, index): Participant[] => {
-    if (!participant || typeof participant !== "object") return []
-    const row = participant as Record<string, unknown>
-    return [{ id: String(row.id ?? index), name: String(row.name ?? row.nome ?? "Participante") }]
-  })
-  const dateValue = raw.startDate ?? raw.dataInicio ?? raw.date ?? raw.data
-  const date = dateValue ? new Date(String(dateValue)) : null
-  return {
-    name: String(raw.name ?? raw.nome ?? raw.title ?? "Torneio"),
-    status: String(raw.status ?? "status indisponível"),
-    modality: String(raw.modality ?? raw.modalidade ?? "Ciclismo"),
-    date: date && !Number.isNaN(date.getTime()) ? date.toLocaleDateString("pt-BR") : "Data a confirmar",
-    location: String(raw.location ?? raw.local ?? "Local a confirmar"),
-    participants,
-    participantCount: Number(raw.participantsCount ?? raw.participantes ?? participants.length),
-    maxParticipants: Number(raw.maxParticipants ?? raw.maxParticipantes ?? 0),
-    entryFee: Number(raw.entryFee ?? raw.valorInscricao ?? 0),
-  }
-}
+type Participant = { id: string; userName: string; paymentStatus: string }
+type Estado = { status: "loading" } | { status: "error" } | { status: "ok"; torneio: Tournament; participantes: Participant[] }
 
 export default function GerenciarTorneioPage() {
-  const { isLoaded, isSignedIn } = useAuth()
-  const params = useParams<{ id: string }>()
-  const id = params.id
-  const numericId = Number(id)
-  const validId = Number.isInteger(numericId) && numericId > 0
-  const [tournament, setTournament] = useState<TournamentManagementData | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const { id } = useParams<{ id: string }>()
+  const [estado, setEstado] = useState<Estado>({ status: "loading" })
+  const [erroEncerrar, setErroEncerrar] = useState<string | null>(null)
+
+  async function mudarStatus(chamada: () => Promise<Tournament>) {
+    if (estado.status !== "ok") return
+    setErroEncerrar(null)
+    try {
+      setEstado({ ...estado, torneio: await chamada() })
+    } catch (cause) {
+      setErroEncerrar(mensagemDaApi(cause, "Não foi possível concluir. Tente novamente."))
+    }
+  }
+  const encerrar = () => mudarStatus(() => tournamentService.encerrar(id))
+  const cancelar = () => mudarStatus(() => tournamentService.cancelar(id, "Cancelado pelo organizador"))
 
   useEffect(() => {
-    if (!isLoaded || !isSignedIn) return
-    if (!validId) return
     let active = true
-    tournamentService.buscarPorId(numericId)
-      .then((data) => { if (active) setTournament(normalizeTournament(data)) })
-      .catch(() => { if (active) setError("Não foi possível carregar os dados deste torneio.") })
-      .finally(() => { if (active) setLoading(false) })
-    return () => { active = false }
-  }, [id, isLoaded, isSignedIn, numericId, validId])
+    Promise.all([tournamentService.buscarPorId(id), api.get(`/api/tournaments/${id}/participants`, { params: { size: 200 } })])
+      .then(([torneio, { data }]) => active && setEstado({ status: "ok", torneio, participantes: data.content }))
+      .catch(() => active && setEstado({ status: "error" }))
+    return () => {
+      active = false
+    }
+  }, [id])
 
-  if (!isLoaded || (loading && validId)) return <main className="grid min-h-screen place-items-center text-sm text-muted-foreground">Carregando painel...</main>
-  if (!isSignedIn) return <main className="grid min-h-screen place-items-center px-4 text-center"><div><p>Entre para abrir o painel do torneio.</p><Link className="mt-4 inline-block underline" href={`/sign-in?redirect_url=${encodeURIComponent(`/torneios/${id}/gerenciar`)}`}>Entrar</Link></div></main>
-  if (error || !tournament) return <main className="grid min-h-screen place-items-center px-4 text-center"><div><p role="alert" className="text-sm text-destructive">{error ?? (!validId ? "Torneio inválido." : "Torneio não encontrado.")}</p><Link className="mt-4 inline-block underline" href="/torneios">Voltar aos torneios</Link></div></main>
+  if (estado.status === "loading") return <Loader className="py-24" />
+  if (estado.status === "error") return <ErrorState title="Não foi possível carregar este evento" />
 
-  const fee = formatarPreco(tournament.entryFee)
-  return <main className="mx-auto min-h-screen max-w-3xl space-y-6 px-4 py-8"><Link href={`/torneios/${id}`} className="inline-flex items-center gap-2 text-sm text-muted-foreground"><ArrowLeft className="size-4"/>Voltar ao torneio</Link><header><p className="text-xs font-semibold uppercase tracking-widest text-primary">Painel do torneio</p><h1 className="mt-2 font-heading text-3xl font-bold">{tournament.name}</h1><p className="mt-2 text-sm text-muted-foreground">{tournament.modality} · {tournament.status}</p></header><section className="grid gap-3 rounded-xl border border-border bg-card p-5 sm:grid-cols-3"><p className="flex items-center gap-2 text-sm"><Calendar className="size-4 text-primary"/>{tournament.date}</p><p className="flex items-center gap-2 text-sm"><MapPin className="size-4 text-primary"/>{tournament.location}</p><p className="flex items-center gap-2 text-sm"><Users className="size-4 text-primary"/>{tournament.participantCount}{tournament.maxParticipants ? `/${tournament.maxParticipants}` : ""} participantes</p><p className="text-sm">Inscrição: {tournament.entryFee ? fee : "Grátis"}</p></section><section className="rounded-xl border border-border bg-card p-5"><h2 className="font-heading text-lg font-semibold">Participantes</h2>{tournament.participants.length ? <ul className="mt-4 divide-y divide-border">{tournament.participants.map((participant) => <li key={participant.id} className="py-3 text-sm">{participant.name}</li>)}</ul> : <p className="mt-3 text-sm text-muted-foreground">A API não retornou a lista de participantes.</p>}</section><section className="rounded-xl border border-amber-300/50 bg-amber-50 p-5 text-sm text-amber-950"><div className="flex items-center gap-2 font-semibold"><Video className="size-4"/>Transmissão ao vivo</div><p className="mt-2">O backend ainda não oferece controles de transmissão. A página de visualização está disponível, mas o player não está integrado.</p><Link href={`/torneios/${id}/live`} className="mt-3 inline-block underline">Abrir página da transmissão</Link></section><p className="text-xs text-muted-foreground">Edição de dados, cancelamento, definição de resultados e gestão de reembolsos ainda não estão conectados à API.</p></main>
+  const { torneio, participantes } = estado
+  const pagos = participantes.filter((p) => p.paymentStatus === "PAID").length
+  return (
+    <main className="mx-auto w-full max-w-3xl px-4 pb-16 pt-4 sm:px-6">
+      <PageHeading
+        title={torneio.nome}
+        description={`${participantes.length} inscritos · ${pagos} confirmados · inscrição ${torneio.valorInscricao > 0 ? formatarPreco(torneio.valorInscricao) : "grátis"}`}
+        back={{ href: `/torneios/${id}`, label: "Evento" }}
+      />
+      {torneio.status === "andamento" && (
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button variant="outline" className="mr-2 mt-6">
+              Encerrar evento
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Encerrar {torneio.nome}?</AlertDialogTitle>
+              <AlertDialogDescription>
+                O evento passa a constar como encerrado e não pode ser reaberto.
+                {torneio.valorInscricao > 0 && " As inscrições pagas são repassadas para a sua Carteira."}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction onClick={encerrar}>Encerrar</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
+      {!torneio.cancelado && torneio.status !== "encerrado" && (
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button variant="outline" className="mt-6">
+              Cancelar evento
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Cancelar {torneio.nome}?</AlertDialogTitle>
+              <AlertDialogDescription>
+                O evento sai do ar e não pode ser reaberto.
+                {pagos > 0 && ` As ${pagos} inscrições pagas são reembolsadas automaticamente e você não recebe o valor.`}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Voltar</AlertDialogCancel>
+              <AlertDialogAction onClick={cancelar}>Cancelar evento</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
+      {torneio.cancelado && (
+        <p role="status" className="type-body-small mt-6 text-muted-foreground">
+          Evento cancelado. As inscrições pagas são reembolsadas automaticamente.
+        </p>
+      )}
+      {erroEncerrar && (
+        <p role="alert" className="type-body-small mt-3 text-destructive">
+          {erroEncerrar}
+        </p>
+      )}
+      <h2 className="type-h3 mt-8 text-foreground">Participantes</h2>
+      {participantes.length === 0 ? (
+        <p className="type-body-small mt-3 text-muted-foreground">Ninguém se inscreveu ainda.</p>
+      ) : (
+        <ul className="mt-4 divide-y divide-border rounded-xl border border-border bg-surface">
+          {participantes.map((p) => (
+            <li key={p.id} className="type-body-small flex items-center justify-between px-4 py-3">
+              <span className="text-foreground">{p.userName}</span>
+              <span className={p.paymentStatus === "PAID" ? "text-success" : "text-muted-foreground"}>
+                {p.paymentStatus === "PAID" ? "Confirmado" : p.paymentStatus === "REFUNDED" ? "Reembolsado" : "Aguardando pagamento"}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </main>
+  )
 }

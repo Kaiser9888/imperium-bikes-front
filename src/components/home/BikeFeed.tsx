@@ -4,6 +4,7 @@
 import { useEffect, useState } from 'react';
 import { productService } from '@/services/productService';
 import type { ProductResponse } from '@/types/publish/product';
+import { Loader } from '@/components/ui/loader';
 
 interface ApiResponse {
     content: ProductResponse[];
@@ -55,11 +56,7 @@ export default function BikeFeed() {
 
     if (loading) {
         return (
-          <div className="p-4 text-center">
-              <p className="text-gray-500">
-                  Carregando produtos...
-              </p>
-          </div>
+          <Loader className="p-4" />
         );
     }
 
@@ -76,7 +73,7 @@ export default function BikeFeed() {
     if (bikes.length === 0) {
         return (
           <div className="p-4 text-center">
-              <p className="text-gray-500">
+              <p className="text-muted-foreground">
                   Nenhum produto cadastrado ainda.
               </p>
           </div>
@@ -94,7 +91,7 @@ export default function BikeFeed() {
                     {bike.title || 'Sem título'}
                 </h3>
 
-                <p className="text-gray-600 mt-2">
+                <p className="text-muted-foreground mt-2">
                     {bike.description || 'Sem descrição'}
                 </p>
 

@@ -17,6 +17,9 @@ import {
     Store,
     Tag,
     Trophy,
+    Bell,
+    Newspaper,
+    Package,
     User,
     Wallet,
     type LucideIcon,
@@ -31,8 +34,7 @@ type MenuDrawerProps = { open: boolean; onOpenChange: (open: boolean) => void }
 type MenuItem = { icon: LucideIcon; label: string; href: string }
 type MenuSection = { title: string; items: MenuItem[] }
 
-// Somente rotas que existem no app. Notificações, Notícias, Fórum e Suporte
-// voltam quando tiverem implementação real.
+// Somente rotas que existem no app. Suporte volta quando tiver implementação real.
 const menuSections: MenuSection[] = [
     {
         title: "Minha conta",
@@ -40,6 +42,7 @@ const menuSections: MenuSection[] = [
             { icon: User, label: "Perfil", href: "/perfil" },
             { icon: Heart, label: "Favoritos", href: "/favoritos" },
             { icon: MessageCircle, label: "Chat", href: "/chat" },
+            { icon: Bell, label: "Notificações", href: "/notificacoes" },
             { icon: Wallet, label: "Carteira", href: "/carteira" },
         ],
     },
@@ -55,6 +58,7 @@ const menuSections: MenuSection[] = [
         items: [
             { icon: ShoppingBag, label: "Comprar", href: "/produtos" },
             { icon: ShoppingCart, label: "Carrinho", href: "/carrinho" },
+            { icon: Package, label: "Pedidos", href: "/pedidos" },
             { icon: Store, label: "Central do vendedor", href: "/vendedor" },
             { icon: Tag, label: "Anunciar", href: "/publicar" },
         ],
@@ -63,6 +67,7 @@ const menuSections: MenuSection[] = [
         title: "Conteúdo",
         items: [
             { icon: Clapperboard, label: "Vídeos", href: "/videos" },
+            { icon: Newspaper, label: "Notícias", href: "/forum" },
             { icon: LayoutGrid, label: "Modalidades", href: "/modalidades" },
         ],
     },

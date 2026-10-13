@@ -108,15 +108,15 @@
     --border: oklch(0.915 0.008 245);
     --input: oklch(0.87 0.01 245);
 
-    /* Primária: azul-oceano profundo */
-    --primary: oklch(0.42 0.12 250);
-    --primary-hover: oklch(0.36 0.12 250);
+    /* Primária: vermelho da marca (links, foco, seleção) */
+    --primary: oklch(0.56 0.22 27);
+    --primary-hover: oklch(0.5 0.21 27);
     --primary-foreground: oklch(1 0 0);
 
-    /* Destaque: coral — apenas para a ação principal da tela */
-    --accent: oklch(0.68 0.19 38);
-    --accent-hover: oklch(0.63 0.19 38);
-    --accent-foreground: oklch(0.21 0.03 255);
+    /* Destaque: vermelho da marca */
+    --accent: oklch(0.56 0.22 27);
+    --accent-hover: oklch(0.5 0.21 27);
+    --accent-foreground: oklch(1 0 0);
 
     --secondary: var(--surface-muted);
     --secondary-foreground: var(--foreground);
@@ -170,13 +170,13 @@
     --border: oklch(1 0 0 / 12%);
     --input: oklch(1 0 0 / 18%);
 
-    --primary: oklch(0.68 0.13 245);
-    --primary-hover: oklch(0.74 0.12 245);
-    --primary-foreground: oklch(0.18 0.02 255);
+    --primary: oklch(0.62 0.22 27);
+    --primary-hover: oklch(0.68 0.2 27);
+    --primary-foreground: oklch(1 0 0);
 
-    --accent: oklch(0.72 0.17 38);
-    --accent-hover: oklch(0.77 0.15 38);
-    --accent-foreground: oklch(0.18 0.02 255);
+    --accent: oklch(0.62 0.22 27);
+    --accent-hover: oklch(0.68 0.2 27);
+    --accent-foreground: oklch(1 0 0);
 
     --muted-foreground: oklch(0.72 0.015 250);
 
@@ -203,6 +203,25 @@
     :focus-visible {
         outline: 2px solid var(--ring);
         outline-offset: 2px;
+    }
+}
+
+/*
+  Campos de texto escritos direto na página (fora do componente Input) ganham a
+  mesma borda e sombra sólida. Fica fora de @layer para valer sobre as classes
+  utilitárias da página; data-plain desliga em campos embutidos (barra de busca).
+*/
+:where(input:not([type="checkbox"], [type="radio"], [type="range"], [type="file"], [type="hidden"], [type="color"], [type="submit"], [type="button"]), textarea, select):not([data-plain], [cmdk-input], [data-input-otp], [class*="cl-"]) {
+    border: 1.5px solid var(--foreground);
+    box-shadow: 2.5px 3px 0 var(--foreground);
+    transition: box-shadow 0.2s;
+
+    &:focus-visible {
+        box-shadow: 5.5px 7px 0 var(--foreground);
+        outline: none;
+    }
+    &[aria-invalid="true"] {
+        border-color: var(--destructive);
     }
 }
 
@@ -274,6 +293,137 @@
         animation-iteration-count: 1 !important;
         transition-duration: 0.01ms !important;
         scroll-behavior: auto !important;
+    }
+}
+
+/* Botão de compartilhar (Uiverse.io, zaby_4213) nas cores da marca */
+.galaxy-btn {
+    --btn-bg: oklch(0.16 0.02 20);
+    --btn-text: #fff;
+    position: relative;
+    z-index: 1;
+    overflow: hidden;
+    cursor: pointer;
+    border: none;
+    border-radius: 0.75em;
+    background: var(--btn-bg);
+    padding: 0.8em 1.6em;
+    font-size: 0.8125rem;
+    box-shadow: 0 0.5em 1.5em -0.5em color-mix(in oklch, var(--accent) 50%, transparent);
+    transition: transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+.galaxy-btn:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 4px;
+}
+.galaxy-btn:active {
+    transform: scale(0.96);
+}
+.galaxy-btn__content {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    gap: 0.75em;
+    color: var(--btn-text);
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+.galaxy-btn__content svg {
+    width: 1.25em;
+    height: 1.25em;
+    transition: transform 0.3s ease;
+}
+.galaxy-btn:hover .galaxy-btn__content svg {
+    transform: translateX(0.25em) rotate(-10deg);
+}
+.galaxy-btn::before {
+    content: '';
+    position: absolute;
+    inset: -4px;
+    z-index: 0;
+    border-radius: 0.75em;
+    background: conic-gradient(
+        from 0deg,
+        var(--btn-bg) 0deg,
+        var(--accent) 60deg,
+        oklch(0.7 0.19 45) 120deg,
+        var(--btn-bg) 180deg,
+        oklch(0.45 0.2 20) 240deg,
+        var(--accent) 300deg,
+        var(--btn-bg) 360deg
+    );
+    filter: blur(8px);
+    opacity: 0.7;
+    animation: rotate-nebula 4s linear infinite;
+    transition: opacity 0.3s ease;
+}
+.galaxy-btn:hover::before {
+    opacity: 1;
+    animation-duration: 2s;
+}
+.galaxy-btn::after {
+    content: '';
+    position: absolute;
+    inset: 2px;
+    z-index: 1;
+    border-radius: 0.6em;
+    background: var(--btn-bg);
+}
+.galaxy-btn__stars {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    background-image:
+        radial-gradient(circle at 20% 30%, white 1px, transparent 1.5px),
+        radial-gradient(circle at 80% 70%, white 1px, transparent 1.5px),
+        radial-gradient(circle at 40% 80%, white 0.5px, transparent 1px);
+    background-size: 120% 120%;
+    opacity: 0.3;
+    transition: opacity 0.3s ease;
+}
+.galaxy-btn:hover .galaxy-btn__stars {
+    opacity: 0.8;
+    animation: star-drift 5s linear infinite alternate;
+}
+@keyframes rotate-nebula {
+    to {
+        transform: rotate(360deg);
+    }
+}
+@keyframes star-drift {
+    to {
+        transform: scale(1.1) translate(-2%, -2%);
+    }
+}
+
+/* Loader de pulso (Uiverse.io, 0senno) */
+.pulse-loader polyline {
+    fill: none;
+    stroke-width: 3;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+.pulse-loader .back {
+    stroke: color-mix(in oklch, var(--accent) 20%, transparent);
+}
+.pulse-loader .front {
+    stroke: var(--accent);
+    stroke-dasharray: 48, 144;
+    stroke-dashoffset: 192;
+    animation: pulse-dash 2s linear infinite;
+}
+.pulse-loader .front + .front {
+    animation-delay: 1s;
+}
+@keyframes pulse-dash {
+    72.5% {
+        opacity: 0;
+    }
+    to {
+        stroke-dashoffset: 0;
     }
 }
 

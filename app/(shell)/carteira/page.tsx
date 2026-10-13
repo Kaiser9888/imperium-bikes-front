@@ -10,6 +10,7 @@ import type { ContaConectadaResponse } from "@/types/contaConectada";
 import SaldoCard from "@/components/carteira/SaldoCard";
 import ExtratoList from "@/components/carteira/ExtratoList";
 import StripeStatusBanner from "@/components/carteira/StripeStatusBanner";
+import { Loader } from "@/components/ui/loader";
 
 export default function CarteiraPage() {
   const { getToken, isLoaded, isSignedIn } = useAuth();
@@ -55,10 +56,10 @@ export default function CarteiraPage() {
       .finally(() => setLoading(false));
   }, [isLoaded, isSignedIn, isSynced, pagina, carregarCarteira, carregarStatusConta, carregarExtrato]);
 
-  if (!isLoaded) return <StatusMessage>Carregando...</StatusMessage>;
+  if (!isLoaded) return <Loader className="py-24" />;
   if (!isSignedIn) return <StatusMessage>Você precisa estar logado.</StatusMessage>;
   if (!isSynced) return <StatusMessage>Preparando sua conta...</StatusMessage>;
-  if (loading) return <StatusMessage>Carregando carteira...</StatusMessage>;
+  if (loading) return <Loader className="py-24" />;
   if (erro) return <StatusMessage error>{erro}</StatusMessage>;
 
   return (

@@ -3,7 +3,9 @@ import { ClerkProvider } from '@clerk/nextjs'
 import { ptBR } from '@clerk/localizations'
 import type { Metadata } from 'next'
 import { Geist } from 'next/font/google'
+import { ThemeProvider } from 'next-themes'
 import { AppShellProvider } from '@/components/layout/app-shell'
+import { Toaster } from '@/components/ui/sonner'
 import { UserSyncProvider } from '@/lib/UserSyncContext'
 import './globals.css'
 
@@ -28,9 +30,13 @@ export default function RootLayout({
       {/* A variável da fonte fica no <html> para os tokens do :root conseguirem lê-la */}
       <html lang="pt-BR" className={geistSans.variable} suppressHydrationWarning>
         <body className="antialiased">
-          <UserSyncProvider>
-            <AppShellProvider>{children}</AppShellProvider>
-          </UserSyncProvider>
+          {/* Tema claro/escuro: a escolha fica em Configurações e é guardada no navegador */}
+          <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+            <UserSyncProvider>
+              <AppShellProvider>{children}</AppShellProvider>
+            </UserSyncProvider>
+            <Toaster />
+          </ThemeProvider>
           <Analytics />
         </body>
       </html>

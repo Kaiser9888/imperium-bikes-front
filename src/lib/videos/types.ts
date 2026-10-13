@@ -17,6 +17,8 @@ export interface VideoItem {
     userAvatarUrl?: string;
     createdAt: string;
     isShort?: boolean;
+    /** PROCESSING enquanto o Mux prepara o vídeo; PUBLISHED quando dá para assistir. */
+    status?: string;
 }
 
 export interface VideoPage {

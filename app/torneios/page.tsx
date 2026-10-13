@@ -2,69 +2,45 @@
 "use client"
 
 import { BottomNav } from "@/components/layout/bottom-nav"
-import { Search, Plus, Trophy, MapPin, Calendar, Users, Flame, ChevronRight } from "lucide-react"
+import { Search, Plus, Trophy, MapPin, Calendar, Users, ChevronRight } from "lucide-react"
 import Link from "next/link"
 import { Logo } from "@/components/layout/logo"
 import { useEffect, useState } from "react"
-import { tournamentService } from "@/services/tournamentService"
+import { tournamentService, type Tournament } from "@/services/tournamentService"
 import { formatarPreco } from "@/lib/format"
+import { Loader } from "@/components/ui/loader"
 
-interface TournamentCard {
-    id: string
-    nome: string
-    modalidade: string
-    data: string
-    local: string
-    participantes: number
-    maxParticipantes: number
-    valor: string
-    status: string
-    banner: string
-    organizador: string
-    premiacao: string
+/** Formato que os cartões desta tela usam. */
+function tournamentCards(torneios: Tournament[]) {
+    return torneios.map((t) => ({
+        id: t.id,
+        nome: t.nome,
+        data: new Date(`${t.dataInicio}T12:00:00`).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" }),
+        local: t.local,
+        participantes: t.participantes,
+        maxParticipantes: Math.max(1, t.maxParticipantes),
+        valor: t.valorInscricao > 0 ? formatarPreco(t.valorInscricao) : "Grátis",
+        status: t.status as string,
+        banner: t.banner,
+        organizador: t.organizadorNome,
+        premiacao: t.premiacao,
+    }))
 }
+type TournamentCard = ReturnType<typeof tournamentCards>[number]
 
-function tournamentCards(payload: unknown): TournamentCard[] {
-    const root = payload && typeof payload === "object" ? payload as Record<string, unknown> : {}
-    const rawItems = Array.isArray(payload) ? payload : [root.content, root.items, root.data].find(Array.isArray) ?? []
-    return rawItems.flatMap((value): TournamentCard[] => {
-        if (!value || typeof value !== "object") return []
-        const item = value as Record<string, unknown>
-        const id = item.id
-        const name = item.name ?? item.nome ?? item.title
-        if (id == null || typeof name !== "string") return []
-        const rawStatus = String(item.status ?? "open").toLowerCase()
-        const status = /closed|ended|encerr|finaliz/.test(rawStatus) ? "encerrado" : /progress|live|andamento/.test(rawStatus) ? "andamento" : "aberto"
-        const dateValue = item.startDate ?? item.dataInicio ?? item.date ?? item.data
-        const parsedDate = dateValue ? new Date(String(dateValue)) : null
-        const date = parsedDate && !Number.isNaN(parsedDate.getTime()) ? parsedDate.toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" }) : "Data a confirmar"
-        const price = Number(item.entryFee ?? item.valorInscricao ?? item.price ?? 0)
-        return [{
-            id: String(id), nome: name, modalidade: String(item.modality ?? item.modalidade ?? "Ciclismo"), data: date,
-            local: String(item.location ?? item.local ?? item.city ?? "Local a confirmar"),
-            participantes: Number(item.participantsCount ?? item.participantes ?? item.participants ?? 0),
-            maxParticipantes: Math.max(1, Number(item.maxParticipants ?? item.maxParticipantes ?? 1)),
-            valor: price > 0 ? formatarPreco(price) : "Grátis",
-            status, banner: String(item.bannerUrl ?? item.banner ?? "/placeholder.svg"),
-            organizador: String(item.organizerUsername ?? item.organizer ?? item.organizador ?? "Organizador"),
-            premiacao: String(item.prize ?? item.premiacao ?? "Premiação a confirmar"),
-        }]
-    })
-}
 
 type FiltroStatus = "todos" | "aberto" | "andamento" | "encerrado"
 
 export default function TorneiosPage() {
     const [filtro, setFiltro] = useState<FiltroStatus>("todos")
     const [busca, setBusca] = useState("")
-    const [modalidadeFiltro, setModalidadeFiltro] = useState<string>("todas")
     const [torneios, setTorneios] = useState<TournamentCard[]>([])
     const [carregando, setCarregando] = useState(true)
     const [erro, setErro] = useState<string | null>(null)
 
     useEffect(() => {
         let active = true
-        tournamentService.listar({ page: 0 }).then((result) => {
+        tournamentService.listar().then((result) => {
             if (active) setTorneios(tournamentCards(result))
         }).catch(() => {
             if (active) setErro("Não foi possível carregar os torneios. Tente novamente mais tarde.")
@@ -72,16 +48,13 @@ export default function TorneiosPage() {
         return () => { active = false }
     }, [])
 
-    const modalidades = ["todas", "Downhill", "Mountain Bike", "Speed", "BMX", "Urbana"]
-
     const torneiosFiltrados = torneios.filter((t) => {
         const matchStatus = filtro === "todos" ||
             (filtro === "aberto" && t.status === "aberto") ||
             (filtro === "andamento" && t.status === "andamento") ||
             (filtro === "encerrado" && t.status === "encerrado")
         const matchBusca = t.nome.toLowerCase().includes(busca.toLowerCase())
-        const matchModalidade = modalidadeFiltro === "todas" || t.modalidade === modalidadeFiltro
-        return matchStatus && matchBusca && matchModalidade
+        return matchStatus && matchBusca
     })
 
     return (
@@ -102,8 +75,7 @@ export default function TorneiosPage() {
             <main className="mx-auto max-w-7xl px-4 py-6">
                 {/* Título */}
                 <div className="mb-6">
-                    <h1 className="font-blackletter text-3xl text-primary">Torneios</h1>
-                    <p className="text-sm text-muted-foreground mt-1">Compita, vença e conquiste sua glória</p>
+                    <h1 className="type-h1 text-foreground">Eventos</h1>
                 </div>
 
                 {/* Busca */}
@@ -125,19 +97,12 @@ export default function TorneiosPage() {
                             {f.label}
                         </button>
                     ))}
-                    <div className="w-px bg-border shrink-0" />
-                    {modalidades.map((m) => (
-                        <button key={m} onClick={() => setModalidadeFiltro(m)}
-                                className={`shrink-0 rounded-full px-4 py-2 text-xs font-medium transition-colors ${modalidadeFiltro === m ? "bg-imperial text-imperial-foreground" : "bg-card border border-border text-muted-foreground hover:text-foreground"}`}>
-                            {m === "todas" ? "Todas" : m}
-                        </button>
-                    ))}
                 </div>
 
                 {/* Lista */}
                 {erro && <p role="alert" className="mb-4 rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">{erro}</p>}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {carregando && <p className="col-span-full py-12 text-center text-sm text-muted-foreground">Carregando torneios...</p>}
+                    {carregando && <Loader className="col-span-full py-12" />}
                     {!carregando && !erro && torneiosFiltrados.length === 0 && (
                         <div className="col-span-full text-center py-12">
                             <Trophy className="size-12 text-muted-foreground mx-auto mb-3" />
@@ -151,10 +116,8 @@ export default function TorneiosPage() {
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                                 <div className="absolute top-3 left-3">
                                     {torneio.status === "aberto" && <span className="inline-flex items-center gap-1 rounded-full bg-green-500/90 px-2.5 py-1 text-[0.6rem] font-bold text-white uppercase"><span className="size-1.5 rounded-full bg-white animate-pulse" />Inscrições abertas</span>}
-                                    {torneio.status === "quase_cheio" && <span className="inline-flex items-center gap-1 rounded-full bg-yellow-500/90 px-2.5 py-1 text-[0.6rem] font-bold text-white uppercase"><Flame className="size-3" />Quase cheio</span>}
                                     {torneio.status === "encerrado" && <span className="inline-flex items-center gap-1 rounded-full bg-gray-500/90 px-2.5 py-1 text-[0.6rem] font-bold text-white uppercase">Encerrado</span>}
                                 </div>
-                                <div className="absolute top-3 right-3"><span className="rounded-full bg-white/20 backdrop-blur px-2.5 py-1 text-[0.6rem] font-semibold text-white uppercase">{torneio.modalidade}</span></div>
                                 <div className="absolute bottom-0 left-0 right-0 p-3"><h3 className="font-heading text-base font-bold text-white leading-tight">{torneio.nome}</h3></div>
                             </div>
                             <div className="p-4 space-y-3">

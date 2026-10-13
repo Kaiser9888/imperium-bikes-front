@@ -212,7 +212,7 @@ function ProdutoPage() {
 
           <Link
             href="/"
-            className="mt-6 inline-flex items-center gap-2 bg-foreground px-5 py-3 text-sm font-bold text-white"
+            className="mt-6 inline-flex items-center gap-2 bg-foreground px-5 py-3 text-sm font-bold text-background"
           >
             <ArrowLeft className="size-4" />
             Voltar ao marketplace
@@ -562,7 +562,7 @@ function ProdutoPage() {
                     <ChevronRight />
                   </button>
 
-                  <span className="absolute bottom-4 left-4 bg-foreground/85 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.16em] text-white">
+                  <span className="absolute bottom-4 left-4 bg-foreground/85 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.16em] text-background">
                     {activeImage + 1} / {imagens.length}
                   </span>
 
@@ -814,7 +814,7 @@ function ProdutoPage() {
       inputMode="numeric"
       placeholder="00000-000"
       aria-label="CEP para cálculo do frete"
-      className="min-w-0 flex-1 border border-border bg-white px-3 py-3 text-sm outline-none focus:border-primary"
+      className="min-w-0 flex-1 border border-border bg-surface px-3 py-3 text-sm outline-none focus:border-primary"
     />
 
     <Button
@@ -854,7 +854,7 @@ function ProdutoPage() {
 
           <div
             key={opcao.id}
-            className="flex items-center justify-between gap-4 border border-border bg-white p-3"
+            className="flex items-center justify-between gap-4 border border-border bg-surface p-3"
           >
 
             <div className="min-w-0">

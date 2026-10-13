@@ -1,10 +1,9 @@
 // src/components/videos/VideoActions.tsx
 "use client";
-import { Button } from "@/components/ui/button"
+import { ShareButton } from "@/components/ui/share-button"
 
-import { ThumbsUp, ThumbsDown, Share2 } from "lucide-react";
+import { ThumbsUp, ThumbsDown } from "lucide-react";
 import { formatViews } from "@/lib/videos/format";
-import { toast } from "sonner";
 
 interface VideoActionsProps {
   liked: boolean;
@@ -23,24 +22,6 @@ export function VideoActions({
                                onToggleLike,
                                onToggleDislike,
                              }: VideoActionsProps) {
-  async function handleShare() {
-    const url = typeof window !== "undefined" ? window.location.href : "";
-
-    if (typeof navigator !== "undefined" && navigator.share) {
-      try {
-        await navigator.share({ url });
-        return;
-      } catch {
-        // Usuário cancelou
-      }
-    }
-
-    if (typeof navigator !== "undefined" && navigator.clipboard) {
-      await navigator.clipboard.writeText(url);
-      toast?.("Link copiado!", { description: "Compartilhe com seus amigos" });
-    }
-  }
-
   return (
     <div className="flex items-center gap-2 w-full sm:w-auto">
       <div className="flex items-center rounded-full bg-muted/50 border border-border overflow-hidden">
@@ -51,11 +32,11 @@ export function VideoActions({
           className={`
                         flex items-center gap-2 px-4 py-2.5 text-sm font-medium
                         transition-all duration-200 hover:bg-muted/80
-                        ${liked ? "text-blue-600 dark:text-blue-400" : "text-muted-foreground"}
+                        ${liked ? "text-accent" : "text-muted-foreground"}
                     `}
         >
           <ThumbsUp
-            className={`size-5 transition-transform ${liked ? "fill-blue-600 dark:fill-blue-400 scale-110" : ""}`}
+            className={`size-5 transition-transform ${liked ? "fill-accent scale-110" : ""}`}
             aria-hidden="true"
           />
           <span className="tabular-nums">{formatViews(likesCount)}</span>
@@ -70,25 +51,18 @@ export function VideoActions({
           className={`
                         flex items-center gap-2 px-4 py-2.5 text-sm font-medium
                         transition-all duration-200 hover:bg-muted/80
-                        ${disliked ? "text-blue-600 dark:text-blue-400" : "text-muted-foreground"}
+                        ${disliked ? "text-accent" : "text-muted-foreground"}
                     `}
         >
           <ThumbsDown
-            className={`size-5 transition-transform ${disliked ? "fill-blue-600 dark:fill-blue-400 scale-110" : ""}`}
+            className={`size-5 transition-transform ${disliked ? "fill-accent scale-110" : ""}`}
             aria-hidden="true"
           />
           <span className="tabular-nums hidden sm:inline">{formatViews(dislikesCount)}</span>
         </button>
       </div>
 
-      <Button
-        type="button"
-        onClick={handleShare}
-        variant="outline"
-      >
-        <Share2 className="size-5" aria-hidden="true" />
-        <span className="hidden sm:inline">Compartilhar</span>
-      </Button>
+      <ShareButton />
     </div>
   );
 }

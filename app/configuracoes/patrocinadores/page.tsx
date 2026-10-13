@@ -1,175 +1,161 @@
-// app/configuracoes/patrocinadores/page.tsx
 "use client"
-import { Button } from "@/components/ui/button"
 
+import { useCallback, useEffect, useRef, useState } from "react"
 import { useUser } from "@clerk/nextjs"
-import { ArrowLeft, Plus, Trash2, Upload, Image, AlertCircle } from "lucide-react"
-import Link from "next/link"
-import { Logo } from "@/components/layout/logo"
-import { useState } from "react"
+import { ImagePlus, Trash2 } from "lucide-react"
+
+import { AppShell } from "@/components/layout/app-shell"
+import { PageHeading } from "@/components/layout/page-heading"
+import { sponsorImageUrl, type Sponsor } from "@/components/perfil/SponsorBanners"
+import { Button } from "@/components/ui/button"
+import { ErrorState } from "@/components/ui/error-state"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Loader } from "@/components/ui/loader"
+import api from "@/lib/api"
 
 const MAX_BANNERS = 6
-const FORMATOS_ACEITOS = "PNG, JPG ou WEBP"
-const TAMANHO_MAXIMO = "2 MB"
-const DIMENSOES_RECOMENDADAS = "400×200px"
+const MAX_BYTES = 2 * 1024 * 1024
+
+function motivo(cause: unknown): string {
+    const data = (cause as { response?: { data?: { message?: unknown } } })?.response?.data
+    return typeof data?.message === "string" ? data.message : "Tente novamente."
+}
 
 export default function PatrocinadoresPage() {
-    const { user, isSignedIn, isLoaded } = useUser()
-    const [banners, setBanners] = useState<string[]>([
-        "/images/banner-patro-1.png",
-        "/images/banner-patro-2.png",
-        "/images/banner-patro-3.png",
-    ])
-    const [mostrarForm, setMostrarForm] = useState(false)
-    const [novaImagem, setNovaImagem] = useState("")
-    const [erro, setErro] = useState("")
+    const { isSignedIn, isLoaded } = useUser()
+    const [sponsors, setSponsors] = useState<Sponsor[] | null>(null)
+    const [falhou, setFalhou] = useState(false)
+    const [erro, setErro] = useState<string | null>(null)
+    const [ocupado, setOcupado] = useState(false)
+    const [salvo, setSalvo] = useState(false)
+    const fileInput = useRef<HTMLInputElement>(null)
 
-    const adicionarBanner = () => {
-        setErro("")
-        if (!novaImagem.trim()) {
-            setErro("Insira a URL da imagem.")
+    const carregar = useCallback(async () => {
+        setFalhou(false)
+        try {
+            const { data } = await api.get("/api/users/me")
+            setSponsors(data.sponsors ?? [])
+        } catch {
+            setFalhou(true)
+        }
+    }, [])
+
+    useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- carga inicial ao entrar na conta
+        if (isSignedIn) void carregar()
+    }, [isSignedIn, carregar])
+
+    async function adicionar(event: React.ChangeEvent<HTMLInputElement>) {
+        const file = event.target.files?.[0]
+        event.target.value = ""
+        if (!file || !sponsors) return
+        setErro(null)
+        setSalvo(false)
+        if (file.size > MAX_BYTES) {
+            setErro("A imagem deve ter no máximo 2 MB.")
             return
         }
-        if (banners.length >= MAX_BANNERS) {
-            setErro(`Máximo de ${MAX_BANNERS} banners. Remova um para adicionar.`)
-            return
+        setOcupado(true)
+        try {
+            const form = new FormData()
+            form.append("file", file)
+            // Content-Type indefinido: o navegador define o multipart com o boundary correto
+            const { data } = await api.post("/api/files/upload/image", form, { headers: { "Content-Type": undefined } })
+            const imageUrl = data?.data?.publicUrl
+            if (typeof imageUrl !== "string") throw new Error("upload sem URL")
+            setSponsors([...sponsors, { name: "", imageUrl: sponsorImageUrl(imageUrl), linkUrl: "" }])
+        } catch (cause) {
+            setErro(`Não foi possível enviar a imagem. ${motivo(cause)}`)
+        } finally {
+            setOcupado(false)
         }
-        setBanners([...banners, novaImagem])
-        setNovaImagem("")
-        setMostrarForm(false)
     }
 
-    const removerBanner = (index: number) => {
-        setBanners(banners.filter((_, i) => i !== index))
+    function alterar(index: number, campo: "name" | "linkUrl", valor: string) {
+        setSalvo(false)
+        setSponsors((atual) => atual && atual.map((sponsor, i) => (i === index ? { ...sponsor, [campo]: valor } : sponsor)))
     }
 
-    if (!isLoaded) return <div className="min-h-screen bg-background flex items-center justify-center"><p className="text-muted-foreground">Carregando...</p></div>
-    if (!isSignedIn) return <div className="min-h-screen bg-background flex items-center justify-center"><p className="text-muted-foreground">Entre para acessar</p></div>
+    async function salvar() {
+        if (!sponsors) return
+        setErro(null)
+        setOcupado(true)
+        try {
+            const { data } = await api.put(
+                "/api/users/me/sponsors",
+                sponsors.map((sponsor) => ({
+                    name: sponsor.name?.trim() || null,
+                    imageUrl: sponsor.imageUrl,
+                    linkUrl: sponsor.linkUrl?.trim() || null,
+                })),
+            )
+            setSponsors(data.sponsors ?? [])
+            setSalvo(true)
+        } catch (cause) {
+            setErro(`Não foi possível salvar. ${motivo(cause)}`)
+        } finally {
+            setOcupado(false)
+        }
+    }
 
     return (
-        <div className="min-h-screen bg-background">
-            {/* Header */}
-            <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur-md">
-                <div>
-                    <div className="mx-auto flex w-full max-w-7xl items-center px-4 py-3">
-                        <Link href="/perfil" className="flex items-center gap-2 text-marble-foreground hover:text-foreground">
-                            <ArrowLeft className="size-5" />
-                            <span className="text-sm">Voltar</span>
-                        </Link>
-                        <h1 className="flex-1 text-center font-heading text-sm font-bold uppercase tracking-widest text-marble-foreground">Gerenciar Banners</h1>
-                        <Logo compact />
-                    </div>
-                </div>
-            </header>
+        <AppShell>
+            <main className="mx-auto w-full max-w-2xl px-4 pb-16 pt-4 sm:px-6">
+                <PageHeading
+                    title="Patrocinadores"
+                    description={`Até ${MAX_BANNERS} banners no seu perfil. PNG, JPG ou WEBP de até 2 MB.`}
+                    back={{ href: "/perfil", label: "Perfil" }}
+                />
 
-            <main className="mx-auto max-w-2xl px-4 py-6 space-y-6">
-                {/* Especificações */}
-                <div className="rounded-xl border border-border bg-card p-4 space-y-2">
-                    <div className="flex items-center gap-2">
-                        <AlertCircle className="size-4 text-muted-foreground" />
-                        <h3 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Especificações dos banners</h3>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
-                        <p>• Formato: {FORMATOS_ACEITOS}</p>
-                        <p>• Máximo: {TAMANHO_MAXIMO}</p>
-                        <p>• Dimensão: {DIMENSOES_RECOMENDADAS}</p>
-                        <p>• Limite: {MAX_BANNERS} banners</p>
-                    </div>
-                </div>
+                {(!isLoaded || (isSignedIn && !sponsors && !falhou)) && <Loader className="py-16" />}
+                {isLoaded && !isSignedIn && <p className="type-body mt-8 text-muted-foreground">Entre para gerenciar seus patrocinadores.</p>}
+                {falhou && <ErrorState onRetry={carregar} />}
 
-                {/* Banners atuais */}
-                <div>
-                    <div className="flex items-center justify-between mb-3">
-                        <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-                            Seus banners ({banners.length}/{MAX_BANNERS})
-                        </h2>
-                    </div>
-
-                    {banners.length === 0 ? (
-                        <div className="rounded-xl border-2 border-dashed border-border p-8 text-center">
-                            <Image className="size-10 text-muted-foreground mx-auto mb-3" />
-                            <p className="text-sm text-muted-foreground">Nenhum banner cadastrado</p>
-                            <p className="text-xs text-muted-foreground mt-1">Adicione banners de patrocinadores ou parceiros</p>
-                        </div>
-                    ) : (
-                        <div className="grid grid-cols-2 gap-3">
-                            {banners.map((banner, i) => (
-                                <div
-                                    key={i}
-                                    className="group relative rounded-xl border border-border bg-card overflow-hidden hover:border-primary/30 transition-all"
-                                >
-                                    <img
-                                        src={banner}
-                                        alt={`Banner ${i + 1}`}
-                                        className="w-full h-24 object-cover"
-                                    />
-                                    <button
-                                        onClick={() => removerBanner(i)}
-                                        className="absolute top-2 right-2 flex size-7 items-center justify-center rounded-full bg-red-500 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
-                                    >
-                                        <Trash2 className="size-3.5" />
-                                    </button>
-                                    <div className="absolute bottom-0 left-0 right-0 bg-black/40 px-2 py-1">
-                                        <span className="text-[0.6rem] text-white font-medium">Banner {i + 1}</span>
-                                    </div>
+                {sponsors && (
+                    <div className="mt-8 flex flex-col gap-4">
+                        {sponsors.map((sponsor, index) => (
+                            <div key={`${sponsor.imageUrl}-${index}`} className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-4 sm:flex-row sm:items-end">
+                                {/* eslint-disable-next-line @next/next/no-img-element -- imagem enviada pelo usuário */}
+                                <img src={sponsorImageUrl(sponsor.imageUrl)} alt="" className="h-16 w-32 shrink-0 rounded-lg border border-border object-contain p-1.5" />
+                                <div className="flex flex-1 flex-col gap-2">
+                                    <Label htmlFor={`sponsor-name-${index}`}>Nome</Label>
+                                    <Input id={`sponsor-name-${index}`} maxLength={100} value={sponsor.name ?? ""} onChange={(e) => alterar(index, "name", e.target.value)} />
                                 </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
+                                <div className="flex flex-1 flex-col gap-2">
+                                    <Label htmlFor={`sponsor-link-${index}`}>Link (opcional)</Label>
+                                    <Input id={`sponsor-link-${index}`} type="url" placeholder="https://" value={sponsor.linkUrl ?? ""} onChange={(e) => alterar(index, "linkUrl", e.target.value)} />
+                                </div>
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    aria-label={`Remover ${sponsor.name || "patrocinador"}`}
+                                    onClick={() => {
+                                        setSalvo(false)
+                                        setSponsors(sponsors.filter((_, i) => i !== index))
+                                    }}
+                                >
+                                    <Trash2 aria-hidden="true" />
+                                </Button>
+                            </div>
+                        ))}
 
-                {/* Formulário */}
-                {mostrarForm ? (
-                    <div className="rounded-xl border border-border bg-card p-5 space-y-4">
-                        <h3 className="font-heading text-sm font-bold uppercase tracking-wide text-foreground">Adicionar banner</h3>
-                        <div>
-                            <label className="text-[10px] text-muted-foreground uppercase tracking-wider">URL da imagem</label>
-                            <input
-                                type="text"
-                                value={novaImagem}
-                                onChange={(e) => { setNovaImagem(e.target.value); setErro("") }}
-                                placeholder="https://exemplo.com/banner.png"
-                                className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm mt-1 outline-none focus:border-primary/30"
-                            />
-                            <p className="text-[10px] text-muted-foreground mt-1">
-                                Aceito: {FORMATOS_ACEITOS} • Máx: {TAMANHO_MAXIMO}
-                            </p>
-                        </div>
-                        {erro && (
-                            <p className="text-xs text-red-500 flex items-center gap-1">
-                                <AlertCircle className="size-3" /> {erro}
-                            </p>
-                        )}
-                        <div className="flex gap-2">
-                            <Button
-                                onClick={() => { setMostrarForm(false); setErro("") }}
-                                variant="outline" className="flex-1"
-                            >
-                                Cancelar
-                            </Button>
-                            <Button
-                                onClick={adicionarBanner}
-                                className="flex-1"
-                            >
-                                Adicionar
-                            </Button>
-                        </div>
+                        <input ref={fileInput} type="file" accept="image/png,image/jpeg,image/webp" onChange={adicionar} className="sr-only" tabIndex={-1} aria-hidden="true" />
+                        <Button type="button" variant="outline" disabled={ocupado || sponsors.length >= MAX_BANNERS} onClick={() => fileInput.current?.click()}>
+                            <ImagePlus aria-hidden="true" />
+                            {sponsors.length >= MAX_BANNERS ? "Limite de banners atingido" : "Adicionar banner"}
+                        </Button>
+
+                        {erro && <p role="alert" className="type-body-small rounded-lg bg-destructive/10 px-3 py-2.5 text-destructive">{erro}</p>}
+                        {salvo && <p role="status" className="type-body-small text-success">Patrocinadores salvos.</p>}
+
+                        <Button type="button" size="lg" loading={ocupado} onClick={salvar}>
+                            Salvar
+                        </Button>
                     </div>
-                ) : (
-                    <button
-                        onClick={() => setMostrarForm(true)}
-                        disabled={banners.length >= MAX_BANNERS}
-                        className={`w-full flex items-center justify-center gap-2 rounded-xl border-2 border-dashed py-4 text-sm font-medium transition-all ${
-                            banners.length >= MAX_BANNERS
-                                ? "border-border text-muted-foreground/50 cursor-not-allowed"
-                                : "border-border text-muted-foreground hover:border-primary/50 hover:text-primary"
-                        }`}
-                    >
-                        <Plus className="size-4" />
-                        {banners.length >= MAX_BANNERS ? "Limite de banners atingido" : "Adicionar banner"}
-                    </button>
                 )}
             </main>
-        </div>
+        </AppShell>
     )
 }

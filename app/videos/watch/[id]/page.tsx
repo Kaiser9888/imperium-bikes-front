@@ -14,6 +14,7 @@ import { VideoComments } from "@/components/videos/VideoComments";
 import { VideoSidebar } from "@/components/videos/VideoSidebar";
 import { VideoAvatar } from "@/components/videos/VideoAvatar";
 import { VideoDescription } from "@/components/videos/VideoDescription";
+import { Loader } from "@/components/ui/loader";
 
 export default function WatchPage() {
     const { id } = useParams<{ id: string }>();
@@ -50,6 +51,18 @@ export default function WatchPage() {
             cancelled = true;
         };
     }, [id]);
+
+    // Vídeo recém-enviado: consulta de novo a cada 5s até o Mux terminar (o backend
+    // confere o estado no Mux a cada consulta, então não depende do webhook).
+    const processando = video?.status === "PROCESSING";
+    useEffect(() => {
+        if (!processando) return;
+        const timer = setInterval(async () => {
+            const data = await fetchVideo(id);
+            if (data) setVideo(data);
+        }, 5000);
+        return () => clearInterval(timer);
+    }, [id, processando]);
 
     async function handleToggleLike() {
         if (!video) return;
@@ -143,7 +156,18 @@ export default function WatchPage() {
           <div className="grid gap-6 lg:gap-8 lg:grid-cols-[minmax(0,1fr)_360px]">
               <div className="space-y-4 lg:space-y-5">
                   <div className="lg:rounded-lg overflow-hidden">
-                      <VideoPlayer playbackId={playbackIdFrom(video.videoUrl)} title={video.title} />
+                      {processando || video.status === "FAILED" ? (
+                          <div role="status" className="flex aspect-video w-full flex-col items-center justify-center gap-3 bg-surface-muted px-6 text-center">
+                              {processando && <Loader label="Processando vídeo" />}
+                              <p className="type-body-small text-muted-foreground">
+                                  {processando
+                                      ? "Processando o vídeo. Ele aparece aqui assim que ficar pronto."
+                                      : "Não foi possível processar este vídeo. Envie o arquivo novamente."}
+                              </p>
+                          </div>
+                      ) : (
+                          <VideoPlayer playbackId={playbackIdFrom(video.videoUrl)} title={video.title} />
+                      )}
                   </div>
 
                   <div className="px-4 sm:px-0">

@@ -4,42 +4,80 @@ import { Suspense, useEffect, useState } from "react"
 import { useAuth } from "@clerk/nextjs"
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
-import { CheckCircle2, Loader2, XCircle } from "lucide-react"
+import { CheckCircle2, Clock, XCircle } from "lucide-react"
+
+import { Button } from "@/components/ui/button"
+import { Loader } from "@/components/ui/loader"
 import { apiFetch } from "@/lib/apiClient"
-import type { PedidoResponse } from "@/types/pedido"
+
+type Status = "LOADING" | "PAGO" | "FAILED" | "PENDING"
+type Consulta = { status: string; type?: string; referenceId?: string }
+
+const TEXTOS: Record<Exclude<Status, "LOADING">, { titulo: string; descricao: string }> = {
+  PAGO: { titulo: "Pagamento confirmado", descricao: "Recebemos seu pagamento." },
+  PENDING: { titulo: "Pagamento em confirmação", descricao: "Ainda não recebemos a confirmação. Atualize esta página em alguns instantes." },
+  FAILED: { titulo: "Não foi possível confirmar", descricao: "Não encontramos a confirmação deste pagamento. Se o valor foi cobrado, fale com o suporte." },
+}
 
 function SuccessContent() {
   const params = useSearchParams()
   const orderId = params.get("orderId")
+  // O Checkout do Stripe volta com session_id e o id é de um pagamento; sem ele, é um pedido
+  const path = orderId && `/api/${params.get("session_id") ? "payments" : "pedidos"}/${encodeURIComponent(orderId)}`
   const { getToken, isLoaded } = useAuth()
-  const [status, setStatus] = useState<"LOADING" | "PAGO" | "FAILED" | "PENDING">("LOADING")
+  const [status, setStatus] = useState<Status>(path ? "LOADING" : "FAILED")
+  const [voltar, setVoltar] = useState({ href: "/", label: "Voltar ao início" })
 
   useEffect(() => {
-    if (!isLoaded || !orderId) return
+    if (!isLoaded || !path) return
     let active = true
     let attempts = 0
     let timer: ReturnType<typeof setTimeout>
     const check = async () => {
       try {
-        const order = await apiFetch<PedidoResponse>(`/api/pedidos/${encodeURIComponent(orderId)}`, getToken)
+        const result = await apiFetch<Consulta>(path, getToken)
         if (!active) return
-        if (order.status === "PAGO" || order.status === "PAID") { setStatus("PAGO"); return }
-        if (["FAILED", "FALHOU", "CANCELADO", "CANCELED"].includes(order.status.toUpperCase())) { setStatus("FAILED"); return }
+        if (result.type === "TOURNAMENT_INSCRIPTION" && result.referenceId) {
+          setVoltar({ href: `/torneios/${result.referenceId}`, label: "Voltar ao evento" })
+        }
+        const atual = result.status.toUpperCase()
+        if (atual === "PAGO" || atual === "PAID") return setStatus("PAGO")
+        if (["FAILED", "FALHOU", "CANCELADO", "CANCELED", "CANCELLED", "EXPIRED"].includes(atual)) return setStatus("FAILED")
         attempts += 1
-        if (attempts >= 10) { setStatus("PENDING"); return }
+        if (attempts >= 10) return setStatus("PENDING")
         timer = setTimeout(check, 2000)
       } catch {
         if (active) setStatus("FAILED")
       }
     }
     void check()
-    return () => { active = false; clearTimeout(timer) }
-  }, [getToken, isLoaded, orderId])
+    return () => {
+      active = false
+      clearTimeout(timer)
+    }
+  }, [getToken, isLoaded, path])
 
-  if (!orderId) return <main className="grid min-h-screen place-items-center px-6 text-center"><div><XCircle className="mx-auto size-12 text-primary"/><h1 className="mt-5 font-serif text-3xl">Não foi possível confirmar</h1><p className="mt-2 text-sm text-muted-foreground">O pedido não foi informado.</p><Link href="/" className="mt-6 inline-block underline">Voltar ao marketplace</Link></div></main>
-  return <main className="grid min-h-screen place-items-center bg-background px-6 text-center text-foreground"><div className="max-w-md">{status === "LOADING" && <><Loader2 className="mx-auto size-10 animate-spin text-primary"/><h1 className="mt-5 font-serif text-3xl">Confirmando pagamento...</h1><p className="mt-2 text-sm text-muted-foreground">Isso pode levar alguns segundos.</p></>}{status === "PAGO" && <><CheckCircle2 className="mx-auto size-12 text-green-700"/><h1 className="mt-5 font-serif text-3xl">Pagamento confirmado!</h1><p className="mt-2 text-sm text-muted-foreground">Seu pedido foi pago e o vendedor foi notificado.</p><Link href="/" className="mt-6 inline-block bg-foreground px-5 py-3 text-sm font-bold text-white">Voltar ao marketplace</Link></>}{status === "PENDING" && <><Loader2 className="mx-auto size-10 text-primary"/><h1 className="mt-5 font-serif text-3xl">Pagamento em confirmação</h1><p className="mt-2 text-sm text-muted-foreground">O provedor ainda está atualizando o pedido. Consulte novamente em alguns instantes.</p><Link href="/" className="mt-6 inline-block underline">Voltar ao marketplace</Link></>}{status === "FAILED" && <><XCircle className="mx-auto size-12 text-primary"/><h1 className="mt-5 font-serif text-3xl">Não foi possível confirmar</h1><p className="mt-2 text-sm text-muted-foreground">Não encontramos a confirmação do pedido. Verifique seu pedido ou tente novamente.</p><Link href="/" className="mt-6 inline-block underline">Voltar ao marketplace</Link></>}</div></main>
+  if (status === "LOADING") return <Loader fullPage label="Confirmando pagamento" />
+
+  const Icon = status === "PAGO" ? CheckCircle2 : status === "PENDING" ? Clock : XCircle
+  return (
+    <main className="grid min-h-screen place-items-center bg-background px-6 text-center">
+      <div className="max-w-md">
+        <Icon className={`mx-auto size-12 ${status === "PAGO" ? "text-success" : status === "PENDING" ? "text-muted-foreground" : "text-destructive"}`} aria-hidden="true" />
+        <h1 className="type-h1 mt-5 text-foreground">{TEXTOS[status].titulo}</h1>
+        <p className="type-body-small mt-2 text-muted-foreground">{TEXTOS[status].descricao}</p>
+        <Button asChild size="lg" className="mt-8">
+          <Link href={voltar.href}>{voltar.label}</Link>
+        </Button>
+      </div>
+    </main>
+  )
 }
 
 export default function CheckoutSuccessPage() {
-  return <Suspense fallback={<main className="grid min-h-screen place-items-center"><Loader2 className="size-8 animate-spin"/></main>}><SuccessContent/></Suspense>
+  return (
+    <Suspense fallback={<Loader fullPage />}>
+      <SuccessContent />
+    </Suspense>
+  )
 }

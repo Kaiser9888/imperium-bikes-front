@@ -1,29 +1,60 @@
-import api from '@/lib/api'
+import api from "@/lib/api"
 
-// Endpoints baseados no Swagger: tag "Forum"
+export interface ForumCategory {
+    id: string
+    name: string
+}
+
+export interface ForumPost {
+    id: string
+    categoryId: string
+    categoryName: string
+    userId: string
+    userName: string
+    title: string
+    content: string
+    createdAt: string
+    replyCount: number
+    karmaTotal: number
+}
+
+export type Voto = "UP" | "DOWN"
+
 export const forumService = {
-    async listarPosts(params?: { page?: number; category?: string }) {
-        const response = await api.get('/api/forum/posts', { params })
-        return response.data
+    async categorias(): Promise<ForumCategory[]> {
+        return (await api.get("/api/forum/categories")).data
     },
 
-    async buscarPost(id: number) {
-        const response = await api.get(`/api/forum/posts/${id}`)
-        return response.data
+    /** Publicações mais recentes; com categoria, só as dela. */
+    async listar(categoryId?: string): Promise<ForumPost[]> {
+        const path = categoryId ? `/api/forum/posts/category/${categoryId}` : "/api/forum/posts"
+        return (await api.get(path, { params: { size: 30 } })).data.content
     },
 
-    async criarPost(data: { title: string; content: string; categoryId: number }) {
-        const response = await api.post('/api/forum/posts', data)
-        return response.data
+    async publicar(post: { categoryId: string; title: string; content: string }): Promise<ForumPost> {
+        return (await api.post("/api/forum/posts", post)).data
     },
 
-    async comentar(postId: number, content: string) {
-        const response = await api.post(`/api/forum/posts/${postId}/comments`, { content })
-        return response.data
+    async respostas(postId: string): Promise<ForumPost[]> {
+        return (await api.get(`/api/forum/posts/${postId}/replies`, { params: { size: 100 } })).data.content
     },
 
-    async votar(postId: number, vote: 'UP' | 'DOWN') {
-        const response = await api.post(`/api/forum/posts/${postId}/karma`, { vote })
-        return response.data
+    async responder(post: ForumPost, content: string): Promise<ForumPost> {
+        return (await api.post(`/api/forum/posts/${post.id}/reply`, { categoryId: post.categoryId, content })).data
+    },
+
+    /** Votar de novo no mesmo sentido retira o voto. Devolve o saldo e o voto atual. */
+    async votar(postId: string, voto: Voto): Promise<{ score: number; userVote: Voto | null }> {
+        return (await api.post(`/api/forum/posts/${postId}/karma/${voto.toLowerCase()}`)).data
+    },
+
+    /** Votos que o usuário logado já deu, por id de publicação ou resposta. */
+    async meusVotos(): Promise<Record<string, Voto>> {
+        return (await api.get("/api/forum/posts/my-votes")).data
+    },
+
+    /** Serve para publicação e para resposta (só o autor consegue). */
+    async excluir(postId: string): Promise<void> {
+        await api.delete(`/api/forum/posts/${postId}`)
     },
 }

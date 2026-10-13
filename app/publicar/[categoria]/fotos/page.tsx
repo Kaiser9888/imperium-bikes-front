@@ -205,7 +205,7 @@ export default function FotosPage() {
           onChange={adicionar}
         />
 
-        {erro && <p role="alert" className="mb-4 text-sm font-semibold text-red-700">{erro}</p>}
+        {erro && <p role="alert" className="mb-4 text-sm font-semibold text-destructive">{erro}</p>}
 
         {!fotos.length ? (
           <button
