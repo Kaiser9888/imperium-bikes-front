@@ -1,6 +1,5 @@
 "use client"
 
-import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { SignOutButton, useAuth, useUser } from "@clerk/nextjs"
@@ -25,6 +24,7 @@ import {
     type LucideIcon,
 } from "lucide-react"
 
+import { OrcaMark } from "@/components/layout/logo"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet"
 import { isRouteActive } from "@/lib/navigation"
@@ -93,13 +93,7 @@ export function MenuDrawer({ open, onOpenChange }: MenuDrawerProps) {
         <Sheet open={open} onOpenChange={onOpenChange}>
             <SheetContent side="right" className="flex w-[min(90vw,22.5rem)] flex-col gap-0 border-l-0 bg-surface p-0 sm:max-w-none">
                 <div className="flex items-center gap-2.5 px-6 pb-5 pt-6">
-                    <Image
-                        src="/logo1.png"
-                        alt=""
-                        width={446}
-                        height={331}
-                        className="h-8 w-auto mix-blend-multiply dark:invert dark:mix-blend-screen"
-                    />
+                    <OrcaMark className="h-8" />
                     <SheetTitle className="type-h3">Imperium Bikes</SheetTitle>
                     <SheetDescription className="sr-only">Menu principal</SheetDescription>
                 </div>

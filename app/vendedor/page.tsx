@@ -189,8 +189,12 @@ export default function CentralVendedorPage() {
     { id: "VENDIDO", label: "Vendidos" },
   ]
 
-  const botaoNovo =
-    "items-center gap-2 rounded-full bg-background px-5 py-3 text-sm font-semibold text-primary active:scale-[0.97]"
+  // Painel sempre escuro (fundo de chuva), então as cores aqui são fixas
+  const argolas: { id: Status; label: string; cor: string }[] = [
+    { id: "ATIVO", label: "No ar", cor: "oklch(0.78 0.16 155)" },
+    { id: "PAUSADO", label: "Pausados", cor: "oklch(0.82 0.14 80)" },
+    { id: "VENDIDO", label: "Vendidos", cor: "oklch(0.76 0.12 235)" },
+  ]
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -198,39 +202,41 @@ export default function CentralVendedorPage() {
 
       <main className="mx-auto max-w-5xl px-4 pb-44 pt-4 md:px-6 md:pt-6">
         {/* ---------- RESUMO ---------- */}
-        <section className="relative overflow-hidden rounded-3xl bg-primary p-5 text-primary-foreground md:p-7">
-          <div className="pointer-events-none absolute -right-12 -top-12 size-44 rounded-full bg-background/10" />
-          <div className="pointer-events-none absolute -bottom-16 right-16 size-40 rounded-full bg-background/5" />
+        <section className="relative isolate overflow-hidden rounded-3xl p-5 text-white md:p-7">
+          <div className="seller-rain" aria-hidden="true" />
+          <div
+            className="pointer-events-none absolute inset-0 -z-[1] bg-gradient-to-r from-black/70 via-black/35 to-transparent"
+            aria-hidden="true"
+          />
 
-          <div className="relative flex items-end justify-between gap-4">
+          <div className="flex items-end justify-between gap-4">
             <div>
-              <p className="text-sm text-primary-foreground/80">Olá, {nome}</p>
+              <p className="text-sm text-white/80">Olá, {nome}</p>
               <p className="mt-2 font-heading text-6xl font-bold leading-none">{contagem.ATIVO}</p>
-              <p className="mt-1.5 text-sm text-primary-foreground/90">
+              <p className="mt-1.5 text-sm text-white/90">
                 {contagem.ATIVO === 1 ? "anúncio no ar" : "anúncios no ar"}
               </p>
             </div>
-            <button onClick={() => setPublicando(true)} className={`hidden md:inline-flex ${botaoNovo}`}>
-              <Plus className="size-4" />
-              Novo anúncio
+            <button onClick={() => setPublicando(true)} className="underline-btn hidden md:block">
+              <span className="flex items-center gap-2 py-1.5">
+                <Plus className="size-5" />
+                Publicar novo anúncio
+              </span>
             </button>
           </div>
 
-          <div className="relative mt-6">
-            <div className="flex h-2 overflow-hidden rounded-full bg-background/20">
-              {contagem.TODOS > 0 && (
-                <>
-                  <span className="bg-background" style={{ width: `${(contagem.ATIVO / total) * 100}%` }} />
-                  <span className="bg-primary" style={{ width: `${(contagem.PAUSADO / total) * 100}%` }} />
-                  <span className="bg-info" style={{ width: `${(contagem.VENDIDO / total) * 100}%` }} />
-                </>
-              )}
-            </div>
-            <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-xs text-primary-foreground/90">
-              <Legenda cor="bg-background" texto="No ar" n={contagem.ATIVO} />
-              <Legenda cor="bg-primary" texto="Pausados" n={contagem.PAUSADO} />
-              <Legenda cor="bg-info" texto="Vendidos" n={contagem.VENDIDO} />
-            </div>
+          <div className="mt-6 flex gap-5 md:gap-8">
+            {argolas.map((a) => (
+              <Argola
+                key={a.id}
+                label={a.label}
+                cor={a.cor}
+                n={contagem[a.id]}
+                total={total}
+                ativo={filtro === a.id}
+                onClick={() => setFiltro(filtro === a.id ? "TODOS" : a.id)}
+              />
+            ))}
           </div>
         </section>
 
@@ -245,14 +251,21 @@ export default function CentralVendedorPage() {
                     <button
                       key={f.id}
                       onClick={() => setFiltro(f.id)}
-                      className={`flex shrink-0 items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium transition-colors ${
+                      aria-pressed={ativo}
+                      className={`flex shrink-0 items-center gap-2 rounded-full border py-1.5 pl-4 pr-1.5 text-sm font-medium transition-colors ${
                         ativo
-                          ? "bg-foreground text-primary-foreground"
-                          : "border border-border bg-surface hover:border-foreground/40"
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-border bg-surface text-foreground hover:border-primary/60"
                       }`}
                     >
                       {f.label}
-                      <span className={ativo ? "text-primary-foreground/60" : "text-muted-foreground"}>{contagem[f.id]}</span>
+                      <span
+                        className={`grid h-6 min-w-6 place-items-center rounded-full border-2 px-1 text-xs font-semibold tabular-nums ${
+                          ativo ? "border-primary-foreground/70" : "border-primary/50 text-muted-foreground"
+                        }`}
+                      >
+                        {contagem[f.id]}
+                      </span>
                     </button>
                   )
                 })}
@@ -500,12 +513,57 @@ export default function CentralVendedorPage() {
 
 /* ---------- componentes auxiliares ---------- */
 
-function Legenda({ cor, texto, n }: { cor: string; texto: string; n: number }) {
+/* Contador em argola: o arco mostra a fatia do total; clicar filtra a lista */
+function Argola({
+  label,
+  cor,
+  n,
+  total,
+  ativo,
+  onClick,
+}: {
+  label: string
+  cor: string
+  n: number
+  total: number
+  ativo: boolean
+  onClick: () => void
+}) {
+  const raio = 26
+  const volta = 2 * Math.PI * raio
   return (
-    <span className="flex items-center gap-1.5">
-      <span className={`size-2 rounded-full ${cor}`} />
-      {texto} <b className="font-semibold">{n}</b>
-    </span>
+    <button
+      onClick={onClick}
+      aria-pressed={ativo}
+      aria-label={`${label}: ${n}`}
+      className="group flex flex-col items-center gap-1.5 rounded-2xl"
+    >
+      <span className="relative grid size-16 place-items-center">
+        <svg viewBox="0 0 64 64" className="absolute inset-0 -rotate-90" aria-hidden="true">
+          <circle cx="32" cy="32" r={raio} fill="none" stroke="rgb(255 255 255 / 0.18)" strokeWidth="5" />
+          <circle
+            cx="32"
+            cy="32"
+            r={raio}
+            fill="none"
+            stroke={cor}
+            strokeWidth="5"
+            strokeLinecap="round"
+            strokeDasharray={`${(n / total) * volta} ${volta}`}
+            className="transition-[stroke-dasharray] duration-500"
+            opacity={n > 0 ? 1 : 0}
+          />
+        </svg>
+        <span className="text-lg font-bold tabular-nums">{n}</span>
+      </span>
+      <span
+        className={`text-xs font-medium underline-offset-4 group-hover:underline ${
+          ativo ? "text-white underline" : "text-white/80"
+        }`}
+      >
+        {label}
+      </span>
+    </button>
   )
 }
 
@@ -520,7 +578,7 @@ function Sheet({
 }) {
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
-      <div className="absolute inset-0 bg-foreground/45" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/60" onClick={onClose} />
       <div className="relative max-h-[88vh] w-full overflow-y-auto rounded-t-3xl bg-background px-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-3 shadow-2xl sm:max-w-md sm:rounded-3xl sm:pb-6">
         <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-border sm:hidden" />
         <div className="mb-4 flex items-center justify-between gap-3">
@@ -591,7 +649,7 @@ function EditarModal({
 
   async function salvar() {
     const valor = Number(price.replace(",", "."))
-    if (!title.trim()) return setErro("Informe o título.")
+    if (title.trim().length < 10) return setErro("O título precisa ter pelo menos 10 caracteres.")
     if (!Number.isFinite(valor) || valor <= 0) return setErro("Informe um preço válido.")
 
     setSaving(true)
@@ -606,8 +664,9 @@ function EditarModal({
       }
       const resp = await sellerProductService.update(produto.id, dados)
       onSaved({ ...produto, ...dados, ...(resp ?? {}) })
-    } catch {
-      setErro("Não foi possível salvar as alterações.")
+    } catch (e) {
+      const motivo = (e as { response?: { data?: { message?: string } } })?.response?.data?.message
+      setErro(motivo ?? "Não foi possível salvar as alterações.")
       setSaving(false)
     }
   }

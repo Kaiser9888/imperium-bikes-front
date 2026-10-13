@@ -1,5 +1,6 @@
-import Image from "next/image"
 import Link from "next/link"
+
+import { OrcaMark } from "@/components/layout/logo"
 
 // Somente rotas que existem no app.
 const grupos = [
@@ -27,13 +28,7 @@ export function Footer() {
             <div className="mx-auto flex w-full max-w-7xl flex-col gap-10 px-4 pb-32 pt-12 sm:px-6 md:flex-row md:justify-between lg:px-8">
                 <div className="max-w-xs">
                     <Link href="/" className="inline-flex items-center gap-2.5 rounded-lg">
-                        <Image
-                            src="/logo1.png"
-                            alt=""
-                            width={446}
-                            height={331}
-                            className="h-8 w-auto mix-blend-multiply dark:invert dark:mix-blend-screen"
-                        />
+                        <OrcaMark className="h-8" />
                         <span className="type-h3 text-foreground">Imperium Bikes</span>
                     </Link>
                     <p className="type-body-small mt-3 text-muted-foreground">

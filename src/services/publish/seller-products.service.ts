@@ -27,11 +27,22 @@ export function formatarPreco(v?: number) {
     : "Sob consulta"
 }
 
+// O backend fala ACTIVE / DISABLED / SOLD; o front usa ATIVO / PAUSADO / VENDIDO.
+const STATUS_DO_BACKEND: Record<string, string> = {
+  ACTIVE: "ATIVO",
+  DISABLED: "PAUSADO",
+  SOLD: "VENDIDO",
+}
+
+function normalizar(p: ProdutoItem): ProdutoItem {
+  const status = typeof p?.status === "string" ? p.status.toUpperCase() : undefined
+  return status ? { ...p, status: STATUS_DO_BACKEND[status] ?? status } : p
+}
+
 // A API pode devolver um array ou uma página do Spring ({ content: [] })
 function listar(data: any): ProdutoItem[] {
-  if (Array.isArray(data)) return data
-  if (Array.isArray(data?.content)) return data.content
-  return []
+  const itens = Array.isArray(data) ? data : Array.isArray(data?.content) ? data.content : []
+  return itens.map(normalizar)
 }
 
 /**
@@ -72,14 +83,36 @@ export const sellerProductService = {
     return listar(r.data)
   },
 
+  // O PUT do backend exige o anúncio inteiro (condição, CEP, peso, medidas...),
+  // então busca o atual e envia junto com o que foi editado.
   async update(id: string | number, data: Partial<ProdutoItem>) {
-    const r = await api.put(`/api/products/${id}`, data)
-    return r.data as ProdutoItem
+    const { data: atual } = await api.get(`/api/products/${id}`)
+    const r = await api.put(`/api/products/${id}`, {
+      title: atual.title,
+      description: atual.description,
+      price: atual.price,
+      condition: atual.condition,
+      brand: atual.brand,
+      model: atual.model,
+      year: atual.year,
+      stock: atual.stock,
+      hasSecurePayment: atual.hasSecurePayment,
+      negotiable: atual.negotiable,
+      city: atual.city,
+      state: atual.state,
+      originPostalCode: atual.originPostalCode,
+      weightKg: atual.weightKg,
+      heightCm: atual.heightCm,
+      widthCm: atual.widthCm,
+      lengthCm: atual.lengthCm,
+      ...data,
+    })
+    return normalizar(r.data)
   },
 
+  // status: "ATIVO" reativa, "PAUSADO" pausa
   async setStatus(id: string | number, status: string) {
-    const r = await api.patch(`/api/products/${id}/status`, { status })
-    return r.data
+    await api.post(`/api/products/${id}/${status === "PAUSADO" ? "disable" : "reactivate"}`)
   },
 
   async remove(id: string | number) {

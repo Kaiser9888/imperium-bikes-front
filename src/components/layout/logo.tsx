@@ -3,6 +3,37 @@ import Link from "next/link"
 
 import { cn } from "@/lib/utils"
 
+/**
+ * A orca da marca. No tema escuro usa logo1-dark (manchas brancas preenchidas)
+ * com um contorno branco, para continuar preta com manchas brancas em vez de
+ * virar o negativo.
+ */
+export function OrcaMark({ className, priority }: { className?: string; priority?: boolean }) {
+    return (
+        <>
+            <Image
+                src="/logo1.png"
+                alt=""
+                width={447}
+                height={317}
+                priority={priority}
+                className={cn("w-auto mix-blend-multiply dark:hidden", className)}
+            />
+            <Image
+                src="/logo1-dark.png"
+                alt=""
+                width={447}
+                height={317}
+                priority={priority}
+                className={cn(
+                    "hidden w-auto dark:block [filter:drop-shadow(1px_0_0_#fff)_drop-shadow(-1px_0_0_#fff)_drop-shadow(0_1px_0_#fff)_drop-shadow(0_-1px_0_#fff)]",
+                    className,
+                )}
+            />
+        </>
+    )
+}
+
 type LogoProps = {
     /** Só a orca, para cabeçalhos de páginas internas que já têm título. */
     compact?: boolean
@@ -17,14 +48,7 @@ export function Logo({ compact = false, className }: LogoProps) {
             aria-label="Imperium Bikes — início"
             className={cn("flex shrink-0 items-center gap-2.5 rounded-lg", className)}
         >
-            <Image
-                src="/logo1.png"
-                alt=""
-                width={446}
-                height={331}
-                priority
-                className={cn("w-auto mix-blend-multiply dark:invert dark:mix-blend-screen", compact ? "h-7" : "h-8")}
-            />
+            <OrcaMark priority className={compact ? "h-7" : "h-8"} />
             {!compact && (
                 <span className="text-lg font-bold tracking-tight text-foreground">
                     Imperium <span className="text-accent">Bikes</span>
