@@ -125,6 +125,10 @@ export interface ProductResponse {
     }
 
     category: string
+    /** Slugs de identificação do anúncio (ver lib/publicar/taxonomia). */
+    sport?: string | null
+    modality?: string | null
+    productType?: string | null
     createdAt: string
 }
 

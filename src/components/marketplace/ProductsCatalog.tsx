@@ -15,7 +15,20 @@ function normalize(value: string) {
   return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase()
 }
 
-export function ProductsCatalog({ category, condition, minPrice, maxPrice, subcategory }: { category?: string; condition?: string | null; minPrice?: string; maxPrice?: string; subcategory?: string | null }) {
+type Props = {
+  /** Termo livre procurado no texto do anúncio (página de todos os produtos). */
+  category?: string
+  /** Slug do esporte: lista só anúncios identificados com ele. */
+  sport?: string
+  /** Slug da modalidade de ciclismo: lista só anúncios identificados com ela. */
+  modality?: string
+  condition?: string | null
+  minPrice?: string
+  maxPrice?: string
+  subcategory?: string | null
+}
+
+export function ProductsCatalog({ category, sport, modality, condition, minPrice, maxPrice, subcategory }: Props) {
   const [products, setProducts] = useState<ProductResponse[]>([])
   const [page, setPage] = useState(0)
   const [totalPages, setTotalPages] = useState(1)
@@ -28,7 +41,7 @@ export function ProductsCatalog({ category, condition, minPrice, maxPrice, subca
     else setLoading(true)
     setError(null)
     try {
-      const result = await productService.getAll(pageToLoad, PAGE_SIZE)
+      const result = await productService.getAll(pageToLoad, PAGE_SIZE, modality ? { modality } : sport ? { sport } : {})
       setProducts((current) => append ? [...current, ...result.content] : result.content)
       setPage(result.number)
       setTotalPages(result.totalPages)
@@ -39,19 +52,21 @@ export function ProductsCatalog({ category, condition, minPrice, maxPrice, subca
       setLoading(false)
       setLoadingMore(false)
     }
-  }, [])
+  }, [sport, modality])
 
   useEffect(() => { queueMicrotask(() => { void load(0, false) }) }, [load])
 
   const filtered = useMemo(() => {
-    if (!category) return products
+    // Confere de novo no cliente: se o backend ignorar o filtro, nada de outra página vaza para cá.
+    const identificados = products.filter((product) => (!modality || product.modality === modality) && (!sport || product.sport === sport))
+    if (!category) return identificados
     const term = normalize(category)
-    return products.filter((product) => normalize(`${product.category} ${product.title} ${product.description} ${product.model} ${product.brand}`).includes(term))
-  }, [category, products])
+    return identificados.filter((product) => normalize(`${product.category} ${product.title} ${product.description} ${product.model} ${product.brand}`).includes(term))
+  }, [category, sport, modality, products])
 
   const filteredByOptions = filtered.filter((product) => {
     const price = Number(product.price)
-    const categoryMatches = !subcategory || normalize(`${product.category} ${product.title} ${product.description} ${product.model}`).includes(normalize(subcategory))
+    const categoryMatches = !subcategory || normalize(`${product.productType ?? ""} ${product.category} ${product.title} ${product.description} ${product.model}`).includes(normalize(subcategory))
     const conditionValue = normalize(product.condition)
     const conditionMatches = !condition || (normalize(condition) === "novo" ? conditionValue === "new" : conditionValue !== "new")
     const minMatches = !minPrice || price >= Number(minPrice.replace(",", "."))
@@ -61,7 +76,7 @@ export function ProductsCatalog({ category, condition, minPrice, maxPrice, subca
 
   if (loading) return <Loader className="py-12" />
   if (error) return <div className="py-12 text-center"><p role="alert" className="text-sm text-destructive">{error}</p><button onClick={() => void load(0, false)} className="mt-3 text-sm font-medium text-primary underline">Tentar novamente</button></div>
-  if (!filteredByOptions.length) return <div className="py-12 text-center"><p className="text-sm text-muted-foreground">{category ? "Nenhum produto encontrado com esses filtros nesta modalidade." : "Nenhum produto disponível no momento."}</p>{page + 1 < totalPages && <Button disabled={loadingMore} onClick={() => void load(page + 1, true)} variant="outline" className="mt-4">{loadingMore ? "Carregando..." : "Buscar em mais produtos"}</Button>}</div>
+  if (!filteredByOptions.length) return <div className="py-12 text-center"><p className="text-sm text-muted-foreground">{category || sport || modality ? "Nenhum produto encontrado aqui com esses filtros." : "Nenhum produto disponível no momento."}</p>{page + 1 < totalPages && <Button disabled={loadingMore} onClick={() => void load(page + 1, true)} variant="outline" className="mt-4">{loadingMore ? "Carregando..." : "Buscar em mais produtos"}</Button>}</div>
 
   return <>
     <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">

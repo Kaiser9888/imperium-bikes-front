@@ -6,6 +6,7 @@ const categories = [
   ['Serviços', 'Serviços especializados', '/publicar/servicos'],
   ['Produtos', 'Acessórios e equipamentos', '/publicar/produtos'],
   ['Consumíveis', 'Produtos de consumo', '/publicar/consumiveis'],
+  ['Artigos esportivos', 'Corrida, natação, futebol, musculação e lutas', '/publicar/esportes'],
 ] as const
 
 export default function PublicarPage() {

@@ -11,6 +11,12 @@ import {
   readDraft,
   writeDraft,
 } from '@/lib/publicar/categorias'
+import {
+  CATEGORIA_ESPORTES,
+  OPCOES_ESPORTE,
+  OPCOES_MODALIDADE,
+  modalidadeSugerida,
+} from '@/lib/publicar/taxonomia'
 
 const condicoes = [
   {
@@ -34,9 +40,24 @@ export default function InformacoesPage() {
   const [descricao, setDescricao] = useState('')
   const [condicao, setCondicao] = useState('')
   const [quantidade, setQuantidade] = useState('1')
+  const [marca, setMarca] = useState('')
+  const [modelo, setModelo] = useState('')
+
+  // Onde o anúncio aparece: esporte (em /publicar/esportes) ou modalidade de ciclismo
+  const porEsporte = categoria === CATEGORIA_ESPORTES
+  const opcoesDestino = porEsporte ? OPCOES_ESPORTE : OPCOES_MODALIDADE
+  const [destino, setDestino] = useState('')
 
   useEffect(() => {
     const d = readDraft(categoria)
+
+    setMarca(String(d.marca || ''))
+    setModelo(String(d.modelo || ''))
+    setDestino(
+      categoria === CATEGORIA_ESPORTES
+        ? String(d.sport || '')
+        : String(d.modality || '') || modalidadeSugerida(d),
+    )
 
     setTitulo(String(d.titulo || ''))
     setDescricao(String(d.descricao || ''))
@@ -57,8 +78,10 @@ export default function InformacoesPage() {
     titulo.trim().length >= 10 &&
     descricao.trim().length >= 10 &&
     Boolean(condicao) &&
+    opcoesDestino.some(item => item.value === destino) &&
     Number.isInteger(quantidadeNumerica) &&
-    quantidadeNumerica >= 1
+    quantidadeNumerica >= 1 &&
+    quantidadeNumerica <= 999999
 
   function continuar() {
     if (!pronto) return
@@ -68,6 +91,9 @@ export default function InformacoesPage() {
       descricao: descricao.trim(),
       condicao,
       quantidade: quantidadeNumerica,
+      marca: marca.trim(),
+      modelo: modelo.trim(),
+      ...(porEsporte ? { sport: destino } : { modality: destino }),
     })
 
     router.push(nextStep(categoria, 'informacoes'))
@@ -139,6 +165,58 @@ export default function InformacoesPage() {
           </label>
 
           <fieldset>
+            <legend>
+              {porEsporte ? 'Esporte' : 'Modalidade'}
+
+              <small>
+                {porEsporte
+                  ? 'O anúncio aparece na página deste esporte.'
+                  : 'O anúncio aparece na página desta modalidade.'}
+              </small>
+            </legend>
+
+            <div className="publish-options publish-options-grid">
+              {opcoesDestino.map(item => (
+                <button
+                  type="button"
+                  key={item.value}
+                  className={destino === item.value ? 'is-selected' : ''}
+                  aria-pressed={destino === item.value}
+                  onClick={() => setDestino(item.value)}
+                >
+                  <span>
+                    <b>{item.label}</b>
+                  </span>
+
+                  {destino === item.value && <Check />}
+                </button>
+              ))}
+            </div>
+          </fieldset>
+
+          <label>
+            Marca (opcional)
+
+            <input
+              value={marca}
+              onChange={e => setMarca(e.target.value)}
+              maxLength={100}
+              placeholder="Ex.: Shimano, Nike, Specialized"
+            />
+          </label>
+
+          <label>
+            Modelo (opcional)
+
+            <input
+              value={modelo}
+              onChange={e => setModelo(e.target.value)}
+              maxLength={100}
+              placeholder="Ex.: Deore M6100"
+            />
+          </label>
+
+          <fieldset>
             <legend>Condição do produto</legend>
 
             <div className="publish-options">
@@ -166,6 +244,7 @@ export default function InformacoesPage() {
             <input
               type="number"
               min={1}
+              max={999999}
               step={1}
               value={quantidade}
               onChange={e => {
@@ -178,7 +257,7 @@ export default function InformacoesPage() {
 
                 const numero = Number(valor)
 
-                if (Number.isInteger(numero) && numero >= 1) {
+                if (Number.isInteger(numero) && numero >= 1 && numero <= 999999) {
                   setQuantidade(String(numero))
                 }
               }}

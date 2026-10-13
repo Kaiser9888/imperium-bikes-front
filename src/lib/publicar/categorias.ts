@@ -173,6 +173,23 @@ export const CATEGORIAS: Record<string, CategoriaConfig> = {
     ],
   },
 
+  esportes: {
+    label: "Artigo esportivo",
+    labelPlural: "Artigos esportivos",
+    campos: [
+      {
+        id: "marca",
+        label: "Marca",
+        tipo: "text",
+      },
+      {
+        id: "modelo",
+        label: "Modelo",
+        tipo: "text",
+      },
+    ],
+  },
+
   produtos: {
     label: "Produto",
     labelPlural: "Produtos",
@@ -240,6 +257,23 @@ export function writeDraft(categoria: string, patch: Partial<PublishDraft>): Pub
   const updated: PublishDraft = { ...current, ...patch }
   if (typeof window !== "undefined") {
     sessionStorage.setItem(draftKey(categoria), JSON.stringify(updated))
+  }
+  return updated
+}
+
+/**
+ * Primeira etapa (características): grava as respostas direto no rascunho da
+ * categoria. Antes elas iam para uma chave antiga, e um rascunho abandonado
+ * da mesma categoria continuava valendo por cima das respostas novas.
+ */
+export function startDraft(categoria: string, respostas: Partial<PublishDraft>): PublishDraft {
+  const atual = readDraft(categoria)
+  // A modalidade das bikes é sugerida pelas respostas; se elas mudaram, sugere de novo.
+  if ("subModality" in respostas) delete atual.modality
+  const updated: PublishDraft = { ...atual, ...respostas, categoryId: categoria }
+  if (typeof window !== "undefined") {
+    sessionStorage.setItem(draftKey(categoria), JSON.stringify(updated))
+    sessionStorage.removeItem("imperium_bikes_publish")
   }
   return updated
 }

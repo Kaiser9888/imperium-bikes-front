@@ -724,6 +724,22 @@
     text-align: right;
 }
 
+/* Escolha entre várias opções curtas (modalidade, esporte): duas colunas */
+.publish-options.publish-options-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.publish-options-grid button {
+    min-height: 54px;
+}
+
+.publish-options-grid button > span:last-child {
+    justify-content: flex-start;
+    min-width: 0;
+    text-align: left;
+}
+
 .publish-options button > span:last-child small {
     color: var(--imperium-muted);
 }

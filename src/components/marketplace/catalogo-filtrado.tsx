@@ -17,14 +17,16 @@ const chipClasses = (ativo: boolean) =>
     )
 
 type Props = {
-    /** Termo que define a página (modalidade ou esporte). */
-    category: string
+    /** Slug do esporte da página (/esportes/[slug]). */
+    sport?: string
+    /** Slug da modalidade de ciclismo da página (/modalidades/[slug]). */
+    modality?: string
     /** Tipos de produto oferecidos no filtro; sem eles, o grupo não aparece. */
     tipos?: string[]
 }
 
 /** Catálogo de uma modalidade ou esporte, com filtros de condição, preço e tipo. */
-export function CatalogoFiltrado({ category, tipos = [] }: Props) {
+export function CatalogoFiltrado({ sport, modality, tipos = [] }: Props) {
     const [aberto, setAberto] = useState(false)
     const [condicao, setCondicao] = useState<string | null>(null)
     const [tipo, setTipo] = useState<string | null>(null)
@@ -61,7 +63,7 @@ export function CatalogoFiltrado({ category, tipos = [] }: Props) {
                 )}
             </div>
 
-            <ProductsCatalog category={category} condition={condicao} minPrice={precoMin} maxPrice={precoMax} subcategory={tipo} />
+            <ProductsCatalog sport={sport} modality={modality} condition={condicao} minPrice={precoMin} maxPrice={precoMax} subcategory={tipo} />
 
             <Sheet open={aberto} onOpenChange={setAberto}>
                 <SheetContent className="flex flex-col gap-0 overflow-y-auto">

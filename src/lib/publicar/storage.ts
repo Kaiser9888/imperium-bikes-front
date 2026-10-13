@@ -46,6 +46,16 @@ export interface PublishDraft {
   aro?: string
   tamanho?: string
 
+  subModality?: string
+  saleFormat?: string
+  tipo?: string
+
+  // Identificação (ver lib/publicar/taxonomia)
+  sport?: string
+  modality?: string
+  marca?: string
+  modelo?: string
+
   // Etapa: informações
   title?: string
   description?: string

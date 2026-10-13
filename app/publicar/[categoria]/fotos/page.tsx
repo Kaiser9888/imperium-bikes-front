@@ -146,7 +146,7 @@ export default function FotosPage() {
             ? 'Serviços'
             : categoria === 'produtos'
               ? 'Produtos'
-              : categoria ?? 'Anúncio'
+              : categoria === 'esportes' ? 'Artigos esportivos' : categoria ?? 'Anúncio'
 
   return (
     <main className="publish-page">

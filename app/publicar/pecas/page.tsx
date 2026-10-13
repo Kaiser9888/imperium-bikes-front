@@ -4,6 +4,8 @@ import { useMemo, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 
+import { startDraft } from "@/lib/publicar/categorias"
+
 /* ------------------------------------------------------------------ */
 /* CATEGORIAS PRINCIPAIS                                               */
 /* ------------------------------------------------------------------ */
@@ -574,43 +576,7 @@ export default function PublicarPecasPage() {
       return
     }
 
-    const currentData =
-      sessionStorage.getItem(
-        "imperium_bikes_publish"
-      )
-
-    let publishData: Record<
-      string,
-      unknown
-    > = {}
-
-    if (currentData) {
-      try {
-        const parsed =
-          JSON.parse(currentData)
-
-        if (
-          parsed &&
-          typeof parsed === "object" &&
-          !Array.isArray(parsed)
-        ) {
-          publishData = parsed
-        }
-      } catch {
-        publishData = {}
-      }
-    }
-
-    const updatedData = {
-      ...publishData,
-      categoryId: "pecas",
-      ...answers,
-    }
-
-    sessionStorage.setItem(
-      "imperium_bikes_publish",
-      JSON.stringify(updatedData)
-    )
+    startDraft("pecas", answers)
 
     router.push(
       "/publicar/pecas/informacoes"

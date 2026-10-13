@@ -13,9 +13,11 @@ export const productService = {
         return res.data
     },
 
+    // filtro: slugs de esporte/modalidade (o backend só aceita os da lista dele)
     getAll: async (
       page = 0,
-      size = 20
+      size = 20,
+      filtro: { sport?: string; modality?: string } = {}
     ): Promise<{
         content: ProductResponse[]
         totalElements: number
@@ -27,6 +29,7 @@ export const productService = {
             params: {
                 page,
                 size,
+                ...filtro,
             },
         })
 

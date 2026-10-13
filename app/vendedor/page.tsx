@@ -50,6 +50,7 @@ const tiposDeAnuncio = [
   { label: "Serviços", desc: "Aulas, manutenção, personal, aluguel", href: "/publicar/servicos", icon: Wrench },
   { label: "Produtos", desc: "Roupas, calçados e itens gerais", href: "/publicar/produtos", icon: ShoppingBag },
   { label: "Consumíveis", desc: "Suplementos, géis, hidratação", href: "/publicar/consumiveis", icon: Zap },
+  { label: "Artigos esportivos", desc: "Corrida, natação, futebol, musculação, lutas", href: "/publicar/esportes", icon: Dumbbell },
 ]
 
 type Status = "ATIVO" | "PAUSADO" | "VENDIDO"

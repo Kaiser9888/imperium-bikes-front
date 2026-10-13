@@ -4,6 +4,8 @@ import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
+import { startDraft } from '@/lib/publicar/categorias'
+
 type BikeType =
   | 'urbana'
   | 'mountain-bike'
@@ -511,13 +513,7 @@ export default function BikesClassificationPage() {
       return
     }
 
-    sessionStorage.setItem(
-      'imperium_bikes_publish',
-      JSON.stringify({
-        categoryId: 'bikes',
-        ...form,
-      })
-    )
+    startDraft('bikes', form)
 
     router.push(
       '/publicar/bikes/informacoes'

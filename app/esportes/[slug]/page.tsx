@@ -5,6 +5,7 @@ import { AppShell } from "@/components/layout/app-shell"
 import { PageHeading } from "@/components/layout/page-heading"
 import { CatalogoFiltrado } from "@/components/marketplace/catalogo-filtrado"
 import { esportes } from "@/lib/esportes"
+import { TIPOS_POR_ESPORTE } from "@/lib/publicar/taxonomia"
 
 type Props = { params: Promise<{ slug: string }> }
 
@@ -31,7 +32,7 @@ export default async function EsportePage({ params }: Props) {
                     description="Produtos anunciados para este esporte."
                     back={{ href: "/", label: "Início" }}
                 />
-                <CatalogoFiltrado category={esporte.nome} />
+                <CatalogoFiltrado sport={esporte.slug} tipos={TIPOS_POR_ESPORTE[esporte.slug]} />
             </main>
         </AppShell>
     )

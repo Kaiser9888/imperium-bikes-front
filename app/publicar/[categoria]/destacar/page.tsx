@@ -6,6 +6,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { useAuth } from '@clerk/nextjs'
 
 import { getCategoriaConfig } from '@/lib/publicar/categorias'
+import { identificar } from '@/lib/publicar/taxonomia'
 import {
   clearDraft,
   getDraft,
@@ -269,6 +270,18 @@ async function handlePublicar() {
       )
     }
 
+    // Esporte, modalidade e tipo: é o que coloca o anúncio na página certa.
+    const identificacao = identificar(
+      categoria,
+      draftFinal as Record<string, unknown>,
+    )
+
+    if (!identificacao) {
+      throw new Error(
+        'Escolha a modalidade ou o esporte na etapa de informações antes de publicar.',
+      )
+    }
+
     const tier =
       TIERS.find(
         (item) =>
@@ -370,6 +383,24 @@ async function handlePublicar() {
 
           categoryId:
           categoryResponse.id,
+
+          sport:
+          identificacao.sport,
+
+          modality:
+          identificacao.modality,
+
+          productType:
+          identificacao.productType,
+
+          brand:
+            draftFinal.marca || undefined,
+
+          model:
+            draftFinal.modelo || undefined,
+
+          stock:
+          draftFinal.quantidade,
 
           weightKg:
             draftFinal.frete
