@@ -68,7 +68,7 @@ export default function PublicarEsportesPage() {
         </div>
 
         <div>
-          <p className="eyebrow">Imperium Bikes</p>
+          <p className="brand-name m-0 text-base">Imperium Bikes</p>
           <p className="header-context">Publicar anúncio</p>
         </div>
 

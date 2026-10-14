@@ -199,7 +199,7 @@ function ProdutoPage() {
       <main className="grid min-h-screen place-items-center bg-background px-6 text-center">
         <div>
 
-          <p className="text-xs font-bold uppercase tracking-[.2em] text-primary">
+          <p className="brand-name text-lg">
             Imperium Bikes
           </p>
 
@@ -461,7 +461,7 @@ function ProdutoPage() {
             <span className="hidden h-5 w-px bg-border sm:block" />
 
             <span className="hidden text-xs uppercase tracking-[0.18em] text-muted-foreground sm:block">
-              Imperium Bikes / Marketplace
+              <span className="brand-name text-sm normal-case tracking-normal">Imperium Bikes</span> / Marketplace
             </span>
 
           </div>

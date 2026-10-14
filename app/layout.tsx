@@ -2,7 +2,7 @@ import { Analytics } from '@vercel/analytics/next'
 import { ClerkProvider } from '@clerk/nextjs'
 import { ptBR } from '@clerk/localizations'
 import type { Metadata } from 'next'
-import { Geist } from 'next/font/google'
+import { Caesar_Dressing, Geist } from 'next/font/google'
 import { ThemeProvider } from 'next-themes'
 import { AppShellProvider } from '@/components/layout/app-shell'
 import { Toaster } from '@/components/ui/sonner'
@@ -11,6 +11,13 @@ import './globals.css'
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
+  subsets: ['latin'],
+})
+
+// Fonte do nome da marca (classe .brand-name no globals.css)
+const caesarDressing = Caesar_Dressing({
+  variable: '--font-caesar-dressing',
+  weight: '400',
   subsets: ['latin'],
 })
 
@@ -28,7 +35,7 @@ export default function RootLayout({
   return (
     <ClerkProvider localization={ptBR} signInUrl="/sign-in" signUpUrl="/sign-up">
       {/* A variável da fonte fica no <html> para os tokens do :root conseguirem lê-la */}
-      <html lang="pt-BR" className={geistSans.variable} suppressHydrationWarning>
+      <html lang="pt-BR" className={`${geistSans.variable} ${caesarDressing.variable}`} suppressHydrationWarning>
         <body className="antialiased">
           {/* Tema claro/escuro: a escolha fica em Configurações e é guardada no navegador */}
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>

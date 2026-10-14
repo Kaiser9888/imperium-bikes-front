@@ -12,6 +12,7 @@
 @theme inline {
     --font-sans: var(--font-geist-sans), 'Geist Fallback', system-ui, sans-serif;
     --font-mono: var(--font-geist-sans), 'Geist Fallback', system-ui, sans-serif;
+    --font-brand: var(--font-caesar-dressing), Georgia, serif;
 
     --color-background: var(--background);
     --color-foreground: var(--foreground);
@@ -642,6 +643,14 @@ mux-player.mux-player-cover {
 }
 
 @layer components {
+    /* Nome da marca: sempre vermelho, na fonte Caesar Dressing */
+    .brand-name {
+        font-family: var(--font-brand);
+        font-weight: 400;
+        letter-spacing: 0.02em;
+        color: var(--primary);
+    }
+
     /* Botão Voltar (Uiverse.io, Jedi-hongbin): a seta escorrega para a esquerda no hover */
     .back-btn {
         display: inline-flex;

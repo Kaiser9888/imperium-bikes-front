@@ -29,7 +29,7 @@ export function Footer() {
                 <div className="max-w-xs">
                     <Link href="/" className="inline-flex items-center gap-2.5 rounded-lg">
                         <OrcaMark className="h-8" />
-                        <span className="type-h3 text-foreground">Imperium Bikes</span>
+                        <span className="brand-name text-2xl">Imperium Bikes</span>
                     </Link>
                     <p className="type-body-small mt-3 text-muted-foreground">
                         Bikes, peças, eventos e vídeos de ciclismo em um só lugar.

@@ -11,6 +11,7 @@ import {
     MessageCircle,
     PlusCircle,
     Settings,
+    ShieldCheck,
     ShoppingBag,
     ShoppingCart,
     Store,
@@ -27,6 +28,7 @@ import { OrcaMark } from "@/components/layout/logo"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet"
 import { isRouteActive } from "@/lib/navigation"
+import { useIsAdmin } from "@/lib/use-is-admin"
 import { cn } from "@/lib/utils"
 
 type MenuDrawerProps = { open: boolean; onOpenChange: (open: boolean) => void }
@@ -79,12 +81,20 @@ const menuSections: MenuSection[] = [
     },
 ]
 
-const todosOsLinks = menuSections.flatMap((section) => section.items.map((item) => item.href))
+// Só aparece para quem tem ROLE_ADMIN no backend
+const secaoAdmin: MenuSection = {
+    title: "Administração",
+    items: [{ icon: ShieldCheck, label: "Painel admin", href: "/admin" }],
+}
 
 export function MenuDrawer({ open, onOpenChange }: MenuDrawerProps) {
     const { isSignedIn } = useAuth()
+    const { isAdmin } = useIsAdmin()
     const pathname = usePathname()
     const close = () => onOpenChange(false)
+
+    const secoes = isAdmin ? [...menuSections, secaoAdmin] : menuSections
+    const todosOsLinks = secoes.flatMap((section) => section.items.map((item) => item.href))
 
     // Entre /torneios e /torneios/criar, só o link mais específico fica marcado
     // e o fluxo de publicação (/publicar/...) conta como Central do vendedor
@@ -98,14 +108,14 @@ export function MenuDrawer({ open, onOpenChange }: MenuDrawerProps) {
             <SheetContent side="right" className="flex w-[min(90vw,22.5rem)] flex-col gap-0 border-l-0 bg-surface p-0 sm:max-w-none">
                 <div className="flex items-center gap-2.5 px-6 pb-5 pt-6">
                     <OrcaMark className="h-8" />
-                    <SheetTitle className="type-h3">Imperium Bikes</SheetTitle>
+                    <SheetTitle className="brand-name text-xl">Imperium Bikes</SheetTitle>
                     <SheetDescription className="sr-only">Menu principal</SheetDescription>
                 </div>
 
                 <ProfileBar onNavigate={close} />
 
                 <nav aria-label="Menu principal" className="flex-1 overflow-y-auto px-3 py-4">
-                    {menuSections.map((section) => (
+                    {secoes.map((section) => (
                         <section key={section.title} className="mb-5 last:mb-0">
                             <h3 className="type-caption px-3 pb-1 font-semibold text-muted-foreground">{section.title}</h3>
                             <ul>

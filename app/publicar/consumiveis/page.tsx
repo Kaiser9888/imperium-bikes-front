@@ -389,7 +389,7 @@ export default function PublicarConsumiveisPage() {
         </div>
 
         <div>
-          <p className="eyebrow">
+          <p className="brand-name m-0 text-base">
             Imperium Bikes
           </p>
 

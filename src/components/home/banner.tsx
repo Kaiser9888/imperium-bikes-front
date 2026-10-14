@@ -1,22 +1,23 @@
-import Image from "next/image"
+"use client"
+
 import Link from "next/link"
+import { useEffect, useState } from "react"
 
 import { cn } from "@/lib/utils"
+import { bannerService, type Banner } from "@/services/adminService"
 
-export type BannerAnuncio = {
-    /** Arte do anúncio, proporção 16:7 (ex.: 1600x700), em /public/banners. */
-    image: string
-    /** Descreve o anúncio para leitores de tela. */
-    alt: string
-    href: string
-}
+/** Faixa de anúncios e promoções da Home (cadastrados em /admin): até dois lado a lado no desktop, deslizável no celular. */
+export function Banners() {
+    const [banners, setBanners] = useState<Banner[]>([])
 
-// ponytail: lista fixa até existir backend de banners; cada item é uma campanha real
-// com arte própria. Vazia, a Home simplesmente não mostra a faixa de anúncios.
-const anuncios: BannerAnuncio[] = []
+    useEffect(() => {
+        let ativo = true
+        bannerService.ativos().then((lista) => ativo && setBanners(lista)).catch(() => {})
+        return () => {
+            ativo = false
+        }
+    }, [])
 
-/** Faixa de anúncios e promoções da Home: até dois lado a lado no desktop, deslizável no celular. */
-export function Banners({ banners = anuncios }: { banners?: BannerAnuncio[] }) {
     if (banners.length === 0) return null
     const unico = banners.length === 1
 
@@ -28,21 +29,15 @@ export function Banners({ banners = anuncios }: { banners?: BannerAnuncio[] }) {
                     unico ? "md:grid-cols-1" : "md:grid-cols-2",
                 )}
             >
-                {banners.map(({ image, alt, href }, index) => (
-                    <li key={href + image} className={cn("shrink-0 snap-center md:w-auto", unico ? "w-full" : "w-[88%]")}>
+                {banners.map(({ id, imageUrl, alt, linkUrl }) => (
+                    <li key={id} className={cn("shrink-0 snap-center md:w-auto", unico ? "w-full" : "w-[88%]")}>
                         {/* Sem borda nem sombra: a arte encosta direto no fundo da página */}
                         <Link
-                            href={href}
+                            href={linkUrl}
                             className="relative block aspect-[16/7] overflow-hidden rounded-2xl bg-surface-muted transition-opacity hover:opacity-90"
                         >
-                            <Image
-                                src={image}
-                                alt={alt}
-                                fill
-                                priority={index === 0}
-                                sizes={unico ? "(min-width: 1280px) 1216px, 100vw" : "(min-width: 768px) 50vw, 88vw"}
-                                className="object-cover"
-                            />
+                            {/* eslint-disable-next-line @next/next/no-img-element -- arte do painel: data URL ou link externo */}
+                            <img src={imageUrl} alt={alt} className="size-full object-cover" />
                         </Link>
                     </li>
                 ))}
