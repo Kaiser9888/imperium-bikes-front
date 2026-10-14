@@ -4,7 +4,16 @@ import { Share2 } from "lucide-react"
 import { toast } from "sonner"
 
 /** Compartilha a página atual: folha nativa do celular ou, sem ela, copia o link. */
-export function ShareButton({ title, className }: { title?: string; className?: string }) {
+export function ShareButton({
+    title,
+    className,
+    variant = "galaxy",
+}: {
+    title?: string
+    className?: string
+    /** "line": botão de texto com traço (páginas de torneio). */
+    variant?: "galaxy" | "line"
+}) {
     async function share() {
         const url = window.location.href
         if (navigator.share) {
@@ -21,6 +30,15 @@ export function ShareButton({ title, className }: { title?: string; className?: 
         } catch {
             toast.error("Não foi possível copiar o link")
         }
+    }
+
+    if (variant === "line") {
+        return (
+            <button type="button" onClick={share} className={`line-btn line-btn--sm line-btn--muted ${className ?? ""}`}>
+                <Share2 aria-hidden="true" />
+                Compartilhar
+            </button>
+        )
     }
 
     return (

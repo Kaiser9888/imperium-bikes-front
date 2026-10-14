@@ -1,10 +1,11 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import Link from "next/link"
 import { useRouter } from "next/navigation"
 
 import { startDraft } from "@/lib/publicar/categorias"
+
+import { BackButton } from "@/components/ui/back-button"
 
 /* ------------------------------------------------------------------ */
 /* CATEGORIAS PRINCIPAIS                                               */
@@ -584,18 +585,13 @@ export default function PublicarPecasPage() {
   }
 
   const handleCancel = () => {
-    router.push("/publicar")
+    router.push("/vendedor")
   }
 
   return (
     <main className="imperium-page">
       <header className="imperium-header">
-        <Link
-          className="header-back"
-          href="/publicar"
-        >
-          Voltar
-        </Link>
+        <BackButton href="/vendedor" />
 
         <div
           className="brand-mark"

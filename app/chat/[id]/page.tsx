@@ -4,13 +4,15 @@
 import { Button } from "@/components/ui/button"
 
 import { useUser } from "@clerk/nextjs"
-import { ArrowLeft, Loader2, Send } from "lucide-react"
+import { Loader2, Send } from "lucide-react"
 import Link from "next/link"
 import { Logo } from "@/components/layout/logo"
 import { useParams } from "next/navigation"
 import { useEffect, useRef, useState } from "react"
 import type { Channel } from "stream-chat"
 import { useStreamClient } from "@/lib/stream"
+
+import { BackButton } from "@/components/ui/back-button"
 
 function hora(d?: Date | string | null) {
     if (!d) return ""
@@ -116,9 +118,7 @@ export default function ConversaPage() {
           <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur-md">
               <div>
                   <div className="mx-auto flex w-full max-w-2xl items-center gap-3 px-4 py-3">
-                      <Link href="/chat" className="flex items-center text-marble-foreground hover:text-foreground">
-                          <ArrowLeft className="size-5" />
-                      </Link>
+                      <BackButton href="/chat" />
                       <img src={outro?.image || "/placeholder.svg"} alt={outro?.name ?? "Usuário"} className="size-9 rounded-full object-cover" />
                       <div className="min-w-0 flex-1">
                           <p className="truncate text-sm font-semibold text-foreground">{outro?.name ?? "Conversa"}</p>

@@ -1,11 +1,12 @@
 "use client"
 
 import { useState } from "react"
-import Link from "next/link"
 import { useRouter } from "next/navigation"
 
 import { writeDraft } from "@/lib/publicar/categorias"
 import { CATEGORIA_ESPORTES, OPCOES_ESPORTE, TIPOS_POR_ESPORTE } from "@/lib/publicar/taxonomia"
+
+import { BackButton } from "@/components/ui/back-button"
 
 type Answers = { sport: string; tipo: string }
 
@@ -60,9 +61,7 @@ export default function PublicarEsportesPage() {
   return (
     <main className="imperium-page">
       <header className="imperium-header">
-        <Link className="header-back" href="/publicar">
-          Voltar
-        </Link>
+        <BackButton href="/vendedor" />
 
         <div className="brand-mark" aria-label="Imperium Bikes">
           IB
@@ -177,7 +176,7 @@ export default function PublicarEsportesPage() {
           </div>
 
           <div className="summary-actions">
-            <button type="button" className="secondary-action" onClick={() => router.push("/publicar")}>
+            <button type="button" className="secondary-action" onClick={() => router.push("/vendedor")}>
               Cancelar anúncio
             </button>
 

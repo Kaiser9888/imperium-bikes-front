@@ -2,8 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import {
-  ArrowLeft,
+import {
   ArrowRight,
   ImagePlus,
   Trash2,
@@ -14,6 +13,8 @@ import {
   getDraft,
   saveDraft,
 } from '@/lib/publicar/storage'
+
+import { BackButton } from "@/components/ui/back-button"
 
 export default function FotosPage() {
   const { categoria } = useParams<{
@@ -151,14 +152,7 @@ export default function FotosPage() {
   return (
     <main className="publish-page">
       <header className="publish-header">
-        <button
-          type="button"
-          onClick={voltar}
-          className="publish-back"
-        >
-          <ArrowLeft />
-          Voltar
-        </button>
+        <BackButton onClick={voltar} />
 
         <strong>
           {nomeCategoria}

@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { ArrowLeft, ArrowRight, Check, X } from 'lucide-react'
+import { ArrowRight, Check, X } from 'lucide-react'
 import {
   getCategoriaConfig,
   nextStep,
@@ -17,6 +17,8 @@ import {
   OPCOES_MODALIDADE,
   modalidadeSugerida,
 } from '@/lib/publicar/taxonomia'
+
+import { BackButton } from "@/components/ui/back-button"
 
 const condicoes = [
   {
@@ -104,18 +106,12 @@ export default function InformacoesPage() {
   return (
     <main className="publish-page">
       <header className="publish-header">
-        <Link
-          href={previousStep(categoria, 'informacoes')}
-          className="publish-back"
-        >
-          <ArrowLeft />
-          Voltar
-        </Link>
+        <BackButton href={previousStep(categoria, 'informacoes')} />
 
         <strong>{label}</strong>
 
         <Link
-          href="/publicar"
+          href="/vendedor"
           className="publish-cancel"
         >
           <X />

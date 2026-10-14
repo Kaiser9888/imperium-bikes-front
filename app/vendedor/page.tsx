@@ -2,13 +2,12 @@
 "use client"
 import { Button } from "@/components/ui/button"
 
-import { useEffect, useMemo, useState, useCallback } from "react"
+import { useEffect, useMemo, useState, useCallback, useSyncExternalStore } from "react"
 import Link from "next/link"
 import { Logo } from "@/components/layout/logo"
 import { useUser } from "@clerk/nextjs"
 import {
-  ArrowLeft,
-  ChevronRight,
+  ArrowRight,
   Cog,
   Dumbbell,
   Eye,
@@ -32,6 +31,8 @@ import {
   formatarPreco,
   type ProdutoItem,
 } from "@/services/publish/seller-products.service"
+import { clearDraft } from "@/lib/publicar/categorias"
+import { BackButton } from "@/components/ui/back-button"
 
 /*
   Paleta
@@ -45,13 +46,60 @@ import {
   Dica: renomeie /publicar/bikes para /publicar/equipamentos quando puder.
 */
 const tiposDeAnuncio = [
-  { label: "Equipamentos", desc: "O item principal do seu esporte", href: "/publicar/bikes", icon: Trophy },
-  { label: "Peças e acessórios", desc: "Componentes, proteções, complementos", href: "/publicar/pecas", icon: Cog },
-  { label: "Serviços", desc: "Aulas, manutenção, personal, aluguel", href: "/publicar/servicos", icon: Wrench },
-  { label: "Produtos", desc: "Roupas, calçados e itens gerais", href: "/publicar/produtos", icon: ShoppingBag },
-  { label: "Consumíveis", desc: "Suplementos, géis, hidratação", href: "/publicar/consumiveis", icon: Zap },
-  { label: "Artigos esportivos", desc: "Corrida, natação, futebol, musculação, lutas", href: "/publicar/esportes", icon: Dumbbell },
+  { slug: "bikes", label: "Equipamentos", desc: "O item principal do seu esporte", icon: Trophy },
+  { slug: "pecas", label: "Peças e acessórios", desc: "Componentes, proteções, complementos", icon: Cog },
+  { slug: "servicos", label: "Serviços", desc: "Aulas, manutenção, personal, aluguel", icon: Wrench },
+  { slug: "produtos", label: "Produtos", desc: "Roupas, calçados e itens gerais", icon: ShoppingBag },
+  { slug: "consumiveis", label: "Consumíveis", desc: "Suplementos, géis, hidratação", icon: Zap },
+  { slug: "esportes", label: "Artigos esportivos", desc: "Corrida, natação, futebol, musculação, lutas", icon: Dumbbell },
 ]
+
+/*
+  Rascunhos do fluxo /publicar (sessionStorage, uma chave por categoria; ver
+  lib/publicar/categorias). A Central mostra os que ficaram pela metade.
+*/
+const PREFIXO_RASCUNHO = "imperium_publish_draft:"
+const ETAPAS = [
+  { id: "informacoes", label: "Informações" },
+  { id: "fotos", label: "Fotos" },
+  { id: "frete", label: "Frete" },
+  { id: "preco", label: "Preço" },
+  { id: "destacar", label: "Destaque" },
+] as const
+
+type Rascunho = { slug: string; titulo: string; etapa: number }
+
+function lerRascunhosBrutos(): string {
+  const achados: [string, string][] = []
+  try {
+    for (let i = 0; i < sessionStorage.length; i++) {
+      const chave = sessionStorage.key(i)
+      if (chave?.startsWith(PREFIXO_RASCUNHO)) achados.push([chave.slice(PREFIXO_RASCUNHO.length), sessionStorage.getItem(chave) ?? ""])
+    }
+  } catch {
+    // sessionStorage bloqueado: sem rascunhos
+  }
+  return JSON.stringify(achados.sort())
+}
+
+function interpretarRascunhos(brutos: string): Rascunho[] {
+  return (JSON.parse(brutos) as [string, string][]).flatMap(([slug, raw]) => {
+    if (!tiposDeAnuncio.some((t) => t.slug === slug)) return []
+    try {
+      const d = JSON.parse(raw) as { titulo?: string; photos?: unknown[]; frete?: unknown; preco?: unknown }
+      // Próxima etapa = primeira que ainda não salvou nada
+      const etapa = !d.titulo ? 0 : !d.photos?.length ? 1 : !d.frete ? 2 : !d.preco ? 3 : 4
+      return [{ slug, titulo: d.titulo ?? "", etapa }]
+    } catch {
+      return []
+    }
+  })
+}
+
+const assinarStorage = (avisar: () => void) => {
+  window.addEventListener("storage", avisar)
+  return () => window.removeEventListener("storage", avisar)
+}
 
 type Status = "ATIVO" | "PAUSADO" | "VENDIDO"
 type Filtro = "TODOS" | Status
@@ -68,7 +116,16 @@ export default function CentralVendedorPage() {
   const [filtro, setFiltro] = useState<Filtro>("TODOS")
   const [busca, setBusca] = useState("")
 
-  const [publicando, setPublicando] = useState(false)
+  // Lido direto do sessionStorage a cada render; descartar só precisa forçar um novo render
+  const [, setVersaoRascunhos] = useState(0)
+  const rascunhosBrutos = useSyncExternalStore(assinarStorage, lerRascunhosBrutos, () => "[]")
+  const rascunhos = useMemo(() => interpretarRascunhos(rascunhosBrutos), [rascunhosBrutos])
+
+  function descartarRascunho(slug: string) {
+    clearDraft(slug)
+    setVersaoRascunhos((v) => v + 1)
+  }
+
   const [acoes, setAcoes] = useState<ProdutoItem | null>(null)
   const [editando, setEditando] = useState<ProdutoItem | null>(null)
   const [excluindo, setExcluindo] = useState<ProdutoItem | null>(null)
@@ -138,13 +195,7 @@ export default function CentralVendedorPage() {
   const Topo = (
     <header className="sticky top-0 z-40 border-b border-border bg-background/90 backdrop-blur">
       <div className="mx-auto flex max-w-5xl items-center gap-2 px-3 py-2.5 md:px-6">
-        <Link
-          href="/"
-          aria-label="Voltar para o início"
-          className="flex size-10 items-center justify-center rounded-full hover:bg-surface-muted active:bg-border"
-        >
-          <ArrowLeft className="size-5" />
-        </Link>
+        <BackButton href="/" />
         <h1 className="font-heading text-lg font-bold">Central do vendedor</h1>
         <Logo compact className="ml-auto" />
       </div>
@@ -218,12 +269,12 @@ export default function CentralVendedorPage() {
                 {contagem.ATIVO === 1 ? "anúncio no ar" : "anúncios no ar"}
               </p>
             </div>
-            <button onClick={() => setPublicando(true)} className="underline-btn hidden md:block">
+            <a href="#publicar" className="underline-btn hidden md:block">
               <span className="flex items-center gap-2 py-1.5">
                 <Plus className="size-5" />
                 Publicar novo anúncio
               </span>
-            </button>
+            </a>
           </div>
 
           <div className="mt-6 flex gap-5 md:gap-8">
@@ -241,9 +292,81 @@ export default function CentralVendedorPage() {
           </div>
         </section>
 
+        {/* ---------- CONTINUAR (rascunhos pela metade) ---------- */}
+        {rascunhos.length > 0 && (
+          <section aria-labelledby="titulo-rascunhos" className="mt-8">
+            <h2 id="titulo-rascunhos" className="type-h3">Continue de onde parou</h2>
+            <ul className="mt-3 space-y-2">
+              {rascunhos.map((r) => {
+                const tipo = tiposDeAnuncio.find((t) => t.slug === r.slug)!
+                const Icon = tipo.icon
+                const proxima = ETAPAS[r.etapa]
+                return (
+                  <li key={r.slug} className="flex items-center gap-3 rounded-2xl border border-dashed border-foreground/40 bg-surface p-3 pr-2">
+                    <span className="grid size-11 shrink-0 place-items-center rounded-full bg-primary/10 text-primary">
+                      <Icon className="size-5" />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-semibold">{r.titulo || `Rascunho de ${tipo.label.toLowerCase()}`}</p>
+                      <div className="mt-1.5 flex items-center gap-2">
+                        <div className="flex gap-0.5" aria-hidden="true">
+                          {ETAPAS.map((e, i) => (
+                            <span key={e.id} className={`h-1 w-4 rounded-full ${i < r.etapa ? "bg-primary" : "bg-surface-muted"}`} />
+                          ))}
+                        </div>
+                        <span className="truncate text-xs text-muted-foreground">Falta: {proxima.label.toLowerCase()}</span>
+                      </div>
+                    </div>
+                    <Link href={`/publicar/${r.slug}/${proxima.id}`} className="line-btn line-btn--sm shrink-0">
+                      Continuar
+                      <ArrowRight aria-hidden="true" />
+                    </Link>
+                    <Button
+                      onClick={() => descartarRascunho(r.slug)}
+                      aria-label="Descartar rascunho"
+                      variant="ghost" size="icon" className="shrink-0 text-muted-foreground"
+                    >
+                      <X className="size-4" />
+                    </Button>
+                  </li>
+                )
+              })}
+            </ul>
+          </section>
+        )}
+
+        {/* ---------- PUBLICAR ---------- */}
+        <section id="publicar" aria-labelledby="titulo-publicar" className="mt-8 scroll-mt-20">
+          <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+            <h2 id="titulo-publicar" className="type-h3">O que você vai vender?</h2>
+            <p className="text-xs text-muted-foreground">Escolha a categoria. O resto vai por etapas.</p>
+          </div>
+          <ul className="mt-3 grid grid-cols-2 gap-2.5 md:grid-cols-3">
+            {tiposDeAnuncio.map(({ slug, label, desc, icon: Icon }) => (
+              <li key={slug}>
+                <Link
+                  href={`/publicar/${slug}`}
+                  className="group flex h-full flex-col rounded-2xl border border-border bg-surface p-3.5 transition-[border-color,transform] hover:-translate-y-0.5 hover:border-foreground active:translate-y-0 md:flex-row md:items-center md:gap-3"
+                >
+                  <span className="grid size-10 shrink-0 place-items-center rounded-full bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
+                    <Icon className="size-5" />
+                  </span>
+                  <span className="mt-3 min-w-0 md:mt-0">
+                    <span className="block text-sm font-semibold leading-snug">{label}</span>
+                    <span className="mt-0.5 line-clamp-2 block text-xs text-muted-foreground">{desc}</span>
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        {/* ---------- MEUS ANÚNCIOS ---------- */}
+        <h2 id="anuncios" className="type-h3 mt-10 scroll-mt-20">Meus anúncios</h2>
+
         {/* ---------- FILTROS + BUSCA ---------- */}
         {produtos.length > 0 && (
-          <div className="mt-5 space-y-3 md:flex md:items-center md:justify-between md:space-y-0 md:gap-4">
+          <div className="mt-3 space-y-3 md:flex md:items-center md:justify-between md:space-y-0 md:gap-4">
             <div className="-mx-4 overflow-x-auto px-4 [scrollbar-width:none] md:mx-0 md:overflow-visible md:px-0">
               <div className="flex gap-2">
                 {filtros.map((f) => {
@@ -304,30 +427,12 @@ export default function CentralVendedorPage() {
               ))}
             </ul>
           ) : produtos.length === 0 ? (
-            <div className="flex flex-col items-center px-6 py-14 text-center">
-              <div className="mb-6 flex items-center">
-                {[Dumbbell, Trophy, Zap].map((Icon, i) => (
-                  <span
-                    key={i}
-                    className={`grid size-16 place-items-center rounded-full border-4 border-background ${
-                      i === 1 ? "z-10 -mx-3 size-[72px] bg-primary text-primary-foreground" : "bg-primary/10 text-primary"
-                    }`}
-                  >
-                    <Icon className="size-7" />
-                  </span>
-                ))}
-              </div>
-              <p className="font-heading text-xl font-bold">Sua vitrine está pronta</p>
-              <p className="mt-1 max-w-xs text-sm text-muted-foreground">
-                Publique o primeiro anúncio e comece a vender para a comunidade esportiva.
+            <div className="rounded-2xl border border-dashed border-border px-5 py-10 text-center">
+              <Package className="mx-auto size-7 text-muted-foreground/60" />
+              <p className="mt-3 text-sm font-semibold">Nenhum anúncio ainda</p>
+              <p className="mx-auto mt-1 max-w-xs text-sm text-muted-foreground">
+                Escolha uma categoria em “O que você vai vender?” e publique o primeiro.
               </p>
-              <Button
-                onClick={() => setPublicando(true)}
-                size="lg" className="mt-6"
-              >
-                <Plus className="size-4" />
-                Criar anúncio
-              </Button>
             </div>
           ) : visiveis.length === 0 ? (
             <p className="py-16 text-center text-sm text-muted-foreground">Nada encontrado com esse filtro.</p>
@@ -411,38 +516,12 @@ export default function CentralVendedorPage() {
 
       {/* Botão flutuante (só no celular; no PC o botão fica no resumo) */}
       {produtos.length > 0 && (
-        <Button
-          onClick={() => setPublicando(true)}
-          size="lg" className="fixed bottom-24 right-4 z-30 md:hidden rounded-full shadow-lg"
-        >
-          <Plus className="size-5" />
-          Novo anúncio
+        <Button asChild size="lg" className="fixed bottom-24 right-4 z-30 md:hidden rounded-full shadow-lg">
+          <a href="#publicar">
+            <Plus className="size-5" />
+            Novo anúncio
+          </a>
         </Button>
-      )}
-
-      {/* ---------- O QUE VAI VENDER ---------- */}
-      {publicando && (
-        <Sheet titulo="O que você vai vender?" onClose={() => setPublicando(false)}>
-          <ul className="space-y-2">
-            {tiposDeAnuncio.map(({ label, desc, href, icon: Icon }) => (
-              <li key={href}>
-                <Link
-                  href={href}
-                  className="flex items-center gap-3 rounded-2xl border border-border bg-surface px-4 py-3.5 hover:border-primary/40 active:bg-primary/10"
-                >
-                  <span className="grid size-11 shrink-0 place-items-center rounded-full bg-primary/10 text-primary">
-                    <Icon className="size-5" />
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-sm font-semibold">{label}</span>
-                    <span className="block truncate text-xs text-muted-foreground">{desc}</span>
-                  </span>
-                  <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </Sheet>
       )}
 
       {/* ---------- AÇÕES ---------- */}

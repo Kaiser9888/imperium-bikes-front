@@ -632,3 +632,142 @@ mux-player.mux-player-cover {
 .underline-btn:focus-visible::after {
     width: 100%;
 }
+/* Mesma coisa em fundo claro */
+.underline-btn--ink {
+    color: var(--foreground);
+}
+.underline-btn:disabled {
+    cursor: progress;
+    opacity: 0.6;
+}
+
+@layer components {
+    /* Botão Voltar (Uiverse.io, Jedi-hongbin): a seta escorrega para a esquerda no hover */
+    .back-btn {
+        display: inline-flex;
+        height: 2.75rem;
+        min-width: 100px;
+        padding-inline: 0.625rem 1rem;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        border: none;
+        border-radius: 3px;
+        background: var(--surface);
+        color: var(--foreground);
+        font-size: 0.875rem;
+        font-weight: 500;
+        letter-spacing: 1px;
+        text-decoration: none;
+        cursor: pointer;
+        transition: all 0.2s linear;
+    }
+    .back-btn > svg {
+        width: 16px;
+        height: 16px;
+        margin-inline: 5px;
+        fill: currentColor;
+        transition: transform 0.4s ease-in;
+    }
+    .back-btn:hover,
+    .back-btn:focus-visible {
+        box-shadow: 9px 9px 33px oklch(0.21 0.03 255 / 18%), -9px -9px 33px var(--surface);
+        transform: translateY(-2px);
+    }
+    .dark .back-btn:hover,
+    .dark .back-btn:focus-visible {
+        box-shadow: 9px 9px 33px oklch(0 0 0 / 45%), -9px -9px 33px oklch(1 0 0 / 4%);
+    }
+    .back-btn:hover > svg,
+    .back-btn:focus-visible > svg {
+        transform: translateX(-5px) scale(1.2);
+    }
+    .back-btn:focus-visible {
+        outline: 2px solid var(--ring);
+        outline-offset: 2px;
+    }
+
+    /* Botão de texto com traço que abre do centro (Uiverse.io, LightAndy1) */
+    .line-btn {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding-block: 0.375rem;
+        border: none;
+        background: none;
+        color: var(--foreground);
+        font: inherit;
+        font-size: 1rem;
+        font-weight: 800;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+        text-decoration: none;
+        white-space: nowrap;
+        cursor: pointer;
+        transition: color 400ms cubic-bezier(0.25, 0.8, 0.25, 1);
+    }
+    .line-btn::after {
+        content: '';
+        position: absolute;
+        bottom: -2px;
+        left: 50%;
+        width: 0%;
+        height: 2px;
+        background-color: var(--accent);
+        pointer-events: none;
+        transition-property: width, left;
+        transition-duration: 400ms;
+        transition-timing-function: cubic-bezier(0.25, 0.8, 0.25, 1);
+    }
+    .line-btn:hover::after,
+    .line-btn:focus-visible::after,
+    .line-btn[aria-pressed='true']::after,
+    .line-btn[aria-current='page']::after {
+        left: 0%;
+        width: 100%;
+    }
+    .line-btn:focus-visible {
+        outline: 2px solid var(--ring);
+        outline-offset: 4px;
+    }
+    .line-btn svg {
+        width: 1em;
+        height: 1em;
+        flex-shrink: 0;
+    }
+    .line-btn:disabled,
+    .line-btn[aria-disabled='true'] {
+        cursor: not-allowed;
+        opacity: 0.35;
+    }
+    .line-btn:disabled::after {
+        width: 0%;
+    }
+    .line-btn[aria-busy='true'] {
+        cursor: progress;
+    }
+    .line-btn--sm {
+        font-size: 0.75rem;
+        letter-spacing: 0.08em;
+    }
+    .line-btn--lg {
+        font-size: 1.125rem;
+    }
+    .line-btn--muted {
+        color: var(--muted-foreground);
+    }
+    .line-btn--muted:hover,
+    .line-btn--muted[aria-pressed='true'] {
+        color: var(--foreground);
+    }
+    .line-btn--accent {
+        color: var(--accent);
+    }
+    .line-btn--danger {
+        color: var(--destructive);
+    }
+    .line-btn--danger::after {
+        background-color: var(--destructive);
+    }
+}

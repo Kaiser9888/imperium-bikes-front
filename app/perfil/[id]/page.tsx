@@ -2,8 +2,7 @@
 // app/perfil/[id]/page.tsx
 "use client"
 
-import { ArrowLeft, MapPin } from "lucide-react"
-import Link from "next/link"
+import { MapPin } from "lucide-react"
 import { Logo } from "@/components/layout/logo"
 import { useState, useEffect } from "react"
 import { useParams } from "next/navigation"
@@ -28,6 +27,8 @@ interface PerfilUsuario {
 }
 
 import { API_BASE_URL } from '@/lib/api-config'
+
+import { BackButton } from "@/components/ui/back-button"
 
 const API_URL = API_BASE_URL
 
@@ -74,7 +75,7 @@ export default function PerfilPublicoPage() {
           <div>
               <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 py-3">
                   <div className="flex items-center gap-3 min-w-0">
-                      <Link href="/buscar" className="flex shrink-0 items-center"><ArrowLeft className="size-5" /></Link>
+                      <BackButton href="/buscar" />
                       {titulo && <span className="font-heading text-lg font-bold text-foreground truncate">{titulo}</span>}
                   </div>
                   <Logo compact />

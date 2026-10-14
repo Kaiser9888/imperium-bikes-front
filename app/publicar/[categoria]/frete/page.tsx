@@ -2,12 +2,14 @@
 
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { ArrowLeft, ArrowRight, Check, X } from 'lucide-react'
+import { ArrowRight, Check, X } from 'lucide-react'
 import {
   clearDraft,
   getDraft,
   saveDraft,
 } from '@/lib/publicar/storage'
+
+import { BackButton } from "@/components/ui/back-button"
 
 const pagadores = [
   {
@@ -287,14 +289,7 @@ const nomeCategoria =
 return (
   <main className="publish-page">
     <header className="publish-header">
-      <button
-        type="button"
-        onClick={voltar}
-        className="publish-back"
-      >
-        <ArrowLeft />
-        Voltar
-      </button>
+      <BackButton onClick={voltar} />
 
       <strong>
         {nomeCategoria}

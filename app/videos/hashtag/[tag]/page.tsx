@@ -3,14 +3,15 @@ import { Button } from "@/components/ui/button"
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import Link from "next/link";
-import { ArrowLeft, ArrowRight, Loader2 } from "lucide-react";
+import { ArrowRight, Loader2 } from "lucide-react";
 import { fetchVideosByHashtag } from "@/lib/videos/api";
 import { normalizeHashtag } from "@/lib/videos/hashtags";
 import type { VideoItem } from "@/lib/videos/types";
 import { VideoCard } from "@/components/videos/VideoCard";
 import { VideoGridSkeleton } from "@/components/videos/VideoGridSkeleton";
 import { ErrorState, EmptyState } from "@/components/videos/FeedStates";
+
+import { BackButton } from "@/components/ui/back-button"
 
 export default function HashtagPage() {
   const { tag: rawTag } = useParams<{ tag: string }>();
@@ -59,13 +60,7 @@ export default function HashtagPage() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-10">
-      <Link
-        href="/videos"
-        className="mb-6 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-      >
-        <ArrowLeft className="size-4" aria-hidden="true" />
-        Voltar
-      </Link>
+      <BackButton href="/videos" className="mb-6" />
 
       <h1 className="text-xl font-semibold text-foreground">#{tag}</h1>
       <p className="mt-1 text-sm text-muted-foreground">Vídeos publicados com essa hashtag</p>

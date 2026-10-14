@@ -1,7 +1,7 @@
 ﻿"use client"
 
-import { ArrowLeft } from "lucide-react"
-import Link from "next/link"
+
+import { BackButton } from "@/components/ui/back-button"
 
 interface Props {
   onClear: () => void
@@ -16,13 +16,7 @@ export function PublishHeader({ onClear }: Props) {
       <div className="bg-white/60 backdrop-blur-[2px] dark:bg-background/90">
         <div className="flex h-14 items-center justify-between px-4">
           {/* Botão Voltar */}
-          <Link
-            href="/"
-            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <ArrowLeft className="size-4" />
-            <span>Voltar</span>
-          </Link>
+          <BackButton href="/" />
 
 
           {/* Espaço vazio para centralizar o título */}

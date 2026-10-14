@@ -14,7 +14,6 @@ import {
     ShoppingBag,
     ShoppingCart,
     Store,
-    Tag,
     Trophy,
     Bell,
     Newspaper,
@@ -59,9 +58,12 @@ const menuSections: MenuSection[] = [
             { icon: ShoppingBag, label: "Comprar", href: "/produtos" },
             { icon: ShoppingCart, label: "Carrinho", href: "/carrinho" },
             { icon: Package, label: "Pedidos", href: "/pedidos" },
-            { icon: Store, label: "Central do vendedor", href: "/vendedor" },
-            { icon: Tag, label: "Anunciar", href: "/publicar" },
         ],
+    },
+    {
+        // Tudo de anunciar (publicar, rascunhos, gerenciar) fica dentro da Central
+        title: "Vender",
+        items: [{ icon: Store, label: "Central do vendedor", href: "/vendedor" }],
     },
     {
         title: "Conteúdo",
@@ -85,8 +87,10 @@ export function MenuDrawer({ open, onOpenChange }: MenuDrawerProps) {
     const close = () => onOpenChange(false)
 
     // Entre /torneios e /torneios/criar, só o link mais específico fica marcado
+    // e o fluxo de publicação (/publicar/...) conta como Central do vendedor
+    const rota = isRouteActive(pathname, "/publicar") ? "/vendedor" : pathname
     const ativo = todosOsLinks
-        .filter((href) => isRouteActive(pathname, href))
+        .filter((href) => isRouteActive(rota, href))
         .sort((a, b) => b.length - a.length)[0]
 
     return (

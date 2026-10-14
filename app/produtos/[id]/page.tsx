@@ -36,6 +36,8 @@ import { iniciarConversa } from "@/lib/stream"
 import { addToCart } from "@/lib/cart"
 import { isFavoriteProduct, toggleFavorite } from "@/lib/favorites"
 
+import { BackButton } from "@/components/ui/back-button"
+
 function ProdutoPage() {
   const params = useParams<{ id: string }>()
   const router = useRouter()
@@ -454,13 +456,7 @@ function ProdutoPage() {
 
           <div className="flex items-center gap-5">
 
-            <Link
-              href="/"
-              className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground hover:text-primary"
-            >
-              <ArrowLeft className="size-4" />
-              Voltar
-            </Link>
+            <BackButton href="/" />
 
             <span className="hidden h-5 w-px bg-border sm:block" />
 

@@ -3,8 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { formatarPreco } from '@/lib/format'
-import {
-  ArrowLeft,
+import {
   ArrowRight,
   X,
 } from 'lucide-react'
@@ -13,6 +12,8 @@ import {
   getDraft,
   saveDraft,
 } from '@/lib/publicar/storage'
+
+import { BackButton } from "@/components/ui/back-button"
 
 function parseMoney(value: string): number {
   const cleaned = value
@@ -149,14 +150,7 @@ export default function PrecoPage() {
   return (
     <main className="publish-page">
       <header className="publish-header">
-        <button
-          type="button"
-          onClick={voltar}
-          className="publish-back"
-        >
-          <ArrowLeft />
-          Voltar
-        </button>
+        <BackButton onClick={voltar} />
 
         <strong>
           {nomeCategoria}

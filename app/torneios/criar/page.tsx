@@ -1,15 +1,22 @@
 // app/torneios/criar/page.tsx
 "use client"
-import { Button } from "@/components/ui/button"
 
-import { Header } from "@/components/layout/Header"
-import { BottomNav } from "@/components/layout/bottom-nav"
-import { useUser } from "@clerk/nextjs"
-import { ArrowLeft, Calendar, MapPin, Users, DollarSign, Trophy, Image, X, Shield } from "lucide-react"
 import Link from "next/link"
-import { Logo } from "@/components/layout/logo"
 import { useState } from "react"
+import { useUser } from "@clerk/nextjs"
+import { ArrowRight, Check, Loader2, Plus, X } from "lucide-react"
+
+import { BottomNav } from "@/components/layout/bottom-nav"
+import { Logo } from "@/components/layout/logo"
+import { BackButton } from "@/components/ui/back-button"
+import { formatarPreco, partesDaData } from "@/lib/format"
 import { mensagemDaApi, tournamentService } from "@/services/tournamentService"
+
+const PASSOS = ["O evento", "Local e vagas", "Inscrição"] as const
+
+const rotulo = "type-label text-foreground"
+const ajuda = "type-caption mt-1.5 text-muted-foreground"
+const campo = "mt-2 w-full rounded-lg bg-surface px-3.5 py-3 text-base outline-none md:text-sm"
 
 export default function CriarTorneioPage() {
     const { isSignedIn } = useUser()
@@ -36,7 +43,7 @@ export default function CriarTorneioPage() {
     const [enviando, setEnviando] = useState(false)
     const [erroEnvio, setErroEnvio] = useState<string | null>(null)
 
-    const update = (campo: string, valor: string) => {
+    const update = (campo: keyof typeof form, valor: string) => {
         setForm((prev) => ({ ...prev, [campo]: valor }))
     }
 
@@ -63,228 +70,264 @@ export default function CriarTorneioPage() {
         }
     }
 
-    const podeAvancar = () => {
-        if (passo === 1) return form.nome.trim().length >= 5 && form.dataInicio
-        if (passo === 2) return form.local && form.maxParticipantes
-        return true
+    /** O que falta para sair de cada passo; null quando está tudo certo. */
+    const pendencia = (p: number): string | null => {
+        if (p === 1) {
+            if (form.nome.trim().length < 5) return "Dê um nome com pelo menos 5 letras."
+            if (!form.dataInicio) return "Escolha a data de início."
+        }
+        if (p === 2) {
+            if (!form.local.trim()) return "Informe onde vai acontecer."
+            if (!form.maxParticipantes) return "Defina quantas vagas o evento tem."
+        }
+        return null
     }
+    // Pode pular para um passo se todos os anteriores estiverem completos
+    const alcancavel = (p: number) => Array.from({ length: p - 1 }, (_, i) => i + 1).every((q) => !pendencia(q))
+    const falta = pendencia(passo)
+
+    const cabecalho = (
+        <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur-md">
+            <div className="mx-auto flex w-full max-w-3xl items-center justify-between gap-3 px-4 py-2.5">
+                <BackButton href="/torneios" className="-ml-2.5" />
+                <p className="type-caption font-semibold uppercase tracking-[0.18em] text-muted-foreground">Novo torneio</p>
+                <Logo compact />
+            </div>
+        </header>
+    )
 
     if (criadoId) {
         return (
-            <div className="min-h-screen bg-background">
-                <Header />
-                <div className="flex flex-col items-center justify-center px-4 py-20 text-center">
-                    <div className="size-16 rounded-full bg-success/15 flex items-center justify-center mb-4">
-                        <Shield className="size-8 text-success" />
+            <div className="min-h-screen bg-background text-foreground">
+                {cabecalho}
+                <main className="mx-auto max-w-3xl px-4 pb-32 pt-16">
+                    <span className="grid size-12 place-items-center rounded-full bg-success text-success-foreground">
+                        <Check className="size-6" aria-hidden="true" />
+                    </span>
+                    <h1 className="type-display mt-6">Está no ar.</h1>
+                    <p className="type-body mt-3 max-w-md text-muted-foreground">
+                        <strong className="font-semibold text-foreground">{form.nome.trim()}</strong> já aparece em Eventos e as inscrições estão abertas. Compartilhe o link com a sua turma.
+                    </p>
+                    <div className="mt-8 flex flex-wrap items-center gap-8">
+                        <Link href={`/torneios/${criadoId}`} className="line-btn line-btn--accent">
+                            Ver evento
+                            <ArrowRight aria-hidden="true" />
+                        </Link>
+                        <Link href="/torneios" className="line-btn line-btn--muted">
+                            Todos os eventos
+                        </Link>
                     </div>
-                    <h1 className="type-h1 mb-2 text-foreground">Evento publicado</h1>
-                    <p className="mb-6 text-muted-foreground">As inscrições já estão abertas.</p>
-                    <Button asChild size="lg">
-                        <Link href={`/torneios/${criadoId}`}>Ver evento</Link>
-                    </Button>
-                </div>
+                </main>
                 <BottomNav />
             </div>
         )
     }
 
+    const data = partesDaData(form.dataInicio)
+    const valor = Number(form.valorInscricao) || 0
+
     return (
-        <div className="min-h-screen bg-background">
-            <Header />
+        <div className="min-h-screen bg-background text-foreground">
+            {cabecalho}
 
-            {/* Header */}
-            <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur-md">
-                <div>
-                    <div className="mx-auto flex w-full max-w-3xl items-center justify-between px-4 py-3">
-                        <Link href="/torneios" className="flex items-center gap-2 text-marble-foreground hover:text-foreground">
-                            <ArrowLeft className="size-5" />
-                            <span className="text-sm">Voltar</span>
-                        </Link>
-                        <h1 className="font-heading text-sm font-bold uppercase tracking-widest text-marble-foreground">Criar Torneio</h1>
-                        <Logo compact />
-                    </div>
-                </div>
-            </header>
+            <main className="mx-auto max-w-3xl px-4 pb-32 pt-6 sm:pt-10">
+                {/* Passos: dá para voltar a qualquer um já liberado */}
+                <nav aria-label="Passos" className="-mx-4 overflow-x-auto px-4 [scrollbar-width:none]">
+                    <ol className="flex gap-6">
+                        {PASSOS.map((nome, i) => {
+                            const p = i + 1
+                            return (
+                                <li key={nome}>
+                                    <button
+                                        type="button"
+                                        onClick={() => setPasso(p)}
+                                        disabled={!alcancavel(p)}
+                                        aria-current={passo === p ? "page" : undefined}
+                                        className={`line-btn line-btn--sm ${passo === p ? "" : "line-btn--muted"}`}
+                                    >
+                                        <span className="tabular-nums opacity-60">{String(p).padStart(2, "0")}</span>
+                                        {nome}
+                                        {p < passo && !pendencia(p) && <Check className="text-success" aria-label="concluído" />}
+                                    </button>
+                                </li>
+                            )
+                        })}
+                    </ol>
+                </nav>
 
-            <main className="mx-auto max-w-3xl px-4 py-6">
-                {/* Passos */}
-                <div className="flex items-center gap-2 mb-8">
-                    {[1, 2, 3].map((p) => (
-                        <div key={p} className="flex items-center gap-2 flex-1">
-                            <div className={`flex size-8 items-center justify-center rounded-full text-xs font-bold ${
-                                passo >= p ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"
-                            }`}>
-                                {passo > p ? "✓" : p}
-                            </div>
-                            <span className={`text-xs font-medium hidden sm:block ${passo >= p ? "text-foreground" : "text-muted-foreground"}`}>
-                                {p === 1 ? "Básico" : p === 2 ? "Local e Vagas" : "Finalizar"}
-                            </span>
-                            {p < 3 && <div className={`flex-1 h-px ${passo > p ? "bg-primary" : "bg-border"}`} />}
-                        </div>
-                    ))}
-                </div>
-
-                {/* PASSO 1 */}
                 {passo === 1 && (
-                    <div className="space-y-5">
-                        <h2 className="font-heading text-lg font-bold text-foreground">Informações do torneio</h2>
-
+                    <section className="mt-10 space-y-7">
                         <div>
-                            <label className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Nome do torneio *</label>
-                            <input type="text" value={form.nome} onChange={(e) => update("nome", e.target.value)} placeholder="Ex: Downhill Cup 2026" className="w-full rounded-xl border border-border bg-card px-4 py-3 text-sm mt-1 outline-none focus:border-primary/30" />
+                            <h1 className="type-h1">Sobre o evento</h1>
+                            <p className="type-body-small mt-1.5 text-muted-foreground">O básico para alguém decidir se quer participar.</p>
                         </div>
 
-                        {/* CAPA DO TORNEIO */}
                         <div>
-                            <label className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Capa do torneio</label>
-                            <div className="mt-1">
-                                {form.capa ? (
-                                    <div className="relative rounded-xl overflow-hidden border border-border">
-                                        <img src={form.capa} alt="Capa" className="w-full h-40 object-cover" />
-                                        <button
-                                            onClick={() => update("capa", "")}
-                                            className="absolute top-2 right-2 size-7 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-red-500 transition-colors"
-                                        >
-                                            <X className="size-3.5" />
-                                        </button>
-                                    </div>
-                                ) : (
-                                    <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-border p-8 hover:border-primary/30 transition-colors">
-                                        <Image className="size-10 text-muted-foreground mb-2" />
-                                        <p className="text-sm text-muted-foreground">Adicionar capa</p>
-                                        <p className="text-[10px] text-muted-foreground mt-1">PNG, JPG ou WEBP • Recomendado 1200×630px</p>
-                                        <input
-                                            type="text"
-                                            value={form.capa}
-                                            onChange={(e) => update("capa", e.target.value)}
-                                            placeholder="Cole a URL da imagem"
-                                            className="mt-3 w-full max-w-xs rounded-xl border border-border bg-background px-4 py-2 text-xs text-center outline-none focus:border-primary/30"
-                                        />
+                            <label htmlFor="nome" className={rotulo}>Nome</label>
+                            <input id="nome" type="text" value={form.nome} onChange={(e) => update("nome", e.target.value)} placeholder="Downhill Cup 2026" className={campo} />
+                        </div>
+
+                        <div className="grid gap-5 sm:grid-cols-2">
+                            <div>
+                                <label htmlFor="inicio" className={rotulo}>Começa em</label>
+                                <input id="inicio" type="date" value={form.dataInicio} onChange={(e) => update("dataInicio", e.target.value)} className={campo} />
+                            </div>
+                            <div>
+                                <label htmlFor="fim" className={rotulo}>Termina em <span className="font-normal text-muted-foreground">(opcional)</span></label>
+                                <input id="fim" type="date" value={form.dataFim} min={form.dataInicio || undefined} onChange={(e) => update("dataFim", e.target.value)} className={campo} />
+                            </div>
+                        </div>
+
+                        <div>
+                            <label htmlFor="capa" className={rotulo}>Capa</label>
+                            {form.capa ? (
+                                <div className="relative mt-2 overflow-hidden rounded-lg border border-foreground">
+                                    {/* eslint-disable-next-line @next/next/no-img-element -- URL colada pelo organizador */}
+                                    <img src={form.capa} alt="Prévia da capa" className="aspect-[1200/630] w-full object-cover" />
+                                    <button
+                                        type="button"
+                                        onClick={() => update("capa", "")}
+                                        aria-label="Remover capa"
+                                        className="absolute right-2 top-2 grid size-8 place-items-center rounded-full bg-black/60 text-white transition-colors hover:bg-destructive"
+                                    >
+                                        <X className="size-4" />
+                                    </button>
+                                </div>
+                            ) : (
+                                <>
+                                    <input id="capa" type="url" value={form.capa} onChange={(e) => update("capa", e.target.value)} placeholder="https://…/capa.jpg" className={campo} />
+                                    <p className={ajuda}>Cole o link de uma imagem. Fica melhor em 1200×630.</p>
+                                </>
+                            )}
+                        </div>
+
+                        <div>
+                            <label htmlFor="descricao" className={rotulo}>Descrição</label>
+                            <textarea id="descricao" value={form.descricao} onChange={(e) => update("descricao", e.target.value)} rows={4} placeholder="Percurso, categorias, horário de largada…" className={`${campo} resize-none`} />
+                        </div>
+
+                        <div>
+                            <label htmlFor="regras" className={rotulo}>Regras</label>
+                            <textarea id="regras" value={form.regras} onChange={(e) => update("regras", e.target.value)} rows={3} placeholder="Equipamento obrigatório, idade mínima, critérios de desempate…" className={`${campo} resize-none`} />
+                        </div>
+                    </section>
+                )}
+
+                {passo === 2 && (
+                    <section className="mt-10 space-y-7">
+                        <div>
+                            <h1 className="type-h1">Onde e quantos</h1>
+                            <p className="type-body-small mt-1.5 text-muted-foreground">Quando as vagas acabam, as inscrições fecham sozinhas.</p>
+                        </div>
+
+                        <div>
+                            <label htmlFor="local" className={rotulo}>Local</label>
+                            <input id="local" type="text" value={form.local} onChange={(e) => update("local", e.target.value)} placeholder="Parque Municipal" className={campo} />
+                        </div>
+
+                        <div className="grid grid-cols-[1fr_6rem] gap-5">
+                            <div>
+                                <label htmlFor="cidade" className={rotulo}>Cidade</label>
+                                <input id="cidade" type="text" value={form.cidade} onChange={(e) => update("cidade", e.target.value)} placeholder="Campos do Jordão" className={campo} />
+                            </div>
+                            <div>
+                                <label htmlFor="uf" className={rotulo}>UF</label>
+                                <input id="uf" type="text" value={form.estado} onChange={(e) => update("estado", e.target.value)} maxLength={2} placeholder="SP" className={`${campo} uppercase`} />
+                            </div>
+                        </div>
+
+                        <div className="grid gap-5 sm:grid-cols-2">
+                            <div>
+                                <label htmlFor="vagas" className={rotulo}>Vagas</label>
+                                <input id="vagas" type="number" inputMode="numeric" value={form.maxParticipantes} onChange={(e) => update("maxParticipantes", e.target.value)} min={2} placeholder="50" className={campo} />
+                            </div>
+                            <div>
+                                <label htmlFor="prazo" className={rotulo}>Inscrições até <span className="font-normal text-muted-foreground">(opcional)</span></label>
+                                <input id="prazo" type="date" value={form.prazoInscricao} max={form.dataInicio || undefined} onChange={(e) => update("prazoInscricao", e.target.value)} className={campo} />
+                            </div>
+                        </div>
+                    </section>
+                )}
+
+                {passo === 3 && (
+                    <section className="mt-10 space-y-7">
+                        <div>
+                            <h1 className="type-h1">Inscrição e prêmio</h1>
+                            <p className="type-body-small mt-1.5 text-muted-foreground">Confira o resumo e publique.</p>
+                        </div>
+
+                        <div className="grid gap-5 sm:grid-cols-2">
+                            <div>
+                                <label htmlFor="valor" className={rotulo}>Valor da inscrição (R$)</label>
+                                <input id="valor" type="number" inputMode="decimal" value={form.valorInscricao} onChange={(e) => update("valorInscricao", e.target.value)} min={0} max={500} step="0.01" placeholder="0,00" className={campo} />
+                                <p className={ajuda}>Vazio ou zero deixa o evento grátis. Em evento pago, 90% de cada inscrição vai para a sua Carteira quando você encerrar o evento.</p>
+                            </div>
+                            <div>
+                                <label htmlFor="premio" className={rotulo}>Premiação <span className="font-normal text-muted-foreground">(opcional)</span></label>
+                                <input id="premio" type="text" value={form.premiacao} onChange={(e) => update("premiacao", e.target.value)} placeholder="R$ 2.000 + troféu" className={campo} />
+                            </div>
+                        </div>
+
+                        {/* Resumo no mesmo painel escuro da Central do vendedor, com o mesmo botão */}
+                        <div className="rounded-2xl bg-[oklch(0.21_0.03_255)] p-5 text-white sm:p-7 dark:bg-surface-secondary dark:ring-1 dark:ring-border">
+                            <div className="flex gap-4">
+                                {data && (
+                                    <div className="shrink-0 border border-white/30 px-2.5 py-2 text-center">
+                                        <p className="text-3xl font-bold leading-none tabular-nums">{data.dia}</p>
+                                        <p className="mt-1 text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-white/70">{data.mes} {data.ano}</p>
                                     </div>
                                 )}
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <label className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Data de início *</label>
-                                <div className="relative mt-1">
-                                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-                                    <input type="date" value={form.dataInicio} onChange={(e) => update("dataInicio", e.target.value)} className="w-full rounded-xl border border-border bg-card pl-10 pr-4 py-3 text-sm outline-none focus:border-primary/30" />
+                                <div className="min-w-0">
+                                    <p className="type-h2 line-clamp-2">{form.nome.trim() || "Sem nome"}</p>
+                                    <p className="type-body-small mt-1 text-white/70">
+                                        {[form.local.trim(), form.cidade.trim(), form.estado.trim().toUpperCase()].filter(Boolean).join(", ")}
+                                    </p>
                                 </div>
                             </div>
-                            <div>
-                                <label className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Data de término</label>
-                                <div className="relative mt-1">
-                                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-                                    <input type="date" value={form.dataFim} onChange={(e) => update("dataFim", e.target.value)} className="w-full rounded-xl border border-border bg-card pl-10 pr-4 py-3 text-sm outline-none focus:border-primary/30" />
+                            <dl className="mt-6 grid grid-cols-3 gap-4 border-t border-white/15 pt-4">
+                                <div>
+                                    <dt className="type-caption text-white/60">Vagas</dt>
+                                    <dd className="mt-0.5 font-semibold tabular-nums">{form.maxParticipantes || "—"}</dd>
                                 </div>
-                            </div>
+                                <div>
+                                    <dt className="type-caption text-white/60">Inscrição</dt>
+                                    <dd className="mt-0.5 font-semibold tabular-nums">{valor > 0 ? formatarPreco(valor) : "Grátis"}</dd>
+                                </div>
+                                <div className="min-w-0">
+                                    <dt className="type-caption text-white/60">Prêmio</dt>
+                                    <dd className="mt-0.5 truncate font-semibold">{form.premiacao.trim() || "—"}</dd>
+                                </div>
+                            </dl>
+                            <button type="button" onClick={handleSubmit} disabled={enviando} aria-busy={enviando} className="underline-btn mt-7">
+                                <span className="flex items-center gap-2 py-1.5">
+                                    {enviando ? <Loader2 className="size-5 animate-spin" aria-hidden="true" /> : <Plus className="size-5" aria-hidden="true" />}
+                                    {enviando ? "Publicando…" : "Publicar torneio"}
+                                </span>
+                            </button>
                         </div>
-
-                        <div>
-                            <label className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Descrição</label>
-                            <textarea value={form.descricao} onChange={(e) => update("descricao", e.target.value)} rows={3} placeholder="Descreva seu torneio..." className="w-full rounded-xl border border-border bg-card px-4 py-3 text-sm mt-1 outline-none focus:border-primary/30 resize-none" />
-                        </div>
-
-                        <div>
-                            <label className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Regras</label>
-                            <textarea value={form.regras} onChange={(e) => update("regras", e.target.value)} rows={2} placeholder="Regras do torneio..." className="w-full rounded-xl border border-border bg-card px-4 py-3 text-sm mt-1 outline-none focus:border-primary/30 resize-none" />
-                        </div>
-                    </div>
+                        {erroEnvio && <p role="alert" className="type-body-small border-l-2 border-destructive pl-3 text-destructive">{erroEnvio}</p>}
+                    </section>
                 )}
 
-                {/* PASSO 2 */}
-                {passo === 2 && (
-                    <div className="space-y-5">
-                        <h2 className="font-heading text-lg font-bold text-foreground">Local e Participantes</h2>
-
-                        <div>
-                            <label className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Local do evento *</label>
-                            <div className="relative mt-1">
-                                <MapPin className="absolute left-3 top-3 size-4 text-muted-foreground" />
-                                <input type="text" value={form.local} onChange={(e) => update("local", e.target.value)} placeholder="Ex: Parque Municipal, Campos do Jordão" className="w-full rounded-xl border border-border bg-card pl-10 pr-4 py-3 text-sm outline-none focus:border-primary/30" />
-                            </div>
+                {/* Navegação entre passos */}
+                <div className="mt-12 flex items-center justify-between gap-4 border-t border-border pt-5">
+                    {passo > 1 ? (
+                        <button type="button" onClick={() => setPasso(passo - 1)} className="line-btn line-btn--muted">
+                            Passo anterior
+                        </button>
+                    ) : <span />}
+                    {passo < PASSOS.length && (
+                        <div className="flex flex-col items-end gap-2">
+                            <button type="button" onClick={() => setPasso(passo + 1)} disabled={!!falta} className="line-btn">
+                                Continuar
+                                <ArrowRight aria-hidden="true" />
+                            </button>
+                            {falta && <p className="type-caption text-muted-foreground">{falta}</p>}
                         </div>
-
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <label className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Cidade</label>
-                                <input type="text" value={form.cidade} onChange={(e) => update("cidade", e.target.value)} placeholder="Ex: São Paulo" className="w-full rounded-xl border border-border bg-card px-4 py-3 text-sm mt-1 outline-none focus:border-primary/30" />
-                            </div>
-                            <div>
-                                <label className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Estado (UF)</label>
-                                <input type="text" value={form.estado} onChange={(e) => update("estado", e.target.value)} maxLength={2} placeholder="Ex: SP" className="w-full rounded-xl border border-border bg-card px-4 py-3 text-sm mt-1 outline-none focus:border-primary/30 uppercase" />
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <label className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Máximo de participantes *</label>
-                                <div className="relative mt-1">
-                                    <Users className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-                                    <input type="number" value={form.maxParticipantes} onChange={(e) => update("maxParticipantes", e.target.value)} min={2} placeholder="Ex: 50" className="w-full rounded-xl border border-border bg-card pl-10 pr-4 py-3 text-sm outline-none focus:border-primary/30" />
-                                </div>
-                            </div>
-                            <div>
-                                <label className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Prazo de inscrição</label>
-                                <div className="relative mt-1">
-                                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-                                    <input type="date" value={form.prazoInscricao} onChange={(e) => update("prazoInscricao", e.target.value)} className="w-full rounded-xl border border-border bg-card pl-10 pr-4 py-3 text-sm outline-none focus:border-primary/30" />
-                                </div>
-                            </div>
-                        </div>
-
-                    </div>
-                )}
-
-                {/* PASSO 3 */}
-                {passo === 3 && (
-                    <div className="space-y-5">
-                        <h2 className="font-heading text-lg font-bold text-foreground">Inscrição e Premiação</h2>
-
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <label className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Valor da inscrição</label>
-                                <div className="relative mt-1">
-                                    <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-                                    <input type="number" value={form.valorInscricao} onChange={(e) => update("valorInscricao", e.target.value)} min={0} max={500} step="0.01" placeholder="R$ 50,00" className="w-full rounded-xl border border-border bg-card pl-10 pr-4 py-3 text-sm outline-none focus:border-primary/30" />
-                                </div>
-                                <p className="text-[10px] text-muted-foreground mt-1">Deixe em branco ou R$ 0 para gratuito. Em evento pago, você recebe 90% de cada inscrição na sua Carteira depois de encerrar o evento; conecte sua conta de recebimento lá.</p>
-                            </div>
-                            <div>
-                                <label className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Premiação total</label>
-                                <div className="relative mt-1">
-                                    <Trophy className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-                                    <input type="text" value={form.premiacao} onChange={(e) => update("premiacao", e.target.value)} placeholder="Ex: R$ 2.000" className="w-full rounded-xl border border-border bg-card pl-10 pr-4 py-3 text-sm outline-none focus:border-primary/30" />
-                                </div>
-                            </div>
-                        </div>
-
-                    </div>
-                )}
-
-                {/* Navegação */}
-                <div className="flex gap-3 mt-8">
-                    {passo > 1 && (
-                        <Button onClick={() => setPasso(passo - 1)} variant="outline" size="lg" className="flex-1">
-                            Voltar
-                        </Button>
-                    )}
-                    {passo < 3 ? (
-                        <Button onClick={() => setPasso(passo + 1)} disabled={!podeAvancar()} size="lg" className="flex-1">
-                            Continuar
-                        </Button>
-                    ) : (
-                        <Button onClick={handleSubmit} loading={enviando} variant="accent" size="lg" className="flex-1">
-                            Publicar evento
-                        </Button>
                     )}
                 </div>
-                {erroEnvio && <p role="alert" className="mt-4 text-sm text-destructive">{erroEnvio}</p>}
             </main>
 
-            <div className="pb-24" />
             <BottomNav />
         </div>
     )

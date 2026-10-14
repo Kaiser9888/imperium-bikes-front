@@ -4,23 +4,22 @@ import Link from "next/link"
 import { useParams } from "next/navigation"
 import { useCallback, useEffect, useState } from "react"
 import { useUser } from "@clerk/nextjs"
-import { Calendar, CheckCircle, DollarSign, MapPin, Trophy, Users, type LucideIcon } from "lucide-react"
+import { ArrowRight, CheckCircle, Loader2 } from "lucide-react"
 
 import { AppShell } from "@/components/layout/app-shell"
-import { PageHeading } from "@/components/layout/page-heading"
-import { Button } from "@/components/ui/button"
+import { BackButton } from "@/components/ui/back-button"
 import { ErrorState } from "@/components/ui/error-state"
 import { Loader } from "@/components/ui/loader"
 import { ShareButton } from "@/components/ui/share-button"
-import { formatarPreco } from "@/lib/format"
+import { formatarPreco, partesDaData } from "@/lib/format"
 import { mensagemDaApi, tournamentService, type Tournament } from "@/services/tournamentService"
 
-const STATUS_LABEL = { aberto: "Inscrições abertas", andamento: "Em andamento", encerrado: "Encerrado" }
+const STATUS_LABEL = { aberto: "Inscrições abertas", andamento: "Acontecendo agora", encerrado: "Encerrado" }
 
-function data(iso: string) {
+function dataPorExtenso(iso: string) {
     // Meio-dia evita o dia anterior por causa do fuso
     const d = new Date(`${iso}T12:00:00`)
-    return Number.isNaN(d.getTime()) ? "" : d.toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" })
+    return Number.isNaN(d.getTime()) ? "" : d.toLocaleDateString("pt-BR", { weekday: "short", day: "numeric", month: "long" })
 }
 
 export default function TorneioDetalhesPage() {
@@ -90,83 +89,124 @@ export default function TorneioDetalhesPage() {
         )
     }
 
-    const vagas = torneio.maxParticipantes > 0 ? `${Math.max(0, torneio.maxParticipantes - torneio.participantes)} de ${torneio.maxParticipantes}` : "Ilimitadas"
+    const inicio = partesDaData(torneio.dataInicio)
+    const variosDias = torneio.dataFim && torneio.dataFim !== torneio.dataInicio
+    const quando = variosDias ? `${dataPorExtenso(torneio.dataInicio)} a ${dataPorExtenso(torneio.dataFim)}` : dataPorExtenso(torneio.dataInicio)
     const preco = torneio.valorInscricao > 0 ? formatarPreco(torneio.valorInscricao) : "Grátis"
-    const resumo: { icon: LucideIcon; label: string; valor: string }[] = [
-        { icon: Calendar, label: "Data", valor: torneio.dataFim && torneio.dataFim !== torneio.dataInicio ? `${data(torneio.dataInicio)} a ${data(torneio.dataFim)}` : data(torneio.dataInicio) },
-        { icon: MapPin, label: "Local", valor: torneio.local },
-        { icon: Users, label: "Vagas", valor: vagas },
-        { icon: DollarSign, label: "Inscrição", valor: preco },
-    ]
+    const limite = torneio.maxParticipantes > 0
+    const restantes = Math.max(0, torneio.maxParticipantes - torneio.participantes)
+    const ocupacao = limite ? Math.min(1, torneio.participantes / torneio.maxParticipantes) : 0
+    const status = torneio.cancelado ? "Cancelado" : STATUS_LABEL[torneio.status]
+
+    // Seções numeradas só com o que o organizador preencheu
+    const secoes = [
+        { titulo: "Sobre", texto: torneio.descricao },
+        { titulo: "Premiação", texto: torneio.premiacao },
+        { titulo: "Regras", texto: torneio.regras },
+    ].filter((s) => s.texto.trim())
 
     return (
         <AppShell>
-            <main className="mx-auto w-full max-w-3xl px-4 pb-16 pt-4 sm:px-6">
-                <PageHeading title={torneio.nome} description={torneio.cancelado ? "Cancelado. Inscrições pagas são reembolsadas." : STATUS_LABEL[torneio.status]} back={{ href: "/torneios", label: "Eventos" }} />
+            <main className="mx-auto w-full max-w-5xl px-4 pb-16 pt-4 sm:px-6">
+                <BackButton href="/torneios" label="Eventos" className="-ml-2.5" />
+
+                <header className="mt-6 flex gap-5 sm:gap-7">
+                    {inicio && (
+                        <div className="h-fit shrink-0 border border-foreground px-3 py-2.5 text-center shadow-[4px_4px_0_var(--foreground)]">
+                            <p className="text-4xl font-bold leading-none tabular-nums sm:text-5xl">{inicio.dia}</p>
+                            <p className="mt-1.5 text-xs font-semibold uppercase tracking-[0.16em]">{inicio.mes}</p>
+                            <p className="text-xs tabular-nums text-muted-foreground">{inicio.ano}</p>
+                        </div>
+                    )}
+                    <div className="min-w-0">
+                        <p className={`type-caption flex items-center gap-2 font-semibold uppercase tracking-[0.16em] ${torneio.status === "encerrado" ? "text-muted-foreground" : "text-accent"}`}>
+                            <span className={`size-1.5 rounded-full ${torneio.status === "encerrado" ? "bg-muted-foreground" : "bg-accent"} ${torneio.status === "andamento" ? "animate-pulse" : ""}`} />
+                            {status}
+                        </p>
+                        <h1 className="type-display mt-2 text-balance">{torneio.nome}</h1>
+                        <p className="type-body mt-2 text-muted-foreground">{torneio.local}</p>
+                    </div>
+                </header>
 
                 {/* eslint-disable-next-line @next/next/no-img-element -- capa enviada pelo organizador, domínio variável */}
-                <img src={torneio.banner} alt="" className="mt-6 aspect-video w-full rounded-xl bg-surface-muted object-cover" />
+                <img
+                    src={torneio.banner}
+                    alt=""
+                    className={`mt-8 aspect-[16/9] w-full rounded-lg border border-foreground bg-surface-muted object-cover sm:aspect-[21/9] ${torneio.status === "encerrado" ? "grayscale" : ""}`}
+                />
 
-                <dl className="mt-6 grid grid-cols-2 gap-3">
-                    {resumo.map(({ icon: Icon, label, valor }) => (
-                        <div key={label} className="rounded-xl border border-border bg-surface p-4">
-                            <dt className="type-caption flex items-center gap-1.5 text-muted-foreground">
-                                <Icon className="size-4" aria-hidden="true" />
-                                {label}
-                            </dt>
-                            <dd className="type-label mt-1 text-foreground">{valor}</dd>
+                <div className="mt-10 grid gap-10 lg:grid-cols-[1fr_20rem] lg:gap-14">
+                    <aside className="order-first h-fit rounded-lg border border-foreground bg-surface p-5 shadow-[4px_4px_0_var(--foreground)] lg:order-none lg:sticky lg:top-24 lg:col-start-2 lg:row-start-1">
+                        <p className="type-caption text-muted-foreground">Inscrição</p>
+                        <p className="mt-0.5 text-3xl font-bold tabular-nums">{preco}</p>
+
+                        <dl className="type-body-small mt-5 divide-y divide-border border-y border-border">
+                            <div className="flex justify-between gap-4 py-2.5">
+                                <dt className="text-muted-foreground">Quando</dt>
+                                <dd className="text-right font-medium first-letter:uppercase">{quando}</dd>
+                            </div>
+                            <div className="py-2.5">
+                                <div className="flex justify-between gap-4">
+                                    <dt className="text-muted-foreground">Vagas</dt>
+                                    <dd className="font-medium tabular-nums">
+                                        {limite ? `${restantes} de ${torneio.maxParticipantes}` : "Sem limite"}
+                                    </dd>
+                                </div>
+                                {limite && (
+                                    <div className="mt-2 h-1 bg-surface-muted" aria-hidden="true">
+                                        <div className="h-full bg-foreground" style={{ width: `${ocupacao * 100}%` }} />
+                                    </div>
+                                )}
+                            </div>
+                        </dl>
+
+                        <div className="mt-6 flex flex-col items-start gap-5">
+                            {inscricao === "PAGA" ? (
+                                <p role="status" className="type-label flex items-center gap-2 text-success">
+                                    <CheckCircle className="size-5" aria-hidden="true" />
+                                    Você está inscrito
+                                </p>
+                            ) : torneio.status === "aberto" && !torneio.cancelado ? (
+                                <button type="button" onClick={inscrever} disabled={enviando} aria-busy={enviando} className="line-btn line-btn--lg line-btn--accent">
+                                    {inscricao === "PENDENTE" ? "Pagar inscrição" : "Quero participar"}
+                                    {enviando ? <Loader2 className="animate-spin" aria-hidden="true" /> : <ArrowRight aria-hidden="true" />}
+                                </button>
+                            ) : (
+                                <p className="type-body-small text-muted-foreground">Inscrições fechadas.</p>
+                            )}
+                            <ShareButton title={torneio.nome} variant="line" />
                         </div>
-                    ))}
-                </dl>
+                        {erro && (
+                            <p role="alert" className="type-body-small mt-4 border-l-2 border-destructive pl-3 text-destructive">
+                                {erro}
+                            </p>
+                        )}
+                    </aside>
 
-                {torneio.descricao && <p className="type-body mt-8 whitespace-pre-line text-foreground">{torneio.descricao}</p>}
+                    <article className="min-w-0 lg:col-start-1 lg:row-start-1">
+                        {secoes.length === 0 && (
+                            <p className="type-body text-muted-foreground">O organizador ainda não escreveu os detalhes deste evento.</p>
+                        )}
+                        {secoes.map((s, i) => (
+                            <section key={s.titulo} className={i > 0 ? "mt-10 border-t border-border pt-8" : ""}>
+                                <h2 className="flex items-baseline gap-3">
+                                    <span className="text-sm font-bold tabular-nums text-accent">{String(i + 1).padStart(2, "0")}</span>
+                                    <span className="type-h2">{s.titulo}</span>
+                                </h2>
+                                <p className="type-body mt-3 whitespace-pre-line text-foreground/85">{s.texto}</p>
+                            </section>
+                        ))}
 
-                {torneio.premiacao && (
-                    <section className="mt-8">
-                        <h2 className="type-h3 flex items-center gap-2 text-foreground">
-                            <Trophy className="size-5 text-accent" aria-hidden="true" />
-                            Premiação
-                        </h2>
-                        <p className="type-body mt-2 whitespace-pre-line text-muted-foreground">{torneio.premiacao}</p>
-                    </section>
-                )}
-
-                {torneio.regras && (
-                    <section className="mt-8">
-                        <h2 className="type-h3 text-foreground">Regras</h2>
-                        <p className="type-body mt-2 whitespace-pre-line text-muted-foreground">{torneio.regras}</p>
-                    </section>
-                )}
-
-                {torneio.organizadorId && (
-                    <p className="type-body-small mt-8 text-muted-foreground">
-                        Organizado por{" "}
-                        <Link href={`/perfil/${torneio.organizadorId}`} className="font-semibold text-foreground hover:underline">
-                            {torneio.organizadorNome}
-                        </Link>
-                    </p>
-                )}
-
-                <div className="mt-8 flex flex-wrap items-center gap-4">
-                    {inscricao === "PAGA" ? (
-                        <p role="status" className="type-label flex items-center gap-2 text-success">
-                            <CheckCircle className="size-5" aria-hidden="true" />
-                            Você está inscrito
-                        </p>
-                    ) : (
-                        torneio.status === "aberto" && (
-                            <Button variant="accent" size="lg" loading={enviando} onClick={inscrever}>
-                                {inscricao === "PENDENTE" ? `Pagar inscrição · ${preco}` : `Inscrever-se · ${preco}`}
-                            </Button>
-                        )
-                    )}
-                    <ShareButton title={torneio.nome} />
+                        {torneio.organizadorId && (
+                            <p className="type-body-small mt-12 border-t border-border pt-5 text-muted-foreground">
+                                Organizado por{" "}
+                                <Link href={`/perfil/${torneio.organizadorId}`} className="line-btn line-btn--sm ml-1 align-baseline">
+                                    {torneio.organizadorNome || "ver perfil"}
+                                </Link>
+                            </p>
+                        )}
+                    </article>
                 </div>
-                {erro && (
-                    <p role="alert" className="type-body-small mt-4 rounded-lg bg-destructive/10 px-3 py-2.5 text-destructive">
-                        {erro}
-                    </p>
-                )}
             </main>
         </AppShell>
     )

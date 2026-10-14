@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { ArrowLeft, Check, Loader2, X } from 'lucide-react'
+import { Check, Loader2, X } from 'lucide-react'
 import { useParams, useRouter } from 'next/navigation'
 import { useAuth } from '@clerk/nextjs'
 
@@ -14,6 +14,8 @@ import {
 } from '@/lib/publicar/storage'
 import { apiFetch, API_URL } from '@/lib/apiClient'
 import { useUserSync } from '@/lib/UserSyncContext'
+
+import { BackButton } from "@/components/ui/back-button"
 
 interface BoostTier {
   id: string
@@ -443,7 +445,7 @@ async function handlePublicar() {
 
     clearDraft(categoria)
 
-    router.push('/')
+    router.push('/vendedor')
   } catch (erro) {
     console.error(
       'Erro ao publicar anúncio:',
@@ -469,14 +471,7 @@ if (precoCentavos === null) {
 return (
   <main className="publish-page">
     <header className="publish-header">
-      <button
-        type="button"
-        onClick={voltar}
-        className="publish-back"
-      >
-        <ArrowLeft />
-        Voltar
-      </button>
+      <BackButton onClick={voltar} />
 
       <strong>
         {config?.label ?? 'Anúncio'}

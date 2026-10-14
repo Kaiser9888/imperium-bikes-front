@@ -25,7 +25,7 @@ export function ProdutoGrid({ produtos, dono = false }: Props) {
         </p>
         {dono && (
           <Link
-            href="/publicar"
+            href="/vendedor"
             className="mt-6 inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90"
           >
             <Plus className="size-4" />
