@@ -20,17 +20,19 @@ import {
   ShieldCheck,
   ShoppingBag,
   ShoppingCart,
-  Star,
-  Truck,
-  User,
 } from "lucide-react"
 
 import { productService } from "@/services/publish/product.service"
 import { ProductImage } from "@/components/marketplace/ProductImage"
-import type {
-  ProductResponse,
-  ShippingQuote,
+import { ProdutoAvaliacoes } from "@/components/marketplace/produto-avaliacoes"
+import { ProdutoVendedor } from "@/components/marketplace/produto-vendedor"
+import { ProdutosRelacionados } from "@/components/marketplace/produtos-relacionados"
+import {
+  PRODUCT_CONDITIONS,
+  type ProductResponse,
+  type ShippingQuote,
 } from "@/types/publish/product"
+import { esportes, modalidades } from "@/lib/esportes"
 
 import { iniciarConversa } from "@/lib/stream"
 import { addToCart } from "@/lib/cart"
@@ -84,18 +86,10 @@ function ProdutoPage() {
         setLoading(true)
         setErro(null)
 
-        console.log(
-          "Buscando produto:",
-          id,
-        )
 
         const data =
           await productService.getById(id)
 
-        console.log(
-          "Produto recebido:",
-          data,
-        )
 
         setProduto(data)
         setFavorite(isFavoriteProduct(data.id))
@@ -127,25 +121,7 @@ function ProdutoPage() {
       return
     }
 
-    const produtoAtual = produto as
-      | (ProductResponse & {
-          sellerId?: string
-          userId?: string
-          seller?: string | {
-            id?: string
-            name?: string
-          }
-        })
-      | null
-
-    const vendedorId =
-      produtoAtual?.sellerId ??
-      produtoAtual?.userId ??
-      (
-        typeof produtoAtual?.seller === "object"
-          ? produtoAtual.seller?.id
-          : undefined
-      )
+    const vendedorId = produto?.seller?.id
 
     if (!vendedorId || !id) {
       setErroChat("O anúncio não informa o identificador do vendedor. Entre em contato com o suporte.")
@@ -227,40 +203,7 @@ function ProdutoPage() {
 
   // ---------- NORMALIZAÇÃO ----------
 
-  const p =
-    produto as ProductResponse & {
-      location?: string
-      neighborhood?: string
-
-      seller?: string | {
-        id?: string
-        name?: string
-      }
-
-      sellerId?: string
-      userId?: string
-
-      seller_initials?: string
-      initials?: string
-
-      seller_since?: number | string
-      sellerSince?: number | string
-
-      rating?: number | string
-      reviews?: number | string
-
-      active_listings?: number | string
-      active?: number | string
-
-      specs?: [string, string][]
-
-      imageUrl?: string
-      image?: string
-      photos?: string[]
-      images?: {
-        url: string
-      }[]
-    }
+  const p = produto
 
   const titulo =
     p.title ??
@@ -282,65 +225,34 @@ function ProdutoPage() {
     p.price
 
   const imagens =
-    p.photos?.length
-      ? p.photos
-      : p.images?.length
-        ? p.images.map(
-            (image) => image.url,
-          )
-        : p.imageUrl
-          ? [p.imageUrl]
-          : p.image
-            ? [p.image]
-            : []
+    [...(p.images ?? [])]
+      .sort((a, b) => Number(b.isMain) - Number(a.isMain) || a.displayOrder - b.displayOrder)
+      .map((image) => image.url)
 
   const localizacao =
-    p.location ??
     [p.city, p.state]
       .filter(Boolean)
       .join(", ")
 
-  const bairro =
-    p.neighborhood ??
-    ""
+  // Categoria real do anúncio (modalidade de ciclismo ou esporte), com link para a lista
+  const modalidade = modalidades.find((m) => m.slug === p.modality)
+  const esporte = esportes.find((e) => e.slug === p.sport)
+  const categoria = modalidade
+    ? { label: modalidade.label, href: modalidade.href }
+    : esporte
+      ? { label: esporte.nome, href: `/esportes/${esporte.slug}` }
+      : null
 
-  const vendedorNome =
-    typeof p.seller === "string"
-      ? p.seller
-      : p.seller?.name ??
-        "Vendedor"
-
-  const iniciais =
-    p.seller_initials ??
-    p.initials ??
-    vendedorNome
-      .split(" ")
-      .map((n) => n[0])
-      .slice(0, 2)
-      .join("")
-      .toUpperCase()
-
-  const sellerSince =
-    p.seller_since ??
-    p.sellerSince ??
-    ""
-
-  const rating =
-    p.rating ??
-    "—"
-
-  const reviews =
-    p.reviews ??
-    0
-
-  const activeListings =
-    p.active_listings ??
-    p.active ??
-    0
-
-  const specs: [string, string][] =
-    p.specs ??
-    []
+  // Ficha técnica só com o que o vendedor preencheu
+  const specs = ([
+    ["Condição", PRODUCT_CONDITIONS.find((c) => c.value === p.condition)?.label],
+    ["Marca", p.brand],
+    ["Modelo", p.model],
+    ["Ano", p.year ? String(p.year) : undefined],
+    ["Tipo", p.productType],
+    ["Estoque", p.stock > 1 ? `${p.stock} unidades` : undefined],
+    ["Peso", p.weightKg ? `${p.weightKg.toLocaleString("pt-BR")} kg` : undefined],
+  ] as [string, string | undefined | null][]).filter((s): s is [string, string] => Boolean(s[1]))
 
   const precoFormatado =
     typeof preco === "number"
@@ -486,18 +398,17 @@ function ProdutoPage() {
           className="mb-8 flex flex-wrap items-center gap-2 text-xs text-muted-foreground"
           aria-label="Breadcrumb"
         >
-          <span>Marketplace</span>
-          <span>/</span>
-          <span>Bicicletas</span>
-          <span>/</span>
+          <Link href="/produtos" className="hover:text-foreground">Marketplace</Link>
+          <span aria-hidden="true">/</span>
 
-          <span className="text-foreground">
-            {marca}
-          </span>
+          {categoria && (
+            <>
+              <Link href={categoria.href} className="hover:text-foreground">{categoria.label}</Link>
+              <span aria-hidden="true">/</span>
+            </>
+          )}
 
-          <span>/</span>
-
-          <span className="text-foreground">
+          <span className="text-foreground" aria-current="page">
             {titulo}
           </span>
 
@@ -662,10 +573,12 @@ function ProdutoPage() {
 
               </div>
 
-              <span className="inline-flex items-center gap-1.5 bg-success/10 px-3 py-2 text-[11px] font-bold uppercase tracking-[0.12em] text-success">
-                <ShieldCheck className="size-4" />
-                Compra segura
-              </span>
+              {p.hasSecurePayment && (
+                <span className="inline-flex items-center gap-1.5 bg-success/10 px-3 py-2 text-[11px] font-bold uppercase tracking-[0.12em] text-success">
+                  <ShieldCheck className="size-4" />
+                  Compra segura
+                </span>
+              )}
 
             </div>
 
@@ -699,25 +612,13 @@ function ProdutoPage() {
 
             {/* LOCALIZAÇÃO */}
 
-            {(localizacao || bairro) && (
-              <div className="mt-6 flex items-start gap-3 text-sm">
-
-                <MapPin className="mt-0.5 size-5 text-primary" />
-
-                <div>
-
-                  <p className="font-semibold">
-                    {localizacao}
-                  </p>
-
-                  {bairro && (
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {bairro} · Retirada ou envio disponível
-                    </p>
-                  )}
-
-                </div>
-
+            {localizacao && (
+              <div className="mt-6 flex items-center gap-3 text-sm">
+                <MapPin className="size-5 text-primary" />
+                <p>
+                  <span className="text-muted-foreground">Enviado de </span>
+                  <span className="font-semibold">{localizacao}</span>
+                </p>
               </div>
             )}
 
@@ -798,23 +699,33 @@ function ProdutoPage() {
 
   </div>
 
-  <div className="flex gap-2">
+  <form
+    className="flex gap-2"
+    onSubmit={(e) => {
+      e.preventDefault()
+      void calculateShipping()
+    }}
+  >
 
     <input
       value={zip}
       onChange={(e) => {
-        setZip(e.target.value)
+        // Máscara 00000-000
+        const digitos = e.target.value.replace(/\D/g, "").slice(0, 8)
+        setZip(digitos.length > 5 ? `${digitos.slice(0, 5)}-${digitos.slice(5)}` : digitos)
         setShipping([])
         setErroFrete(null)
       }}
       inputMode="numeric"
+      autoComplete="postal-code"
+      maxLength={9}
       placeholder="00000-000"
       aria-label="CEP para cálculo do frete"
       className="min-w-0 flex-1 border border-border bg-surface px-3 py-3 text-sm outline-none focus:border-primary"
     />
 
     <Button
-      onClick={calculateShipping}
+      type="submit"
       disabled={calculandoFrete}
       className="min-w-[105px]"
     >
@@ -830,7 +741,7 @@ function ProdutoPage() {
 
     </Button>
 
-  </div>
+  </form>
 
   {erroFrete && (
     <p className="mt-3 text-xs font-semibold text-primary">
@@ -887,62 +798,9 @@ function ProdutoPage() {
 
 {/* VENDEDOR */}
 
-<div className="mt-6 border border-border bg-background p-5">
-
-  <div className="flex items-center justify-between gap-4">
-
-    <div className="flex items-center gap-3">
-
-      <div className="grid size-12 place-items-center rounded-full bg-surface-muted text-sm font-bold">
-        {iniciais || (
-          <User className="size-5" />
-        )}
-      </div>
-
-      <div>
-
-        <p className="font-semibold">
-          {vendedorNome}
-        </p>
-
-        {sellerSince && (
-          <p className="mt-1 text-xs text-muted-foreground">
-            Vendedor desde{" "}
-            {sellerSince}
-          </p>
-        )}
-
-      </div>
-
-    </div>
-
-    <a
-      href="#vendedor"
-      className="text-xs font-bold uppercase tracking-[0.1em] text-primary hover:underline"
-    >
-      Ver perfil
-    </a>
-
-  </div>
-
-  <div className="mt-4 flex items-center gap-5 border-t border-border pt-4 text-xs text-muted-foreground">
-
-                <span className="flex items-center gap-1.5">
-
-                  <Star className="size-4 fill-primary text-primary" />
-
-                  {rating} (
-                  {reviews} avaliações)
-
-                </span>
-
-    <span>
-                  {activeListings} anúncios ativos
-                </span>
-
-  </div>
-
-</div>
+{p.seller && (
+  <ProdutoVendedor id={p.seller.id} nome={p.seller.name || "Vendedor"} avatarUrl={p.seller.avatarUrl} />
+)}
 
 </div>
 
@@ -966,20 +824,21 @@ function ProdutoPage() {
       {descricao}
     </p>
 
+    {/* Só o que o sistema garante de verdade (pedidos com pagamento retido e avaliação após a entrega) */}
     <div className="mt-8 grid gap-3 sm:grid-cols-2">
 
       <div className="flex gap-3 border-t border-border pt-4">
 
-        <PackageCheck className="size-5 text-primary" />
+        <ShieldCheck className="size-5 shrink-0 text-primary" />
 
         <div>
 
           <p className="text-sm font-semibold">
-            Envio protegido
+            Pagamento retido até a entrega
           </p>
 
           <p className="mt-1 text-xs leading-5 text-muted-foreground">
-            Embalagem segura e acompanhamento da entrega.
+            O vendedor só recebe depois que você confirma o recebimento ou o prazo de disputa acaba.
           </p>
 
         </div>
@@ -988,16 +847,16 @@ function ProdutoPage() {
 
       <div className="flex gap-3 border-t border-border pt-4">
 
-        <ShieldCheck className="size-5 text-primary" />
+        <PackageCheck className="size-5 shrink-0 text-primary" />
 
         <div>
 
           <p className="text-sm font-semibold">
-            Anúncio verificado
+            Avaliações de quem recebeu
           </p>
 
           <p className="mt-1 text-xs leading-5 text-muted-foreground">
-            Dados e vendedor conferidos pela equipe.
+            Só compradores com o pedido entregue podem avaliar o vendedor.
           </p>
 
         </div>
@@ -1045,21 +904,9 @@ function ProdutoPage() {
 
 </section>
 
-{/* RODAPÉ */}
+{p.seller && <ProdutoAvaliacoes vendedorId={p.seller.id} />}
 
-<section className="mt-16 border-t border-border pt-12">
-
-  <div className="flex items-center gap-3">
-
-    <Truck className="size-5 text-primary" />
-
-    <p className="text-sm text-muted-foreground">
-      Envio para todo o Brasil · Pagamento protegido pelo Imperium Bikes
-    </p>
-
-  </div>
-
-</section>
+<ProdutosRelacionados produtoId={p.id} sport={p.sport} modality={p.modality} />
 
 </div>
 </main>

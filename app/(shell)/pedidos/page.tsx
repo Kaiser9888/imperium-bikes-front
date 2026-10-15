@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react"
 import Link from "next/link"
 import { useUser } from "@clerk/nextjs"
-import { Package } from "lucide-react"
+import { Package, Star } from "lucide-react"
 
 import { PageHeading } from "@/components/layout/page-heading"
 import {
@@ -91,10 +91,22 @@ export default function PedidosPage() {
     const [enviando, setEnviando] = useState(false)
     const [erro, setErro] = useState<string | null>(null)
 
+    // Avaliação: liberada depois que o comprador recebe o produto
+    const [avaliados, setAvaliados] = useState<Set<string>>(new Set())
+    const [avaliando, setAvaliando] = useState<Pedido | null>(null)
+    const [nota, setNota] = useState(0)
+    const [comentario, setComentario] = useState("")
+
     const carregar = useCallback(async () => {
         setFalhou(false)
         try {
-            setPedidos((await api.get("/api/orders/mine")).data)
+            const [pedidosRes, avaliacoesRes] = await Promise.all([
+                api.get("/api/orders/mine"),
+                // Sem a lista de avaliações, os pedidos ainda aparecem; o backend barra avaliação duplicada
+                api.get("/api/reviews/me", { params: { size: 100 } }).catch(() => ({ data: { content: [] } })),
+            ])
+            setPedidos(pedidosRes.data)
+            setAvaliados(new Set(avaliacoesRes.data.content.map((a: { productId: string }) => a.productId)))
         } catch {
             setFalhou(true)
         }
@@ -113,6 +125,7 @@ export default function PedidosPage() {
             setConfirmando(null)
             setDisputando(null)
             setMotivo("")
+            setAvaliando(null)
             await carregar()
         } catch (cause) {
             setConfirmando(null)
@@ -145,7 +158,7 @@ export default function PedidosPage() {
                 ))}
             </div>
 
-            {erro && !disputando && (
+            {erro && !disputando && !avaliando && (
                 <p role="alert" className="type-body-small mt-4 rounded-lg bg-destructive/10 px-3 py-2.5 text-destructive">
                     {erro}
                 </p>
@@ -208,6 +221,26 @@ export default function PedidosPage() {
                                     Problema resolvido
                                 </Button>
                             )}
+                            {pedido.comprador && (pedido.status === "ENTREGUE" || pedido.status === "LIBERADO") && (
+                                avaliados.has(pedido.productId) ? (
+                                    <span className="type-caption inline-flex items-center gap-1.5 text-muted-foreground">
+                                        <Star className="size-3.5 fill-warning text-warning" aria-hidden="true" />
+                                        Você já avaliou
+                                    </span>
+                                ) : (
+                                    <Button
+                                        size="sm"
+                                        onClick={() => {
+                                            setErro(null)
+                                            setNota(0)
+                                            setComentario("")
+                                            setAvaliando(pedido)
+                                        }}
+                                    >
+                                        Avaliar vendedor
+                                    </Button>
+                                )
+                            )}
                             {!pedido.comprador && pedido.status === "EM_DISPUTA" && (
                                 <Button size="sm" variant="outline" onClick={() => setConfirmando({ pedido, acao: "reembolsar" })}>
                                     Reembolsar comprador
@@ -263,6 +296,69 @@ export default function PedidosPage() {
                             </Button>
                             <Button type="submit" loading={enviando} disabled={!motivo.trim()}>
                                 Abrir disputa
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={avaliando !== null} onOpenChange={(open) => !open && !enviando && setAvaliando(null)}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Como foi a compra?</DialogTitle>
+                        <DialogDescription>
+                            {avaliando && `Sua nota para ${avaliando.outraParte} aparece no perfil e nos anúncios do vendedor.`}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <form
+                        className="flex flex-col gap-4"
+                        onSubmit={(event) => {
+                            event.preventDefault()
+                            if (avaliando && nota > 0)
+                                void executar(() =>
+                                    api.post("/api/reviews", { productId: avaliando.productId, rating: nota, comment: comentario.trim() || null }),
+                                )
+                        }}
+                    >
+                        <fieldset className="flex flex-col gap-2">
+                            <legend className="type-label mb-2">Nota</legend>
+                            <div className="flex gap-1">
+                                {[1, 2, 3, 4, 5].map((n) => (
+                                    <button
+                                        key={n}
+                                        type="button"
+                                        onClick={() => setNota(n)}
+                                        aria-label={`${n} de 5`}
+                                        aria-pressed={nota === n}
+                                        className="grid size-11 place-items-center rounded-lg transition-colors hover:bg-surface-muted"
+                                    >
+                                        <Star className={cn("size-7", n <= nota ? "fill-warning text-warning" : "text-border")} aria-hidden="true" />
+                                    </button>
+                                ))}
+                            </div>
+                        </fieldset>
+                        <div className="flex flex-col gap-2">
+                            <Label htmlFor="avaliacao-comentario">Comentário (opcional)</Label>
+                            <Textarea
+                                id="avaliacao-comentario"
+                                rows={4}
+                                maxLength={2000}
+                                placeholder="O produto chegou como anunciado? O vendedor respondeu bem?"
+                                value={comentario}
+                                onChange={(e) => setComentario(e.target.value)}
+                            />
+                        </div>
+                        {erro && (
+                            <p role="alert" className="type-body-small rounded-lg bg-destructive/10 px-3 py-2.5 text-destructive">
+                                {erro}
+                            </p>
+                        )}
+                        <DialogFooter>
+                            <Button type="button" variant="outline" onClick={() => setAvaliando(null)} disabled={enviando}>
+                                Cancelar
+                            </Button>
+                            <Button type="submit" loading={enviando} disabled={nota === 0}>
+                                Enviar avaliação
                             </Button>
                         </DialogFooter>
                     </form>
