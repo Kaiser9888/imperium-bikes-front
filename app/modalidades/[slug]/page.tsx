@@ -27,7 +27,7 @@ export default async function ModalidadePage({ params }: Props) {
             <PageHeading
                 title={modalidade.label}
                 description="Bikes, peças e acessórios anunciados nesta modalidade."
-                back={{ href: "/modalidades", label: "Modalidades" }}
+                back={{ href: "/modalidades", label: "Categorias" }}
             />
             <CatalogoFiltrado modality={modalidade.slug} tipos={modalidade.tipos} />
         </main>

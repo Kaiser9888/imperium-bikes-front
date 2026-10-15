@@ -1,6 +1,7 @@
 import Link from "next/link"
 
 import { OrcaMark } from "@/components/layout/logo"
+import { Sigillum } from "@/components/layout/sigillum"
 
 // Somente rotas que existem no app.
 const grupos = [
@@ -9,7 +10,7 @@ const grupos = [
         links: [
             { label: "Eventos", href: "/torneios" },
             { label: "Vídeos", href: "/videos" },
-            { label: "Modalidades", href: "/modalidades" },
+            { label: "Categorias", href: "/modalidades" },
         ],
     },
     {
@@ -25,7 +26,7 @@ const grupos = [
 export function Footer() {
     return (
         <footer className="border-t border-border bg-surface-secondary">
-            <div className="mx-auto flex w-full max-w-7xl flex-col gap-10 px-4 pb-32 pt-12 sm:px-6 md:flex-row md:justify-between lg:px-8">
+            <div className="mx-auto flex w-full max-w-7xl flex-col gap-10 px-4 pb-10 pt-12 sm:px-6 md:flex-row md:justify-between lg:px-8">
                 <div className="max-w-xs">
                     <Link href="/" className="inline-flex items-center gap-2.5 rounded-lg">
                         <OrcaMark className="h-8" />
@@ -55,6 +56,9 @@ export function Footer() {
                         </div>
                     ))}
                 </nav>
+            </div>
+            <div className="mx-auto w-full max-w-7xl border-t border-border px-4 pb-32 pt-5 sm:px-6 lg:px-8">
+                <Sigillum />
             </div>
         </footer>
     )

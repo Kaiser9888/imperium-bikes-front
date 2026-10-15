@@ -72,7 +72,7 @@ const menuSections: MenuSection[] = [
         items: [
             { icon: Clapperboard, label: "Vídeos", href: "/videos" },
             { icon: Newspaper, label: "Notícias", href: "/forum" },
-            { icon: LayoutGrid, label: "Modalidades", href: "/modalidades" },
+            { icon: LayoutGrid, label: "Categorias", href: "/modalidades" },
         ],
     },
     {

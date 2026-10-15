@@ -1,7 +1,6 @@
 export type Modalidade = {
     slug: string
     label: string
-    image: string
     href: string
     /** Termo usado para encontrar os produtos da modalidade. */
     categoria: string
@@ -14,7 +13,6 @@ const modalidade = (slug: string, label: string, categoria: string, tipos: strin
     label,
     categoria,
     tipos,
-    image: `/images/mod-${slug}.png`,
     href: `/modalidades/${slug}`,
 })
 
@@ -38,4 +36,12 @@ export const esportes: Esporte[] = [
     { slug: "futebol", nome: "Futebol" },
     { slug: "musculacao", nome: "Musculação" },
     { slug: "lutas", nome: "Lutas" },
+]
+
+export type Categoria = { label: string; href: string }
+
+/** Modalidades e esportes numa lista só, sem foto. */
+export const categorias: Categoria[] = [
+    ...modalidades.map(({ label, href }) => ({ label, href })),
+    ...esportes.map(({ slug, nome }) => ({ label: nome, href: `/esportes/${slug}` })),
 ]

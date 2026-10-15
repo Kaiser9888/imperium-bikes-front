@@ -1,6 +1,7 @@
 ﻿// app/torneios/page.tsx
 "use client"
 
+import Image from "next/image"
 import Link from "next/link"
 import { useEffect, useMemo, useState } from "react"
 import { Plus, Search } from "lucide-react"
@@ -67,6 +68,7 @@ export default function TorneiosPage() {
                     <span aria-hidden="true" className="pointer-events-none absolute -bottom-8 -right-3 -z-10 select-none text-[7rem] font-black leading-none tracking-tighter text-white/[0.04] sm:-bottom-14 sm:text-[12rem]">
                         {new Date().getFullYear()}
                     </span>
+                    <Image src="/sigillum/lorica.jpg" alt="" width={430} height={600} aria-hidden="true" className="pointer-events-none absolute -top-6 right-[22%] -z-10 hidden h-[130%] w-auto select-none opacity-[0.05] invert mix-blend-screen sm:block" />
                     <p className="type-caption font-semibold uppercase tracking-[0.2em] text-white/60">Calendário</p>
                     <div className="mt-2 flex flex-wrap items-end justify-between gap-x-8 gap-y-5">
                         <div>

@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useState } from "react"
 import { useAuth } from "@clerk/nextjs"
 import { useSearchParams } from "next/navigation"
+import Image from "next/image"
 import Link from "next/link"
 import { CheckCircle2, Loader2, XCircle } from "lucide-react"
 import { paymentService } from "@/services/publish/payment.service"
@@ -107,6 +108,16 @@ function PedidoSucessoContent() {
             >
               Voltar ao marketplace
             </Link>
+
+            {/* Recompensa discreta de quem concluiu a compra */}
+            <Image
+              src="/sigillum/lupus.jpg"
+              alt=""
+              width={380}
+              height={570}
+              title="Vae victis"
+              className="mx-auto mt-12 w-16 opacity-40 mix-blend-multiply transition-opacity duration-700 hover:opacity-90 dark:invert dark:mix-blend-screen"
+            />
           </>
         )}
 
