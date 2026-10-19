@@ -82,8 +82,10 @@ export async function uploadVideo(
     });
 
     if (!res.ok) {
-        const body = await res.text().catch(() => "");
-        throw new Error(`Erro ao criar upload (HTTP ${res.status}): ${body.slice(0, 300)}`);
+        // O backend responde { message } (ex.: limite de envios por dia): mostra isso, não o JSON cru
+        const body = await res.json().catch(() => null);
+        const message = body?.message || body?.details;
+        throw new Error(typeof message === "string" && message ? message : `Erro ao criar upload (HTTP ${res.status})`);
     }
 
     const data = (await res.json()) as { uploadUrl: string; uploadId: string; videoId: string };

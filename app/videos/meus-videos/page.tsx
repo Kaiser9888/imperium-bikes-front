@@ -1,165 +1,164 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@clerk/nextjs";
 import Link from "next/link";
-import { Trash2, Eye, Heart, Clock, Plus, Film, BarChart3, Copy } from "lucide-react";
+import { toast } from "sonner";
+import { Trash2, Eye, Heart, Clock, Plus, Film, BarChart3, MessageSquare, Radio, Loader2, ArrowRight } from "lucide-react";
 
-import { API_BASE_URL } from "@/lib/api-config";
+import { Button } from "@/components/ui/button";
+import { ErrorState } from "@/components/videos/FeedStates";
+import { CopyLinkButton } from "@/components/videos/CopyLinkButton";
+import { deleteVideo, fetchMyVideos } from "@/lib/videos/api";
+import { formatViews, timeAgo } from "@/lib/videos/format";
+import type { VideoItem } from "@/lib/videos/types";
 
-const API_URL = API_BASE_URL;
-
-interface MyVideo {
-  id: string;
-  title: string;
-  description: string;
-  thumbnailUrl: string;
-  formattedDuration: string;
-  viewCount: number;
-  likesCount: number;
-  commentsCount: number;
-  status: string;
-  createdAt: string;
+/** Selo de estado: o criador precisa saber se o vídeo está processando, falhou ou é uma live. */
+function StatusBadge({ video }: { video: VideoItem }) {
+  let label: string | null = null;
+  let tone = "bg-secondary text-muted-foreground";
+  if (video.isLiveNow) {
+    label = "Ao vivo";
+    tone = "bg-primary text-primary-foreground";
+  } else if (video.isLive) {
+    label = "Live aguardando";
+  } else if (video.status === "PROCESSING") {
+    label = "Processando";
+  } else if (video.status === "FAILED") {
+    label = "Falhou";
+    tone = "bg-destructive/15 text-destructive";
+  }
+  if (!label) return null;
+  return (
+    <span className={`inline-flex items-center rounded px-2 py-0.5 text-[0.6875rem] font-semibold uppercase tracking-wider ${tone}`}>
+      {label}
+    </span>
+  );
 }
 
 export default function MeusVideosPage() {
-  const { getToken } = useAuth();
-  const [videos, setVideos] = useState<MyVideo[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { getToken, isLoaded, isSignedIn } = useAuth();
+  const [videos, setVideos] = useState<VideoItem[] | null>(null);
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [error, setError] = useState(false);
+  const [attempt, setAttempt] = useState(0);
   const [deleting, setDeleting] = useState<string | null>(null);
-  const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  const fetchMyVideos = useCallback(async () => {
-    try {
+  const load = useCallback(
+    async (target: number) => {
       const token = await getToken();
-      const res = await fetch(`${API_URL}/api/videos/my-videos`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      setVideos(data.content || []);
-    } catch (error) {
-      console.error("Erro:", error);
-    } finally {
-      setLoading(false);
-    }
-  }, [getToken]);
+      if (!token) throw new Error("Sessão expirada");
+      return fetchMyVideos(token, target);
+    },
+    [getToken]
+  );
 
   useEffect(() => {
-    fetchMyVideos();
-  }, [fetchMyVideos]);
+    if (!isLoaded || !isSignedIn) return;
+    let cancelled = false;
+    load(0)
+      .then((data) => {
+        if (cancelled) return;
+        setVideos(data.content);
+        setPage(0);
+        setHasMore(!data.last);
+        setError(false);
+      })
+      .catch(() => !cancelled && setError(true));
+    return () => {
+      cancelled = true;
+    };
+  }, [isLoaded, isSignedIn, load, attempt]);
 
-  const deleteVideo = async (videoId: string) => {
-    if (!confirm("Tem certeza que deseja excluir este vídeo permanentemente?")) return;
+  async function loadMore() {
+    setLoadingMore(true);
+    try {
+      const data = await load(page + 1);
+      setVideos((prev) => [...(prev ?? []), ...data.content]);
+      setPage((p) => p + 1);
+      setHasMore(!data.last);
+    } catch {
+      toast.error("Não foi possível carregar mais vídeos.");
+    } finally {
+      setLoadingMore(false);
+    }
+  }
+
+  async function handleDelete(videoId: string) {
+    if (!window.confirm("Tem certeza que deseja excluir este vídeo permanentemente?")) return;
     setDeleting(videoId);
     try {
       const token = await getToken();
-      const res = await fetch(`${API_URL}/api/videos/${videoId}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.ok) {
-        setVideos((prev) => prev.filter((v) => v.id !== videoId));
-      } else {
-        alert("Erro ao excluir vídeo");
-        await fetchMyVideos();
-      }
-    } catch (error) {
-      console.error("Erro ao excluir:", error);
-      await fetchMyVideos();
+      if (!token) throw new Error("Sua sessão expirou.");
+      await deleteVideo(token, videoId);
+      setVideos((prev) => prev?.filter((v) => v.id !== videoId) ?? prev);
+      toast("Vídeo excluído");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro ao excluir vídeo");
     } finally {
       setDeleting(null);
     }
-  };
+  }
 
-  const copyLink = async (videoId: string) => {
-    const url = `${window.location.origin}/videos/watch/${videoId}`;
-    await navigator.clipboard.writeText(url);
-    setCopiedId(videoId);
-    setTimeout(() => setCopiedId(null), 2000);
-  };
+  if (isLoaded && !isSignedIn) {
+    return (
+      <div className="mx-auto max-w-xl px-4 py-16 text-center">
+        <p className="text-muted-foreground">Entre para gerenciar seus vídeos.</p>
+        <Button asChild className="mt-4">
+          <Link href="/sign-in">Entrar</Link>
+        </Button>
+      </div>
+    );
+  }
 
-  const formatViews = (views: number) => {
-    if (views >= 1000000) return `${(views / 1000000).toFixed(1)}M`;
-    if (views >= 1000) return `${(views / 1000).toFixed(1)}K`;
-    return String(views);
-  };
-
-  const timeAgo = (date: string) => {
-    if (!date) return "";
-    const now = new Date();
-    const past = new Date(date);
-    const diffMs = now.getTime() - past.getTime();
-    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-    if (diffDays <= 0) return "Hoje";
-    if (diffDays === 1) return "Ontem";
-    if (diffDays < 7) return `${diffDays}d`;
-    if (diffDays < 30) return `${Math.floor(diffDays / 7)}sem`;
-    return `${Math.floor(diffDays / 30)}m`;
-  };
-
-  const totalViews = videos.reduce((sum, v) => sum + v.viewCount, 0);
-  const totalLikes = videos.reduce((sum, v) => sum + v.likesCount, 0);
+  const list = videos ?? [];
+  const published = list.filter((v) => v.status === "PUBLISHED");
+  const totalViews = published.reduce((sum, v) => sum + (v.viewCount ?? 0), 0);
+  const totalLikes = published.reduce((sum, v) => sum + (v.likesCount ?? 0), 0);
 
   return (
     <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:py-10">
-
-        {/* CABEÇALHO */}
         <div className="mb-8">
-          <h1
-            className="text-3xl tracking-wide text-foreground"
-            style={{ fontFamily: 'var(--font-caesar)' }}
-          >
-            Central de Vídeos
-          </h1>
-          <p className="mt-1 text-start text-muted-foreground">
-            Gerencie todos os seus vídeos em um só lugar
-          </p>
+          <h1 className="text-3xl tracking-wide text-foreground">Central de Vídeos</h1>
+          <p className="mt-1 text-start text-muted-foreground">Gerencie todos os seus vídeos em um só lugar</p>
         </div>
 
-        {/* CARDS DE ESTATÍSTICAS */}
-        {!loading && videos.length > 0 && (
+        {published.length > 0 && (
           <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
-            <div className="rounded-xl border border-border bg-card p-4">
-              <Film className="h-5 w-5 text-primary" />
-              <p className="mt-2 text-2xl font-bold">{videos.length}</p>
-              <p className="text-xs text-muted-foreground">Vídeos</p>
-            </div>
-            <div className="rounded-xl border border-border bg-card p-4">
-              <Eye className="h-5 w-5 text-primary" />
-              <p className="mt-2 text-2xl font-bold">{formatViews(totalViews)}</p>
-              <p className="text-xs text-muted-foreground">Visualizações</p>
-            </div>
-            <div className="rounded-xl border border-border bg-card p-4">
-              <Heart className="h-5 w-5 text-red-500" />
-              <p className="mt-2 text-2xl font-bold">{formatViews(totalLikes)}</p>
-              <p className="text-xs text-muted-foreground">Curtidas</p>
-            </div>
-            <div className="rounded-xl border border-border bg-card p-4">
-              <BarChart3 className="h-5 w-5 text-green-500" />
-              <p className="mt-2 text-2xl font-bold">
-                {videos.length > 0 ? Math.round(totalViews / videos.length) : 0}
-              </p>
-              <p className="text-xs text-muted-foreground">Média de views</p>
-            </div>
+            <Stat icon={<Film className="h-5 w-5 text-primary" />} value={String(published.length)} label="Publicados" />
+            <Stat icon={<Eye className="h-5 w-5 text-primary" />} value={formatViews(totalViews)} label="Visualizações" />
+            <Stat icon={<Heart className="h-5 w-5 text-primary" />} value={formatViews(totalLikes)} label="Curtidas" />
+            <Stat
+              icon={<BarChart3 className="h-5 w-5 text-primary" />}
+              value={formatViews(Math.round(totalViews / published.length))}
+              label="Média de views"
+            />
           </div>
         )}
 
-        {/* BOTÃO NOVO VÍDEO */}
-        {videos.length > 0 && (
-          <div className="mb-6">
-            <Link
-              href="/videos/upload"
-              className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-            >
-              <Plus className="size-4" />
-              Novo vídeo
-            </Link>
+        {list.length > 0 && (
+          <div className="mb-6 flex flex-wrap gap-3">
+            <Button asChild>
+              <Link href="/videos/upload">
+                <Plus className="size-4" />
+                Novo vídeo
+              </Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link href="/videos/live">
+                <Radio className="size-4" />
+                Fazer live
+              </Link>
+            </Button>
           </div>
         )}
 
-        {/* LOADING */}
-        {loading ? (
+        {error ? (
+          <ErrorState onRetry={() => { setError(false); setVideos(null); setAttempt((n) => n + 1); }} />
+        ) : videos === null ? (
           <div className="space-y-4">
             {Array.from({ length: 3 }).map((_, i) => (
               <div key={i} className="animate-pulse rounded-xl border border-border bg-card p-5">
@@ -168,137 +167,108 @@ export default function MeusVideosPage() {
                   <div className="flex-1 space-y-3">
                     <div className="h-5 w-3/4 rounded bg-secondary" />
                     <div className="h-4 w-1/2 rounded bg-secondary" />
-                    <div className="h-3 w-1/3 rounded bg-secondary" />
                   </div>
                 </div>
               </div>
             ))}
           </div>
-        ) : videos.length === 0 ? (
-          /* VAZIO */
+        ) : list.length === 0 ? (
           <div className="rounded-xl border border-border bg-card px-8 py-20 text-center">
             <Film className="mx-auto size-12 text-muted-foreground/40" />
-            <h2
-              className="mt-4 text-xl"
-              style={{ fontFamily: 'var(--font-caesar)' }}
-            >
-              Nenhum vídeo publicado
-            </h2>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Comece a criar conteúdo agora mesmo
-            </p>
-            <Link
-              href="/videos/upload"
-              className="mt-6 inline-flex items-center gap-2 rounded-lg bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-            >
-              <Plus className="size-4" />
-              Publicar primeiro vídeo
-            </Link>
+            <h2 className="mt-4 text-xl">Nenhum vídeo publicado</h2>
+            <p className="mt-2 text-sm text-muted-foreground">Comece a criar conteúdo agora mesmo</p>
+            <Button asChild className="mt-6">
+              <Link href="/videos/upload">
+                <Plus className="size-4" />
+                Publicar primeiro vídeo
+              </Link>
+            </Button>
           </div>
         ) : (
-          /* LISTA DE VÍDEOS */
-          <div className="space-y-4">
-            {videos.map((video) => (
-              <div
-                key={video.id}
-                className="group rounded-xl border border-border bg-card p-5 transition-all hover:border-primary/30 hover:shadow-sm"
-              >
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-
-                  {/* Thumbnail */}
-                  <Link
-                    href={`/videos/watch/${video.id}`}
-                    className="relative h-24 w-full flex-shrink-0 overflow-hidden rounded-lg bg-secondary sm:w-44"
+          <>
+            <ul className="space-y-4">
+              {list.map((video) => {
+                const href = video.isLive ? `/videos/live?id=${video.id}` : `/videos/watch/${video.id}`;
+                return (
+                  <li
+                    key={video.id}
+                    className="group rounded-xl border border-border bg-card p-5 transition-all hover:border-primary/30"
                   >
-                    {video.thumbnailUrl ? (
-                      <img
-                        src={video.thumbnailUrl}
-                        alt={video.title}
-                        className="size-full object-cover transition-transform duration-300 group-hover:scale-105"
-                      />
-                    ) : (
-                      <div className="flex size-full items-center justify-center text-muted-foreground">
-                        <Film className="size-6" />
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+                      <Link href={href} className="relative h-24 w-full flex-shrink-0 overflow-hidden rounded-lg bg-secondary sm:w-44">
+                        {video.thumbnailUrl ? (
+                          <img src={video.thumbnailUrl} alt="" className="size-full object-cover transition-transform duration-300 group-hover:scale-105" />
+                        ) : (
+                          <div className="flex size-full items-center justify-center text-muted-foreground">
+                            <Film className="size-6" />
+                          </div>
+                        )}
+                        {video.formattedDuration && (
+                          <span className="absolute bottom-2 right-2 rounded-md bg-black/80 px-2 py-0.5 text-xs font-medium text-white">
+                            {video.formattedDuration}
+                          </span>
+                        )}
+                      </Link>
+
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Link href={href} className="line-clamp-1 text-base font-semibold leading-snug text-foreground transition-colors hover:text-primary">
+                            {video.title || "Sem título"}
+                          </Link>
+                          <StatusBadge video={video} />
+                          {video.isShort && <span className="text-[0.6875rem] font-semibold uppercase tracking-wider text-muted-foreground">Memento</span>}
+                        </div>
+
+                        {video.description && <p className="mt-1 line-clamp-1 text-sm text-muted-foreground">{video.description}</p>}
+
+                        <div className="mt-2 flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
+                          <span className="inline-flex items-center gap-1.5"><Eye className="size-3.5" />{formatViews(video.viewCount)} views</span>
+                          <span className="inline-flex items-center gap-1.5"><Heart className="size-3.5" />{video.likesCount ?? 0} curtidas</span>
+                          <span className="inline-flex items-center gap-1.5"><MessageSquare className="size-3.5" />{video.commentsCount} comentários</span>
+                          <span className="inline-flex items-center gap-1.5"><Clock className="size-3.5" />{timeAgo(video.createdAt)}</span>
+                        </div>
                       </div>
-                    )}
-                    <span className="absolute bottom-2 right-2 rounded-md bg-black/80 px-2 py-0.5 text-xs font-medium text-white">
-                                            {video.formattedDuration || "00:00"}
-                                        </span>
-                  </Link>
 
-                  {/* Informações */}
-                  <div className="min-w-0 flex-1">
-                    <Link
-                      href={`/videos/watch/${video.id}`}
-                      className="text-base font-semibold leading-snug text-foreground transition-colors hover:text-primary line-clamp-1"
-                    >
-                      {video.title || "Sem título"}
-                    </Link>
-
-                    {video.description && (
-                      <p className="mt-1 line-clamp-1 text-sm text-muted-foreground">
-                        {video.description}
-                      </p>
-                    )}
-
-                    <div className="mt-2 flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
-                                            <span className="inline-flex items-center gap-1.5">
-                                                <Eye className="size-3.5" />
-                                              {formatViews(video.viewCount)} views
-                                            </span>
-                      <span className="inline-flex items-center gap-1.5">
-                                                <Heart className="size-3.5" />
-                        {video.likesCount} curtidas
-                                            </span>
-                      {video.commentsCount !== undefined && (
-                        <span className="inline-flex items-center gap-1.5">
-                                                    <svg className="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-                                                    </svg>
-                          {video.commentsCount} comentários
-                                                </span>
-                      )}
-                      {video.createdAt && (
-                        <span className="inline-flex items-center gap-1.5">
-                                                    <Clock className="size-3.5" />
-                          {timeAgo(video.createdAt)}
-                                                </span>
-                      )}
+                      <div className="flex items-center gap-2 sm:flex-col sm:items-end">
+                        {video.status === "PUBLISHED" && <CopyLinkButton path={`/videos/watch/${video.id}`} />}
+                        <button
+                          type="button"
+                          onClick={() => void handleDelete(video.id)}
+                          disabled={deleting === video.id}
+                          className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive disabled:opacity-50"
+                          aria-label="Excluir vídeo"
+                          title="Excluir vídeo"
+                        >
+                          {deleting === video.id ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />}
+                        </button>
+                      </div>
                     </div>
-                  </div>
+                  </li>
+                );
+              })}
+            </ul>
 
-                  {/* Ações */}
-                  <div className="flex items-center gap-1 sm:flex-col">
-                    <button
-                      onClick={() => copyLink(video.id)}
-                      className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary"
-                      title="Copiar link"
-                    >
-                      {copiedId === video.id ? (
-                        <span className="text-xs font-medium text-green-500">✓</span>
-                      ) : (
-                        <Copy className="size-4" />
-                      )}
-                    </button>
-                    <button
-                      onClick={() => deleteVideo(video.id)}
-                      disabled={deleting === video.id}
-                      className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive disabled:opacity-50"
-                      title="Excluir vídeo"
-                    >
-                      {deleting === video.id ? (
-                        <div className="size-4 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
-                      ) : (
-                        <Trash2 className="size-4" />
-                      )}
-                    </button>
-                  </div>
-                </div>
+            {hasMore && (
+              <div className="mt-8 flex justify-center">
+                <Button onClick={loadMore} disabled={loadingMore} variant="outline">
+                  {loadingMore ? <Loader2 className="size-4 animate-spin" /> : <ArrowRight className="size-4" />}
+                  {loadingMore ? "Carregando..." : "Ver mais"}
+                </Button>
               </div>
-            ))}
-          </div>
+            )}
+          </>
         )}
       </div>
+    </div>
+  );
+}
+
+function Stat({ icon, value, label }: { icon: React.ReactNode; value: string; label: string }) {
+  return (
+    <div className="rounded-xl border border-border bg-card p-4">
+      {icon}
+      <p className="mt-2 text-2xl font-bold">{value}</p>
+      <p className="text-xs text-muted-foreground">{label}</p>
     </div>
   );
 }

@@ -22,7 +22,8 @@ export default function VideosLayout({
 }) {
   const pathname = usePathname();
 
-  const isMemento = pathname.startsWith("/videos/memento");
+  // Só o feed é imersivo; /videos/memento/upload é um formulário comum.
+  const isMemento = pathname === "/videos/memento";
   const isSearchPage = pathname === "/videos/buscar";
 
   const { isSignedIn } = useAuth();
@@ -62,7 +63,7 @@ export default function VideosLayout({
   return (
     <div className={`flex min-h-screen flex-col ${isMemento ? "bg-black" : "bg-background"}`}>
       {/* ===== TOP BAR ===== */}
-      {!isSearchPage && (
+      {!isSearchPage && !isMemento && (
         <header
           className={`
             fixed top-0 left-0 right-0 z-40 h-14
@@ -135,7 +136,7 @@ export default function VideosLayout({
           flex-1
           ${
           isMemento
-            ? "h-[calc(100dvh-7.5rem)] overflow-hidden pt-14 pb-20"
+            ? "h-dvh overflow-hidden pb-16"
             : `${!isSearchPage ? "pt-14" : ""} pb-16`
         }
         `}
@@ -153,7 +154,7 @@ export default function VideosLayout({
             ? "border-white/10 bg-black/80"
             : "border-border bg-background/95"
         }
-          ${showNav ? "translate-y-0" : "translate-y-full"}
+          ${showNav || isMemento ? "translate-y-0" : "translate-y-full"}
         `}
         role="navigation"
         aria-label="Navegação principal"

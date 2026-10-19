@@ -1,5 +1,8 @@
+export type VideoStatus = "UPLOADING" | "PROCESSING" | "READY" | "PUBLISHED" | "FAILED" | "REMOVED";
+
 export interface VideoItem {
     id: string;
+    userId?: string;
     title: string;
     description?: string;
     videoUrl?: string;
@@ -10,6 +13,7 @@ export interface VideoItem {
     likesCount?: number;
     commentsCount: number;
     dislikesCount?: number;
+    /** Reação de quem está vendo (só vem quando a requisição leva o token). */
     liked?: boolean;
     disliked?: boolean;
     hashtags?: string[];
@@ -17,8 +21,12 @@ export interface VideoItem {
     userAvatarUrl?: string;
     createdAt: string;
     isShort?: boolean;
-    /** PROCESSING enquanto o Mux prepara o vídeo; PUBLISHED quando dá para assistir. */
-    status?: string;
+    /** Live criada (ainda não virou replay). */
+    isLive?: boolean;
+    /** Live transmitindo agora. */
+    isLiveNow?: boolean;
+    /** PROCESSING enquanto o Mux prepara o vídeo; PUBLISHED quando dá para assistir; READY = live aguardando. */
+    status?: VideoStatus;
 }
 
 export interface VideoPage {
@@ -40,3 +48,13 @@ export interface ReactionResponse {
     liked: boolean;
     disliked: boolean;
 }
+
+export interface LiveCredentials {
+    videoId: string;
+    ingestUrl: string;
+    streamKey: string;
+    isLiveNow: boolean;
+}
+
+/** recent = mais recentes (padrão); views = mais vistos. */
+export type FeedOrder = "recent" | "views";

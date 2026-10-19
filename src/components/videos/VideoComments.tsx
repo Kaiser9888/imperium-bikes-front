@@ -56,8 +56,6 @@ export function VideoComments({ videoId }: VideoCommentsProps) {
                     ? data.content
                     : [];
 
-                console.log("🔍 Comentários:", list);
-                console.log("🔍 Seu userId:", userId);
 
                 setComments(list);
             } catch (err) {

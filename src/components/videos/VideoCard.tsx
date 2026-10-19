@@ -3,61 +3,72 @@ import { Eye, Play } from "lucide-react";
 import type { VideoItem } from "@/lib/videos/types";
 import { formatViews, timeAgo } from "@/lib/videos/format";
 import { VideoAvatar } from "./VideoAvatar";
+import { SaveButton } from "./SaveButton";
+
+type CardVideo = Pick<
+    VideoItem,
+    "id" | "title" | "thumbnailUrl" | "formattedDuration" | "viewCount" | "userName" | "userAvatarUrl" | "createdAt"
+>;
 
 interface VideoCardProps {
-    video: VideoItem;
+    video: CardVideo;
     priority?: boolean;
 }
 
 export function VideoCard({ video, priority = false }: VideoCardProps) {
     return (
-        <Link
-            href={`/videos/watch/${video.id}`}
-            className="group block rounded-lg outline-offset-4 focus-visible:outline-2 focus-visible:outline-ring"
-        >
-            <article className="overflow-hidden rounded-lg border border-border bg-card transition-colors duration-300 group-hover:border-primary/40">
-                <div className="relative aspect-video overflow-hidden bg-secondary">
+        <article className="group relative">
+            <Link
+                href={`/videos/watch/${video.id}`}
+                className="block rounded-xl outline-offset-4 focus-visible:outline-2 focus-visible:outline-ring"
+            >
+                <div className="relative aspect-video overflow-hidden rounded-xl bg-secondary ring-1 ring-border transition duration-300 group-hover:ring-primary/60">
                     {video.thumbnailUrl ? (
                         <img
                             src={video.thumbnailUrl}
-                            alt={video.title || "Miniatura do vídeo"}
+                            alt=""
                             loading={priority ? "eager" : "lazy"}
                             decoding="async"
-                            className="size-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+                            className="size-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
                         />
                     ) : (
                         <div className="flex size-full items-center justify-center bg-secondary">
                             <Play className="size-7 text-muted-foreground" aria-hidden="true" />
                         </div>
                     )}
-                    <div className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-                        <span className="flex size-11 items-center justify-center rounded-full border border-border bg-background/85 backdrop-blur-sm">
-                            <Play className="ml-0.5 size-4 fill-primary text-primary" aria-hidden="true" />
-                        </span>
-                    </div>
-                    <span className="absolute bottom-2.5 right-2.5 rounded-md bg-background/90 px-2 py-0.5 text-xs font-medium tabular-nums text-foreground">
+
+                    {/* Faixa vermelha que corre embaixo no hover: assinatura visual dos cards */}
+                    <span
+                        aria-hidden="true"
+                        className="absolute inset-x-0 bottom-0 h-0.5 origin-left scale-x-0 bg-primary transition-transform duration-500 group-hover:scale-x-100"
+                    />
+
+                    <span className="absolute bottom-2 right-2 rounded bg-black/80 px-1.5 py-0.5 text-[0.6875rem] font-semibold tabular-nums tracking-wide text-white">
                         {video.formattedDuration || "00:00"}
                     </span>
                 </div>
 
-                <div className="p-4">
-                    <h3 className="line-clamp-2 min-h-10 text-sm font-medium leading-snug text-foreground transition-colors group-hover:text-primary">
-                        {video.title}
-                    </h3>
-                    <div className="mt-3 flex items-center justify-between gap-3 border-t border-border pt-3">
-                        <span className="flex min-w-0 items-center gap-2 text-sm text-muted-foreground">
-                            <VideoAvatar name={video.userName} url={video.userAvatarUrl} />
-                            <span className="truncate">{video.userName}</span>
-                        </span>
-                        <span className="flex shrink-0 items-center gap-1 text-xs text-muted-foreground">
+                <div className="mt-3 flex gap-3">
+                    <VideoAvatar name={video.userName} url={video.userAvatarUrl} className="size-9" />
+                    <div className="min-w-0">
+                        <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-foreground transition-colors group-hover:text-primary">
+                            {video.title}
+                        </h3>
+                        <p className="mt-1 truncate text-xs text-muted-foreground">{video.userName}</p>
+                        <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
                             <Eye className="size-3.5" aria-hidden="true" />
                             {formatViews(video.viewCount)}
                             <span aria-hidden="true">·</span>
                             <time dateTime={video.createdAt}>{timeAgo(video.createdAt)}</time>
-                        </span>
+                        </p>
                     </div>
                 </div>
-            </article>
-        </Link>
+            </Link>
+
+            {/* Fora do link: salvar não abre o vídeo */}
+            <div className="absolute right-2 top-2 opacity-0 transition-opacity duration-200 group-hover:opacity-100 focus-within:opacity-100 max-sm:opacity-100">
+                <SaveButton videoId={video.id} iconOnly />
+            </div>
+        </article>
     );
 }

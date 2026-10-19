@@ -1,11 +1,13 @@
 // src/components/videos/VideoActions.tsx
 "use client";
-import { ShareButton } from "@/components/ui/share-button"
+import { CopyLinkButton } from "./CopyLinkButton"
+import { SaveButton } from "./SaveButton"
 
 import { ThumbsUp, ThumbsDown } from "lucide-react";
 import { formatViews } from "@/lib/videos/format";
 
 interface VideoActionsProps {
+  videoId: string;
   liked: boolean;
   disliked: boolean;
   likesCount: number;
@@ -15,6 +17,7 @@ interface VideoActionsProps {
 }
 
 export function VideoActions({
+                               videoId,
                                liked,
                                disliked,
                                likesCount,
@@ -23,7 +26,7 @@ export function VideoActions({
                                onToggleDislike,
                              }: VideoActionsProps) {
   return (
-    <div className="flex items-center gap-2 w-full sm:w-auto">
+    <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
       <div className="flex items-center rounded-full bg-muted/50 border border-border overflow-hidden">
         <button
           type="button"
@@ -62,7 +65,8 @@ export function VideoActions({
         </button>
       </div>
 
-      <ShareButton />
+      <CopyLinkButton path={`/videos/watch/${videoId}`} />
+      <SaveButton videoId={videoId} />
     </div>
   );
 }

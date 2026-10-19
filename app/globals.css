@@ -780,3 +780,246 @@ mux-player.mux-player-cover {
         background-color: var(--destructive);
     }
 }
+
+/* ===== VÍDEOS: botões da área de vídeos/Memento ===== */
+
+/* Botão glitch (Uiverse.io, namecho) nas cores da marca. Texto em data-text. */
+.glitch-btn,
+.glitch-btn::after {
+    --glitch-bg: var(--primary);
+    --glitch-shadow: oklch(0.86 0.13 200);
+    --glitch-text-shadow: oklch(0.93 0.17 100);
+    padding: 0.85em 1.25em;
+    font-size: 0.875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    background: linear-gradient(45deg, transparent 5%, var(--glitch-bg) 5%);
+    border: 0;
+    color: #fff;
+    letter-spacing: 0.18em;
+    line-height: 1;
+    box-shadow: 5px 0 0 var(--glitch-shadow);
+    outline: transparent;
+    position: relative;
+}
+.glitch-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6em;
+    cursor: pointer;
+    white-space: nowrap;
+}
+.glitch-btn svg {
+    width: 1.1em;
+    height: 1.1em;
+}
+.glitch-btn:focus-visible {
+    outline: 2px solid var(--glitch-shadow);
+    outline-offset: 4px;
+}
+.glitch-btn::after {
+    --slice-0: inset(50% 50% 50% 50%);
+    --slice-1: inset(80% -6px 0 0);
+    --slice-2: inset(50% -6px 30% 0);
+    --slice-3: inset(10% -6px 85% 0);
+    --slice-4: inset(40% -6px 43% 0);
+    --slice-5: inset(80% -6px 5% 0);
+    content: attr(data-text);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(45deg, transparent 3%, var(--glitch-shadow) 3%, var(--glitch-shadow) 5%, var(--glitch-bg) 5%);
+    text-shadow: -3px -3px 0 var(--glitch-text-shadow), 3px 3px 0 var(--glitch-shadow);
+    clip-path: var(--slice-0);
+}
+.glitch-btn:hover::after,
+.glitch-btn:focus-visible::after {
+    animation: glitch 1s steps(2, end);
+}
+.glitch-btn--sm,
+.glitch-btn--sm::after {
+    font-size: 0.6875rem;
+    padding: 0.75em 1em;
+    box-shadow: 3px 0 0 var(--glitch-shadow);
+}
+@keyframes glitch {
+    0% { clip-path: var(--slice-1); transform: translate(-20px, -10px); }
+    10% { clip-path: var(--slice-3); transform: translate(10px, 10px); }
+    20% { clip-path: var(--slice-1); transform: translate(-10px, 10px); }
+    30% { clip-path: var(--slice-3); transform: translate(0, 5px); }
+    40% { clip-path: var(--slice-2); transform: translate(-5px, 0); }
+    50% { clip-path: var(--slice-3); transform: translate(5px, 0); }
+    60% { clip-path: var(--slice-4); transform: translate(5px, 10px); }
+    70% { clip-path: var(--slice-2); transform: translate(-10px, 10px); }
+    80% { clip-path: var(--slice-5); transform: translate(20px, -10px); }
+    90% { clip-path: var(--slice-1); transform: translate(-10px, 0); }
+    100% { clip-path: var(--slice-1); transform: translate(0); }
+}
+
+/* Copiar link (Uiverse.io, fabiodevbr): troca o texto quando data-copied="true". */
+.copy-link-btn {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 8.5rem;
+    height: 2.5rem;
+    border: 1px solid var(--border);
+    border-radius: 9999px;
+    background-color: var(--secondary);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    cursor: pointer;
+    overflow: hidden;
+    transition: background-color 700ms, border-color 700ms;
+}
+.copy-link-btn:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 3px;
+}
+.copy-link-btn > span {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    white-space: nowrap;
+    transition: transform 500ms, opacity 500ms, color 500ms;
+}
+.copy-link-btn > span svg {
+    width: 1rem;
+    height: 1rem;
+}
+.copy-link-btn > span:first-child {
+    color: var(--foreground);
+    transform: translate(-50%, -50%);
+}
+.copy-link-btn > span:last-child {
+    color: var(--primary-foreground);
+    opacity: 0;
+    transform: translate(-50%, 100%);
+}
+.copy-link-btn[data-copied='true'] {
+    background-color: var(--primary);
+    border-color: var(--primary);
+    transition-delay: 100ms;
+    transition-duration: 500ms;
+}
+.copy-link-btn[data-copied='true'] > span:first-child {
+    color: var(--primary-foreground);
+    opacity: 0;
+    transform: translate(-50%, -150%);
+}
+.copy-link-btn[data-copied='true'] > span:last-child {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+    transition-delay: 300ms;
+}
+
+/* Salvar (Uiverse.io, vinodjangid07): o ícone cresce e cobre o texto no hover. */
+.bookmark-btn {
+    --bookmark-from: var(--primary);
+    --bookmark-to: oklch(0.72 0.18 50);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 6.5rem;
+    height: 2.5rem;
+    padding: 0 0.3rem;
+    border-radius: 9999px;
+    border: 1px solid rgb(255 255 255 / 0.35);
+    background-color: oklch(0.16 0.02 20);
+    color: #fff;
+    cursor: pointer;
+    overflow: hidden;
+    transition: transform 0.3s;
+}
+.bookmark-btn:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 3px;
+}
+.bookmark-btn__icon {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 1.875rem;
+    height: 1.875rem;
+    border-radius: 9999px;
+    background: linear-gradient(to bottom, var(--bookmark-to), var(--bookmark-from));
+    overflow: hidden;
+    z-index: 2;
+    transition: width 0.3s;
+}
+.bookmark-btn__icon svg {
+    width: 0.875rem;
+    height: 0.875rem;
+}
+.bookmark-btn__text {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    height: 100%;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    z-index: 1;
+    transition: transform 0.3s, width 0.3s, font-size 0.3s;
+}
+.bookmark-btn:hover .bookmark-btn__icon,
+.bookmark-btn:focus-visible .bookmark-btn__icon {
+    width: 100%;
+}
+.bookmark-btn:hover .bookmark-btn__text,
+.bookmark-btn:focus-visible .bookmark-btn__text {
+    transform: translate(10px);
+    width: 0;
+    flex: 0;
+    font-size: 0;
+}
+.bookmark-btn:active {
+    transform: scale(0.95);
+}
+.bookmark-btn[aria-pressed='true'] .bookmark-btn__icon svg {
+    fill: currentColor;
+}
+/* Só o ícone: usado na barra lateral do Memento. */
+.bookmark-btn--icon {
+    width: 2.75rem;
+    height: 2.75rem;
+    padding: 0;
+    background-color: rgb(0 0 0 / 0.4);
+    backdrop-filter: blur(12px);
+}
+.bookmark-btn--icon .bookmark-btn__icon {
+    width: 2rem;
+    height: 2rem;
+}
+.bookmark-btn--icon:hover .bookmark-btn__icon {
+    width: 2.25rem;
+    height: 2.25rem;
+}
+
+/* Ponto pulsante de "ao vivo" */
+.live-dot {
+    position: relative;
+    display: inline-block;
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 9999px;
+    background: var(--primary);
+}
+.live-dot::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: inherit;
+    animation: live-ping 1.4s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+@keyframes live-ping {
+    75%, 100% { transform: scale(2.4); opacity: 0; }
+}

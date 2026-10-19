@@ -1,7 +1,9 @@
 import type {
+    FeedOrder,
+    LiveCredentials,
+    ReactionResponse,
     VideoItem,
     VideoPage,
-    ReactionResponse,
 } from "./types";
 import { API_BASE_URL } from "@/lib/api-config";
 
@@ -9,504 +11,260 @@ export const API_URL = API_BASE_URL;
 
 export const PAGE_SIZE = 12;
 
+const TIMEOUT_MS = 8000;
+
 /* ================================================================
  * HELPERS
  * ================================================================ */
 
-/**
- * Remove espaços e normaliza uma URL de vídeo.
- */
-function normalizeVideoUrl(
-  videoUrl?: string | null
-): string | undefined {
-    if (!videoUrl) {
-        return undefined;
+function authHeaders(token?: string | null): Record<string, string> {
+    return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+/** Lê a mensagem de erro do backend ({ message }) quando houver. */
+async function errorFrom(res: Response): Promise<Error> {
+    try {
+        const body = await res.json();
+        const message = body?.message || body?.details || body?.error;
+        if (typeof message === "string" && message) return new Error(message);
+    } catch {
+        // corpo vazio ou não-JSON
     }
+    return new Error(`HTTP ${res.status}`);
+}
 
-    const value = videoUrl.trim();
+async function getJson<T>(path: string, token?: string | null): Promise<T> {
+    const res = await fetch(`${API_URL}${path}`, {
+        headers: { Accept: "application/json", ...authHeaders(token) },
+        signal: AbortSignal.timeout(TIMEOUT_MS),
+        cache: "no-store",
+    });
+    if (!res.ok) throw await errorFrom(res);
+    return (await res.json()) as T;
+}
 
-    if (!value) {
-        return undefined;
-    }
-
-    return value;
+function normalizeVideoUrl(videoUrl?: string | null): string | undefined {
+    const value = videoUrl?.trim();
+    return value || undefined;
 }
 
 /**
- * Extrai o playback ID do Mux.
- *
- * Aceita:
- *
- * https://stream.mux.com/ABC123.m3u8
- * ABC123
- * ABC123.m3u8
- *
- * E evita:
- *
- * ABC123.m3u8.m3u8
+ * Extrai o playback ID do Mux. Aceita URL completa, "ABC123" ou "ABC123.m3u8"
+ * (e protege contra "ABC123.m3u8.m3u8").
  */
-export function playbackIdFrom(
-  videoUrl?: string | null
-): string {
-    if (!videoUrl) {
-        return "";
-    }
+export function playbackIdFrom(videoUrl?: string | null): string {
+    let value = videoUrl?.trim() ?? "";
+    if (!value) return "";
 
-    let value = videoUrl.trim();
-
-    if (!value) {
-        return "";
-    }
-
-    /*
-     * Remove query string e hash.
-     *
-     * Exemplo:
-     *
-     * ABC123.m3u8?foo=bar
-     *
-     * vira:
-     *
-     * ABC123.m3u8
-     */
     value = value.split("?")[0] ?? value;
     value = value.split("#")[0] ?? value;
 
-    /*
-     * Se for uma URL completa, pega somente o último
-     * segmento do caminho.
-     */
-    try {
-        if (
-          value.startsWith("http://") ||
-          value.startsWith("https://")
-        ) {
-            const url = new URL(value);
-
-            value =
-              url.pathname
-                .split("/")
-                .filter(Boolean)
-                .pop() ?? "";
+    if (value.startsWith("http://") || value.startsWith("https://")) {
+        try {
+            value = new URL(value).pathname.split("/").filter(Boolean).pop() ?? "";
+        } catch {
+            // não é URL válida: trata como playback ID
         }
-    } catch {
-        /*
-         * Se não for uma URL válida, continua tratando
-         * o valor como playback ID.
-         */
     }
 
-    /*
-     * Remove TODAS as extensões .m3u8 do final.
-     *
-     * Isso protege contra:
-     *
-     * ABC.m3u8.m3u8
-     */
-    value = value.replace(
-      /(?:\.m3u8)+$/i,
-      ""
-    );
-
-    /*
-     * Remove barras restantes.
-     */
-    value = value.replace(/^\/+|\/+$/g, "");
-
-    return value;
+    return value.replace(/(?:\.m3u8)+$/i, "").replace(/^\/+|\/+$/g, "");
 }
 
-/**
- * Constrói uma URL de playback Mux válida.
- *
- * Nunca gera:
- *
- * .m3u8.m3u8
- */
-export function muxPlaybackUrl(
-  videoUrl?: string | null
-): string {
+/** URL Mux limpa: nunca gera .m3u8.m3u8. */
+export function muxPlaybackUrl(videoUrl?: string | null): string {
     const playbackId = playbackIdFrom(videoUrl);
-
-    if (!playbackId) {
-        return "";
-    }
-
-    /*
-     * Se o backend já retornar uma URL Mux,
-     * podemos devolver uma URL Mux limpa.
-     *
-     * Se retornar somente o playback ID,
-     * construímos a URL.
-     */
-    return `https://stream.mux.com/${encodeURIComponent(
-      playbackId
-    )}.m3u8`;
+    return playbackId ? `https://stream.mux.com/${encodeURIComponent(playbackId)}.m3u8` : "";
 }
 
-/**
- * Normaliza um VideoItem recebido do backend.
- *
- * O backend continua sendo a fonte da verdade.
- * Apenas corrigimos campos relacionados ao playback.
- */
-function normalizeVideo(
-  video: VideoItem
-): VideoItem {
+export const getMuxVideoUrl = muxPlaybackUrl;
+
+/** O backend é a fonte da verdade; aqui só preenchemos valores ausentes. */
+function normalizeVideo(video: VideoItem): VideoItem {
     return {
         ...video,
         videoUrl: normalizeVideoUrl(video.videoUrl),
         thumbnailUrl: video.thumbnailUrl ?? "",
+        formattedDuration: video.formattedDuration ?? "",
         description: video.description ?? undefined,
         likesCount: video.likesCount ?? 0,
         commentsCount: video.commentsCount ?? 0,
         dislikesCount: video.dislikesCount ?? 0,
-        userAvatarUrl:
-          video.userAvatarUrl ?? undefined,
+        viewCount: video.viewCount ?? 0,
+        userAvatarUrl: video.userAvatarUrl ?? undefined,
         hashtags: video.hashtags ?? [],
         isShort: video.isShort ?? false,
+        isLive: video.isLive ?? false,
+        isLiveNow: video.isLiveNow ?? false,
     };
 }
 
+function normalizePage(data: VideoPage): VideoPage {
+    if (!data || !Array.isArray(data.content)) throw new Error("Resposta inválida da API");
+    return { content: data.content.map(normalizeVideo), last: data.last ?? true };
+}
+
 /* ================================================================
- * LISTAR VÍDEOS
+ * LISTAGENS
  * ================================================================ */
 
-/**
- * Lista vídeos paginados.
- *
- * Mantém o endpoint original.
- *
- * Se a API estiver indisponível, propaga o erro para a tela exibir
- * o estado de falha em vez de inventar vídeos.
- */
+export interface FeedOptions {
+    order?: FeedOrder;
+    /** Com token, cada vídeo já vem com liked/disliked de quem está vendo. */
+    token?: string | null;
+}
+
+/** Feed paginado. Propaga o erro para a tela mostrar o estado de falha. */
 export async function fetchVideoPage(
-  page: number,
-  isShort = false
+    page: number,
+    isShort = false,
+    { order = "recent", token }: FeedOptions = {}
 ): Promise<VideoPage> {
+    const params = new URLSearchParams({
+        page: String(page),
+        size: String(PAGE_SIZE),
+        isShort: String(isShort),
+        order,
+    });
+    return normalizePage(await getJson<VideoPage>(`/api/videos?${params}`, token));
+}
+
+/** Busca no servidor (título, descrição e nome do criador), não só no que já foi carregado. */
+export async function searchVideos(query: string, page: number, token?: string | null): Promise<VideoPage> {
+    const q = query.trim();
+    if (!q) return { content: [], last: true };
+    const params = new URLSearchParams({ query: q, page: String(page), size: String(PAGE_SIZE) });
+    return normalizePage(await getJson<VideoPage>(`/api/videos/search?${params}`, token));
+}
+
+export async function fetchVideosByHashtag(tag: string, page: number): Promise<VideoPage> {
+    const cleanTag = tag.trim().replace(/^#/, "");
+    if (!cleanTag) return { content: [], last: true };
+    const params = new URLSearchParams({ page: String(page), size: String(PAGE_SIZE) });
+    return normalizePage(
+        await getJson<VideoPage>(`/api/videos/hashtag/${encodeURIComponent(cleanTag)}?${params}`)
+    );
+}
+
+/** Lives no ar agora. Falha silenciosa: a faixa "Ao vivo" só mostra "nenhuma live". */
+export async function fetchLiveVideos(): Promise<VideoItem[]> {
     try {
-        const params = new URLSearchParams({
-            page: String(page),
-            size: String(PAGE_SIZE),
-            isShort: String(isShort),
-        });
-
-        const res = await fetch(
-          `${API_URL}/api/videos?${params.toString()}`,
-          {
-              signal: AbortSignal.timeout(8000),
-
-              /*
-               * Evita problemas de cache durante
-               * desenvolvimento e atualização dos vídeos.
-               */
-              cache: "no-store",
-          }
-        );
-
-        if (!res.ok) {
-            throw new Error(
-              `HTTP ${res.status}`
-            );
-        }
-
-        const data =
-          (await res.json()) as VideoPage;
-
-        if (
-          !data ||
-          !Array.isArray(data.content)
-        ) {
-            throw new Error(
-              "Resposta inválida da API"
-            );
-        }
-
-        /*
-         * A API respondeu, mas não há conteúdo.
-         *
-         * Não precisamos inventar vídeos reais.
-         */
-        if (data.content.length === 0) {
-            return {
-                content: [],
-                last: true,
-            };
-        }
-
-        return {
-            ...data,
-            content: data.content.map(
-              normalizeVideo
-            ),
-        };
-    } catch (error) {
-        throw error instanceof Error ? error : new Error("Não foi possível carregar os vídeos.");
+        const data = await getJson<VideoPage>("/api/videos/live?size=8");
+        return Array.isArray(data?.content) ? data.content.map(normalizeVideo) : [];
+    } catch {
+        return [];
     }
 }
 
+/** Todos os vídeos de quem está logado, em qualquer estado (Central de Vídeos e Perfil). */
+export async function fetchMyVideos(token: string, page: number): Promise<VideoPage> {
+    const params = new URLSearchParams({ page: String(page), size: String(PAGE_SIZE) });
+    return normalizePage(await getJson<VideoPage>(`/api/videos/my-videos?${params}`, token));
+}
+
 /* ================================================================
- * BUSCAR UM VÍDEO
+ * UM VÍDEO
  * ================================================================ */
 
-export async function fetchVideo(
-  id: string
-): Promise<VideoItem | null> {
-    if (!id) {
-        return null;
-    }
-
+/** Com token, vem com liked/disliked e o dono vê os próprios vídeos privados. */
+export async function fetchVideo(id: string, token?: string | null): Promise<VideoItem | null> {
+    if (!id) return null;
     try {
-        const res = await fetch(
-          `${API_URL}/api/videos/${encodeURIComponent(
-            id
-          )}`,
-          {
-              signal: AbortSignal.timeout(8000),
-              cache: "no-store",
-          }
-        );
-
-        if (!res.ok) {
-            throw new Error(
-              `HTTP ${res.status}`
-            );
-        }
-
-        const data =
-          (await res.json()) as VideoItem;
-
-        if (!data) {
-            return null;
-        }
-
-        return normalizeVideo(data);
+        return normalizeVideo(await getJson<VideoItem>(`/api/videos/${encodeURIComponent(id)}`, token));
     } catch {
         return null;
     }
 }
 
-/* ================================================================
- * VÍDEOS RELACIONADOS
- * ================================================================ */
-
-export async function fetchRelated(
-  id: string
-): Promise<VideoItem[]> {
-    const page =
-      await fetchVideoPage(0, false);
-
-    return page.content
-      .filter(
-        (video) => video.id !== id
-      )
-      .slice(0, 8);
+/** Mesmo autor primeiro, depois os mais recentes do mesmo formato. */
+export async function fetchRelated(id: string): Promise<VideoItem[]> {
+    try {
+        const list = await getJson<VideoItem[]>(`/api/videos/${encodeURIComponent(id)}/related?limit=8`);
+        return Array.isArray(list) ? list.map(normalizeVideo) : [];
+    } catch {
+        return [];
+    }
 }
 
 /* ================================================================
- * LIKE
+ * LIKE / DISLIKE
  * ================================================================ */
 
-/**
- * Curte/descurte o vídeo.
- *
- * Exige token do Clerk.
- *
- * O backend valida:
- *
- * Authorization: Bearer <token>
- */
-export async function likeVideo(
-  id: string,
-  token: string
-): Promise<ReactionResponse | null> {
-    if (!id || !token) {
-        return null;
-    }
-
+async function react(id: string, token: string, kind: "like" | "dislike"): Promise<ReactionResponse | null> {
+    if (!id || !token) return null;
     try {
-        const res = await fetch(
-          `${API_URL}/api/videos/${encodeURIComponent(
-            id
-          )}/like`,
-          {
-              method: "POST",
-
-              headers: {
-                  Authorization: `Bearer ${token}`,
-                  Accept: "application/json",
-              },
-
-              signal: AbortSignal.timeout(
-                8000
-              ),
-          }
-        );
-
-        if (!res.ok) {
-            throw new Error(
-              `HTTP ${res.status}`
-            );
-        }
-
+        const res = await fetch(`${API_URL}/api/videos/${encodeURIComponent(id)}/${kind}`, {
+            method: "POST",
+            headers: { Accept: "application/json", ...authHeaders(token) },
+            signal: AbortSignal.timeout(TIMEOUT_MS),
+        });
+        if (!res.ok) return null;
         return (await res.json()) as ReactionResponse;
     } catch {
         return null;
     }
 }
 
+export const likeVideo = (id: string, token: string) => react(id, token, "like");
+export const dislikeVideo = (id: string, token: string) => react(id, token, "dislike");
+
 /* ================================================================
- * DISLIKE
+ * TEMPO ASSISTIDO (views)
  * ================================================================ */
 
 /**
- * Marca/desmarca dislike.
- *
- * Exige token do Clerk.
+ * Heartbeat do player. O backend só conta a view depois de ~30s assistidos,
+ * uma vez por pessoa a cada 24h. `keepalive` deixa o último envio sair ao fechar a aba.
  */
-export async function dislikeVideo(
-  id: string,
-  token: string
-): Promise<ReactionResponse | null> {
-    if (!id || !token) {
-        return null;
-    }
-
-    try {
-        const res = await fetch(
-          `${API_URL}/api/videos/${encodeURIComponent(
-            id
-          )}/dislike`,
-          {
-              method: "POST",
-
-              headers: {
-                  Authorization: `Bearer ${token}`,
-                  Accept: "application/json",
-              },
-
-              signal: AbortSignal.timeout(
-                8000
-              ),
-          }
-        );
-
-        if (!res.ok) {
-            throw new Error(
-              `HTTP ${res.status}`
-            );
-        }
-
-        return (await res.json()) as ReactionResponse;
-    } catch {
-        return null;
-    }
+export function sendWatchTime(id: string, seconds: number, token?: string | null): void {
+    const whole = Math.min(120, Math.round(seconds));
+    if (!id || whole < 1) return;
+    fetch(`${API_URL}/api/videos/${encodeURIComponent(id)}/watch`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeaders(token) },
+        body: JSON.stringify({ seconds: whole }),
+        keepalive: true,
+    }).catch(() => {
+        // métrica: perder um heartbeat não pode atrapalhar quem está assistindo
+    });
 }
 
 /* ================================================================
- * HASHTAGS
+ * LIVES
  * ================================================================ */
 
-/**
- * Lista vídeos de uma hashtag específica.
- *
- * O endpoint precisa existir no backend.
- */
-export async function fetchVideosByHashtag(
-  tag: string,
-  page: number
-): Promise<VideoPage> {
-    const cleanTag = tag
-      .trim()
-      .replace(/^#/, "");
+export async function createLive(token: string, title: string, description: string): Promise<LiveCredentials> {
+    const res = await fetch(`${API_URL}/api/videos/live`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeaders(token) },
+        body: JSON.stringify({ title, description }),
+        signal: AbortSignal.timeout(20000),
+    });
+    if (!res.ok) throw await errorFrom(res);
+    return (await res.json()) as LiveCredentials;
+}
 
-    if (!cleanTag) {
-        return {
-            content: [],
-            last: true,
-        };
-    }
+export function fetchLiveCredentials(token: string, videoId: string): Promise<LiveCredentials> {
+    return getJson<LiveCredentials>(`/api/videos/${encodeURIComponent(videoId)}/live/credentials`, token);
+}
 
-    try {
-        const params = new URLSearchParams({
-            page: String(page),
-            size: String(PAGE_SIZE),
-        });
-
-        const res = await fetch(
-          `${API_URL}/api/videos/hashtag/${encodeURIComponent(
-            cleanTag
-          )}?${params.toString()}`,
-          {
-              signal: AbortSignal.timeout(
-                8000
-              ),
-              cache: "no-store",
-          }
-        );
-
-        if (!res.ok) {
-            throw new Error(
-              `HTTP ${res.status}`
-            );
-        }
-
-        const data =
-          (await res.json()) as VideoPage;
-
-        if (
-          !data ||
-          !Array.isArray(data.content)
-        ) {
-            return {
-                content: [],
-                last: true,
-            };
-        }
-
-        return {
-            ...data,
-            content: data.content.map(
-              normalizeVideo
-            ),
-        };
-    } catch {
-        return {
-            content: [],
-            last: true,
-        };
-    }
+export async function endLive(token: string, videoId: string): Promise<void> {
+    const res = await fetch(`${API_URL}/api/videos/${encodeURIComponent(videoId)}/live/end`, {
+        method: "POST",
+        headers: authHeaders(token),
+        signal: AbortSignal.timeout(20000),
+    });
+    if (!res.ok) throw await errorFrom(res);
 }
 
 /* ================================================================
- * EXPORTA URL MUX LIMPA
+ * EXCLUIR
  * ================================================================ */
 
-/**
- * Retorna uma URL Mux pronta para reprodução.
- *
- * Exemplo:
- *
- * entrada:
- * https://stream.mux.com/ABC123.m3u8
- *
- * saída:
- * https://stream.mux.com/ABC123.m3u8
- *
- * entrada:
- * ABC123
- *
- * saída:
- * https://stream.mux.com/ABC123.m3u8
- *
- * entrada problemática:
- * ABC123.m3u8.m3u8
- *
- * saída:
- * https://stream.mux.com/ABC123.m3u8
- */
-export function getMuxVideoUrl(
-  videoUrl?: string | null
-): string {
-    return muxPlaybackUrl(videoUrl);
+export async function deleteVideo(token: string, videoId: string): Promise<void> {
+    const res = await fetch(`${API_URL}/api/videos/${encodeURIComponent(videoId)}`, {
+        method: "DELETE",
+        headers: authHeaders(token),
+        signal: AbortSignal.timeout(TIMEOUT_MS),
+    });
+    if (!res.ok) throw await errorFrom(res);
 }

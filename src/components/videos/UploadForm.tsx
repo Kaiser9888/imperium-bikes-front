@@ -56,7 +56,8 @@ export function UploadForm({ mode }: { mode: UploadMode }) {
 
   const tagList = hashtags.split(/\s+/).filter(Boolean);
   const busy = status === "uploading" || status === "processing";
-  const canPublish = !!file && (isMemento ? !!description.trim() : !!title.trim()) && !busy;
+  // O backend exige título com 3+ caracteres (no Memento o título sai da descrição)
+  const canPublish = !!file && (isMemento ? description.trim().length >= 3 : title.trim().length >= 3) && !busy;
 
   const reset = () => {
     if (previewUrl) URL.revokeObjectURL(previewUrl);
@@ -72,11 +73,11 @@ export function UploadForm({ mode }: { mode: UploadMode }) {
 
   const handleUpload = async () => {
     if (!file) return;
-    if (!isMemento && !title.trim()) {
-      setError("Título obrigatório");
+    if (!isMemento && title.trim().length < 3) {
+      setError("O título precisa ter pelo menos 3 caracteres");
       return;
     }
-    if (isMemento && !description.trim()) {
+    if (isMemento && description.trim().length < 3) {
       setError("Escreva uma descrição — ela também é usada como título do Memento");
       return;
     }
@@ -94,7 +95,7 @@ export function UploadForm({ mode }: { mode: UploadMode }) {
       const saved = await uploadVideo(
         {
           file,
-          title: isMemento ? description.slice(0, 60) : title,
+          title: isMemento ? description.trim().slice(0, 60) : title.trim(),
           description,
           hashtags: isMemento ? "" : hashtags,
           isShort: isMemento,

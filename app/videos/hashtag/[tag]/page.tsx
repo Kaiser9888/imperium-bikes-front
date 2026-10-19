@@ -13,49 +13,56 @@ import { ErrorState, EmptyState } from "@/components/videos/FeedStates";
 
 import { BackButton } from "@/components/ui/back-button"
 
+/** Resultado guardado junto com a tag: trocar de tag já vira "carregando" sem setState no efeito. */
+interface TagState {
+  tag: string;
+  videos: VideoItem[];
+  page: number;
+  hasMore: boolean;
+  error: boolean;
+}
+
 export default function HashtagPage() {
   const { tag: rawTag } = useParams<{ tag: string }>();
   const tag = normalizeHashtag(rawTag);
 
-  const [videos, setVideos] = useState<VideoItem[]>([]);
-  const [page, setPage] = useState(0);
-  const [hasMore, setHasMore] = useState(true);
-  const [loading, setLoading] = useState(true);
+  const [state, setState] = useState<TagState | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [error, setError] = useState(false);
+  const [attempt, setAttempt] = useState(0);
 
-  async function load(targetPage: number, replace: boolean) {
+  useEffect(() => {
+    let cancelled = false;
+    fetchVideosByHashtag(tag, 0)
+      .then((data) => !cancelled && setState({ tag, videos: data.content, page: 0, hasMore: !data.last, error: false }))
+      .catch(() => !cancelled && setState({ tag, videos: [], page: 0, hasMore: false, error: true }));
+    return () => {
+      cancelled = true;
+    };
+  }, [tag, attempt]);
+
+  const current = state?.tag === tag ? state : null;
+
+  async function loadMore() {
+    if (!current || loadingMore) return;
+    setLoadingMore(true);
     try {
-      const data = await fetchVideosByHashtag(tag, targetPage);
-      setVideos((prev) => (replace ? data.content : [...prev, ...data.content]));
-      setHasMore(!data.last);
-      setError(false);
+      const next = current.page + 1;
+      const data = await fetchVideosByHashtag(tag, next);
+      setState((s) =>
+        s && s.tag === tag
+          ? { ...s, videos: [...s.videos, ...data.content], page: next, hasMore: !data.last }
+          : s
+      );
     } catch {
-      setError(true);
+      // mantém o que já está na tela
     } finally {
-      setLoading(false);
       setLoadingMore(false);
     }
   }
 
-  useEffect(() => {
-    setLoading(true);
-    setPage(0);
-    load(0, true);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tag]);
-
-  function loadMore() {
-    const next = page + 1;
-    setLoadingMore(true);
-    setPage(next);
-    load(next, false);
-  }
-
   function reload() {
-    setLoading(true);
-    setPage(0);
-    load(0, true);
+    setState(null);
+    setAttempt((n) => n + 1);
   }
 
   return (
@@ -66,11 +73,11 @@ export default function HashtagPage() {
       <p className="mt-1 text-sm text-muted-foreground">Vídeos publicados com essa hashtag</p>
 
       <div className="mt-8">
-        {loading ? (
+        {!current ? (
           <VideoGridSkeleton />
-        ) : error ? (
+        ) : current.error ? (
           <ErrorState onRetry={reload} />
-        ) : videos.length === 0 ? (
+        ) : current.videos.length === 0 ? (
           <EmptyState
             title="Nenhum vídeo encontrado"
             description={`Ainda não há vídeos publicados com a hashtag #${tag}.`}
@@ -78,20 +85,16 @@ export default function HashtagPage() {
         ) : (
           <>
             <ul className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {videos.map((video, i) => (
+              {current.videos.map((video, i) => (
                 <li key={video.id}>
                   <VideoCard video={video} priority={i < 4} />
                 </li>
               ))}
             </ul>
 
-            {hasMore && (
+            {current.hasMore && (
               <div className="mt-10 flex justify-center">
-                <Button
-                  onClick={loadMore}
-                  disabled={loadingMore}
-                  variant="outline"
-                >
+                <Button onClick={loadMore} disabled={loadingMore} variant="outline">
                   {loadingMore ? (
                     <>
                       <Loader2 className="size-4 animate-spin" />
