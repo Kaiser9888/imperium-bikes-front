@@ -1,10 +1,11 @@
 "use client"
 
 import Link from "next/link"
-import { Clapperboard, House, Search, Trophy, User, type LucideIcon } from "lucide-react"
+import { House, Search, TvMinimalPlay, User, type LucideIcon } from "lucide-react"
 import { usePathname } from "next/navigation"
 
 import { useAppShell } from "@/components/layout/app-shell"
+import { LaurelIcon } from "@/components/ui/laurel-icon"
 import { isRouteActive } from "@/lib/navigation"
 import { cn } from "@/lib/utils"
 
@@ -46,13 +47,14 @@ export function BottomNav() {
                 </li>
                 <li>
                     <Link href="/torneios" aria-label="Eventos" className={itemClasses}>
-                        <span className="flex size-11 items-center justify-center rounded-full bg-accent text-accent-foreground">
-                            <Trophy className="size-6" strokeWidth={2} aria-hidden="true" />
+                        {/* Louros dourados sobre tinta escura, com o aro vermelho da marca */}
+                        <span className="flex size-11 items-center justify-center rounded-full bg-[oklch(0.17_0.02_20)] text-[oklch(0.8_0.12_85)] shadow-sm ring-2 ring-accent">
+                            <LaurelIcon className="size-7" />
                         </span>
                     </Link>
                 </li>
                 <li>
-                    <NavLink href="/videos" label="Vídeos" icon={Clapperboard} />
+                    <NavLink href="/videos" label="Vídeos" icon={TvMinimalPlay} />
                 </li>
                 <li>
                     <NavLink href="/perfil" label="Perfil" icon={User} />
