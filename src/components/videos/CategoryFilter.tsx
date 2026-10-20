@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Sparkles } from "lucide-react";
+import { SlidersHorizontal, Sparkles } from "lucide-react";
 
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { aoMudarGosto, interesses, PESO, registrarInteresse } from "@/lib/videos/gosto";
 
 interface CategoryFilterProps {
@@ -100,6 +101,20 @@ function Chip({ tag, ativo, onClick, destaque }: { tag: Tag; ativo: boolean; onC
   );
 }
 
+function Grupo({ titulo, tags, value, onEscolher }: { titulo: string; tags: Tag[]; value: string; onEscolher: (id: string) => void }) {
+  if (tags.length === 0) return null;
+  return (
+    <section className="mt-5">
+      <h3 className="type-caption mb-2.5 font-semibold uppercase tracking-wider text-muted-foreground">{titulo}</h3>
+      <div className="flex flex-wrap gap-2">
+        {tags.map((tag) => (
+          <Chip key={tag.id} tag={tag} ativo={value === tag.id} onClick={() => onEscolher(tag.id)} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
 export function CategoryFilter({ value, onChange }: CategoryFilterProps) {
   // Começa com a vitrine (igual no servidor) e troca pelo gosto salvo no aparelho
   const [sugestoes, setSugestoes] = useState<{ tags: Tag[]; personalizado: boolean }>({
@@ -113,9 +128,12 @@ export function CategoryFilter({ value, onChange }: CategoryFilterProps) {
     return aoMudarGosto(atualizar);
   }, []);
 
+  const [gavetaAberta, setGavetaAberta] = useState(false);
+
   function escolher(id: string) {
     if (!["recomendados", "recentes", "vistos"].includes(id)) registrarInteresse([id], PESO.filtro);
     onChange(id);
+    setGavetaAberta(false);
   }
 
   // Categoria ativa que não está em nenhum grupo visível (ex.: veio de uma hashtag)
@@ -123,10 +141,42 @@ export function CategoryFilter({ value, onChange }: CategoryFilterProps) {
   const extra = visiveis.has(value) ? null : { id: value, label: rotulo(value) };
 
   const divisor = <span aria-hidden="true" className="mx-1 h-5 w-px shrink-0 bg-border" />;
+  const resto = CATALOGO.filter((t) => !sugestoes.tags.some((s) => s.id === t.id));
 
   return (
     <nav aria-label="Filtros de vídeos">
-      <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none" role="tablist" aria-label="Filtrar por categoria">
+      {/* Celular: linha curta + gaveta com todas (a fileira inteira ocupava a tela) */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none sm:hidden" role="tablist" aria-label="Filtrar por categoria">
+        <Sheet open={gavetaAberta} onOpenChange={setGavetaAberta}>
+          <SheetTrigger asChild>
+            <button
+              type="button"
+              className="type-label inline-flex h-[2.125rem] shrink-0 cursor-pointer items-center gap-1.5 rounded-md border border-border px-3 text-foreground"
+            >
+              <SlidersHorizontal className="size-4" aria-hidden="true" />
+              Categorias
+            </button>
+          </SheetTrigger>
+          <SheetContent side="bottom" className="max-h-[80dvh] overflow-y-auto rounded-t-3xl px-4 pb-8 pt-6">
+            <SheetHeader className="px-0">
+              <SheetTitle>Categorias</SheetTitle>
+            </SheetHeader>
+            <Grupo titulo={sugestoes.personalizado ? "Para você" : "Descubra"} tags={sugestoes.tags} value={value} onEscolher={escolher} />
+            <Grupo titulo="Bike e outros esportes" tags={ESSENCIAIS} value={value} onEscolher={escolher} />
+            <Grupo titulo="Mais categorias" tags={resto} value={value} onEscolher={escolher} />
+          </SheetContent>
+        </Sheet>
+        {FIXAS.map((tag) => (
+          <Chip key={tag.id} tag={tag} ativo={value === tag.id} onClick={() => escolher(tag.id)} />
+        ))}
+        {extra && <Chip tag={extra} ativo onClick={() => escolher(extra.id)} />}
+        {sugestoes.tags.slice(0, 3).map((tag) => (
+          <Chip key={tag.id} tag={tag} ativo={value === tag.id} onClick={() => escolher(tag.id)} destaque />
+        ))}
+      </div>
+
+      {/* Computador: tudo numa fileira */}
+      <div className="hidden items-center gap-2 overflow-x-auto pb-1 scrollbar-none sm:flex" role="tablist" aria-label="Filtrar por categoria">
         {FIXAS.map((tag) => (
           <Chip key={tag.id} tag={tag} ativo={value === tag.id} onClick={() => escolher(tag.id)} />
         ))}

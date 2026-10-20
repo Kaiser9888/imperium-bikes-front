@@ -15,7 +15,7 @@ import {
     ChevronDown,
     ChevronUp,
     Heart,
-    MessageSquare,
+    MessageCircle,
     Plus,
     Search,
     Share2,
@@ -85,6 +85,10 @@ function MementoFeedView() {
     const [showComments, setShowComments] = useState(false);
 
     const [isMuted, setIsMuted] = useState(true);
+    // Total real da gaveta (o do feed fica velho quando alguém comenta)
+    const [totalComentarios, setTotalComentarios] = useState<number | null>(null);
+    // Guardado com o id: trocar de vídeo volta para "cover" sem setState no efeito
+    const [horizontal, setHorizontal] = useState({ id: "", value: false });
     const [isPlaying, setIsPlaying] = useState(false);
     // Guarda de qual vídeo é o progresso: trocar de vídeo zera sem setState no efeito
     const [progress, setProgress] = useState({ id: "", value: 0 });
@@ -194,6 +198,7 @@ function MementoFeedView() {
 
     const currentVideo = videos[currentIndex];
     const currentPlaybackId = playbackIdFrom(currentVideo?.videoUrl);
+    const ehHorizontal = horizontal.id === currentVideo?.id && horizontal.value;
     useWatchHeartbeat(playerRef, currentPlaybackId ? currentVideo?.id : undefined);
 
     // Mantém a URL apontando pro vídeo atual: recarregar ou copiar a barra de endereço volta nele
@@ -225,6 +230,13 @@ function MementoFeedView() {
         const handleTime = () => {
             if (player.duration) setProgress({ id: currentVideo.id, value: player.currentTime / player.duration });
         };
+        // Vídeo horizontal no feed vertical: mostra inteiro em vez de cortar e ampliar (ficava borrado)
+        const handleMeta = () => {
+            const video = (player as unknown as { media?: { nativeEl?: HTMLVideoElement } }).media?.nativeEl;
+            if (video?.videoWidth) setHorizontal({ id: currentVideo.id, value: video.videoWidth > video.videoHeight });
+        };
+        player.addEventListener("loadedmetadata", handleMeta);
+        handleMeta();
 
         player.addEventListener("canplay", handleCanPlay);
         player.addEventListener("play", handlePlay);
@@ -238,6 +250,7 @@ function MementoFeedView() {
             player.removeEventListener("play", handlePlay);
             player.removeEventListener("pause", handlePause);
             player.removeEventListener("timeupdate", handleTime);
+            player.removeEventListener("loadedmetadata", handleMeta);
             try { player.pause(); } catch {}
         };
     }, [currentVideo]);
@@ -417,6 +430,16 @@ function MementoFeedView() {
                 aria-label={`Memento ${currentIndex + 1} de ${videos.length}`}
                 className="relative h-full w-full overflow-hidden bg-black sm:aspect-[9/16] sm:w-auto sm:max-w-full sm:rounded-2xl sm:my-3 sm:h-[calc(100%-1.5rem)] sm:ring-1 sm:ring-white/10"
             >
+                {/* Horizontal: capa desfocada preenche o espaço acima e abaixo do vídeo inteiro */}
+                {ehHorizontal && currentVideo.thumbnailUrl && (
+                    // eslint-disable-next-line @next/next/no-img-element -- miniatura do Mux
+                    <img
+                        src={currentVideo.thumbnailUrl}
+                        alt=""
+                        aria-hidden="true"
+                        className="pointer-events-none absolute inset-0 size-full scale-125 object-cover opacity-50 blur-2xl"
+                    />
+                )}
                 {currentPlaybackId ? (
                     <MuxPlayer
                         key={currentVideo.id}
@@ -429,9 +452,19 @@ function MementoFeedView() {
                         loop
                         playsInline
                         preload="auto"
+                        // Qualidade: o vídeo é ampliado para cobrir a tela vertical (cover), e o Mux
+                        // escolhia a qualidade pelo tamanho do player, ficando borrado. Começa pela
+                        // maior e não limita ao tamanho do player.
+                        renditionOrder="desc"
+                        capRenditionToPlayerSize={false}
                         accentColor="#d33a2c"
                         className="absolute inset-0 h-full w-full"
-                        style={{ "--controls": "none", "--media-object-fit": "cover" }}
+                        style={{
+                            "--controls": "none",
+                            "--media-object-fit": ehHorizontal ? "contain" : "cover",
+                            // Fundo transparente para a capa desfocada aparecer em volta
+                            ...(ehHorizontal ? { "--media-background-color": "transparent", backgroundColor: "transparent" } : {}),
+                        }}
                     />
                 ) : (
                     <div className="flex h-full w-full items-center justify-center">
@@ -506,12 +539,30 @@ function MementoFeedView() {
 
                     {/* Barra de ações */}
                     <div className="flex shrink-0 flex-col items-center gap-4">
-                        <RailButton label="Curtir" count={formatViews(likeCount)} onClick={() => void handleLike(currentVideo)} pressed={isLiked}>
-                            <Heart className={`size-5 ${isLiked ? "fill-primary text-primary" : ""}`} aria-hidden="true" />
-                        </RailButton>
-                        <RailButton label="Comentários" count={formatViews(currentVideo.commentsCount ?? 0)} onClick={() => setShowComments(true)}>
-                            <MessageSquare className="size-5" aria-hidden="true" />
-                        </RailButton>
+                        <IconeAcao
+                            label={isLiked ? "Descurtir" : "Curtir"}
+                            count={formatViews(likeCount)}
+                            onClick={() => void handleLike(currentVideo)}
+                            pressed={isLiked}
+                        >
+                            <Heart
+                                // key: remonta e repete o "pulo" a cada curtida
+                                key={isLiked ? "curtido" : "normal"}
+                                className={`size-9 ${isLiked ? "memento-pulo fill-primary text-primary" : "fill-white/15 text-white"}`}
+                                strokeWidth={isLiked ? 0 : 2}
+                                aria-hidden="true"
+                            />
+                        </IconeAcao>
+                        <IconeAcao
+                            label="Comentários"
+                            count={formatViews(currentVideo.commentsCount ?? 0)}
+                            onClick={() => {
+                                setTotalComentarios(null);
+                                setShowComments(true);
+                            }}
+                        >
+                            <MessageCircle className="size-9 fill-white text-white" strokeWidth={0} aria-hidden="true" />
+                        </IconeAcao>
                         <SaveButton videoId={currentVideo.id} iconOnly />
                         <RailButton label="Compartilhar" onClick={() => void handleShare()}>
                             <Share2 className="size-5" aria-hidden="true" />
@@ -556,29 +607,34 @@ function MementoFeedView() {
             {/* Comentários */}
             {showComments && (
                 <div
-                    className="absolute inset-0 z-[100] flex items-end justify-center bg-black/60 backdrop-blur-sm"
+                    className="memento-sheet-fundo absolute inset-0 z-[100] flex items-end justify-center bg-black/50"
                     onClick={() => setShowComments(false)}
                 >
                     <div
                         role="dialog"
                         aria-modal="true"
                         aria-labelledby="memento-comments-title"
-                        className="relative max-h-[80%] w-full max-w-lg overflow-hidden rounded-t-2xl bg-card shadow-2xl"
+                        className="memento-sheet relative flex h-[72dvh] w-full max-w-lg flex-col overflow-hidden rounded-t-3xl bg-card shadow-2xl sm:mb-3 sm:rounded-3xl"
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <div className="flex items-center justify-between border-b border-border px-4 py-3">
-                            <h2 id="memento-comments-title" className="text-base font-semibold text-foreground">Comentários</h2>
+                        {/* Puxador + título */}
+                        <div className="relative shrink-0 border-b border-border px-4 pb-3 pt-2.5 text-center">
+                            <span aria-hidden="true" className="mx-auto mb-2.5 block h-1 w-10 rounded-full bg-muted-foreground/30" />
+                            <h2 id="memento-comments-title" className="type-label text-foreground">
+                                {totalComentarios ?? currentVideo.commentsCount ?? 0}{" "}
+                                {(totalComentarios ?? currentVideo.commentsCount ?? 0) === 1 ? "comentário" : "comentários"}
+                            </h2>
                             <button
                                 type="button"
                                 onClick={() => setShowComments(false)}
                                 aria-label="Fechar comentários"
-                                className="rounded-full p-2 text-muted-foreground transition hover:bg-secondary"
+                                className="absolute right-2 top-2 grid size-9 cursor-pointer place-items-center rounded-full text-muted-foreground transition hover:bg-secondary hover:text-foreground"
                             >
                                 <X className="size-5" aria-hidden="true" />
                             </button>
                         </div>
-                        <div className="max-h-[calc(80dvh-4rem)] overflow-y-auto px-4 pb-6 pt-3">
-                            <VideoComments videoId={currentVideo.id} />
+                        <div className="min-h-0 flex-1">
+                            <VideoComments videoId={currentVideo.id} layout="sheet" onCountChange={setTotalComentarios} />
                         </div>
                     </div>
                 </div>
@@ -593,6 +649,34 @@ function MementoWordmark() {
             <span aria-hidden="true" className="h-5 w-1 bg-primary" />
             <span className="text-sm font-extrabold uppercase tracking-[0.35em]">Memento</span>
         </span>
+    );
+}
+
+/** Curtir e comentar: ícone grande sem moldura e contagem embaixo, com sombra para ler sobre qualquer vídeo. */
+function IconeAcao({
+    label,
+    count,
+    pressed,
+    onClick,
+    children,
+}: {
+    label: string;
+    count?: string;
+    pressed?: boolean;
+    onClick: () => void;
+    children: React.ReactNode;
+}) {
+    return (
+        <button
+            type="button"
+            onClick={onClick}
+            aria-label={label}
+            aria-pressed={pressed}
+            className="flex cursor-pointer flex-col items-center gap-0.5 text-white [filter:drop-shadow(0_1px_3px_rgb(0_0_0/0.6))] transition-transform active:scale-90"
+        >
+            {children}
+            {count !== undefined && <span className="text-xs font-bold tabular-nums">{count}</span>}
+        </button>
     );
 }
 

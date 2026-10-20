@@ -26,6 +26,8 @@ interface VideoCommentsProps {
     videoId: string;
     /** Avisa a página quando o total muda (novo ou apagado). */
     onCountChange?: (total: number) => void;
+    /** "sheet": gaveta do Memento, com a lista rolando e o campo fixo embaixo. */
+    layout?: "page" | "sheet";
 }
 
 function Avatar({ name, url, className }: { name?: string; url?: string | null; className?: string }) {
@@ -39,7 +41,7 @@ function Avatar({ name, url, className }: { name?: string; url?: string | null; 
     );
 }
 
-export function VideoComments({ videoId, onCountChange }: VideoCommentsProps) {
+export function VideoComments({ videoId, onCountChange, layout = "page" }: VideoCommentsProps) {
     const { getToken, isSignedIn, userId } = useAuth();
     const { user } = useUser();
 
@@ -145,10 +147,12 @@ export function VideoComments({ videoId, onCountChange }: VideoCommentsProps) {
     );
 
     const aberto = focused || newComment.length > 0;
+    const sheet = layout === "sheet";
 
     return (
-        <div className="flex flex-col gap-6">
-            {/* Escrever */}
+        <div className={sheet ? "flex h-full min-h-0 flex-col" : "flex flex-col gap-6"}>
+            {/* Escrever (na gaveta fica fixo embaixo, como nos apps de vídeo curto) */}
+            <div className={sheet ? "order-2 shrink-0 border-t border-border bg-card px-4 pb-[max(env(safe-area-inset-bottom),0.75rem)] pt-3" : ""}>
             {isSignedIn ? (
                 <form
                     onSubmit={(e) => {
@@ -221,8 +225,10 @@ export function VideoComments({ videoId, onCountChange }: VideoCommentsProps) {
                     Entre para comentar e conversar com o criador.
                 </Link>
             )}
+            </div>
 
             {/* Lista */}
+            <div className={sheet ? "order-1 min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4" : ""}>
             {loading ? (
                 <div className="flex flex-col gap-5" aria-busy="true">
                     {[0, 1, 2].map((i) => (
@@ -259,6 +265,7 @@ export function VideoComments({ videoId, onCountChange }: VideoCommentsProps) {
                     ))}
                 </ul>
             )}
+            </div>
         </div>
     );
 }
