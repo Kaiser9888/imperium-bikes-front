@@ -359,6 +359,26 @@
     }
 }
 
+/* Barra do banner atual: enche de vermelho no tempo da troca (duração inline no componente) */
+.banner-progresso {
+    transform: scaleX(0);
+    animation-name: banner-progresso;
+    animation-timing-function: linear;
+    animation-fill-mode: forwards;
+}
+@keyframes banner-progresso {
+    to {
+        transform: scaleX(1);
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    /* Sem troca automática: a barra fica cheia, só marcando o banner atual */
+    .banner-progresso {
+        animation: none;
+        transform: scaleX(1);
+    }
+}
+
 /* Botão de compartilhar (Uiverse.io, zaby_4213) nas cores da marca */
 .galaxy-btn {
     --btn-bg: oklch(0.16 0.02 20);

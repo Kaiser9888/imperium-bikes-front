@@ -5,7 +5,7 @@ import { House, Search, TvMinimalPlay, User, type LucideIcon } from "lucide-reac
 import { usePathname } from "next/navigation"
 
 import { useAppShell } from "@/components/layout/app-shell"
-import { LaurelIcon } from "@/components/ui/laurel-icon"
+import { TrophyIcon } from "@/components/ui/trophy-icon"
 import { isRouteActive } from "@/lib/navigation"
 import { cn } from "@/lib/utils"
 
@@ -47,9 +47,9 @@ export function BottomNav() {
                 </li>
                 <li>
                     <Link href="/torneios" aria-label="Eventos" className={itemClasses}>
-                        {/* Louros dourados sobre tinta escura, com o aro vermelho da marca */}
-                        <span className="flex size-11 items-center justify-center rounded-full bg-[oklch(0.17_0.02_20)] text-[oklch(0.8_0.12_85)] shadow-sm ring-2 ring-accent">
-                            <LaurelIcon className="size-7" />
+                        {/* Troféu dourado sobre tinta escura, com o aro vermelho da marca */}
+                        <span className="flex size-11 items-center justify-center rounded-full bg-[oklch(0.17_0.02_20)] shadow-sm ring-2 ring-accent">
+                            <TrophyIcon className="size-7" />
                         </span>
                     </Link>
                 </li>
