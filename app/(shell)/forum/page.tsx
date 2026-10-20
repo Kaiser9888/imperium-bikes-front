@@ -1,10 +1,27 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { useUser } from "@clerk/nextjs"
-import { ArrowBigDown, ArrowBigUp, MessageSquare, Newspaper, PenLine, Trash2 } from "lucide-react"
+import {
+    ArrowBigDown,
+    ArrowBigUp,
+    Bike,
+    CalendarDays,
+    CircleHelp,
+    Flame,
+    Clock,
+    MessageSquare,
+    MessagesSquare,
+    Newspaper,
+    PenLine,
+    Sparkles,
+    Trash2,
+    Users,
+    Wrench,
+    type LucideIcon,
+} from "lucide-react"
 
-import { PageHeading } from "@/components/layout/page-heading"
+import { BackButton } from "@/components/ui/back-button"
 import {
     AlertDialog,
     AlertDialogAction,
@@ -23,6 +40,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Loader } from "@/components/ui/loader"
 import { RadioCard } from "@/components/ui/radio-group"
+import { Skeleton } from "@/components/ui/skeleton"
+import { StatusBadge } from "@/components/ui/status-badge"
 import { Textarea } from "@/components/ui/textarea"
 import api from "@/lib/api"
 import { cn } from "@/lib/utils"
@@ -30,11 +49,52 @@ import { forumService, type ForumCategory, type ForumPost, type Voto } from "@/s
 import { mensagemDaApi } from "@/services/tournamentService"
 
 const TODAS = ""
-
 const ENTRAR = "/sign-in?redirect_url=%2Fforum"
-const dataCurta = (iso: string) => new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" })
 
-const botaoAcao = "type-label inline-flex h-9 items-center gap-1.5 rounded-full px-2.5 text-muted-foreground transition-colors hover:bg-surface-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
+const ICONES: Record<string, LucideIcon> = {
+    noticias: Newspaper,
+    novidades: Sparkles,
+    eventos: CalendarDays,
+    geral: MessagesSquare,
+    duvidas: CircleHelp,
+    mecanica: Wrench,
+    equipamentos: Bike,
+}
+/** Ícone da categoria pelo slug (componente fixo: o React não deixa escolher o componente durante a renderização). */
+function IconeCategoria({ slug, className }: { slug?: string; className?: string }) {
+    const Icone = (slug && ICONES[slug]) || MessagesSquare
+    return <Icone className={className} aria-hidden="true" />
+}
+
+type Ordem = "recentes" | "alta" | "sem-resposta"
+const ORDENS: { value: Ordem; label: string; icon: LucideIcon }[] = [
+    { value: "recentes", label: "Recentes", icon: Clock },
+    { value: "alta", label: "Em alta", icon: Flame },
+    { value: "sem-resposta", label: "Sem resposta", icon: CircleHelp },
+]
+
+function tempoAtras(iso: string): string {
+    const minutos = Math.floor((Date.now() - new Date(iso).getTime()) / 60000)
+    if (minutos < 1) return "agora"
+    if (minutos < 60) return `há ${minutos} min`
+    const horas = Math.floor(minutos / 60)
+    if (horas < 24) return `há ${horas} h`
+    const dias = Math.floor(horas / 24)
+    if (dias < 30) return `há ${dias} ${dias === 1 ? "dia" : "dias"}`
+    return new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" })
+}
+
+function Iniciais({ nome, className }: { nome: string; className?: string }) {
+    const iniciais = nome.split(" ").map((p) => p[0]).filter(Boolean).slice(0, 2).join("").toUpperCase()
+    return (
+        <span aria-hidden="true" className={cn("type-caption grid shrink-0 place-items-center rounded-full bg-surface-muted font-semibold text-foreground", className)}>
+            {iniciais || "?"}
+        </span>
+    )
+}
+
+const botaoAcao =
+    "type-label inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-full px-2.5 text-muted-foreground transition-colors hover:bg-surface-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
 
 type VotosProps = {
     post: ForumPost
@@ -42,10 +102,12 @@ type VotosProps = {
     /** Voto que o usuário já tinha dado antes desta visita. */
     votoSalvo: Voto | null
     onErro: (mensagem: string | null) => void
+    /** Coluna ao lado da publicação (em vez de linha). */
+    vertical?: boolean
 }
 
 /** Setas de voto com o saldo. Serve para publicação e para resposta. */
-function Votos({ post, meuId, votoSalvo, onErro }: VotosProps) {
+function Votos({ post, meuId, votoSalvo, onErro, vertical = false }: VotosProps) {
     const [saldo, setSaldo] = useState(post.karmaTotal ?? 0)
     // undefined: ainda não votou nesta visita, então vale o voto salvo no servidor
     const [votoAgora, setVotoAgora] = useState<Voto | null | undefined>(undefined)
@@ -64,21 +126,28 @@ function Votos({ post, meuId, votoSalvo, onErro }: VotosProps) {
         }
     }
 
+    const seta = "grid size-8 cursor-pointer place-items-center rounded-full text-muted-foreground transition-colors hover:bg-surface-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
     return (
-        <>
-            <button type="button" onClick={() => votar("UP")} disabled={proprio} aria-pressed={meuVoto === "UP"} aria-label="Gostei" className={cn(botaoAcao, meuVoto === "UP" && "bg-accent/10 text-accent")}>
+        <div className={cn("flex items-center", vertical ? "flex-col gap-0.5" : "gap-1")}>
+            <button type="button" onClick={() => votar("UP")} disabled={proprio} aria-pressed={meuVoto === "UP"} aria-label="Útil" className={cn(seta, meuVoto === "UP" && "bg-accent/10 text-accent")}>
                 <ArrowBigUp className={cn("size-5", meuVoto === "UP" && "fill-current")} aria-hidden="true" />
             </button>
-            <span className="type-label min-w-6 text-center text-foreground" aria-label={`Saldo de votos: ${saldo}`}>{saldo}</span>
-            <button type="button" onClick={() => votar("DOWN")} disabled={proprio} aria-pressed={meuVoto === "DOWN"} aria-label="Não gostei" className={cn(botaoAcao, meuVoto === "DOWN" && "bg-accent/10 text-accent")}>
+            <span
+                className={cn("type-label min-w-6 text-center tabular-nums", saldo > 0 ? "text-foreground" : "text-muted-foreground")}
+                aria-label={`Saldo de votos: ${saldo}`}
+            >
+                {saldo}
+            </span>
+            <button type="button" onClick={() => votar("DOWN")} disabled={proprio} aria-pressed={meuVoto === "DOWN"} aria-label="Não útil" className={cn(seta, meuVoto === "DOWN" && "bg-accent/10 text-accent")}>
                 <ArrowBigDown className={cn("size-5", meuVoto === "DOWN" && "fill-current")} aria-hidden="true" />
             </button>
-        </>
+        </div>
     )
 }
 
 type PublicacaoProps = {
     post: ForumPost
+    categoria?: ForumCategory
     /** Id do usuário logado no backend; null para visitante. */
     meuId: string | null
     /** Votos já dados pelo usuário, por id de publicação ou resposta. */
@@ -88,10 +157,12 @@ type PublicacaoProps = {
     onRemovida: () => void
 }
 
-function Publicacao({ post, meuId, votos, onExcluir, onRemovida }: PublicacaoProps) {
+function Publicacao({ post, categoria, meuId, votos, onExcluir, onRemovida }: PublicacaoProps) {
     const [aberta, setAberta] = useState(false)
     const longa = post.content.length > 320
     const minha = meuId === post.userId
+
+    const ehDuvida = categoria?.slug === "duvidas"
 
     const [respostas, setRespostas] = useState<ForumPost[] | null>(null)
     const [totalRespostas, setTotalRespostas] = useState(post.replyCount ?? 0)
@@ -127,95 +198,131 @@ function Publicacao({ post, meuId, votos, onExcluir, onRemovida }: PublicacaoPro
     }
 
     return (
-        <article className="rounded-xl border border-border bg-surface p-5">
-            <p className="type-caption font-semibold uppercase tracking-wide text-accent">{post.categoryName}</p>
-            <h2 className="type-h3 mt-1 text-foreground">{post.title}</h2>
-            <p className="type-caption mt-1 text-muted-foreground">
-                {post.userName} · {dataCurta(post.createdAt)}
-            </p>
-            <p className={cn("type-body mt-3 whitespace-pre-line text-foreground", longa && !aberta && "line-clamp-4")}>{post.content}</p>
-            {longa && (
-                <button type="button" onClick={() => setAberta(!aberta)} className="type-label mt-2 text-primary hover:underline">
-                    {aberta ? "Mostrar menos" : "Ler mais"}
-                </button>
-            )}
-
-            <div className="mt-4 flex flex-wrap items-center gap-1 border-t border-border pt-3">
-                <Votos post={post} meuId={meuId} votoSalvo={votos[post.id] ?? null} onErro={setErro} />
-                <button type="button" onClick={alternarRespostas} aria-expanded={mostrarRespostas} className={cn(botaoAcao, "ml-2")}>
-                    <MessageSquare className="size-4" aria-hidden="true" />
-                    {totalRespostas === 1 ? "1 resposta" : `${totalRespostas} respostas`}
-                </button>
-                {minha && (
-                    <button type="button" onClick={() => onExcluir(post, onRemovida)} className={cn(botaoAcao, "ml-auto hover:text-destructive")}>
-                        <Trash2 className="size-4" aria-hidden="true" />
-                        Excluir
-                    </button>
-                )}
+        <article className="flex gap-3 rounded-2xl border border-border bg-surface p-4 transition-colors hover:border-primary/30 sm:gap-4 sm:p-5">
+            <div className="-ml-1 hidden sm:block">
+                <Votos post={post} meuId={meuId} votoSalvo={votos[post.id] ?? null} onErro={setErro} vertical />
             </div>
 
-            {erro && (
-                <p role="alert" className="type-body-small mt-3 text-destructive">
-                    {erro}
-                </p>
-            )}
+            <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                    <span className="type-caption inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 font-semibold text-primary">
+                        <IconeCategoria slug={categoria?.slug} className="size-3.5" />
+                        {post.categoryName}
+                    </span>
+                    {ehDuvida &&
+                        (totalRespostas === 0 ? (
+                            <StatusBadge tone="warning">Aguardando resposta</StatusBadge>
+                        ) : (
+                            <StatusBadge tone="success">Respondida</StatusBadge>
+                        ))}
+                </div>
 
-            {mostrarRespostas && (
-                <div className="mt-4 flex flex-col gap-3">
-                    {!respostas && !erro && <Loader className="py-4" />}
-                    {respostas?.map((resposta) => (
-                        <div key={resposta.id} className="rounded-lg bg-surface-muted px-4 py-3">
-                            <div className="flex items-center justify-between gap-3">
-                                <p className="type-caption text-muted-foreground">
-                                    {resposta.userName} · {dataCurta(resposta.createdAt)}
-                                </p>
-                                {meuId === resposta.userId && (
-                                    <button
-                                        type="button"
-                                        aria-label="Excluir resposta"
-                                        onClick={() =>
-                                            onExcluir(resposta, () => {
-                                                setRespostas((atuais) => atuais?.filter((r) => r.id !== resposta.id) ?? null)
-                                                setTotalRespostas((total) => Math.max(total - 1, 0))
-                                            })
-                                        }
-                                        className="rounded-full p-1.5 text-muted-foreground hover:text-destructive"
-                                    >
-                                        <Trash2 className="size-4" aria-hidden="true" />
-                                    </button>
-                                )}
-                            </div>
-                            <p className="type-body-small mt-1 whitespace-pre-line text-foreground">{resposta.content}</p>
-                            <div className="-ml-2.5 mt-1 flex items-center gap-1">
-                                <Votos post={resposta} meuId={meuId} votoSalvo={votos[resposta.id] ?? null} onErro={setErro} />
-                            </div>
-                        </div>
-                    ))}
-                    {meuId ? (
-                        <form onSubmit={responder} className="flex flex-col gap-2">
-                            <Label htmlFor={`resposta-${post.id}`} className="sr-only">
-                                Sua resposta
-                            </Label>
-                            <Textarea id={`resposta-${post.id}`} rows={2} maxLength={50000} placeholder="Escreva uma resposta" value={texto} onChange={(e) => setTexto(e.target.value)} />
-                            <Button type="submit" size="sm" className="self-end" loading={enviando} disabled={!texto.trim()}>
-                                Responder
-                            </Button>
-                        </form>
-                    ) : (
-                        <a href={ENTRAR} className="type-label text-primary hover:underline">
-                            Entre para responder
-                        </a>
+                <h2 className="type-h3 mt-2 break-words text-foreground">{post.title}</h2>
+
+                <div className="type-caption mt-2 flex items-center gap-2 text-muted-foreground">
+                    <Iniciais nome={post.userName} className="size-6" />
+                    <span className="font-medium text-foreground">{post.userName}</span>
+                    <span aria-hidden="true">·</span>
+                    <time dateTime={post.createdAt}>{tempoAtras(post.createdAt)}</time>
+                </div>
+
+                <p className={cn("type-body mt-3 whitespace-pre-line break-words text-foreground/90", longa && !aberta && "line-clamp-4")}>{post.content}</p>
+                {longa && (
+                    <button type="button" onClick={() => setAberta(!aberta)} className="type-label mt-2 cursor-pointer text-primary hover:underline">
+                        {aberta ? "Mostrar menos" : "Ler mais"}
+                    </button>
+                )}
+
+                <div className="mt-4 flex flex-wrap items-center gap-1 border-t border-border pt-3">
+                    <div className="sm:hidden">
+                        <Votos post={post} meuId={meuId} votoSalvo={votos[post.id] ?? null} onErro={setErro} />
+                    </div>
+                    <button type="button" onClick={alternarRespostas} aria-expanded={mostrarRespostas} className={cn(botaoAcao, "-ml-2.5 max-sm:ml-1")}>
+                        <MessageSquare className="size-4" aria-hidden="true" />
+                        {totalRespostas === 0 ? (ehDuvida ? "Responder" : "Comentar") : totalRespostas === 1 ? "1 resposta" : `${totalRespostas} respostas`}
+                    </button>
+                    {minha && (
+                        <button type="button" onClick={() => onExcluir(post, onRemovida)} className={cn(botaoAcao, "ml-auto hover:text-destructive")}>
+                            <Trash2 className="size-4" aria-hidden="true" />
+                            Excluir
+                        </button>
                     )}
                 </div>
-            )}
+
+                {erro && (
+                    <p role="alert" className="type-body-small mt-3 text-destructive">
+                        {erro}
+                    </p>
+                )}
+
+                {mostrarRespostas && (
+                    <div className="mt-4 flex flex-col gap-3 border-l-2 border-border pl-4">
+                        {!respostas && !erro && <Loader className="py-4" />}
+                        {respostas?.map((resposta) => (
+                            <div key={resposta.id} className="rounded-xl bg-surface-muted/60 px-4 py-3">
+                                <div className="flex items-center justify-between gap-3">
+                                    <p className="type-caption flex items-center gap-2 text-muted-foreground">
+                                        <Iniciais nome={resposta.userName} className="size-5 text-[0.625rem]" />
+                                        <span className="font-medium text-foreground">{resposta.userName}</span>
+                                        <span aria-hidden="true">·</span>
+                                        {tempoAtras(resposta.createdAt)}
+                                    </p>
+                                    {meuId === resposta.userId && (
+                                        <button
+                                            type="button"
+                                            aria-label="Excluir resposta"
+                                            onClick={() =>
+                                                onExcluir(resposta, () => {
+                                                    setRespostas((atuais) => atuais?.filter((r) => r.id !== resposta.id) ?? null)
+                                                    setTotalRespostas((total) => Math.max(total - 1, 0))
+                                                })
+                                            }
+                                            className="cursor-pointer rounded-full p-1.5 text-muted-foreground hover:text-destructive"
+                                        >
+                                            <Trash2 className="size-4" aria-hidden="true" />
+                                        </button>
+                                    )}
+                                </div>
+                                <p className="type-body-small mt-1.5 whitespace-pre-line break-words text-foreground">{resposta.content}</p>
+                                <div className="-ml-1.5 mt-1">
+                                    <Votos post={resposta} meuId={meuId} votoSalvo={votos[resposta.id] ?? null} onErro={setErro} />
+                                </div>
+                            </div>
+                        ))}
+                        {meuId ? (
+                            <form onSubmit={responder} className="flex flex-col gap-2">
+                                <Label htmlFor={`resposta-${post.id}`} className="sr-only">
+                                    Sua resposta
+                                </Label>
+                                <Textarea
+                                    id={`resposta-${post.id}`}
+                                    rows={2}
+                                    maxLength={50000}
+                                    placeholder={ehDuvida ? "Ajude com uma resposta" : "Escreva uma resposta"}
+                                    value={texto}
+                                    onChange={(e) => setTexto(e.target.value)}
+                                />
+                                <Button type="submit" size="sm" className="self-end" loading={enviando} disabled={!texto.trim()}>
+                                    Responder
+                                </Button>
+                            </form>
+                        ) : (
+                            <a href={ENTRAR} className="type-label text-primary hover:underline">
+                                Entre para responder
+                            </a>
+                        )}
+                    </div>
+                )}
+            </div>
         </article>
     )
 }
 
 export default function ForumPage() {
     const { isSignedIn } = useUser()
-    const [categorias, setCategorias] = useState<ForumCategory[]>([])
+    const [categorias, setCategorias] = useState<ForumCategory[] | null>(null)
     const [filtro, setFiltro] = useState(TODAS)
+    const [ordem, setOrdem] = useState<Ordem>("recentes")
     const [posts, setPosts] = useState<ForumPost[] | null>(null)
     const [falhou, setFalhou] = useState(false)
 
@@ -229,6 +336,9 @@ export default function ForumPage() {
     const [meuId, setMeuId] = useState<string | null>(null)
     const [votos, setVotos] = useState<Record<string, Voto>>({})
     const [excluindo, setExcluindo] = useState<{ alvo: ForumPost; depois: () => void } | null>(null)
+
+    const porId = useMemo(() => new Map((categorias ?? []).map((c) => [c.id, c])), [categorias])
+    const duvidas = categorias?.find((c) => c.slug === "duvidas")
 
     useEffect(() => {
         if (!isSignedIn) return
@@ -264,16 +374,39 @@ export default function ForumPage() {
     }, [carregar])
 
     useEffect(() => {
-        forumService.categorias().then(setCategorias).catch(() => {})
+        let ativo = true
+        // O backend no Render pode estar acordando: sem categorias ninguém consegue publicar
+        void (async () => {
+            for (let tentativa = 0; tentativa < 4 && ativo; tentativa++) {
+                try {
+                    const lista = await forumService.categorias()
+                    if (ativo) setCategorias(lista)
+                    return
+                } catch {
+                    await new Promise((resolve) => setTimeout(resolve, 4000 * (tentativa + 1)))
+                }
+            }
+            if (ativo) setCategorias([])
+        })()
+        return () => {
+            ativo = false
+        }
     }, [])
 
-    function abrirFormulario() {
+    const visiveis = useMemo(() => {
+        const lista = [...(posts ?? [])]
+        if (ordem === "alta") return lista.sort((a, b) => (b.karmaTotal ?? 0) + (b.replyCount ?? 0) - ((a.karmaTotal ?? 0) + (a.replyCount ?? 0)))
+        if (ordem === "sem-resposta") return lista.filter((p) => (p.replyCount ?? 0) === 0)
+        return lista
+    }, [posts, ordem])
+
+    function abrirFormulario(categoriaInicial?: string) {
         if (!isSignedIn) {
             window.location.assign(ENTRAR)
             return
         }
         setErro(null)
-        setCategoriaId(filtro || categorias[0]?.id || "")
+        setCategoriaId(categoriaInicial || filtro || categorias?.[0]?.id || "")
         setEscrevendo(true)
     }
 
@@ -294,47 +427,163 @@ export default function ForumPage() {
         }
     }
 
+    const perguntando = categoriaId !== "" && categoriaId === duvidas?.id
+
     return (
-        <main className="mx-auto w-full max-w-3xl px-4 pb-16 pt-4 sm:px-6">
-            <div className="flex flex-wrap items-end justify-between gap-4">
-                <PageHeading title="Notícias e novidades" back={{ href: "/", label: "Início" }} />
-                <Button variant="accent" onClick={abrirFormulario} disabled={categorias.length === 0}>
-                    <PenLine aria-hidden="true" />
-                    Publicar
-                </Button>
-            </div>
+        <main className="mx-auto w-full max-w-6xl px-4 pb-16 pt-4 sm:px-6">
+            <BackButton href="/" label="Início" className="-ml-2.5" />
 
-            <div role="group" aria-label="Categorias" className="mt-6 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none]">
-                {[{ id: TODAS, name: "Tudo" }, ...categorias].map((categoria) => (
-                    <button
-                        key={categoria.id}
-                        type="button"
-                        aria-pressed={filtro === categoria.id}
-                        onClick={() => setFiltro(categoria.id)}
-                        className={cn(
-                            "type-label h-9 shrink-0 rounded-full border px-4 transition-colors",
-                            filtro === categoria.id ? "border-accent bg-accent text-accent-foreground" : "border-border bg-surface text-muted-foreground hover:text-foreground",
-                        )}
-                    >
-                        {categoria.name}
-                    </button>
-                ))}
-            </div>
-
-            <div className="mt-6 flex flex-col gap-4">
-                {falhou && <ErrorState onRetry={carregar} />}
-                {!falhou && !posts && <Loader className="py-16" />}
-                {posts?.length === 0 && <EmptyState icon={Newspaper} title="Nada publicado ainda" description="Seja a primeira pessoa a publicar." />}
-                {posts?.map((post) => (
-                    <Publicacao
-                        key={post.id}
-                        post={post}
-                        meuId={isSignedIn ? meuId : null}
-                        votos={votos}
-                        onExcluir={(alvo, depois) => setExcluindo({ alvo, depois })}
-                        onRemovida={() => setPosts((atuais) => atuais?.filter((p) => p.id !== post.id) ?? null)}
+            {/* ===== Topo ===== */}
+            <section aria-labelledby="comunidade-title" className="mt-3 overflow-hidden rounded-2xl border border-border bg-surface">
+                <div className="relative px-5 py-7 sm:px-8 sm:py-9">
+                    <div
+                        aria-hidden="true"
+                        className="pointer-events-none absolute inset-0 bg-[radial-gradient(90%_120%_at_100%_0%,color-mix(in_oklch,var(--primary)_22%,transparent)_0%,transparent_60%)]"
                     />
-                ))}
+                    <div className="relative flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+                        <div className="max-w-xl">
+                            <p className="type-caption flex items-center gap-1.5 font-semibold uppercase tracking-[0.16em] text-primary">
+                                <Users className="size-4" aria-hidden="true" />
+                                Comunidade Imperium
+                            </p>
+                            <h1 id="comunidade-title" className="type-h1 mt-2 text-foreground">
+                                Notícias, dúvidas e conversa
+                            </h1>
+                            <p className="type-body mt-2 text-muted-foreground">
+                                Fique por dentro das novidades, tire dúvidas de mecânica e equipamento e ajude outros ciclistas.
+                            </p>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                            {duvidas && (
+                                <Button onClick={() => abrirFormulario(duvidas.id)}>
+                                    <CircleHelp aria-hidden="true" />
+                                    Fazer uma pergunta
+                                </Button>
+                            )}
+                            <Button variant="outline" onClick={() => abrirFormulario()} disabled={!categorias?.length}>
+                                <PenLine aria-hidden="true" />
+                                Publicar
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <div className="mt-8 grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_18rem]">
+                <div className="min-w-0">
+                    {/* Categorias */}
+                    <div role="group" aria-label="Categorias" className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:mx-0 sm:px-0">
+                        {categorias === null
+                            ? Array.from({ length: 5 }, (_, i) => <Skeleton key={i} className="h-9 w-24 shrink-0 rounded-full" />)
+                            : [{ id: TODAS, name: "Tudo", slug: "" } as ForumCategory, ...categorias].map((categoria) => {
+                                  const slug = categoria.id === TODAS ? undefined : categoria.slug
+                                  const ativa = filtro === categoria.id
+                                  return (
+                                      <button
+                                          key={categoria.id}
+                                          type="button"
+                                          aria-pressed={ativa}
+                                          onClick={() => setFiltro(categoria.id)}
+                                          className={cn(
+                                              "type-label inline-flex h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-full border px-3.5 transition-colors",
+                                              ativa
+                                                  ? "border-foreground bg-foreground text-background"
+                                                  : "border-border bg-surface text-muted-foreground hover:border-primary/40 hover:text-foreground",
+                                          )}
+                                      >
+                                          <IconeCategoria slug={slug} className="size-4" />
+                                          {categoria.name}
+                                      </button>
+                                  )
+                              })}
+                    </div>
+
+                    {/* Ordenação */}
+                    <div role="group" aria-label="Ordenar" className="mt-4 flex gap-5 border-b border-border">
+                        {ORDENS.map(({ value, label, icon: Icone }) => (
+                            <button
+                                key={value}
+                                type="button"
+                                aria-pressed={ordem === value}
+                                onClick={() => setOrdem(value)}
+                                className={cn(
+                                    "type-label -mb-px inline-flex cursor-pointer items-center gap-1.5 border-b-2 pb-3 pt-1 transition-colors",
+                                    ordem === value ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground",
+                                )}
+                            >
+                                <Icone className="size-4" aria-hidden="true" />
+                                {label}
+                            </button>
+                        ))}
+                    </div>
+
+                    <div className="mt-5 flex flex-col gap-4">
+                        {falhou && <ErrorState onRetry={carregar} />}
+                        {!falhou && !posts && Array.from({ length: 3 }, (_, i) => <Skeleton key={i} className="h-40 rounded-2xl" />)}
+                        {posts && visiveis.length === 0 && (
+                            <EmptyState
+                                icon={ordem === "sem-resposta" ? CircleHelp : MessagesSquare}
+                                title={ordem === "sem-resposta" ? "Tudo respondido por aqui" : "Nada publicado ainda"}
+                                description={ordem === "sem-resposta" ? "Todas as publicações já têm resposta." : "Comece a conversa: faça uma pergunta ou compartilhe uma novidade."}
+                                className="rounded-2xl border border-dashed border-border"
+                            />
+                        )}
+                        {visiveis.map((post) => (
+                            <Publicacao
+                                key={post.id}
+                                post={post}
+                                categoria={porId.get(post.categoryId)}
+                                meuId={isSignedIn ? meuId : null}
+                                votos={votos}
+                                onExcluir={(alvo, depois) => setExcluindo({ alvo, depois })}
+                                onRemovida={() => setPosts((atuais) => atuais?.filter((p) => p.id !== post.id) ?? null)}
+                            />
+                        ))}
+                    </div>
+                </div>
+
+                {/* ===== Lateral ===== */}
+                <aside className="flex flex-col gap-4 lg:sticky lg:top-24">
+                    <section aria-labelledby="regras-title" className="rounded-2xl border border-border bg-surface p-5">
+                        <h2 id="regras-title" className="type-label text-foreground">
+                            Boas práticas
+                        </h2>
+                        <ul className="type-body-small mt-3 flex flex-col gap-2.5 text-muted-foreground">
+                            <li>Pesquise antes: sua dúvida pode já ter resposta.</li>
+                            <li>No título, diga o problema e o modelo da bike ou da peça.</li>
+                            <li>Vote nas respostas úteis para elas subirem.</li>
+                            <li>Respeito sempre. Golpes e ofensas são removidos.</li>
+                        </ul>
+                    </section>
+
+                    {categorias && categorias.length > 0 && (
+                        <section aria-labelledby="cats-title" className="hidden rounded-2xl border border-border bg-surface p-5 lg:block">
+                            <h2 id="cats-title" className="type-label text-foreground">
+                                Categorias
+                            </h2>
+                            <ul className="mt-3 flex flex-col gap-1">
+                                {categorias.map((c) => {
+
+                                    return (
+                                        <li key={c.id}>
+                                            <button
+                                                type="button"
+                                                onClick={() => setFiltro(c.id)}
+                                                className="flex w-full cursor-pointer items-start gap-3 rounded-lg px-2 py-2 text-left transition-colors hover:bg-surface-muted"
+                                            >
+                                                <IconeCategoria slug={c.slug} className="mt-0.5 size-4 shrink-0 text-primary" />
+                                                <span className="min-w-0">
+                                                    <span className="type-label block text-foreground">{c.name}</span>
+                                                    {c.description && <span className="type-caption block text-muted-foreground">{c.description}</span>}
+                                                </span>
+                                            </button>
+                                        </li>
+                                    )
+                                })}
+                            </ul>
+                        </section>
+                    )}
+                </aside>
             </div>
 
             <AlertDialog open={excluindo !== null} onOpenChange={(open) => !open && setExcluindo(null)}>
@@ -353,13 +602,15 @@ export default function ForumPage() {
             <Dialog open={escrevendo} onOpenChange={(open) => !enviando && setEscrevendo(open)}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Nova publicação</DialogTitle>
-                        <DialogDescription>Aparece para todos assim que você publicar.</DialogDescription>
+                        <DialogTitle>{perguntando ? "Fazer uma pergunta" : "Nova publicação"}</DialogTitle>
+                        <DialogDescription>
+                            {perguntando ? "Explique o problema com detalhes: quanto mais claro, melhores as respostas." : "Aparece para todos assim que você publicar."}
+                        </DialogDescription>
                     </DialogHeader>
                     <form onSubmit={publicar} className="flex flex-col gap-4">
-                        <fieldset className="grid grid-cols-2 gap-2">
+                        <fieldset className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                             <legend className="type-label mb-2 text-foreground">Categoria</legend>
-                            {categorias.map((categoria) => (
+                            {(categorias ?? []).map((categoria) => (
                                 <RadioCard
                                     key={categoria.id}
                                     name="categoria"
@@ -372,11 +623,19 @@ export default function ForumPage() {
                             ))}
                         </fieldset>
                         <div className="flex flex-col gap-2">
-                            <Label htmlFor="post-titulo">Título</Label>
-                            <Input id="post-titulo" required minLength={5} maxLength={255} value={titulo} onChange={(e) => setTitulo(e.target.value)} />
+                            <Label htmlFor="post-titulo">{perguntando ? "Sua pergunta" : "Título"}</Label>
+                            <Input
+                                id="post-titulo"
+                                required
+                                minLength={5}
+                                maxLength={255}
+                                placeholder={perguntando ? "Ex.: Freio hidráulico Shimano MT200 perdendo força" : ""}
+                                value={titulo}
+                                onChange={(e) => setTitulo(e.target.value)}
+                            />
                         </div>
                         <div className="flex flex-col gap-2">
-                            <Label htmlFor="post-conteudo">Texto</Label>
+                            <Label htmlFor="post-conteudo">{perguntando ? "Detalhes" : "Texto"}</Label>
                             <Textarea id="post-conteudo" required rows={6} maxLength={50000} value={conteudo} onChange={(e) => setConteudo(e.target.value)} />
                         </div>
                         {erro && (
@@ -389,7 +648,7 @@ export default function ForumPage() {
                                 Cancelar
                             </Button>
                             <Button type="submit" loading={enviando} disabled={!categoriaId || titulo.trim().length < 5 || !conteudo.trim()}>
-                                Publicar
+                                {perguntando ? "Perguntar" : "Publicar"}
                             </Button>
                         </DialogFooter>
                     </form>

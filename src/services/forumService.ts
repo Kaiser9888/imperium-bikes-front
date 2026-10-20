@@ -3,6 +3,8 @@ import api from "@/lib/api"
 export interface ForumCategory {
     id: string
     name: string
+    slug?: string
+    description?: string | null
 }
 
 export interface ForumPost {
