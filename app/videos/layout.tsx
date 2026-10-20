@@ -15,6 +15,8 @@ import {
 } from "@clerk/nextjs";
 import { useState, useEffect, useRef } from "react";
 
+import { Logo, OrcaMark } from "@/components/layout/logo";
+
 export default function VideosLayout({
                                        children,
                                      }: {
@@ -25,6 +27,7 @@ export default function VideosLayout({
   // Só o feed é imersivo; /videos/memento/upload é um formulário comum.
   const isMemento = pathname === "/videos/memento";
   const isSearchPage = pathname === "/videos/buscar";
+  const isMementoArea = pathname.startsWith("/videos/memento");
 
   const { isSignedIn } = useAuth();
 
@@ -78,20 +81,15 @@ export default function VideosLayout({
         >
           <div className={`flex h-full items-center px-3 sm:px-6 lg:px-8 ${isMemento ? "justify-start" : "gap-2"}`}>
             {/* LOGO */}
-            <Link href="/videos" className="flex shrink-0 items-center gap-2" aria-label="Página inicial de vídeos">
-              <img src="/logo1.png" alt="Imperium" className="h-6 w-auto sm:h-7" />
-              <span
-                className="font-blackletter text-sm tracking-wide sm:text-2xl"
-                style={{
-                  fontFamily: "var(--font-caesar)",
-                  color: isMemento ? "#FFFFFF" : "#0b0F19",
-                  textShadow: isMemento ? "none" : "0 0 1px #FFF, 1px 1px 0px #FFF, 2px 2px 4px rgba(11, 15, 25, 0.3)",
-                  letterSpacing: "0.05em",
-                }}
-              >
-                Imperium
-              </span>
-            </Link>
+            {/* Mesma marca do site; nas páginas do Memento, o nome do formato curto */}
+            {isMementoArea ? (
+              <Link href="/videos/memento" className="flex shrink-0 items-center gap-2.5" aria-label="Memento">
+                <OrcaMark priority className="h-7" />
+                <span className="text-sm font-extrabold uppercase tracking-[0.35em] text-foreground">Memento</span>
+              </Link>
+            ) : (
+              <Logo className="[&_.brand-name]:text-lg sm:[&_.brand-name]:text-xl" />
+            )}
 
             {/* ÁREA DIREITA */}
             <div className="ml-auto flex shrink-0 items-center gap-1">
