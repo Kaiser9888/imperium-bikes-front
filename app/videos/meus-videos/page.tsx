@@ -173,11 +173,11 @@ export default function MeusVideosPage() {
               <div className="flex items-end gap-4">
                 {user?.imageUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element -- avatar do Clerk
-                  <img src={user.imageUrl} alt="" className="size-20 shrink-0 rounded-full bg-surface-muted object-cover ring-4 ring-surface" />
+                  <img src={user.imageUrl} alt="" className="relative size-20 shrink-0 rounded-full bg-surface-muted object-cover ring-4 ring-surface" />
                 ) : (
-                  <Skeleton className="size-20 shrink-0 rounded-full ring-4 ring-surface" />
+                  <Skeleton className="relative size-20 shrink-0 rounded-full ring-4 ring-surface" />
                 )}
-                <div className="min-w-0 pb-1">
+                <div className="relative min-w-0 pb-1">
                   <p className="type-caption font-semibold uppercase tracking-[0.16em] text-primary">Central de Vídeos</p>
                   <h1 id="central-title" className="type-h2 truncate text-foreground">
                     {user?.fullName || user?.username || "Seu canal"}
