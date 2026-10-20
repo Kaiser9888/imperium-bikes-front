@@ -8,11 +8,13 @@ type HomeSectionProps = {
     /** Só informe quando a página de destino existir de verdade. */
     href?: string
     hrefLabel?: string
+    /** "cta": link em caixa alta com seta e traço vermelho (.cta-link). */
+    linkStyle?: "pill" | "cta"
     children: React.ReactNode
 }
 
 /** Cabeçalho padrão das seções da Home: título sobre um filete e o atalho "Ver todos". */
-export function HomeSection({ id, title, description, href, hrefLabel = "Ver todos", children }: HomeSectionProps) {
+export function HomeSection({ id, title, description, href, hrefLabel = "Ver todos", linkStyle = "pill", children }: HomeSectionProps) {
     const titleId = `${id}-title`
     return (
         <section aria-labelledby={titleId} className="flex flex-col gap-5">
@@ -23,7 +25,12 @@ export function HomeSection({ id, title, description, href, hrefLabel = "Ver tod
                     </h2>
                     {description && <p className="type-body-small mt-1 text-muted-foreground">{description}</p>}
                 </div>
-                {href && (
+                {href && linkStyle === "cta" && (
+                    <Link href={href} className="cta-link shrink-0">
+                        {hrefLabel}
+                    </Link>
+                )}
+                {href && linkStyle === "pill" && (
                     <Link
                         href={href}
                         className="type-label group inline-flex h-10 shrink-0 items-center gap-1.5 rounded-full border border-border px-4 text-foreground transition-colors hover:bg-surface-muted"

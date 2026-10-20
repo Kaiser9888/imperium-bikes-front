@@ -45,6 +45,12 @@ const OPCOES_FIXAS: Partial<Record<Filtro, string[]>> = {
   condition: ["NEW", "USED"],
 }
 
+/** Modalidades e esportes numa lista só, como na Home, mas filtrando aqui mesmo. */
+const CATEGORIAS: { campo: Filtro; valor: string; label: string }[] = [
+  ...modalidades.map((m) => ({ campo: "modality" as const, valor: m.slug, label: m.label })),
+  ...esportes.map((e) => ({ campo: "sport" as const, valor: e.slug, label: e.nome })),
+]
+
 type Estado =
   | { status: "idle" }
   | { status: "loading" }
@@ -415,15 +421,15 @@ function Inicio({
 
       {historico.length > 0 && (
         <section aria-labelledby="recentes-title">
-          <div className="flex items-center justify-between">
-            <h2 id="recentes-title" className="type-label uppercase tracking-wider text-muted-foreground">
+          <div className="flex items-center justify-between border-b border-border pb-3">
+            <h2 id="recentes-title" className="type-h2 text-foreground">
               Buscas recentes
             </h2>
             <button type="button" onClick={onLimparHistorico} className="type-label cursor-pointer text-primary hover:underline">
               Limpar
             </button>
           </div>
-          <ul className="mt-3 flex flex-wrap gap-2">
+          <ul className="mt-5 flex flex-wrap gap-2">
             {historico.map((termo) => (
               <li key={termo}>
                 <button
@@ -440,39 +446,16 @@ function Inicio({
         </section>
       )}
 
-      <section aria-labelledby="modalidades-title">
-        <h2 id="modalidades-title" className="type-label uppercase tracking-wider text-muted-foreground">
-          Explorar por modalidade
+      {/* Mesmo visual das Categorias da Home: texto com traço vermelho no hover */}
+      <section aria-labelledby="categorias-title">
+        <h2 id="categorias-title" className="type-h2 border-b border-border pb-3 text-foreground">
+          Explorar por categoria
         </h2>
-        <ul className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
-          {modalidades.map((m) => (
-            <li key={m.slug}>
-              <button
-                type="button"
-                onClick={() => onFiltro("modality", m.slug)}
-                className="group flex w-full cursor-pointer flex-col items-start gap-1 rounded-2xl border border-border bg-surface p-4 text-left transition-colors hover:border-primary/40"
-              >
-                <span className="type-h3 text-foreground group-hover:text-primary">{m.label}</span>
-                <span className="type-caption line-clamp-1 text-muted-foreground">{m.tipos.slice(0, 3).join(", ")}</span>
-              </button>
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      <section aria-labelledby="esportes-title">
-        <h2 id="esportes-title" className="type-label uppercase tracking-wider text-muted-foreground">
-          Outros esportes
-        </h2>
-        <ul className="mt-3 flex flex-wrap gap-2">
-          {esportes.map((e) => (
-            <li key={e.slug}>
-              <button
-                type="button"
-                onClick={() => onFiltro("sport", e.slug)}
-                className="type-label cursor-pointer rounded-full border border-border bg-surface px-4 py-2 text-foreground transition-colors hover:border-primary/40 hover:text-primary"
-              >
-                {e.nome}
+        <ul className="mt-5 flex flex-wrap gap-x-7 gap-y-2">
+          {CATEGORIAS.map(({ campo, valor, label }) => (
+            <li key={`${campo}-${valor}`}>
+              <button type="button" onClick={() => onFiltro(campo, valor)} className="underline-btn underline-btn--ink inline-block">
+                <span className="block py-1.5">{label}</span>
               </button>
             </li>
           ))}

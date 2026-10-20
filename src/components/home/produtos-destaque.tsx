@@ -72,7 +72,7 @@ export function ProdutosDestaque() {
     }
 
     return (
-        <HomeSection id="marketplace" title="Anúncios recentes" href="/produtos" hrefLabel="Ver todos">
+        <HomeSection id="marketplace" title="Anúncios recentes" href="/produtos" hrefLabel="Ver todos" linkStyle="cta">
             {estado.status === "loading" && (
                 <div className={gridClasses} aria-busy="true">
                     {Array.from({ length: 4 }, (_, i) => (

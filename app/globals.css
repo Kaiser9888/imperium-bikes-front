@@ -704,6 +704,59 @@ mux-player.mux-player-cover {
     opacity: 0.6;
 }
 
+/*
+  Link "Ver todos" (Uiverse.io, joe-herbert): caixa alta espaçada, seta ⇝ e
+  um traço vermelho que cresce da esquerda no hover.
+*/
+.cta-link {
+    position: relative;
+    display: inline-block;
+    margin-right: 2.25rem;
+    padding: 0 0 0.625rem 2px;
+    border: none;
+    background: none;
+    color: var(--foreground);
+    font-size: 0.875rem;
+    font-weight: 500;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: transform 0.3s ease;
+}
+.cta-link::before {
+    content: "\21DD";
+    position: absolute;
+    top: -12px;
+    right: -10px;
+    font-size: 28px;
+    letter-spacing: 0;
+    transform: translateX(100%);
+}
+.cta-link::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background-color: var(--accent);
+    transform: scaleX(0);
+    transform-origin: bottom right;
+    transition: transform 0.25s ease-out;
+}
+.cta-link:hover::after,
+.cta-link:focus-visible::after {
+    transform: scaleX(1);
+    transform-origin: bottom left;
+}
+.cta-link:active {
+    transform: scale(0.9);
+}
+.cta-link:focus-visible {
+    outline: none;
+}
+
 @layer components {
     /* Nome da marca: sempre vermelho, na fonte Caesar Dressing */
     .brand-name {
