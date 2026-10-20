@@ -3,7 +3,7 @@ import { HomeSection } from "@/components/home/home-section"
 
 export function CategoriasSection() {
     return (
-        <HomeSection id="categorias" title="Categorias" href="/modalidades" hrefLabel="Ver todas">
+        <HomeSection id="categorias" title="Categorias" href="/modalidades" hrefLabel="Ver todas" linkStyle="cta">
             <CategoriasLista />
         </HomeSection>
     )
