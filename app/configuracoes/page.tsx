@@ -7,6 +7,7 @@ import { ChevronRight, Megaphone, Monitor, Moon, Sun, UserRound, type LucideIcon
 import { useTheme } from "next-themes"
 
 import { AppShell } from "@/components/layout/app-shell"
+import { InstalarApp } from "@/components/layout/instalar-app"
 import { PageHeading } from "@/components/layout/page-heading"
 import { Button } from "@/components/ui/button"
 import { RadioCard } from "@/components/ui/radio-group"
@@ -51,6 +52,8 @@ export default function ConfiguracoesPage() {
                         ))}
                     </div>
                 </section>
+
+                <InstalarApp />
 
                 {isSignedIn && (
                     <section aria-labelledby="conta-title" className="mt-10">

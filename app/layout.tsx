@@ -1,7 +1,7 @@
 import { Analytics } from '@vercel/analytics/next'
 import { ClerkProvider } from '@clerk/nextjs'
 import { ptBR } from '@clerk/localizations'
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Caesar_Dressing, Geist } from 'next/font/google'
 import { ThemeProvider } from 'next-themes'
 import { AppShellProvider } from '@/components/layout/app-shell'
@@ -24,7 +24,29 @@ const caesarDressing = Caesar_Dressing({
 export const metadata: Metadata = {
   title: 'Imperium Bikes',
   description: 'Bikes, peças, eventos e vídeos de ciclismo em um só lugar.',
-  icons: { icon: '/favicon.ico' },
+  applicationName: 'Imperium Bikes',
+  icons: {
+    icon: [{ url: '/favicon.ico' }, { url: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' }],
+    apple: [{ url: '/icons/apple-touch-icon.png', sizes: '180x180' }],
+  },
+  // iPhone: "Adicionar à Tela de Início" abre em tela cheia, com o nome curto
+  appleWebApp: {
+    capable: true,
+    title: 'Imperium',
+    // "default": o conteúdo começa abaixo do relógio/entalhe (translúcido jogaria os
+    // cabeçalhos para baixo da barra de status)
+    statusBarStyle: 'default',
+  },
+  formatDetection: { telephone: false },
+}
+
+// Cor da barra do sistema no app instalado, acompanhando o tema
+export const viewport: Viewport = {
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#fcfcfd' },
+    { media: '(prefers-color-scheme: dark)', color: '#0e131b' },
+  ],
+  viewportFit: 'cover',
 }
 
 export default function RootLayout({
