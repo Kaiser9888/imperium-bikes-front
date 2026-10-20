@@ -4,24 +4,26 @@ import axios from "axios"
 import Link from "next/link"
 import { useCallback, useEffect, useRef, useState } from "react"
 import { useUser } from "@clerk/nextjs"
-import { Camera, MapPin, Megaphone, Pencil, Settings, Store, UserRound } from "lucide-react"
+import { Camera, Pencil, Store, UserRound } from "lucide-react"
 
 import { AppShell } from "@/components/layout/app-shell"
-import { ProdutoGrid } from "@/components/perfil/ProdutoGrid"
-import { SponsorBanners, type Sponsor } from "@/components/perfil/SponsorBanners"
+import { PerfilView, PerfilViewSkeleton, type PerfilResumo } from "@/components/perfil/PerfilView"
+import type { Sponsor } from "@/components/perfil/SponsorBanners"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { EmptyState } from "@/components/ui/empty-state"
 import { ErrorState } from "@/components/ui/error-state"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Skeleton } from "@/components/ui/skeleton"
 import { Textarea } from "@/components/ui/textarea"
 import api from "@/lib/api"
 import { sellerProductService, type ProdutoItem } from "@/services/publish/seller-products.service"
 
 type Perfil = { fullName: string; bio: string; city: string; state: string; country: string }
-type Estado = { status: "loading" } | { status: "error" } | { status: "ok"; perfil: Perfil; produtos: ProdutoItem[]; sponsors: Sponsor[] }
+/** Dados do backend que o perfil só exibe (não são editados aqui). */
+type Extras = { id: string; nivel?: string; membroDesde?: string; reputacao?: number; totalAvaliacoes?: number; sponsors: Sponsor[] }
+type Carregado = { status: "ok"; perfil: Perfil; extras: Extras; produtos: ProdutoItem[] }
+type Estado = { status: "loading" } | { status: "error" } | Carregado
 
 /** Mostra o motivo real da falha (status e mensagem do backend) em vez de engolir o erro. */
 function motivoDaFalha(cause: unknown): string {
@@ -31,6 +33,22 @@ function motivoDaFalha(cause: unknown): string {
         return cause.response ? `Erro ${cause.response.status}: ${detalhe}` : "Sem resposta do servidor. Tente novamente."
     }
     return cause instanceof Error ? cause.message : "Não foi possível concluir."
+}
+
+/** Junta os dados editáveis, os do backend e os do Clerk (foto e @usuário). */
+function resumo(
+    { perfil, extras }: Carregado,
+    user: { imageUrl: string; fullName: string | null; username: string | null },
+): PerfilResumo {
+    return {
+        ...extras,
+        nome: perfil.fullName || user.fullName || user.username || "Seu perfil",
+        username: user.username,
+        avatarUrl: user.imageUrl,
+        bio: perfil.bio,
+        cidade: perfil.city,
+        estado: perfil.state,
+    }
 }
 
 export default function PerfilPage() {
@@ -54,7 +72,14 @@ export default function PerfilPage() {
             setEstado({
                 status: "ok",
                 produtos,
-                sponsors: data.sponsors ?? [],
+                extras: {
+                    id: String(sync.data.id),
+                    nivel: data.userLevel,
+                    membroDesde: data.createdAt,
+                    reputacao: data.reputationScore,
+                    totalAvaliacoes: data.totalReviews,
+                    sponsors: data.sponsors ?? [],
+                },
                 perfil: {
                     fullName: data.fullName ?? "",
                     bio: data.bio ?? "",
@@ -118,7 +143,7 @@ export default function PerfilPage() {
                     <EmptyState
                         icon={UserRound}
                         title="Entre para ver seu perfil"
-                        description="Seu perfil reúne seus dados e seus anúncios."
+                        description="Seu perfil reúne seus dados, anúncios, torneios e vídeos."
                         action={
                             <Button asChild size="lg">
                                 <Link href="/sign-in?redirect_url=%2Fperfil">Entrar</Link>
@@ -132,32 +157,20 @@ export default function PerfilPage() {
 
     return (
         <AppShell>
-            <main className="mx-auto w-full max-w-3xl px-4 pb-16 pt-6 sm:px-6 lg:pt-10">
-                {(!isLoaded || estado.status === "loading") && (
-                    <div className="flex items-center gap-5" aria-busy="true">
-                        <Skeleton className="size-24 rounded-full" />
-                        <div className="flex flex-1 flex-col gap-3">
-                            <Skeleton className="h-6 w-1/2" />
-                            <Skeleton className="h-4 w-1/3" />
-                            <Skeleton className="h-4 w-2/3" />
-                        </div>
-                    </div>
-                )}
+            <main className="mx-auto w-full max-w-4xl px-4 pb-16 pt-6 sm:px-6 lg:pt-10">
+                {(!isLoaded || estado.status === "loading") && <PerfilViewSkeleton />}
 
                 {isLoaded && estado.status === "error" && (
                     <ErrorState title="Não foi possível carregar seu perfil" onRetry={carregar} />
                 )}
 
                 {isLoaded && user && estado.status === "ok" && (
-                    <>
-                        <section aria-label="Seus dados" className="flex flex-col gap-5 sm:flex-row sm:items-start">
-                            <div className="relative size-24 shrink-0">
-                                {/* eslint-disable-next-line @next/next/no-img-element -- avatar vem do domínio do Clerk */}
-                                <img
-                                    src={user.imageUrl}
-                                    alt=""
-                                    className="size-24 rounded-full bg-surface-muted object-cover"
-                                />
+                    <PerfilView
+                        dono
+                        perfil={resumo(estado, user)}
+                        produtos={estado.produtos}
+                        avatarExtra={
+                            <>
                                 <Button
                                     type="button"
                                     size="icon"
@@ -165,7 +178,7 @@ export default function PerfilPage() {
                                     loading={enviandoFoto}
                                     onClick={() => fotoInput.current?.click()}
                                     aria-label="Trocar foto de perfil"
-                                    className="absolute -bottom-1 -right-1 rounded-full shadow-sm"
+                                    className="absolute bottom-0 right-0 rounded-full shadow-sm"
                                 >
                                     {!enviandoFoto && <Camera aria-hidden="true" />}
                                 </Button>
@@ -178,70 +191,35 @@ export default function PerfilPage() {
                                     tabIndex={-1}
                                     aria-hidden="true"
                                 />
-                            </div>
-
-                            <div className="min-w-0 flex-1">
-                                <h1 className="type-h1 truncate text-foreground">
-                                    {estado.perfil.fullName || user.fullName || user.username || "Seu perfil"}
-                                </h1>
-                                {user.username && <p className="type-body-small text-muted-foreground">@{user.username}</p>}
-                                {(estado.perfil.city || estado.perfil.state) && (
-                                    <p className="type-body-small mt-2 flex items-center gap-1.5 text-muted-foreground">
-                                        <MapPin className="size-4 shrink-0" aria-hidden="true" />
-                                        {[estado.perfil.city, estado.perfil.state, estado.perfil.country].filter(Boolean).join(", ")}
-                                    </p>
-                                )}
-                                {estado.perfil.bio && (
-                                    <p className="type-body mt-3 whitespace-pre-line text-pretty text-foreground">{estado.perfil.bio}</p>
-                                )}
-                                {erroFoto && (
-                                    <p role="alert" className="type-body-small mt-3 text-destructive">
-                                        {erroFoto}
-                                    </p>
-                                )}
-
-                                <div className="mt-5 flex flex-wrap gap-2">
-                                    <Button
-                                        onClick={() => {
-                                            setErroSalvar(null)
-                                            setEditando({ ...estado.perfil, fullName: estado.perfil.fullName || user.fullName || "" })
-                                        }}
-                                    >
-                                        <Pencil aria-hidden="true" />
-                                        Editar perfil
-                                    </Button>
-                                    <Button asChild variant="outline">
-                                        <Link href="/vendedor">
-                                            <Store aria-hidden="true" />
-                                            Central do vendedor
-                                        </Link>
-                                    </Button>
-                                    <Button asChild variant="outline">
-                                        <Link href="/configuracoes/patrocinadores">
-                                            <Megaphone aria-hidden="true" />
-                                            Patrocinadores
-                                        </Link>
-                                    </Button>
-                                    <Button asChild variant="ghost" size="icon" aria-label="Configurações">
-                                        <Link href="/configuracoes">
-                                            <Settings aria-hidden="true" />
-                                        </Link>
-                                    </Button>
-                                </div>
-                            </div>
-                        </section>
-
-                        <SponsorBanners sponsors={estado.sponsors} />
-
-                        <section aria-labelledby="anuncios-title" className="mt-10">
-                            <h2 id="anuncios-title" className="type-h2 border-b border-border pb-3 text-foreground">
-                                Meus anúncios
-                            </h2>
-                            <div className="pt-6">
-                                <ProdutoGrid produtos={estado.produtos} dono />
-                            </div>
-                        </section>
-                    </>
+                            </>
+                        }
+                        acoes={
+                            <>
+                                <Button
+                                    onClick={() => {
+                                        setErroSalvar(null)
+                                        setEditando({ ...estado.perfil, fullName: estado.perfil.fullName || user.fullName || "" })
+                                    }}
+                                >
+                                    <Pencil aria-hidden="true" />
+                                    Editar perfil
+                                </Button>
+                                <Button asChild variant="outline">
+                                    <Link href="/vendedor">
+                                        <Store aria-hidden="true" />
+                                        Central do vendedor
+                                    </Link>
+                                </Button>
+                            </>
+                        }
+                        aviso={
+                            erroFoto && (
+                                <p role="alert" className="type-body-small mt-3 text-destructive">
+                                    {erroFoto}
+                                </p>
+                            )
+                        }
+                    />
                 )}
             </main>
 

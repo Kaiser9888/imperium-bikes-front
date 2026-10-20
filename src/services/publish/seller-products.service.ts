@@ -77,9 +77,9 @@ export const sellerProductService = {
     }
   },
 
-  // Produtos de qualquer vendedor (perfil público)
+  // Anúncios ativos de qualquer vendedor (perfil público)
   async listBySeller(userId: string): Promise<ProdutoItem[]> {
-    const r = await api.get(`/api/users/${userId}/products`)
+    const r = await api.get("/api/products", { params: { sellerId: userId, size: 60 } })
     return listar(r.data)
   },
 

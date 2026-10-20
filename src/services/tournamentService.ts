@@ -49,6 +49,19 @@ function normalize(item: Raw): Tournament {
     }
 }
 
+/** Inscrição de um usuário num torneio, como aparece no perfil público. */
+export interface Participacao {
+    id: string
+    torneioId: string
+    torneioNome: string
+    categoria: string
+    /** Colocação final; null enquanto não há resultado. */
+    posicao: number | null
+    finalizado: boolean
+    /** Data da inscrição (ISO). */
+    data: string
+}
+
 export interface CriarTorneio {
     name: string
     description: string
@@ -97,6 +110,20 @@ export const tournamentService = {
         const inscricao = (data.content as Raw[]).find((p) => p.tournamentId === tournamentId)
         if (!inscricao) return null
         return inscricao.paymentStatus === "PAID" ? "PAGA" : "PENDENTE"
+    },
+
+    /** Histórico público de torneios de um usuário (perfil), mais recentes primeiro. */
+    async participacoesDe(userId: string): Promise<Participacao[]> {
+        const { data } = await api.get(`/api/tournaments/user/${userId}/participations`, { params: { size: 100 } })
+        return (data.content as Raw[]).map((p) => ({
+            id: String(p.id),
+            torneioId: String(p.tournamentId),
+            torneioNome: String(p.tournamentName ?? ""),
+            categoria: String(p.category ?? ""),
+            posicao: typeof p.rankPosition === "number" ? p.rankPosition : null,
+            finalizado: p.status === "FINISHED" || typeof p.rankPosition === "number",
+            data: String(p.createdAt ?? ""),
+        }))
     },
 
     async inscrever(tournamentId: string): Promise<void> {

@@ -161,6 +161,12 @@ export async function fetchMyVideos(token: string, page: number): Promise<VideoP
     return normalizePage(await getJson<VideoPage>(`/api/videos/my-videos?${params}`, token));
 }
 
+/** Vídeos publicados de um usuário (perfil público). */
+export async function fetchUserVideos(userId: string, page = 0): Promise<VideoPage> {
+    const params = new URLSearchParams({ page: String(page), size: "24" });
+    return normalizePage(await getJson<VideoPage>(`/api/videos/user/${encodeURIComponent(userId)}?${params}`));
+}
+
 /* ================================================================
  * UM VÍDEO
  * ================================================================ */
