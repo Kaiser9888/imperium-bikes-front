@@ -1,5 +1,6 @@
-import { Film, Clapperboard } from "lucide-react";
-import { RadioCard } from "@/components/ui/radio-group";
+import { Check } from "lucide-react";
+
+import { cn } from "@/lib/utils";
 
 export type UploadMode = "long" | "memento";
 
@@ -11,41 +12,58 @@ interface UploadSelectorProps {
 const OPTIONS = [
     {
         id: "long" as const,
-        icon: Film,
-        label: "Vídeo Longo",
-        hint: "Trilhas, tutoriais e reviews com título e hashtags.",
+        label: "Vídeo",
+        hint: "Horizontal. Trilhas, tutoriais, reviews e provas, com título e hashtags.",
+        // Moldura desenhada na proporção do formato
+        frame: "aspect-video w-20",
     },
     {
         id: "memento" as const,
-        icon: Clapperboard,
         label: "Memento",
-        hint: "Clipe vertical rápido. Apenas descrição.",
+        hint: "Vertical e curto, até 3 min. Um momento rápido para o feed.",
+        frame: "aspect-[9/16] w-10",
     },
 ];
 
+/** Escolha do formato: vídeo horizontal ou Memento vertical. */
 export function UploadSelector({ value, onChange }: UploadSelectorProps) {
     return (
         <fieldset className="grid gap-3 sm:grid-cols-2">
-            <legend className="sr-only">Tipo de publicação</legend>
+            <legend className="sr-only">Formato da publicação</legend>
             {OPTIONS.map((opt) => {
                 const active = value === opt.id;
                 return (
-                    <RadioCard
+                    <label
                         key={opt.id}
-                        name="upload-mode"
-                        value={opt.id}
-                        checked={active}
-                        onChange={() => onChange(opt.id)}
-                        className="p-4"
+                        className={cn(
+                            "relative flex cursor-pointer items-center gap-4 rounded-2xl border bg-surface p-4 transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring",
+                            active ? "border-primary bg-primary/5" : "border-border hover:border-primary/40",
+                        )}
                     >
-                      <span className="flex items-start gap-3">
-                        <opt.icon className={`mt-0.5 size-5 ${active ? "text-accent" : "text-muted-foreground"}`} aria-hidden="true" />
-                        <span>
-              <span className="block text-sm font-medium text-foreground">{opt.label}</span>
-              <span className="mt-1 block text-xs font-normal text-muted-foreground">{opt.hint}</span>
-            </span>
-                      </span>
-                    </RadioCard>
+                        <input
+                            type="radio"
+                            name="upload-mode"
+                            value={opt.id}
+                            checked={active}
+                            onChange={() => onChange(opt.id)}
+                            className="sr-only"
+                        />
+                        <span className="grid h-16 w-24 shrink-0 place-items-center rounded-xl bg-surface-muted">
+                            <span
+                                aria-hidden="true"
+                                className={cn("rounded-[3px] border-2", opt.frame, active ? "border-primary bg-primary/15" : "border-muted-foreground/50")}
+                            />
+                        </span>
+                        <span className="min-w-0">
+                            <span className={cn("block text-base font-semibold", active ? "text-primary" : "text-foreground")}>{opt.label}</span>
+                            <span className="type-caption mt-0.5 block text-muted-foreground">{opt.hint}</span>
+                        </span>
+                        {active && (
+                            <span className="absolute right-3 top-3 grid size-5 place-items-center rounded-full bg-primary text-primary-foreground">
+                                <Check className="size-3.5" aria-hidden="true" />
+                            </span>
+                        )}
+                    </label>
                 );
             })}
         </fieldset>

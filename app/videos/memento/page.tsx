@@ -30,6 +30,7 @@ import MuxPlayer from "@mux/mux-player-react";
 import type MuxPlayerElement from "@mux/mux-player";
 
 import { VideoComments } from "@/components/videos/VideoComments";
+import { SubscribeButton } from "@/components/videos/SubscribeButton";
 import { GlitchButton } from "@/components/videos/GlitchButton";
 import { SaveButton } from "@/components/videos/SaveButton";
 import { VideoAvatar } from "@/components/videos/VideoAvatar";
@@ -490,6 +491,7 @@ function MementoFeedView() {
                         <div className="mb-2 flex items-center gap-2">
                             <VideoAvatar name={currentVideo.userName} url={currentVideo.userAvatarUrl} className="size-9 border-2 border-white/40" />
                             <span className="truncate text-sm font-bold text-white">@{currentVideo.userName}</span>
+                            <SubscribeButton userId={currentVideo.userId} variant="dark" className="ml-1 shrink-0 [&_button]:h-8 [&_button]:px-3" />
                         </div>
                         <h1 className="line-clamp-2 text-sm font-semibold leading-snug text-white sm:text-base">
                             {currentVideo.title}

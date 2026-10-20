@@ -131,11 +131,12 @@ export default function VideosLayout({
       {/* ===== CONTEÚDO ===== */}
       <main
         className={`
-          flex-1
           ${
           isMemento
-            ? "h-dvh overflow-hidden pb-16"
-            : `${!isSearchPage ? "pt-14" : ""} pb-16`
+            // Sem flex-1: com ele a altura vinha do flex (indefinida) e o feed ficava com 0px
+            // no celular (o vídeo tocava invisível e o toque para play não pegava)
+            ? "h-dvh flex-none overflow-hidden pb-16"
+            : `flex-1 ${!isSearchPage ? "pt-14" : ""} pb-16`
         }
         `}
       >

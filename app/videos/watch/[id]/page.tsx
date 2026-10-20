@@ -1,21 +1,23 @@
 // app/videos/watch/[id]/page.tsx
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useAuth } from "@clerk/nextjs";
-import { ChevronDown, Radio } from "lucide-react";
+import { Radio } from "lucide-react";
 import { toast } from "sonner";
 import { fetchRelated, fetchVideo, playbackIdFrom, likeVideo, dislikeVideo } from "@/lib/videos/api";
+import { formatViews, timeAgo } from "@/lib/videos/format";
+import { PESO, registrarInteresse } from "@/lib/videos/gosto";
 import type { VideoItem } from "@/lib/videos/types";
 import { VideoPlayer } from "@/components/videos/VideoPlayer";
 import { VideoActions } from "@/components/videos/VideoActions";
-import { VideoStats } from "@/components/videos/VideoStats";
 import { VideoComments } from "@/components/videos/VideoComments";
 import { VideoSidebar } from "@/components/videos/VideoSidebar";
 import { VideoAvatar } from "@/components/videos/VideoAvatar";
 import { VideoDescription } from "@/components/videos/VideoDescription";
+import { SubscribeButton } from "@/components/videos/SubscribeButton";
 import { Loader } from "@/components/ui/loader";
 
 interface Reaction {
@@ -40,6 +42,8 @@ function reactionOf(video: VideoItem | null): Reaction {
     };
 }
 
+const dataCompleta = (iso: string) => new Date(iso).toLocaleDateString("pt-BR", { day: "numeric", month: "long", year: "numeric" });
+
 export default function WatchPage() {
     const { id } = useParams<{ id: string }>();
     const { getToken, isLoaded, isSignedIn } = useAuth();
@@ -48,7 +52,7 @@ export default function WatchPage() {
     const [related, setRelated] = useState<VideoItem[]>([]);
     const [reaction, setReaction] = useState<Reaction>(reactionOf(null));
     const [showMore, setShowMore] = useState(false);
-    const [showComments, setShowComments] = useState(false);
+    const [totalComentarios, setTotalComentarios] = useState<number | null>(null);
 
     // Com token: liked/disliked de quem está vendo e acesso aos próprios vídeos privados
     useEffect(() => {
@@ -60,6 +64,8 @@ export default function WatchPage() {
             if (cancelled) return;
             setLoaded({ id, video: data });
             setReaction(reactionOf(data));
+            // Aprende o gosto: assistir pesa nas hashtags deste vídeo
+            if (data) registrarInteresse(data.hashtags ?? [], PESO.assistiu);
         })();
         fetchRelated(id).then((r) => !cancelled && setRelated(r));
         return () => {
@@ -82,6 +88,8 @@ export default function WatchPage() {
         return () => clearInterval(timer);
     }, [id, waiting, getToken]);
 
+    const aoContarComentarios = useCallback((total: number) => setTotalComentarios(total), []);
+
     async function toggle(kind: "like" | "dislike") {
         if (!video) return;
         if (!isSignedIn) {
@@ -92,6 +100,7 @@ export default function WatchPage() {
         const isLike = kind === "like";
         const wasOn = isLike ? previous.liked : previous.disliked;
         const otherOn = isLike ? previous.disliked : previous.liked;
+        if (isLike && !wasOn) registrarInteresse(video.hashtags ?? [], PESO.curtiu);
 
         // Otimista: atualiza já e corrige com a resposta do servidor
         setReaction({
@@ -119,8 +128,12 @@ export default function WatchPage() {
     if (loading) {
         return (
           <div className="mx-auto max-w-7xl animate-pulse px-4 py-6 sm:px-6 lg:px-8">
-              <div className="aspect-video w-full rounded-lg bg-card" />
+              <div className="aspect-video w-full rounded-xl bg-card" />
               <div className="mt-4 h-6 w-2/3 rounded bg-card" />
+              <div className="mt-4 flex items-center gap-3">
+                  <div className="size-10 rounded-full bg-card" />
+                  <div className="h-4 w-40 rounded bg-card" />
+              </div>
           </div>
         );
     }
@@ -130,6 +143,7 @@ export default function WatchPage() {
     }
 
     const liveWaiting = video.isLive && !video.isLiveNow;
+    const temDescricao = Boolean(video.description?.trim()) || (video.hashtags?.length ?? 0) > 0;
 
     const actions = (
       <VideoActions
@@ -145,9 +159,9 @@ export default function WatchPage() {
 
     return (
       <div className="mx-auto max-w-7xl px-0 sm:px-6 lg:px-8 lg:py-8">
-          <div className="grid gap-6 lg:gap-8 lg:grid-cols-[minmax(0,1fr)_360px]">
-              <div className="space-y-4 lg:space-y-5">
-                  <div className="relative lg:rounded-lg overflow-hidden">
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-8">
+              <div className="min-w-0">
+                  <div className="relative overflow-hidden sm:rounded-xl">
                       {video.status === "PROCESSING" || video.status === "FAILED" || liveWaiting ? (
                           <div role="status" className="flex aspect-video w-full flex-col items-center justify-center gap-3 bg-surface-muted px-6 text-center">
                               {video.status === "PROCESSING" && <Loader label="Processando vídeo" />}
@@ -178,96 +192,88 @@ export default function WatchPage() {
                   </div>
 
                   <div className="px-4 sm:px-0">
-                      <h1 className="text-lg font-semibold leading-snug text-foreground lg:text-xl">
-                          {video.title}
-                      </h1>
-                      <div className="mt-2">
-                          <VideoStats viewCount={video.viewCount} createdAt={video.createdAt} />
-                      </div>
-                  </div>
+                      {/* Título */}
+                      <h1 className="type-h2 mt-4 break-words text-foreground">{video.title}</h1>
 
-                  {/* Ações mobile */}
-                  <div className="px-4 sm:px-0 lg:hidden">{actions}</div>
-
-                  {/* Canal + Ações desktop */}
-                  <div className="flex items-center justify-between gap-4 border-y border-border py-3 px-4 sm:px-0">
-                      <div className="flex items-center gap-3">
-                          <VideoAvatar name={video.userName} url={video.userAvatarUrl} className="size-10" />
-                          <div>
-                              <p className="text-sm font-medium text-foreground">{video.userName}</p>
-                              <p className="text-xs text-muted-foreground">Criador Imperium</p>
+                      {/* Canal + ações */}
+                      <div className="mt-4 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                          <div className="flex min-w-0 items-center gap-3">
+                              <Link href={video.userId ? `/perfil/${video.userId}` : "#"} className="shrink-0" aria-label={`Canal de ${video.userName}`}>
+                                  <VideoAvatar name={video.userName} url={video.userAvatarUrl} className="size-11" />
+                              </Link>
+                              <div className="min-w-0">
+                                  <Link
+                                    href={video.userId ? `/perfil/${video.userId}` : "#"}
+                                    className="type-label block truncate text-foreground hover:text-primary"
+                                  >
+                                      {video.userName}
+                                  </Link>
+                                  <p className="type-caption text-muted-foreground">Criador Imperium</p>
+                              </div>
+                              <SubscribeButton userId={video.userId} showCount className="ml-auto lg:ml-4" />
                           </div>
+                          {actions}
                       </div>
-                      <div className="hidden lg:block">{actions}</div>
-                  </div>
 
-                  {liveWaiting && (
-                    <p className="mx-4 rounded-lg border border-border bg-card px-4 py-3 text-sm text-muted-foreground sm:mx-0">
-                        É sua live? Os dados para o OBS estão em{" "}
-                        <Link href={`/videos/live?id=${video.id}`} className="font-medium text-primary hover:underline">
-                            Fazer live
-                        </Link>
-                        .
-                    </p>
-                  )}
+                      {liveWaiting && (
+                        <p className="type-body-small mt-4 rounded-xl border border-border bg-surface px-4 py-3 text-muted-foreground">
+                            É sua live? Os dados para o OBS estão em{" "}
+                            <Link href={`/videos/live?id=${video.id}`} className="font-medium text-primary hover:underline">
+                                Fazer live
+                            </Link>
+                            .
+                        </p>
+                      )}
 
-                  {/* Descrição */}
-                  {video.description && (
-                    <div className="mx-4 sm:mx-0 rounded-lg border border-border bg-card">
-                        <button
-                          type="button"
-                          onClick={() => setShowMore((v) => !v)}
-                          aria-expanded={showMore}
-                          className="flex w-full items-center justify-between px-4 py-2.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-                        >
-                            <span>Descrição</span>
-                            <ChevronDown
-                              className={`size-4 transition-transform ${showMore ? "rotate-180" : ""}`}
-                            />
-                        </button>
-                        {showMore && (
-                          <div className="border-t border-border px-4 py-3">
-                              <VideoDescription description={video.description} hashtags={video.hashtags} />
-                          </div>
-                        )}
-                    </div>
-                  )}
-
-                  {/* ===== COMENTÁRIOS ===== */}
-                  <div className="px-4 sm:px-0">
-                      <button
-                        type="button"
-                        onClick={() => setShowComments((v) => !v)}
-                        aria-expanded={showComments}
-                        className={`flex w-full items-center gap-3 rounded-lg border px-4 py-3 text-sm font-semibold transition-all ${
-                          showComments
-                            ? "border-primary bg-primary/10 text-primary"
-                            : "border-border bg-card text-foreground hover:border-primary/40 hover:bg-muted/50"
-                        }`}
+                      {/* Descrição: estatísticas em destaque e texto que abre com "mais" */}
+                      <section
+                        aria-label="Descrição"
+                        className={`mt-4 rounded-xl bg-surface-muted/70 p-4 transition-colors ${temDescricao && !showMore ? "cursor-pointer hover:bg-surface-muted" : ""}`}
+                        onClick={() => temDescricao && !showMore && setShowMore(true)}
                       >
-                          <span>Comentários</span>
-                          <span className="ml-auto text-sm text-muted-foreground">{video.commentsCount}</span>
-                          <ChevronDown
-                            className={`size-4 text-muted-foreground transition-transform ${showComments ? "rotate-180" : ""}`}
-                          />
-                      </button>
-                  </div>
+                          <p className="type-label text-foreground">
+                              {formatViews(video.viewCount)} visualizações
+                              <span className="mx-2 text-muted-foreground" aria-hidden="true">·</span>
+                              <time dateTime={video.createdAt} title={dataCompleta(video.createdAt)}>
+                                  {showMore ? dataCompleta(video.createdAt) : timeAgo(video.createdAt)}
+                              </time>
+                          </p>
+                          {temDescricao ? (
+                            <>
+                                <div className={`mt-2 ${showMore ? "" : "line-clamp-3"}`}>
+                                    <VideoDescription description={video.description || " "} hashtags={video.hashtags} />
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                      e.stopPropagation();
+                                      setShowMore((v) => !v);
+                                  }}
+                                  aria-expanded={showMore}
+                                  className="type-label mt-2 cursor-pointer text-foreground hover:underline"
+                                >
+                                    {showMore ? "Mostrar menos" : "...mais"}
+                                </button>
+                            </>
+                          ) : (
+                            <p className="type-body-small mt-2 text-muted-foreground">Sem descrição.</p>
+                          )}
+                      </section>
 
-                  {showComments && (
-                    <div className="mx-4 sm:mx-0 rounded-lg border border-border bg-card p-3">
-                        <VideoComments videoId={video.id} />
-                    </div>
-                  )}
+                      {/* Comentários */}
+                      <section aria-labelledby="comentarios-title" className="mt-8">
+                          <h2 id="comentarios-title" className="type-h3 mb-5 text-foreground">
+                              {totalComentarios ?? video.commentsCount}{" "}
+                              {(totalComentarios ?? video.commentsCount) === 1 ? "comentário" : "comentários"}
+                          </h2>
+                          <VideoComments videoId={video.id} onCountChange={aoContarComentarios} />
+                      </section>
+                  </div>
               </div>
 
-              <div className="hidden lg:block">
+              <div className="px-4 pb-10 sm:px-0">
                   <VideoSidebar videos={related} />
               </div>
-          </div>
-
-          <div className="mt-8 lg:hidden px-4 sm:px-0">
-              <h2 className="text-lg font-semibold mb-4">Vídeos relacionados</h2>
-              <VideoSidebar videos={related} />
           </div>
       </div>
     );

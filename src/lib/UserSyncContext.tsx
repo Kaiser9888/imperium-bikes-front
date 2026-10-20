@@ -23,12 +23,15 @@ interface UserSyncContextValue {
   isSynced: boolean;
   isSyncing: boolean;
   syncError: boolean;
+  /** Id do usuário logado no backend (UUID), depois do sync. */
+  backendUserId: string | null;
 }
 
 const UserSyncContext = createContext<UserSyncContextValue>({
   isSynced: false,
   isSyncing: false,
   syncError: false,
+  backendUserId: null,
 });
 
 export function UserSyncProvider({ children }: { children: ReactNode }) {
@@ -36,6 +39,7 @@ export function UserSyncProvider({ children }: { children: ReactNode }) {
   const [isSynced, setIsSynced] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncError, setSyncError] = useState(false);
+  const [backendUserId, setBackendUserId] = useState<string | null>(null);
 
   // Garante que o sync só rode UMA vez por sessão de login, mesmo que o
   // componente re-renderize várias vezes.
@@ -49,7 +53,9 @@ export function UserSyncProvider({ children }: { children: ReactNode }) {
       jaSincronizouRef.current = false;
       setIsSynced(false);
       setIsSyncing(false);
+      setBackendUserId(null);
       setSyncError(false);
+      setBackendUserId(null);
       return;
     }
 
@@ -61,6 +67,8 @@ export function UserSyncProvider({ children }: { children: ReactNode }) {
       .post("/api/users/sync")
       .then((res) => {
         console.log("[AutoSync] Usuário sincronizado:", res.data?.id);
+        setBackendUserId(res.data?.id ? String(res.data.id) : null);
+        setBackendUserId(res.data?.id ? String(res.data.id) : null);
         setIsSynced(true);
       })
       .catch((err) => {
@@ -77,7 +85,7 @@ export function UserSyncProvider({ children }: { children: ReactNode }) {
   }, [isLoaded, isSignedIn]);
 
   return (
-    <UserSyncContext.Provider value={{ isSynced, isSyncing, syncError }}>
+    <UserSyncContext.Provider value={{ isSynced, isSyncing, syncError, backendUserId }}>
       {children}
     </UserSyncContext.Provider>
   );
