@@ -19,6 +19,8 @@ export interface FreteDraft {
   largura_cm: number
   comprimento_cm: number
   pagador?: "vendedor" | "comprador" | "retirada_local"
+  /** Com pagador "vendedor": quanto ele cobre do frete, em centavos. */
+  limite_frete_centavos?: number
 }
 
 export interface PrecoDraft {

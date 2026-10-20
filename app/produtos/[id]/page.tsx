@@ -198,6 +198,9 @@ function ProdutoPage() {
       : null
 
   const condicao = PRODUCT_CONDITIONS.find((c) => c.value === p.condition)?.label
+  // Vendido, pausado ou sem estoque: não dá para comprar
+  const esgotado = p.status !== "ACTIVE" || p.stock < 1
+  const freteGratis = p.freeShippingLimit ? Number(p.freeShippingLimit) : 0
 
   // Ficha técnica só com o que o vendedor preencheu
   const specs = ([
@@ -348,9 +351,15 @@ function ProdutoPage() {
                 </Button>
               </div>
 
-              {(condicao || p.hasSecurePayment) && (
+              {(condicao || p.hasSecurePayment || freteGratis) && (
                 <div className="mt-4 flex flex-wrap gap-2">
                   {condicao && <StatusBadge tone="neutral">{condicao}</StatusBadge>}
+                  {freteGratis && (
+                    <StatusBadge tone="success">
+                      <Truck className="size-3.5" aria-hidden="true" />
+                      Frete grátis até {brl(freteGratis)}
+                    </StatusBadge>
+                  )}
                   {p.hasSecurePayment && (
                     <StatusBadge tone="success">
                       <ShieldCheck className="size-3.5" aria-hidden="true" />
@@ -369,13 +378,20 @@ function ProdutoPage() {
                 </p>
               )}
 
+              {esgotado && (
+                <p role="status" className="type-label mt-5 rounded-xl bg-surface-muted px-4 py-3 text-center text-muted-foreground">
+                  {p.status === "SOLD" ? "Vendido · este anúncio não está mais disponível" : "Anúncio indisponível no momento"}
+                </p>
+              )}
+
               <div className="mt-6 flex flex-col gap-3">
                 <button
                   type="button"
                   className="pay-btn"
+                  disabled={esgotado}
                   onClick={() => router.push(`/checkout?productId=${encodeURIComponent(p.id)}`)}
                 >
-                  Comprar agora
+                  {esgotado ? "Esgotado" : "Comprar agora"}
                   <IconeCartao />
                 </button>
 
@@ -383,6 +399,7 @@ function ProdutoPage() {
                   type="button"
                   variant="outline"
                   size="lg"
+                  disabled={esgotado}
                   onClick={() => {
                     addToCart(p)
                     setAdicionadoAoCarrinho(true)
@@ -462,9 +479,14 @@ function ProdutoPage() {
                         <p className="type-label truncate text-foreground">{opcao.transportadora}</p>
                         <p className="type-caption mt-0.5 text-muted-foreground">
                           {opcao.servico} · {opcao.prazoDias} {opcao.prazoDias === 1 ? "dia útil" : "dias úteis"}
+                          {Number(opcao.pagoPeloVendedor ?? 0) > 0 && ` · vendedor paga ${brl(Number(opcao.pagoPeloVendedor))}`}
                         </p>
                       </div>
-                      <p className="type-label shrink-0 tabular-nums text-foreground">{brl(opcao.valor)}</p>
+                      {Number(opcao.valor) === 0 ? (
+                        <p className="type-label shrink-0 text-success">Grátis</p>
+                      ) : (
+                        <p className="type-label shrink-0 tabular-nums text-foreground">{brl(opcao.valor)}</p>
+                      )}
                     </li>
                   ))}
                 </ul>

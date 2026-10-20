@@ -435,6 +435,12 @@ async function handlePublicar() {
 
           originPostalCode,
 
+          // "Eu arco com o frete": quanto o vendedor cobre (o comprador paga o que passar)
+          freeShippingLimit:
+            draftFinal.frete?.pagador === 'vendedor' && draftFinal.frete.limite_frete_centavos
+              ? draftFinal.frete.limite_frete_centavos / 100
+              : undefined,
+
           highlightTier:
           tier.backendId,
 

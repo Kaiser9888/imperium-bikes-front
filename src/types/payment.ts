@@ -12,6 +12,10 @@ export interface CreatePaymentRequest {
   referenceId: string
   referenceType: "PRODUCT"
   description?: string
+  /** CEP do comprador; sem ele a entrega é combinada com o vendedor. */
+  cepDestino?: string
+  /** Opção de frete escolhida na cotação. */
+  freteServiceId?: string
 }
 
 export interface PaymentResponse {

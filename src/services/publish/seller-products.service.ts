@@ -10,6 +10,10 @@ export interface ProdutoItem {
   year?: number | string
   description?: string
   status?: string // ex.: "ATIVO" | "PAUSADO" | "VENDIDO"
+  stock?: number
+  originPostalCode?: string | null
+  /** "Eu pago o frete até R$ X"; null quando o comprador paga tudo. */
+  freeShippingLimit?: number | null
   city?: string
   state?: string
   photos?: string[]
@@ -104,6 +108,8 @@ export const sellerProductService = {
       city: atual.city,
       state: atual.state,
       originPostalCode: atual.originPostalCode,
+      // Sem ele o backend entenderia "comprador paga" e apagaria o frete grátis
+      freeShippingLimit: atual.freeShippingLimit,
       weightKg: atual.weightKg,
       heightCm: atual.heightCm,
       widthCm: atual.widthCm,

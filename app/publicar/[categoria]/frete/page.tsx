@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { ArrowRight, Check, X } from 'lucide-react'
+import { ArrowRight, Check, Loader2, Truck, X } from 'lucide-react'
 import {
   clearDraft,
   getDraft,
@@ -10,6 +10,13 @@ import {
 } from '@/lib/publicar/storage'
 
 import { BackButton } from "@/components/ui/back-button"
+import api from '@/lib/api'
+import { formatarPreco } from '@/lib/format'
+
+type Estimativa = { destino: string; menorValor: number | null; prazoDias: number | null; motivo: string | null }
+
+// Correios levam até 30 kg; acima disso poucas transportadoras atendem
+const PESO_CORREIOS_KG = 30
 
 const pagadores = [
   {
@@ -63,6 +70,10 @@ export default function FretePage() {
   const [comprimento, setComprimento] = useState('')
 
   const [pagador, setPagador] = useState('')
+  const [limite, setLimite] = useState('')
+  const [estimativas, setEstimativas] = useState<Estimativa[] | null>(null)
+  const [estimando, setEstimando] = useState(false)
+  const [erroEstimativa, setErroEstimativa] = useState('')
 
   const [consultandoCep, setConsultandoCep] = useState(false)
   const [erroCep, setErroCep] = useState('')
@@ -111,6 +122,9 @@ export default function FretePage() {
     )
 
     setPagador(frete.pagador ?? '')
+    if (frete.limite_frete_centavos) {
+      setLimite(String(frete.limite_frete_centavos / 100).replace('.', ','))
+    }
   }, [categoria])
 
   useEffect(() => {
@@ -217,6 +231,10 @@ const comprimentoValido =
   comprimentoNumerico > 0 &&
   comprimentoNumerico <= LIMITE_MEDIDA_CM
 
+const limiteCentavos = Math.round(
+  Number(limite.replace(/\./g, '').replace(',', '.')) * 100,
+) || 0
+
 const pronto =
   cepNumerico.length === 8 &&
   Boolean(cidade) &&
@@ -225,7 +243,37 @@ const pronto =
   alturaValida &&
   larguraValida &&
   comprimentoValido &&
-  Boolean(pagador)
+  Boolean(pagador) &&
+  // "Eu arco com o frete" precisa dizer até quanto
+  (pagador !== 'vendedor' || limiteCentavos > 0)
+
+const medidasProntas =
+  cepNumerico.length === 8 && pesoValido && alturaValida && larguraValida && comprimentoValido
+
+async function estimarFrete() {
+  setEstimando(true)
+  setErroEstimativa('')
+  try {
+    const { data } = await api.post<Estimativa[]>('/api/frete/estimar', {
+      cepOrigem: cepNumerico,
+      pesoKg: pesoNumerico,
+      alturaCm: alturaNumerica,
+      larguraCm: larguraNumerica,
+      comprimentoCm: comprimentoNumerico,
+    })
+    setEstimativas(data)
+    // Sugere cobrir o frete mais caro entre os destinos que têm opção
+    const valores = data.map((e) => e.menorValor).filter((v): v is number => v != null)
+    if (!limite && valores.length > 0) {
+      setLimite(String(Math.ceil(Math.max(...valores))).replace('.', ','))
+    }
+  } catch (cause) {
+    const msg = (cause as { response?: { data?: { message?: string } } })?.response?.data?.message
+    setErroEstimativa(msg ?? 'Não foi possível estimar o frete agora.')
+  } finally {
+    setEstimando(false)
+  }
+}
 
 function voltar() {
   router.push(
@@ -259,6 +307,7 @@ function continuar() {
       altura_cm: alturaNumerica,
       largura_cm: larguraNumerica,
       comprimento_cm: comprimentoNumerico,
+      limite_frete_centavos: pagador === 'vendedor' ? limiteCentavos : undefined,
       pagador:
         pagador === 'retirada_local'
           ? 'retirada_local'
@@ -412,6 +461,13 @@ return (
                 Digite um peso de até 1000 kg.
               </small>
             )}
+
+            {pesoNumerico > PESO_CORREIOS_KG && pesoNumerico <= LIMITE_PESO_KG && (
+              <small>
+                Acima de 30 kg os Correios não levam e poucas transportadoras atendem. Se ninguém atender, o comprador
+                poderá combinar a entrega com você.
+              </small>
+            )}
           </label>
 
           <label>
@@ -500,8 +556,7 @@ return (
         </div>
 
         <small>
-          Essas medidas serão utilizadas futuramente
-          no cálculo do frete.
+          O frete é calculado pelo Melhor Envio com este CEP, o peso e as medidas da embalagem.
         </small>
 
         <fieldset>
@@ -540,6 +595,57 @@ return (
             ))}
           </div>
         </fieldset>
+
+        {pagador === 'vendedor' && (
+          <div className="frete-gratis">
+            <div className="frete-gratis__topo">
+              <Truck aria-hidden="true" />
+              <div>
+                <b>Quanto custa enviar</b>
+                <small>Menor valor do seu CEP até algumas regiões, com o peso e as medidas acima.</small>
+              </div>
+            </div>
+
+            <button type="button" className="frete-gratis__botao" onClick={estimarFrete} disabled={!medidasProntas || estimando}>
+              {estimando ? <Loader2 className="animate-spin" aria-hidden="true" /> : null}
+              {estimando ? 'Calculando...' : estimativas ? 'Calcular de novo' : 'Ver quanto custa'}
+            </button>
+            {!medidasProntas && <small>Preencha o CEP, o peso e as medidas para estimar.</small>}
+            {erroEstimativa && <small role="alert">{erroEstimativa}</small>}
+
+            {estimativas && (
+              <ul className="frete-gratis__lista">
+                {estimativas.map((e) => (
+                  <li key={e.destino}>
+                    <span>{e.destino}</span>
+                    {e.menorValor != null ? (
+                      <b>
+                        {formatarPreco(e.menorValor)}
+                        {e.prazoDias != null && <small> · {e.prazoDias} dias</small>}
+                      </b>
+                    ) : (
+                      <small>Sem transportadora</small>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            <label>
+              Pago o frete até (R$)
+              <input
+                inputMode="decimal"
+                value={limite}
+                onChange={(event) => setLimite(event.target.value.replace(/[^0-9.,]/g, ''))}
+                placeholder="Ex.: 40,00"
+              />
+              <small>
+                Se o frete passar desse valor, o comprador paga só a diferença. O que você cobrir é descontado do valor
+                da venda, então o frete nunca custa mais do que você aceitou.
+              </small>
+            </label>
+          </div>
+        )}
       </section>
     </div>
 

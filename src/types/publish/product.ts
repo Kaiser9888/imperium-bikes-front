@@ -5,13 +5,12 @@ export type ProductCondition =
   | 'REFURBISHED'
   | 'FOR_PARTS'
 
+/** Como o backend devolve (enum ProductStatus). SOLD inclui "esgotado". */
 export type ProductStatus =
-  | 'DRAFT'
-  | 'REVIEW'
-  | 'PUBLISHED'
-  | 'PAUSED'
+  | 'ACTIVE'
+  | 'DISABLED'
   | 'SOLD'
-  | 'ARCHIVED'
+  | 'DELETED'
 
 export type ShippingType =
   | 'FREE'
@@ -102,6 +101,8 @@ export interface ProductResponse {
     state: string
 
     originPostalCode: string | null
+    /** "Eu pago o frete até R$ X"; null quando o comprador paga tudo. */
+    freeShippingLimit?: number | null
     weightKg: number | null
     heightCm: number | null
     widthCm: number | null
@@ -137,8 +138,11 @@ export interface ShippingQuote {
     transportadora: string
     servico: string
     prazoDias: number
+    /** O que o comprador paga. */
     valor: number
     valorOriginal: number
+    /** Parte do frete coberta pelo vendedor. */
+    pagoPeloVendedor?: number
 }
 
 export const PRODUCT_CONDITIONS: {

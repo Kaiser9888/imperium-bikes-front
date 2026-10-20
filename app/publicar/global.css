@@ -1060,3 +1060,82 @@
 }
 
 
+
+/* "Eu arco com o frete": estimativa por região e limite que o vendedor cobre */
+.frete-gratis {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    border: 1px solid var(--imperium-line);
+    border-left: 3px solid var(--accent);
+    background: color-mix(in oklch, var(--accent) 5%, var(--imperium-paper));
+    padding: 16px;
+}
+
+.frete-gratis__topo {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+}
+
+.frete-gratis__topo svg {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    color: var(--accent);
+}
+
+.frete-gratis__topo div {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    color: var(--imperium-ink);
+    font-size: 14px;
+}
+
+.frete-gratis__botao {
+    display: inline-flex;
+    align-self: flex-start;
+    align-items: center;
+    gap: 8px;
+    border: 1.5px solid var(--imperium-ink);
+    background: var(--imperium-paper);
+    color: var(--imperium-ink);
+    padding: 9px 14px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.frete-gratis__botao:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+.frete-gratis__botao svg {
+    width: 16px;
+    height: 16px;
+}
+
+.frete-gratis__lista {
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    border-top: 1px solid var(--imperium-line);
+}
+
+.frete-gratis__lista li {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    border-bottom: 1px solid var(--imperium-line);
+    padding: 9px 0;
+    color: var(--imperium-ink);
+    font-size: 13px;
+}
+
+.frete-gratis__lista b {
+    font-variant-numeric: tabular-nums;
+}

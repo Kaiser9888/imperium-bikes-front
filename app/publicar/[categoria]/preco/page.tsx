@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { formatarPreco } from '@/lib/format'
-import {
+import {
   ArrowRight,
   X,
 } from 'lucide-react'
@@ -66,6 +66,8 @@ export default function PrecoPage() {
 
   const [preco, setPreco] = useState('')
   const [custos, setCustos] = useState('')
+  // "Eu arco com o frete" (etapa anterior): até quanto o vendedor cobre, em centavos
+  const [limiteFrete, setLimiteFrete] = useState(0)
 
   useEffect(() => {
     if (!categoria) {
@@ -73,6 +75,10 @@ export default function PrecoPage() {
     }
 
     const draft = getDraft(categoria)
+
+    if (draft.frete?.pagador === 'vendedor' && draft.frete.limite_frete_centavos) {
+      setLimiteFrete(draft.frete.limite_frete_centavos)
+    }
 
     if (draft.preco) {
       const valorCentavos =
@@ -106,6 +112,8 @@ export default function PrecoPage() {
   }, [categoria])
 
   const valor = parseMoney(preco)
+  // O frete coberto não pode passar do preço, senão a venda dá prejuízo
+  const freteMaiorQuePreco = limiteFrete > 0 && valor > 0 && limiteFrete > valor
 
   function voltar() {
     router.push(
@@ -119,7 +127,7 @@ export default function PrecoPage() {
   }
 
   function continuar() {
-    if (valor <= 0) {
+    if (valor <= 0 || freteMaiorQuePreco) {
       return
     }
 
@@ -239,13 +247,21 @@ export default function PrecoPage() {
               </b>
             </div>
           )}
+
+          {valor > 0 && limiteFrete > 0 && (
+            <small role={freteMaiorQuePreco ? 'alert' : undefined}>
+              {freteMaiorQuePreco
+                ? `Você cobre até ${money(limiteFrete)} de frete, mais que o preço. Aumente o preço ou volte e diminua o limite do frete.`
+                : `Você cobre até ${money(limiteFrete)} de frete: no pior caso recebe ${money(valor - limiteFrete)} (antes da comissão).`}
+            </small>
+          )}
         </section>
       </div>
 
       <footer className="publish-footer">
         <button
           type="button"
-          disabled={valor <= 0}
+          disabled={valor <= 0 || freteMaiorQuePreco}
           onClick={continuar}
         >
           Continuar

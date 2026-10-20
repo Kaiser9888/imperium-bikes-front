@@ -724,23 +724,48 @@ function EditarModal({
   const [brand, setBrand] = useState(produto.brand ?? "")
   const [year, setYear] = useState(String(produto.year ?? ""))
   const [description, setDescription] = useState(produto.description ?? "")
+  const [estoque, setEstoque] = useState(String(produto.stock ?? 1))
+  const [cep, setCep] = useState(produto.originPostalCode ?? "")
+  const [limiteFrete, setLimiteFrete] = useState(produto.freeShippingLimit ? String(produto.freeShippingLimit).replace(".", ",") : "")
   const [saving, setSaving] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
 
   async function salvar() {
     const valor = Number(price.replace(",", "."))
+    const quantidade = Number(estoque)
+    const cepNumerico = cep.replace(/\D/g, "")
+    const limite = limiteFrete.trim() ? Number(limiteFrete.replace(/\./g, "").replace(",", ".")) : 0
     if (title.trim().length < 10) return setErro("O título precisa ter pelo menos 10 caracteres.")
     if (!Number.isFinite(valor) || valor <= 0) return setErro("Informe um preço válido.")
+    if (!Number.isInteger(quantidade) || quantidade < 1 || quantidade > 999999) return setErro("Informe uma quantidade de 1 a 999.999.")
+    if (cepNumerico.length !== 8) return setErro("Informe o CEP de origem com 8 dígitos.")
+    if (!Number.isFinite(limite) || limite < 0) return setErro("Informe um valor de frete válido.")
+    if (limite > valor) return setErro("O frete que você paga não pode passar do preço do produto.")
 
     setSaving(true)
     setErro(null)
     try {
+      // CEP novo: atualiza cidade e estado de onde sai o envio
+      let local: { city?: string; state?: string } = {}
+      if (cepNumerico !== (produto.originPostalCode ?? "")) {
+        const res = await fetch(`https://viacep.com.br/ws/${cepNumerico}/json/`).catch(() => null)
+        const data = res?.ok ? ((await res.json()) as { erro?: boolean; localidade?: string; uf?: string }) : null
+        if (!data || data.erro) {
+          setSaving(false)
+          return setErro("CEP não encontrado.")
+        }
+        local = { city: data.localidade, state: data.uf }
+      }
       const dados = {
         title: title.trim(),
         price: valor,
         brand: brand.trim(),
         year: year ? Number(year) : undefined,
         description: description.trim(),
+        stock: quantidade,
+        originPostalCode: cepNumerico,
+        freeShippingLimit: limite > 0 ? Math.round(limite * 100) / 100 : null,
+        ...local,
       }
       const resp = await sellerProductService.update(produto.id, dados)
       onSaved({ ...produto, ...dados, ...(resp ?? {}) })
@@ -772,9 +797,42 @@ function EditarModal({
             <input value={year} onChange={(e) => setYear(e.target.value)} inputMode="numeric" className={campo} />
           </div>
         </div>
-        <div>
-          <label className={rotulo}>Marca</label>
-          <input value={brand} onChange={(e) => setBrand(e.target.value)} className={campo} />
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className={rotulo}>Marca</label>
+            <input value={brand} onChange={(e) => setBrand(e.target.value)} className={campo} />
+          </div>
+          <div>
+            <label className={rotulo}>Quantidade</label>
+            <input
+              value={estoque}
+              onChange={(e) => setEstoque(e.target.value.replace(/\D/g, "").slice(0, 6))}
+              inputMode="numeric"
+              className={campo}
+            />
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className={rotulo}>CEP de origem</label>
+            <input
+              value={cep}
+              onChange={(e) => setCep(e.target.value.replace(/\D/g, "").slice(0, 8))}
+              inputMode="numeric"
+              autoComplete="postal-code"
+              className={campo}
+            />
+          </div>
+          <div>
+            <label className={rotulo}>Pago o frete até (R$)</label>
+            <input
+              value={limiteFrete}
+              onChange={(e) => setLimiteFrete(e.target.value.replace(/[^\d.,]/g, ""))}
+              inputMode="decimal"
+              placeholder="Vazio: comprador paga"
+              className={campo}
+            />
+          </div>
         </div>
         <div>
           <label className={rotulo}>Descrição</label>
