@@ -27,7 +27,18 @@ export function Banners() {
 
     useEffect(() => {
         let ativo = true
-        bannerService.ativos().then((lista) => ativo && setBanners(lista)).catch(() => {})
+        // O backend no Render pode estar acordando (até ~1 min): tenta de novo antes de desistir
+        void (async () => {
+            for (let tentativa = 0; tentativa < 4 && ativo; tentativa++) {
+                try {
+                    const lista = await bannerService.ativos()
+                    if (ativo) setBanners(lista)
+                    return
+                } catch {
+                    await new Promise((resolve) => setTimeout(resolve, 4000 * (tentativa + 1)))
+                }
+            }
+        })()
         return () => {
             ativo = false
         }
