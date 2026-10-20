@@ -1,15 +1,12 @@
 "use client"
-import { Button } from "@/components/ui/button"
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
-import Image from "next/image"
 import { useParams, useRouter } from "next/navigation"
 import { useAuth } from "@clerk/nextjs"
-
 import {
   ArrowLeft,
-  Calculator,
+  Check,
   ChevronLeft,
   ChevronRight,
   Heart,
@@ -18,27 +15,58 @@ import {
   MessageCircle,
   PackageCheck,
   ShieldCheck,
-  ShoppingBag,
   ShoppingCart,
+  Truck,
 } from "lucide-react"
 
-import { productService } from "@/services/publish/product.service"
+import { Logo } from "@/components/layout/logo"
 import { ProductImage } from "@/components/marketplace/ProductImage"
 import { ProdutoAvaliacoes } from "@/components/marketplace/produto-avaliacoes"
 import { ProdutoVendedor } from "@/components/marketplace/produto-vendedor"
 import { ProdutosRelacionados } from "@/components/marketplace/produtos-relacionados"
-import {
-  PRODUCT_CONDITIONS,
-  type ProductResponse,
-  type ShippingQuote,
-} from "@/types/publish/product"
-import { esportes, modalidades } from "@/lib/esportes"
-
-import { iniciarConversa } from "@/lib/stream"
-import { addToCart } from "@/lib/cart"
-import { isFavoriteProduct, toggleFavorite } from "@/lib/favorites"
-
 import { BackButton } from "@/components/ui/back-button"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { StatusBadge } from "@/components/ui/status-badge"
+import { addToCart } from "@/lib/cart"
+import { esportes, modalidades } from "@/lib/esportes"
+import { isFavoriteProduct, toggleFavorite } from "@/lib/favorites"
+import { iniciarConversa } from "@/lib/stream"
+import { cn } from "@/lib/utils"
+import { productService } from "@/services/publish/product.service"
+import { PRODUCT_CONDITIONS, type ProductResponse, type ShippingQuote } from "@/types/publish/product"
+
+const brl = (valor: number) => valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
+
+/** Cabeçalho próprio da página de produto: voltar e uma única marca. */
+function Topo() {
+  return (
+    <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur-md">
+      <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
+        <BackButton href="/" />
+        <Logo />
+      </div>
+    </header>
+  )
+}
+
+/** Título pequeno em caixa alta usado em todas as seções da página. */
+function Sobretitulo({ children, className }: { children: React.ReactNode; className?: string }) {
+  return (
+    <p className={cn("type-caption font-semibold uppercase tracking-[0.16em] text-muted-foreground", className)}>
+      {children}
+    </p>
+  )
+}
+
+/** Ícone de cartão do botão de pagar (Uiverse.io, vinodjangid07). */
+function IconeCartao() {
+  return (
+    <svg viewBox="0 0 576 512" aria-hidden="true">
+      <path d="M512 80c8.8 0 16 7.2 16 16v32H48V96c0-8.8 7.2-16 16-16H512zm16 144V416c0 8.8-7.2 16-16 16H64c-8.8 0-16-7.2-16-16V224H528zM64 32C28.7 32 0 60.7 0 96V416c0 35.3 28.7 64 64 64H512c35.3 0 64-28.7 64-64V96c0-35.3-28.7-64-64-64H64zm56 304c-13.3 0-24 10.7-24 24s10.7 24 24 24h48c13.3 0 24-10.7 24-24s-10.7-24-24-24H120zm128 0c-13.3 0-24 10.7-24 24s10.7 24 24 24H360c13.3 0 24-10.7 24-24s-10.7-24-24-24H248z" />
+    </svg>
+  )
+}
 
 function ProdutoPage() {
   const params = useParams<{ id: string }>()
@@ -47,34 +75,18 @@ function ProdutoPage() {
 
   const { getToken, isSignedIn } = useAuth()
 
-  const [produto, setProduto] =
-    useState<ProductResponse | null>(null)
-
+  const [produto, setProduto] = useState<ProductResponse | null>(null)
   const [loading, setLoading] = useState(true)
+  const [erro, setErro] = useState<string | null>(null)
+  const [activeImage, setActiveImage] = useState(0)
+  const [favorite, setFavorite] = useState(false)
 
-  const [erro, setErro] =
-    useState<string | null>(null)
+  const [zip, setZip] = useState("")
+  const [shipping, setShipping] = useState<ShippingQuote[]>([])
+  const [calculandoFrete, setCalculandoFrete] = useState(false)
+  const [erroFrete, setErroFrete] = useState<string | null>(null)
 
-  const [activeImage, setActiveImage] =
-    useState(0)
-
-  const [favorite, setFavorite] =
-    useState(false)
-
-  const [zip, setZip] =
-    useState("")
-
-  const [shipping, setShipping] =
-    useState<ShippingQuote[]>([])
-
-  const [calculandoFrete, setCalculandoFrete] =
-    useState(false)
-
-  const [erroFrete, setErroFrete] =
-    useState<string | null>(null)
-
-  const [abrindoChat, setAbrindoChat] =
-    useState(false)
+  const [abrindoChat, setAbrindoChat] = useState(false)
   const [erroChat, setErroChat] = useState<string | null>(null)
   const [adicionadoAoCarrinho, setAdicionadoAoCarrinho] = useState(false)
 
@@ -85,26 +97,12 @@ function ProdutoPage() {
       try {
         setLoading(true)
         setErro(null)
-
-
-        const data =
-          await productService.getById(id)
-
-
+        const data = await productService.getById(id)
         setProduto(data)
         setFavorite(isFavoriteProduct(data.id))
-
       } catch (error) {
-
-        console.error(
-          "Erro ao carregar produto:",
-          error,
-        )
-
-        setErro(
-          "Não foi possível carregar este anúncio.",
-        )
-
+        console.error("Erro ao carregar produto:", error)
+        setErro("Não foi possível carregar este anúncio.")
       } finally {
         setLoading(false)
       }
@@ -125,32 +123,19 @@ function ProdutoPage() {
 
     if (!vendedorId || !id) {
       setErroChat("O anúncio não informa o identificador do vendedor. Entre em contato com o suporte.")
-      console.error(
-        "Não foi possível identificar o vendedor.",
-      )
+      console.error("Não foi possível identificar o vendedor.")
       return
     }
 
     try {
       setErroChat(null)
       setAbrindoChat(true)
-
-      const canalId =
-        await iniciarConversa(
-          String(vendedorId),
-          String(id),
-          getToken,
-        )
-
+      const canalId = await iniciarConversa(String(vendedorId), String(id), getToken)
       router.push(`/chat/${canalId}`)
-
     } catch (error) {
-
       console.error("Erro ao iniciar conversa com vendedor:", error)
       setErroChat(error instanceof Error ? error.message : "Não foi possível iniciar a conversa. O serviço de chat pode estar indisponível.")
-
     } finally {
-
       setAbrindoChat(false)
     }
   }
@@ -159,8 +144,9 @@ function ProdutoPage() {
 
   if (loading) {
     return (
-      <main className="grid min-h-screen place-items-center bg-background text-muted-foreground">
-        <div className="flex items-center gap-3 text-sm">
+      <main className="min-h-screen bg-background">
+        <Topo />
+        <div className="flex items-center justify-center gap-3 py-32 text-sm text-muted-foreground">
           <Loader2 className="size-5 animate-spin" />
           Carregando anúncio...
         </div>
@@ -172,30 +158,17 @@ function ProdutoPage() {
 
   if (erro || !produto) {
     return (
-      <main className="grid min-h-screen place-items-center bg-background px-6 text-center">
-        <div>
-
-          <p className="brand-name text-lg">
-            Imperium Bikes
-          </p>
-
-          <h1 className="mt-4 font-serif text-4xl">
-            Anúncio não encontrado
-          </h1>
-
-          <p className="mt-3 text-muted-foreground">
-            {erro ??
-              "Este produto não está disponível."}
-          </p>
-
-          <Link
-            href="/"
-            className="mt-6 inline-flex items-center gap-2 bg-foreground px-5 py-3 text-sm font-bold text-background"
-          >
-            <ArrowLeft className="size-4" />
-            Voltar ao marketplace
-          </Link>
-
+      <main className="min-h-screen bg-background">
+        <Topo />
+        <div className="mx-auto max-w-md px-6 py-24 text-center">
+          <h1 className="type-h1 text-foreground">Anúncio não encontrado</h1>
+          <p className="type-body mt-3 text-muted-foreground">{erro ?? "Este produto não está disponível."}</p>
+          <Button asChild className="mt-8">
+            <Link href="/">
+              <ArrowLeft aria-hidden="true" />
+              Voltar ao marketplace
+            </Link>
+          </Button>
         </div>
       </main>
     )
@@ -204,35 +177,16 @@ function ProdutoPage() {
   // ---------- NORMALIZAÇÃO ----------
 
   const p = produto
+  const titulo = p.title ?? "Produto"
+  const marca = p.brand ?? ""
+  const ano = p.year ?? ""
+  const descricao = p.description ?? "Este anúncio ainda não possui uma descrição."
 
-  const titulo =
-    p.title ??
-    "Produto"
+  const imagens = [...(p.images ?? [])]
+    .sort((a, b) => Number(b.isMain) - Number(a.isMain) || a.displayOrder - b.displayOrder)
+    .map((image) => image.url)
 
-  const marca =
-    p.brand ??
-    ""
-
-  const ano =
-    p.year ??
-    ""
-
-  const descricao =
-    p.description ??
-    "Este anúncio ainda não possui uma descrição."
-
-  const preco =
-    p.price
-
-  const imagens =
-    [...(p.images ?? [])]
-      .sort((a, b) => Number(b.isMain) - Number(a.isMain) || a.displayOrder - b.displayOrder)
-      .map((image) => image.url)
-
-  const localizacao =
-    [p.city, p.state]
-      .filter(Boolean)
-      .join(", ")
+  const localizacao = [p.city, p.state].filter(Boolean).join(", ")
 
   // Categoria real do anúncio (modalidade de ciclismo ou esporte), com link para a lista
   const modalidade = modalidades.find((m) => m.slug === p.modality)
@@ -243,9 +197,11 @@ function ProdutoPage() {
       ? { label: esporte.nome, href: `/esportes/${esporte.slug}` }
       : null
 
+  const condicao = PRODUCT_CONDITIONS.find((c) => c.value === p.condition)?.label
+
   // Ficha técnica só com o que o vendedor preencheu
   const specs = ([
-    ["Condição", PRODUCT_CONDITIONS.find((c) => c.value === p.condition)?.label],
+    ["Condição", condicao],
     ["Marca", p.brand],
     ["Modelo", p.model],
     ["Ano", p.year ? String(p.year) : undefined],
@@ -254,663 +210,322 @@ function ProdutoPage() {
     ["Peso", p.weightKg ? `${p.weightKg.toLocaleString("pt-BR")} kg` : undefined],
   ] as [string, string | undefined | null][]).filter((s): s is [string, string] => Boolean(s[1]))
 
-  const precoFormatado =
-    typeof preco === "number"
-      ? preco.toLocaleString(
-          "pt-BR",
-          {
-            style: "currency",
-            currency: "BRL",
-          },
-        )
-      : preco ??
-        "Preço sob consulta"
+  const precoFormatado = typeof p.price === "number" ? brl(p.price) : (p.price ?? "Preço sob consulta")
 
   // ---------- FRETE ----------
 
   async function calculateShipping() {
-
-    const cep =
-      zip.replace(/\D/g, "")
+    const cep = zip.replace(/\D/g, "")
 
     if (cep.length !== 8) {
-
       setShipping([])
-
-      setErroFrete(
-        "Digite um CEP válido com 8 dígitos.",
-      )
-
+      setErroFrete("Digite um CEP válido com 8 dígitos.")
       return
     }
 
-    if (!id) {
-      return
-    }
+    if (!id) return
 
     try {
-
       setCalculandoFrete(true)
       setErroFrete(null)
       setShipping([])
-
-      const cotacoes =
-        await productService.calculateShipping(
-          id,
-          cep,
-        )
-
-      setShipping(cotacoes)
-
+      setShipping(await productService.calculateShipping(id, cep))
     } catch (error) {
-
-      console.error(
-        "Erro ao calcular frete:",
-        error,
-      )
-
-      let mensagem =
-        "Não foi possível calcular o frete."
-
-      if (
-        error &&
-        typeof error === "object" &&
-        "response" in error
-      ) {
-
-        const response =
-          (
-            error as {
-              response?: {
-                data?: {
-                  message?: string
-                }
-              }
-            }
-          ).response
-
-        if (
-          response?.data?.message
-        ) {
-          mensagem =
-            response.data.message
-        }
-      }
-
-      setErroFrete(mensagem)
-
+      console.error("Erro ao calcular frete:", error)
+      const mensagem = (error as { response?: { data?: { message?: string } } })?.response?.data?.message
+      setErroFrete(mensagem || "Não foi possível calcular o frete.")
     } finally {
-
       setCalculandoFrete(false)
     }
-  }
-
-  function formatarFrete(
-    valor: number,
-  ) {
-    return valor.toLocaleString(
-      "pt-BR",
-      {
-        style: "currency",
-        currency: "BRL",
-      },
-    )
   }
 
   // ---------- RENDER ----------
 
   return (
-    <main className="min-h-screen bg-background text-foreground">
+    <main className="min-h-screen bg-background pb-16 text-foreground">
+      <Topo />
 
-      <header className="border-b border-border bg-background/95">
-
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-5 lg:px-8">
-
-          <div className="flex items-center gap-5">
-
-            <BackButton href="/" />
-
-            <span className="hidden h-5 w-px bg-border sm:block" />
-
-            <span className="hidden text-xs uppercase tracking-[0.18em] text-muted-foreground sm:block">
-              <span className="brand-name text-sm normal-case tracking-normal">Imperium Bikes</span> / Marketplace
-            </span>
-
-          </div>
-
-          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em]">
-
-            <Image src="/logo1.png" alt="Imperium Bikes" width={64} height={32} className="h-7 w-14 object-contain" />
-
-            <span className="hidden sm:block">
-              Imperium
-            </span>
-
-          </div>
-
-        </div>
-
-      </header>
-
-      <div className="mx-auto max-w-7xl px-5 py-8 lg:px-8 lg:py-12">
-
-        <nav
-          className="mb-8 flex flex-wrap items-center gap-2 text-xs text-muted-foreground"
-          aria-label="Breadcrumb"
-        >
-          <Link href="/produtos" className="hover:text-foreground">Marketplace</Link>
-          <span aria-hidden="true">/</span>
-
+      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+        <nav className="type-caption flex min-w-0 items-center gap-2 text-muted-foreground" aria-label="Breadcrumb">
+          <Link href="/produtos" className="shrink-0 hover:text-foreground">
+            Marketplace
+          </Link>
           {categoria && (
             <>
-              <Link href={categoria.href} className="hover:text-foreground">{categoria.label}</Link>
-              <span aria-hidden="true">/</span>
+              <ChevronRight className="size-3.5 shrink-0" aria-hidden="true" />
+              <Link href={categoria.href} className="shrink-0 hover:text-foreground">
+                {categoria.label}
+              </Link>
             </>
           )}
-
-          <span className="text-foreground" aria-current="page">
+          <ChevronRight className="size-3.5 shrink-0" aria-hidden="true" />
+          <span className="truncate text-foreground" aria-current="page">
             {titulo}
           </span>
-
         </nav>
 
-        <section className="grid items-start gap-10 lg:grid-cols-[minmax(0,1.06fr)_minmax(380px,0.94fr)] lg:gap-16">
-
+        <section className="mt-6 grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_400px] lg:gap-12 xl:grid-cols-[minmax(0,1fr)_440px]">
           {/* GALERIA */}
 
-          <div>
-
-            <div className="group relative aspect-[4/3] overflow-hidden bg-surface-muted">
-
+          <div className="min-w-0">
+            <div className="group relative aspect-[4/3] overflow-hidden rounded-2xl border border-border bg-surface-muted">
               {imagens.length > 0 ? (
-
                 <ProductImage
                   src={imagens[activeImage]}
-                  alt={`${marca} ${titulo}`}
+                  alt={`${marca} ${titulo}`.trim()}
                   className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.02]"
                 />
-
               ) : (
-
-                <div className="grid h-full place-items-center text-sm text-muted-foreground">
-                  Sem imagem disponível
-                </div>
-
+                <div className="grid h-full place-items-center text-sm text-muted-foreground">Sem imagem disponível</div>
               )}
 
               {imagens.length > 1 && (
                 <>
-
                   <button
-                    onClick={() =>
-                      setActiveImage(
-                        (activeImage +
-                          imagens.length -
-                          1) %
-                          imagens.length,
-                      )
-                    }
-                    className="absolute left-4 top-1/2 grid size-10 -translate-y-1/2 place-items-center rounded-full border border-white/50 bg-black/20 text-white backdrop-blur hover:bg-black/50"
+                    type="button"
+                    onClick={() => setActiveImage((activeImage + imagens.length - 1) % imagens.length)}
+                    className="absolute left-3 top-1/2 grid size-10 -translate-y-1/2 cursor-pointer place-items-center rounded-full bg-background/80 text-foreground shadow-sm backdrop-blur transition hover:bg-background"
                     aria-label="Imagem anterior"
                   >
-                    <ChevronLeft />
+                    <ChevronLeft className="size-5" />
                   </button>
-
                   <button
-                    onClick={() =>
-                      setActiveImage(
-                        (activeImage + 1) %
-                          imagens.length,
-                      )
-                    }
-                    className="absolute right-4 top-1/2 grid size-10 -translate-y-1/2 place-items-center rounded-full border border-white/50 bg-black/20 text-white backdrop-blur hover:bg-black/50"
+                    type="button"
+                    onClick={() => setActiveImage((activeImage + 1) % imagens.length)}
+                    className="absolute right-3 top-1/2 grid size-10 -translate-y-1/2 cursor-pointer place-items-center rounded-full bg-background/80 text-foreground shadow-sm backdrop-blur transition hover:bg-background"
                     aria-label="Próxima imagem"
                   >
-                    <ChevronRight />
+                    <ChevronRight className="size-5" />
                   </button>
-
-                  <span className="absolute bottom-4 left-4 bg-foreground/85 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.16em] text-background">
+                  <span className="type-caption absolute bottom-3 right-3 rounded-full bg-black/70 px-2.5 py-1 font-semibold tabular-nums text-white">
                     {activeImage + 1} / {imagens.length}
                   </span>
-
                 </>
               )}
-
             </div>
 
             {imagens.length > 1 && (
-              <div className="mt-3 grid grid-cols-3 gap-3">
-
-                {imagens.map(
-                  (image, index) => (
-
-                    <button
-                      key={`${image}-${index}`}
-                      onClick={() =>
-                        setActiveImage(index)
-                      }
-                      className={`aspect-[4/3] overflow-hidden border-2 bg-surface-muted ${
-  activeImage === index
-    ? "border-primary"
-    : "border-transparent opacity-70 hover:opacity-100"
-}`}
-                      aria-label={`Ver foto ${index + 1}`}
-                    >
-
-                      <ProductImage
-                        src={image}
-                        alt=""
-                        className="h-full w-full object-cover"
-                      />
-
-                    </button>
-
-                  ),
-                )}
-
+              <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+                {imagens.map((image, index) => (
+                  <button
+                    type="button"
+                    key={`${image}-${index}`}
+                    onClick={() => setActiveImage(index)}
+                    className={cn(
+                      "aspect-[4/3] w-20 shrink-0 cursor-pointer overflow-hidden rounded-lg border-2 bg-surface-muted transition sm:w-24",
+                      activeImage === index ? "border-primary" : "border-transparent opacity-60 hover:opacity-100",
+                    )}
+                    aria-label={`Ver foto ${index + 1}`}
+                    aria-current={activeImage === index}
+                  >
+                    <ProductImage src={image} alt="" className="h-full w-full object-cover" />
+                  </button>
+                ))}
               </div>
             )}
-
           </div>
 
-          {/* INFO */}
+          {/* COMPRA: fica visível ao rolar no desktop */}
 
-          <div className="flex flex-col">
-
-            <div className="flex items-start justify-between gap-4">
-
-              <div>
-
-                {(marca || ano) && (
-                  <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.2em] text-primary">
-                    {marca}{" "}
-                    {ano &&
-                      `· ${ano}`}
-                  </p>
-                )}
-
-                <h1 className="max-w-xl font-serif text-4xl leading-[0.98] tracking-[-0.04em] sm:text-5xl">
-                  {titulo}
-                </h1>
-
-              </div>
-
-              <Button
-                onClick={() => {
-                  if (produto) setFavorite(toggleFavorite(produto))
-                }}
-                variant="outline" size="icon" className="shrink-0"
-                aria-label={
-                  favorite
-                    ? "Remover dos favoritos"
-                    : "Adicionar aos favoritos"
-                }
-              >
-
-                <Heart
-                  className={`size-5 ${
-  favorite
-    ? "fill-primary text-primary"
-    : "text-muted-foreground"
-}`}
-                />
-
-              </Button>
-
-            </div>
-
-            <div className="mt-7 flex items-end justify-between border-b border-border pb-7">
-
-              <div>
-
-                <p className="mb-1 text-xs text-muted-foreground">
-                  Preço anunciado
-                </p>
-
-                <p className="text-3xl font-semibold tracking-tight">
-                  {precoFormatado}
-                </p>
-
-              </div>
-
-              {p.hasSecurePayment && (
-                <span className="inline-flex items-center gap-1.5 bg-success/10 px-3 py-2 text-[11px] font-bold uppercase tracking-[0.12em] text-success">
-                  <ShieldCheck className="size-4" />
-                  Compra segura
-                </span>
-              )}
-
-            </div>
-
-            {/* SPECS */}
-
-            {specs.length > 0 && (
-              <div className="grid grid-cols-2 gap-x-8 gap-y-5 border-b border-border py-6 text-sm sm:grid-cols-3">
-
-                {specs
-                  .slice(0, 3)
-                  .map(
-                    ([label, value]) => (
-
-                      <div key={label}>
-
-                        <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
-                          {label}
-                        </p>
-
-                        <p className="font-semibold">
-                          {value}
-                        </p>
-
-                      </div>
-
-                    ),
+          <aside className="flex flex-col gap-4 lg:sticky lg:top-24">
+            <div className="rounded-2xl border border-border bg-surface p-5 sm:p-6">
+              <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0">
+                  {(marca || ano) && (
+                    <Sobretitulo className="text-primary">{[marca, ano].filter(Boolean).join(" · ")}</Sobretitulo>
                   )}
-
+                  <h1 className="type-h1 mt-1.5 break-words text-foreground">{titulo}</h1>
+                </div>
+                <Button
+                  onClick={() => setFavorite(toggleFavorite(p))}
+                  variant="outline"
+                  size="icon"
+                  className="shrink-0 rounded-full"
+                  aria-pressed={favorite}
+                  aria-label={favorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}
+                >
+                  <Heart className={cn("size-5", favorite ? "fill-primary text-primary" : "text-muted-foreground")} />
+                </Button>
               </div>
-            )}
 
-            {/* LOCALIZAÇÃO */}
+              {(condicao || p.hasSecurePayment) && (
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {condicao && <StatusBadge tone="neutral">{condicao}</StatusBadge>}
+                  {p.hasSecurePayment && (
+                    <StatusBadge tone="success">
+                      <ShieldCheck className="size-3.5" aria-hidden="true" />
+                      Compra segura
+                    </StatusBadge>
+                  )}
+                </div>
+              )}
 
-            {localizacao && (
-              <div className="mt-6 flex items-center gap-3 text-sm">
-                <MapPin className="size-5 text-primary" />
-                <p>
-                  <span className="text-muted-foreground">Enviado de </span>
-                  <span className="font-semibold">{localizacao}</span>
+              <p className="type-display mt-5 tabular-nums text-foreground">{precoFormatado}</p>
+
+              {localizacao && (
+                <p className="type-body-small mt-2 flex items-center gap-1.5 text-muted-foreground">
+                  <MapPin className="size-4 shrink-0" aria-hidden="true" />
+                  Enviado de <span className="font-medium text-foreground">{localizacao}</span>
                 </p>
+              )}
+
+              <div className="mt-6 flex flex-col gap-3">
+                <button
+                  type="button"
+                  className="pay-btn"
+                  onClick={() => router.push(`/checkout?productId=${encodeURIComponent(p.id)}`)}
+                >
+                  Comprar agora
+                  <IconeCartao />
+                </button>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="lg"
+                  onClick={() => {
+                    addToCart(p)
+                    setAdicionadoAoCarrinho(true)
+                    window.setTimeout(() => setAdicionadoAoCarrinho(false), 2500)
+                  }}
+                >
+                  {adicionadoAoCarrinho ? <Check className="size-5" /> : <ShoppingCart className="size-5" />}
+                  {adicionadoAoCarrinho ? "Adicionado ao carrinho" : "Adicionar ao carrinho"}
+                </Button>
               </div>
-            )}
 
-            {/* CTA */}
-
-            <div className="mt-7 grid gap-3 sm:grid-cols-[1fr_auto]">
-
-              <Button
-                onClick={() => {
-                  if (!id) return
-
-                  router.push(`/checkout?productId=${encodeURIComponent(id)}`)
-}} size="lg"
-  >
-  <ShoppingBag className="size-5" />
-  Comprar agora
-</Button>
-
-<Button
-  type="button"
-  onClick={() => {
-    if (!produto) return
-    addToCart(produto)
-    setAdicionadoAoCarrinho(true)
-    window.setTimeout(() => setAdicionadoAoCarrinho(false), 2500)
-  }}
-  disabled={!produto}
-  variant="outline" size="lg"
->
-  <ShoppingCart className="size-5" />
-  {adicionadoAoCarrinho ? "Adicionado ao carrinho" : "Adicionar ao carrinho"}
-</Button>
-
-<Button
-  type="button"
-  onClick={falarComVendedor}
-  disabled={abrindoChat}
-  variant="outline" size="lg"
->
-
-  {abrindoChat ? (
-    <>
-      <Loader2 className="size-5 animate-spin" />
-      Abrindo conversa...
-    </>
-  ) : (
-    <>
-      <MessageCircle className="size-5" />
-      Falar com vendedor
-    </>
-  )}
-
-</Button>
-
-</div>
-
-{erroChat && <p role="alert" className="mt-3 text-sm font-semibold text-primary">{erroChat}</p>}
-
-{/* FRETE */}
-
-<div className="mt-5 border border-border bg-background p-5">
-
-  <div className="mb-4 flex items-center gap-3">
-
-    <Calculator className="size-5 text-primary" />
-
-    <div>
-
-      <p className="font-semibold">
-        Calcule o frete
-      </p>
-
-      <p className="text-xs text-muted-foreground">
-        Informe seu CEP para ver opções de entrega.
-      </p>
-
-    </div>
-
-  </div>
-
-  <form
-    className="flex gap-2"
-    onSubmit={(e) => {
-      e.preventDefault()
-      void calculateShipping()
-    }}
-  >
-
-    <input
-      value={zip}
-      onChange={(e) => {
-        // Máscara 00000-000
-        const digitos = e.target.value.replace(/\D/g, "").slice(0, 8)
-        setZip(digitos.length > 5 ? `${digitos.slice(0, 5)}-${digitos.slice(5)}` : digitos)
-        setShipping([])
-        setErroFrete(null)
-      }}
-      inputMode="numeric"
-      autoComplete="postal-code"
-      maxLength={9}
-      placeholder="00000-000"
-      aria-label="CEP para cálculo do frete"
-      className="min-w-0 flex-1 border border-border bg-surface px-3 py-3 text-sm outline-none focus:border-primary"
-    />
-
-    <Button
-      type="submit"
-      disabled={calculandoFrete}
-      className="min-w-[105px]"
-    >
-
-      {calculandoFrete ? (
-        <>
-          <Loader2 className="size-4 animate-spin" />
-          Calculando
-        </>
-      ) : (
-        "Calcular"
-      )}
-
-    </Button>
-
-  </form>
-
-  {erroFrete && (
-    <p className="mt-3 text-xs font-semibold text-primary">
-      {erroFrete}
-    </p>
-  )}
-
-  {shipping.length > 0 && (
-    <div className="mt-4 space-y-2">
-
-      <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
-        Opções de entrega
-      </p>
-
-      {shipping.map(
-        (opcao) => (
-
-          <div
-            key={opcao.id}
-            className="flex items-center justify-between gap-4 border border-border bg-surface p-3"
-          >
-
-            <div className="min-w-0">
-
-              <p className="text-sm font-semibold">
-                {opcao.transportadora}
-              </p>
-
-              <p className="mt-1 text-xs text-muted-foreground">
-                {opcao.servico} ·{" "}
-                {opcao.prazoDias}{" "}
-                {opcao.prazoDias === 1
-                  ? "dia útil"
-                  : "dias úteis"}
-              </p>
-
+              <ul className="type-caption mt-6 flex flex-col gap-3 border-t border-border pt-5 text-muted-foreground">
+                <li className="flex gap-2.5">
+                  <ShieldCheck className="size-4 shrink-0 text-success" aria-hidden="true" />
+                  <span>
+                    <span className="font-semibold text-foreground">Pagamento retido até a entrega.</span> O vendedor só recebe
+                    depois que você confirma o recebimento.
+                  </span>
+                </li>
+                <li className="flex gap-2.5">
+                  <PackageCheck className="size-4 shrink-0 text-success" aria-hidden="true" />
+                  <span>
+                    <span className="font-semibold text-foreground">Avaliações reais.</span> Só quem recebeu o pedido pode avaliar o
+                    vendedor.
+                  </span>
+                </li>
+              </ul>
             </div>
 
-            <p className="shrink-0 text-sm font-bold">
-              {formatarFrete(
-                opcao.valor,
-              )}
-            </p>
+            {/* FRETE */}
 
+            <div className="rounded-2xl border border-border bg-surface p-5">
+              <div className="flex items-center gap-2.5">
+                <Truck className="size-5 text-primary" aria-hidden="true" />
+                <p className="type-label text-foreground">Calcule o frete</p>
+              </div>
+
+              <form
+                className="mt-3 flex gap-2"
+                onSubmit={(e) => {
+                  e.preventDefault()
+                  void calculateShipping()
+                }}
+              >
+                <Input
+                  value={zip}
+                  onChange={(e) => {
+                    // Máscara 00000-000
+                    const digitos = e.target.value.replace(/\D/g, "").slice(0, 8)
+                    setZip(digitos.length > 5 ? `${digitos.slice(0, 5)}-${digitos.slice(5)}` : digitos)
+                    setShipping([])
+                    setErroFrete(null)
+                  }}
+                  inputMode="numeric"
+                  autoComplete="postal-code"
+                  maxLength={9}
+                  placeholder="Seu CEP"
+                  aria-label="CEP para cálculo do frete"
+                  className="min-w-0 flex-1"
+                />
+                <Button type="submit" variant="outline" loading={calculandoFrete} className="min-w-[6.5rem]">
+                  Calcular
+                </Button>
+              </form>
+
+              {erroFrete && (
+                <p role="alert" className="type-caption mt-3 font-semibold text-destructive">
+                  {erroFrete}
+                </p>
+              )}
+
+              {shipping.length > 0 && (
+                <ul className="mt-4 divide-y divide-border overflow-hidden rounded-xl border border-border">
+                  {shipping.map((opcao) => (
+                    <li key={opcao.id} className="flex items-center justify-between gap-4 px-4 py-3">
+                      <div className="min-w-0">
+                        <p className="type-label truncate text-foreground">{opcao.transportadora}</p>
+                        <p className="type-caption mt-0.5 text-muted-foreground">
+                          {opcao.servico} · {opcao.prazoDias} {opcao.prazoDias === 1 ? "dia útil" : "dias úteis"}
+                        </p>
+                      </div>
+                      <p className="type-label shrink-0 tabular-nums text-foreground">{brl(opcao.valor)}</p>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            {/* VENDEDOR */}
+
+            {p.seller && (
+              <ProdutoVendedor
+                id={p.seller.id}
+                nome={p.seller.name || "Vendedor"}
+                avatarUrl={p.seller.avatarUrl}
+                acao={
+                  <>
+                    <Button type="button" variant="outline" className="w-full" onClick={falarComVendedor} loading={abrindoChat}>
+                      {!abrindoChat && <MessageCircle aria-hidden="true" />}
+                      {abrindoChat ? "Abrindo conversa..." : "Falar com vendedor"}
+                    </Button>
+                    {erroChat && (
+                      <p role="alert" className="type-caption mt-3 font-semibold text-destructive">
+                        {erroChat}
+                      </p>
+                    )}
+                  </>
+                }
+              />
+            )}
+          </aside>
+        </section>
+
+        {/* DESCRIÇÃO + FICHA TÉCNICA */}
+
+        <section className="mt-14 grid items-start gap-10 border-t border-border pt-10 lg:grid-cols-[minmax(0,1fr)_400px] lg:gap-12 xl:grid-cols-[minmax(0,1fr)_440px]">
+          <div>
+            <Sobretitulo className="text-primary">Sobre este anúncio</Sobretitulo>
+            <h2 className="type-h2 mt-2 text-foreground">Descrição</h2>
+            <p className="type-body mt-4 max-w-prose whitespace-pre-line text-pretty text-muted-foreground">{descricao}</p>
           </div>
 
-        ),
-      )}
+          {specs.length > 0 && (
+            <aside className="rounded-2xl border border-border bg-surface p-5 sm:p-6">
+              <h2 className="type-h3 text-foreground">Ficha técnica</h2>
+              <dl className="type-body-small mt-4 divide-y divide-border">
+                {specs.map(([label, value]) => (
+                  <div key={label} className="flex justify-between gap-4 py-3 first:pt-0 last:pb-0">
+                    <dt className="text-muted-foreground">{label}</dt>
+                    <dd className="text-right font-medium text-foreground">{value}</dd>
+                  </div>
+                ))}
+              </dl>
+            </aside>
+          )}
+        </section>
 
-    </div>
-  )}
+        {p.seller && <ProdutoAvaliacoes vendedorId={p.seller.id} />}
 
-</div>
-
-{/* VENDEDOR */}
-
-{p.seller && (
-  <ProdutoVendedor id={p.seller.id} nome={p.seller.name || "Vendedor"} avatarUrl={p.seller.avatarUrl} />
-)}
-
-</div>
-
-</section>
-
-{/* DESCRIÇÃO + FICHA TÉCNICA */}
-
-<section className="mt-16 grid gap-10 border-t border-border pt-12 lg:grid-cols-[1.35fr_0.65fr]">
-
-  <div>
-
-    <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.2em] text-primary">
-      Sobre este anúncio
-    </p>
-
-    <h2 className="font-serif text-3xl tracking-[-0.03em]">
-      Detalhes do produto.
-    </h2>
-
-    <p className="mt-5 max-w-2xl whitespace-pre-line text-[15px] leading-7 text-muted-foreground">
-      {descricao}
-    </p>
-
-    {/* Só o que o sistema garante de verdade (pedidos com pagamento retido e avaliação após a entrega) */}
-    <div className="mt-8 grid gap-3 sm:grid-cols-2">
-
-      <div className="flex gap-3 border-t border-border pt-4">
-
-        <ShieldCheck className="size-5 shrink-0 text-primary" />
-
-        <div>
-
-          <p className="text-sm font-semibold">
-            Pagamento retido até a entrega
-          </p>
-
-          <p className="mt-1 text-xs leading-5 text-muted-foreground">
-            O vendedor só recebe depois que você confirma o recebimento ou o prazo de disputa acaba.
-          </p>
-
-        </div>
-
+        <ProdutosRelacionados produtoId={p.id} sport={p.sport} modality={p.modality} />
       </div>
-
-      <div className="flex gap-3 border-t border-border pt-4">
-
-        <PackageCheck className="size-5 shrink-0 text-primary" />
-
-        <div>
-
-          <p className="text-sm font-semibold">
-            Avaliações de quem recebeu
-          </p>
-
-          <p className="mt-1 text-xs leading-5 text-muted-foreground">
-            Só compradores com o pedido entregue podem avaliar o vendedor.
-          </p>
-
-        </div>
-
-      </div>
-
-    </div>
-
-  </div>
-
-  {specs.length > 0 && (
-    <aside className="border-l border-border pl-0 lg:pl-8">
-
-      <p className="mb-4 text-[11px] font-bold uppercase tracking-[0.2em] text-primary">
-        Ficha técnica
-      </p>
-
-      <dl className="flex flex-col gap-4 text-sm">
-
-        {specs.map(
-          ([label, value]) => (
-
-            <div
-              key={label}
-              className="flex justify-between gap-4 border-b border-border pb-3"
-            >
-
-              <dt className="text-muted-foreground">
-                {label}
-              </dt>
-
-              <dd className="text-right font-semibold">
-                {value}
-              </dd>
-
-            </div>
-
-          ),
-        )}
-
-      </dl>
-
-    </aside>
-  )}
-
-</section>
-
-{p.seller && <ProdutoAvaliacoes vendedorId={p.seller.id} />}
-
-<ProdutosRelacionados produtoId={p.id} sport={p.sport} modality={p.modality} />
-
-</div>
-</main>
-)
+    </main>
+  )
 }
 
 export default ProdutoPage

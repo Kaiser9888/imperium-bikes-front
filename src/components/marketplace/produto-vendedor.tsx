@@ -6,11 +6,19 @@ import { User } from "lucide-react"
 
 import { Rating } from "@/components/ui/rating"
 import api from "@/lib/api"
+import { cn } from "@/lib/utils"
 
-type Props = { id: string; nome: string; avatarUrl?: string | null }
+type Props = {
+    id: string
+    nome: string
+    avatarUrl?: string | null
+    /** Botão no rodapé do cartão (ex.: Falar com vendedor). */
+    acao?: React.ReactNode
+    className?: string
+}
 
 /** Cartão do vendedor com nota e anúncios ativos reais. */
-export function ProdutoVendedor({ id, nome, avatarUrl }: Props) {
+export function ProdutoVendedor({ id, nome, avatarUrl, acao, className }: Props) {
     const [nota, setNota] = useState<{ average: number; count: number } | null>(null)
     const [ativos, setAtivos] = useState<number | null>(null)
 
@@ -24,8 +32,9 @@ export function ProdutoVendedor({ id, nome, avatarUrl }: Props) {
     const iniciais = nome.split(" ").map((n) => n[0]).slice(0, 2).join("").toUpperCase()
 
     return (
-        <div className="mt-6 border border-border bg-background p-5">
-            <div className="flex items-center justify-between gap-4">
+        <div className={cn("rounded-2xl border border-border bg-surface p-5", className)}>
+            <p className="type-caption font-semibold uppercase tracking-[0.14em] text-muted-foreground">Vendido por</p>
+            <div className="mt-3 flex items-center justify-between gap-4">
                 <div className="flex min-w-0 items-center gap-3">
                     {avatarUrl ? (
                         // eslint-disable-next-line @next/next/no-img-element -- avatar externo do Clerk
@@ -35,17 +44,14 @@ export function ProdutoVendedor({ id, nome, avatarUrl }: Props) {
                             {iniciais || <User className="size-5" />}
                         </div>
                     )}
-                    <p className="truncate font-semibold">{nome}</p>
+                    <p className="type-label truncate text-foreground">{nome}</p>
                 </div>
-                <Link
-                    href={`/perfil/${id}`}
-                    className="shrink-0 text-xs font-bold uppercase tracking-[0.1em] text-primary hover:underline"
-                >
+                <Link href={`/perfil/${id}`} className="type-label shrink-0 text-primary hover:underline">
                     Ver perfil
                 </Link>
             </div>
 
-            <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-border pt-4 text-xs text-muted-foreground">
+            <div className="type-caption mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-muted-foreground">
                 {nota && nota.count > 0 ? <Rating media={nota.average} total={nota.count} /> : <span>Ainda sem avaliações</span>}
                 {ativos !== null && (
                     <span>
@@ -53,6 +59,8 @@ export function ProdutoVendedor({ id, nome, avatarUrl }: Props) {
                     </span>
                 )}
             </div>
+
+            {acao && <div className="mt-4 border-t border-border pt-4">{acao}</div>}
         </div>
     )
 }

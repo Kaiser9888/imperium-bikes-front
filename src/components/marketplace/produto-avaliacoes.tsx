@@ -31,10 +31,10 @@ export function ProdutoAvaliacoes({ vendedorId }: { vendedorId: string }) {
     }, [vendedorId])
 
     return (
-        <section className="mt-16 border-t border-border pt-12" aria-labelledby="avaliacoes-title">
-            <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.2em] text-primary">Avaliações</p>
-            <h2 id="avaliacoes-title" className="font-serif text-3xl tracking-[-0.03em]">
-                O que dizem do vendedor.
+        <section className="mt-14 border-t border-border pt-10" aria-labelledby="avaliacoes-title">
+            <p className="type-caption mb-2 font-semibold uppercase tracking-[0.16em] text-primary">Avaliações</p>
+            <h2 id="avaliacoes-title" className="type-h2 text-foreground">
+                O que dizem do vendedor
             </h2>
 
             {lista === null ? null : lista.length === 0 ? (

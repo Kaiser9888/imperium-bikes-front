@@ -28,10 +28,10 @@ export function ProdutosRelacionados({ produtoId, sport, modality }: Props) {
     if (produtos.length === 0) return null
 
     return (
-        <section className="mt-16 border-t border-border pt-12" aria-labelledby="relacionados-title">
-            <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.2em] text-primary">Você também pode gostar</p>
-            <h2 id="relacionados-title" className="font-serif text-3xl tracking-[-0.03em]">
-                Produtos relacionados.
+        <section className="mt-14 border-t border-border pt-10" aria-labelledby="relacionados-title">
+            <p className="type-caption mb-2 font-semibold uppercase tracking-[0.16em] text-primary">Você também pode gostar</p>
+            <h2 id="relacionados-title" className="type-h2 text-foreground">
+                Produtos relacionados
             </h2>
             <ul className="mt-6 grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 lg:grid-cols-4">
                 {produtos.map((p) => (

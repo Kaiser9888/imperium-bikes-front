@@ -297,6 +297,68 @@
     }
 }
 
+/*
+  Botão de pagar (Uiverse.io, vinodjangid07). No hover um quadrado com
+  mix-blend-mode: difference atravessa o botão e inverte as cores.
+  Usa foreground/background, então funciona nos dois temas.
+*/
+.pay-btn {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    display: flex;
+    width: 100%;
+    height: 3.25rem;
+    align-items: center;
+    justify-content: center;
+    gap: 0.625rem;
+    border: none;
+    border-radius: 0.625rem;
+    background-color: var(--foreground);
+    color: var(--background);
+    font-size: 0.9375rem;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 5px 5px 10px rgb(0 0 0 / 0.1);
+    transition-duration: 0.3s;
+}
+.pay-btn svg {
+    width: 1.125rem;
+    fill: currentColor;
+}
+.pay-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background-color: #fff;
+    mix-blend-mode: difference;
+    transition-duration: 0.3s;
+}
+.pay-btn:hover::before {
+    transform: translate(100%, -50%);
+    border-radius: 0;
+}
+.pay-btn:active {
+    transform: translate(3px, 3px);
+}
+.pay-btn:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 3px;
+}
+.pay-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+@media (prefers-reduced-motion: reduce) {
+    .pay-btn::before {
+        display: none;
+    }
+}
+
 /* Botão de compartilhar (Uiverse.io, zaby_4213) nas cores da marca */
 .galaxy-btn {
     --btn-bg: oklch(0.16 0.02 20);
