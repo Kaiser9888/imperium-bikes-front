@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@clerk/nextjs";
 import Link from "next/link";
 import { toast } from "sonner";
-import { Trash2, Eye, Heart, Clock, Plus, Film, BarChart3, MessageSquare, Radio, Loader2, ArrowRight } from "lucide-react";
+import { Trash2, Eye, Heart, Clock, Plus, Film, BarChart3, MessageSquare, Radio, Loader2, ArrowRight, CircleDollarSign } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { ErrorState } from "@/components/videos/FeedStates";
@@ -151,6 +151,12 @@ export default function MeusVideosPage() {
               <Link href="/videos/live">
                 <Radio className="size-4" />
                 Fazer live
+              </Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link href="/videos/monetizacao">
+                <CircleDollarSign className="size-4" />
+                Monetização
               </Link>
             </Button>
           </div>

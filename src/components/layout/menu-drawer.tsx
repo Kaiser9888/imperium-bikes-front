@@ -4,10 +4,12 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { SignOutButton, useAuth, useUser } from "@clerk/nextjs"
 import {
+    CircleDollarSign,
     Clapperboard,
     Heart,
     LayoutGrid,
     LogOut,
+    Megaphone,
     MessageCircle,
     PlusCircle,
     Settings,
@@ -65,12 +67,16 @@ const menuSections: MenuSection[] = [
     {
         // Tudo de anunciar (publicar, rascunhos, gerenciar) fica dentro da Central
         title: "Vender",
-        items: [{ icon: Store, label: "Central do vendedor", href: "/vendedor" }],
+        items: [
+            { icon: Store, label: "Central do vendedor", href: "/vendedor" },
+            { icon: Megaphone, label: "Anunciar nos vídeos", href: "/anunciar" },
+        ],
     },
     {
         title: "Conteúdo",
         items: [
             { icon: Clapperboard, label: "Vídeos", href: "/videos" },
+            { icon: CircleDollarSign, label: "Monetização", href: "/videos/monetizacao" },
             { icon: Newspaper, label: "Notícias", href: "/forum" },
             { icon: LayoutGrid, label: "Categorias", href: "/modalidades" },
         ],

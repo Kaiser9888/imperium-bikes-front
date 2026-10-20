@@ -40,6 +40,9 @@ function SuccessContent() {
         if (result.type === "TOURNAMENT_INSCRIPTION" && result.referenceId) {
           setVoltar({ href: `/torneios/${result.referenceId}`, label: "Voltar ao evento" })
         }
+        if (result.type === "AD_CAMPAIGN") {
+          setVoltar({ href: "/anunciar", label: "Ver minhas campanhas" })
+        }
         const atual = result.status.toUpperCase()
         if (atual === "PAGO" || atual === "PAID") return setStatus("PAGO")
         if (["FAILED", "FALHOU", "CANCELADO", "CANCELED", "CANCELLED", "EXPIRED"].includes(atual)) return setStatus("FAILED")

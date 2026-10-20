@@ -6,6 +6,7 @@ import { useState } from "react"
 import { useUser } from "@clerk/nextjs"
 import { Loader2, ShieldAlert } from "lucide-react"
 
+import { AnunciosAdmin } from "@/components/admin/anuncios-admin"
 import { BannersAdmin } from "@/components/admin/banners-admin"
 import { DenunciasAdmin } from "@/components/admin/denuncias-admin"
 import { UsuariosAdmin } from "@/components/admin/usuarios-admin"
@@ -16,6 +17,7 @@ import { useIsAdmin } from "@/lib/use-is-admin"
 
 const ABAS = [
     { id: "banners", label: "Banners" },
+    { id: "anuncios", label: "Anúncios" },
     { id: "denuncias", label: "Denúncias" },
     { id: "usuarios", label: "Usuários" },
 ] as const
@@ -72,6 +74,7 @@ export default function AdminPage() {
                 </nav>
                 <div className="mt-6">
                     {aba === "banners" && <BannersAdmin />}
+                    {aba === "anuncios" && <AnunciosAdmin />}
                     {aba === "denuncias" && <DenunciasAdmin />}
                     {aba === "usuarios" && <UsuariosAdmin />}
                 </div>
