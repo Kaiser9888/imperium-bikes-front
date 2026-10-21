@@ -48,6 +48,9 @@ export const viewport: Viewport = {
     { media: '(prefers-color-scheme: dark)', color: '#0e131b' },
   ],
   viewportFit: 'cover',
+  // Sem zoom de pinça na página (jeito de app); fotos ampliam na galeria em tela cheia
+  maximumScale: 1,
+  userScalable: false,
 }
 
 export default function RootLayout({

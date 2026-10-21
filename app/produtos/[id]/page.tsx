@@ -20,6 +20,7 @@ import {
 } from "lucide-react"
 
 import { Logo } from "@/components/layout/logo"
+import { GaleriaTelaCheia } from "@/components/marketplace/galeria-tela-cheia"
 import { ProductImage } from "@/components/marketplace/ProductImage"
 import { ProdutoAvaliacoes } from "@/components/marketplace/produto-avaliacoes"
 import { ProdutoVendedor } from "@/components/marketplace/produto-vendedor"
@@ -79,6 +80,7 @@ function ProdutoPage() {
   const [loading, setLoading] = useState(true)
   const [erro, setErro] = useState<string | null>(null)
   const [activeImage, setActiveImage] = useState(0)
+  const [telaCheia, setTelaCheia] = useState(false)
   const [favorite, setFavorite] = useState(false)
 
   const [zip, setZip] = useState("")
@@ -273,11 +275,18 @@ function ProdutoPage() {
           <div className="min-w-0">
             <div className="group relative aspect-[4/3] overflow-hidden rounded-2xl border border-border bg-surface-muted">
               {imagens.length > 0 ? (
-                <ProductImage
-                  src={imagens[activeImage]}
-                  alt={`${marca} ${titulo}`.trim()}
-                  className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.02]"
-                />
+                <button
+                  type="button"
+                  onClick={() => setTelaCheia(true)}
+                  className="block h-full w-full cursor-zoom-in"
+                  aria-label="Ver foto em tela cheia"
+                >
+                  <ProductImage
+                    src={imagens[activeImage]}
+                    alt={`${marca} ${titulo}`.trim()}
+                    className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.02]"
+                  />
+                </button>
               ) : (
                 <div className="grid h-full place-items-center text-sm text-muted-foreground">Sem imagem disponível</div>
               )}
@@ -326,6 +335,15 @@ function ProdutoPage() {
                 ))}
               </div>
             )}
+
+            <GaleriaTelaCheia
+              imagens={imagens}
+              indice={activeImage}
+              onIndice={setActiveImage}
+              aberta={telaCheia}
+              onAberta={setTelaCheia}
+              alt={`${marca} ${titulo}`.trim()}
+            />
           </div>
 
           {/* COMPRA: fica visível ao rolar no desktop */}

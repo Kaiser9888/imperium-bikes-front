@@ -217,7 +217,7 @@ export default function TorneioDetalhesPage() {
                 <header className="mt-6 flex gap-5 sm:gap-7">
                     {inicio && (
                         <div className="h-fit shrink-0 border border-foreground px-3 py-2.5 text-center shadow-[4px_4px_0_var(--foreground)]">
-                            <p className="text-4xl font-bold leading-none tabular-nums sm:text-5xl">{inicio.dia}</p>
+                            <p className="text-3xl font-bold leading-none tabular-nums sm:text-5xl">{inicio.dia}</p>
                             <p className="mt-1.5 text-xs font-semibold uppercase tracking-[0.16em]">{inicio.mes}</p>
                             <p className="text-xs tabular-nums text-muted-foreground">{inicio.ano}</p>
                         </div>
