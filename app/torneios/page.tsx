@@ -179,7 +179,7 @@ function CartaoEvento({ torneio: t }: { torneio: Tournament }) {
 
     return (
         <li>
-            <Link href={`/torneios/${t.id}`} className="group block outline-none">
+            <Link href={`/torneios/${t.id}`} className="group block rounded-lg">
                 <div className="relative aspect-[4/3] overflow-hidden rounded-lg border border-foreground bg-surface-muted">
                     {/* eslint-disable-next-line @next/next/no-img-element -- capa enviada pelo organizador, domínio variável */}
                     <img

@@ -35,14 +35,16 @@ export const bannerService = {
 /* ---------- Denúncias ---------- */
 
 export type StatusDenuncia = "PENDING" | "REVIEWED" | "RESOLVED" | "DISMISSED"
-export type TipoDenunciado = "PRODUCT" | "USER" | "POST" | "COMMENT" | "VIDEO"
+export type MotivoDenuncia = "SPAM" | "ABUSE" | "SCAM" | "INAPPROPRIATE" | "FAKE" | "COPYRIGHT" | "OTHER"
+
+export type TipoDenunciado = "PRODUCT" | "USER" | "POST" | "COMMENT" | "VIDEO" | "TOURNAMENT"
 
 export type Denuncia = {
     id: string
     reporterName: string | null
     reportedType: TipoDenunciado
     reportedId: string
-    reason: "SPAM" | "ABUSE" | "SCAM" | "INAPPROPRIATE" | "FAKE" | "OTHER"
+    reason: MotivoDenuncia
     details: string | null
     status: StatusDenuncia
     priority: number

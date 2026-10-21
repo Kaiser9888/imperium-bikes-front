@@ -1,11 +1,12 @@
-import { Analytics } from '@vercel/analytics/next'
 import { ClerkProvider } from '@clerk/nextjs'
 import { ptBR } from '@clerk/localizations'
 import type { Metadata, Viewport } from 'next'
 import { Caesar_Dressing, Geist } from 'next/font/google'
 import { ThemeProvider } from 'next-themes'
 import { AppShellProvider } from '@/components/layout/app-shell'
+import { AvisoCookies } from '@/components/layout/aviso-cookies'
 import { Toaster } from '@/components/ui/sonner'
+import { RastreioNavegacao } from '@/components/ui/back-button'
 import { UserSyncProvider } from '@/lib/UserSyncContext'
 import './globals.css'
 
@@ -65,8 +66,10 @@ export default function RootLayout({
               <AppShellProvider>{children}</AppShellProvider>
             </UserSyncProvider>
             <Toaster />
+            <RastreioNavegacao />
           </ThemeProvider>
-          <Analytics />
+          {/* Estatísticas só carregam com consentimento */}
+          <AvisoCookies />
         </body>
       </html>
     </ClerkProvider>

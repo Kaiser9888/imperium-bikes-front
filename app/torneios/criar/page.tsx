@@ -4,12 +4,13 @@
 import Link from "next/link"
 import { useState } from "react"
 import { useUser } from "@clerk/nextjs"
-import { ArrowRight, Check, Loader2, Plus, X } from "lucide-react"
+import { ArrowRight, Check, ImagePlus, Loader2, Plus, X } from "lucide-react"
 
 import { BottomNav } from "@/components/layout/bottom-nav"
 import { Logo } from "@/components/layout/logo"
 import { BackButton } from "@/components/ui/back-button"
 import { formatarPreco, partesDaData } from "@/lib/format"
+import { compactarImagem } from "@/lib/imagem"
 import { mensagemDaApi, tournamentService } from "@/services/tournamentService"
 
 const PASSOS = ["O evento", "Local e vagas", "Inscrição"] as const
@@ -42,6 +43,23 @@ export default function CriarTorneioPage() {
     const [criadoId, setCriadoId] = useState<string | null>(null)
     const [enviando, setEnviando] = useState(false)
     const [erroEnvio, setErroEnvio] = useState<string | null>(null)
+    // Se a publicação falhar depois de criar, tentar de novo só publica (sem rascunho repetido)
+    const [rascunhoId, setRascunhoId] = useState<string | null>(null)
+    const [preparandoCapa, setPreparandoCapa] = useState(false)
+    const [erroCapa, setErroCapa] = useState<string | null>(null)
+
+    const escolherCapa = async (arquivo: File | undefined) => {
+        if (!arquivo) return
+        setPreparandoCapa(true)
+        setErroCapa(null)
+        try {
+            update("capa", await compactarImagem(arquivo, 1200, 350 * 1024))
+        } catch (cause) {
+            setErroCapa(cause instanceof Error ? cause.message : "Não foi possível usar essa imagem.")
+        } finally {
+            setPreparandoCapa(false)
+        }
+    }
 
     const update = (campo: keyof typeof form, valor: string) => {
         setForm((prev) => ({ ...prev, [campo]: valor }))
@@ -55,14 +73,16 @@ export default function CriarTorneioPage() {
         setEnviando(true)
         setErroEnvio(null)
         try {
-            const criado = await tournamentService.criar({
+            const id = rascunhoId ?? (await tournamentService.criarRascunho({
                 name: form.nome.trim(), description: form.descricao.trim(),
                 location: form.local.trim(), city: form.cidade.trim(), state: form.estado.trim().toUpperCase(),
                 startDate: form.dataInicio, endDate: form.dataFim || form.dataInicio, registrationDeadline: form.prazoInscricao,
                 maxParticipants: Number(form.maxParticipantes), minParticipants: Number(form.minParticipantes),
-                registrationFee: Number(form.valorInscricao) || 0, prizes: form.premiacao.trim(), rules: form.regras.trim(), coverImageUrl: form.capa.trim(),
-            })
-            setCriadoId(criado.id)
+                registrationFee: Number(form.valorInscricao) || 0, prizes: form.premiacao.trim(), rules: form.regras.trim(), coverImageUrl: form.capa,
+            }))
+            setRascunhoId(id)
+            const publicado = await tournamentService.publicar(id)
+            setCriadoId(publicado.id)
         } catch (cause) {
             setErroEnvio(mensagemDaApi(cause, "Não foi possível criar o evento. Confira os dados e tente novamente."))
         } finally {
@@ -182,8 +202,8 @@ export default function CriarTorneioPage() {
                             <label htmlFor="capa" className={rotulo}>Capa</label>
                             {form.capa ? (
                                 <div className="relative mt-2 overflow-hidden rounded-lg border border-foreground">
-                                    {/* eslint-disable-next-line @next/next/no-img-element -- URL colada pelo organizador */}
-                                    <img src={form.capa} alt="Prévia da capa" className="aspect-[1200/630] w-full object-cover" />
+                                    {/* eslint-disable-next-line @next/next/no-img-element -- imagem local, ainda não enviada */}
+                                    <img src={form.capa} alt="Prévia da capa do evento" className="aspect-[1200/630] w-full object-cover" />
                                     <button
                                         type="button"
                                         onClick={() => update("capa", "")}
@@ -195,8 +215,26 @@ export default function CriarTorneioPage() {
                                 </div>
                             ) : (
                                 <>
-                                    <input id="capa" type="url" value={form.capa} onChange={(e) => update("capa", e.target.value)} placeholder="https://…/capa.jpg" className={campo} />
-                                    <p className={ajuda}>Cole o link de uma imagem. Fica melhor em 1200×630.</p>
+                                    <label
+                                        htmlFor="capa"
+                                        className="mt-2 flex aspect-[1200/630] w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-foreground/40 bg-surface text-muted-foreground transition-colors focus-within:border-primary hover:border-foreground"
+                                    >
+                                        {preparandoCapa ? <Loader2 className="size-6 animate-spin" aria-hidden="true" /> : <ImagePlus className="size-6" aria-hidden="true" />}
+                                        <span className="type-label">{preparandoCapa ? "Preparando imagem…" : "Escolher foto do dispositivo"}</span>
+                                        <input
+                                            id="capa"
+                                            type="file"
+                                            accept="image/*"
+                                            className="sr-only"
+                                            disabled={preparandoCapa}
+                                            onChange={(e) => {
+                                                escolherCapa(e.target.files?.[0])
+                                                e.target.value = ""
+                                            }}
+                                        />
+                                    </label>
+                                    <p className={ajuda}>Fica melhor em 1200×630. Use só fotos suas ou que você tem permissão para usar.</p>
+                                    {erroCapa && <p role="alert" className="type-caption mt-1.5 text-destructive">{erroCapa}</p>}
                                 </>
                             )}
                         </div>

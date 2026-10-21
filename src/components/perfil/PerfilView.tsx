@@ -6,6 +6,7 @@ import { CalendarDays, Clapperboard, MapPin, Medal, Star, Trophy, type LucideIco
 
 import { ProdutoGrid } from "@/components/perfil/ProdutoGrid"
 import { SponsorBanners, type Sponsor } from "@/components/perfil/SponsorBanners"
+import { DenunciarButton } from "@/components/ui/denunciar-button"
 import { VideoCard } from "@/components/videos/VideoCard"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -173,6 +174,7 @@ export function PerfilView({
             </section>
 
             <SponsorBanners sponsors={perfil.sponsors} gerenciarHref={dono ? "/configuracoes/patrocinadores" : undefined} />
+            {!dono && <DenunciarButton tipo="USER" id={perfil.id} className="mt-3" />}
 
             <Tabs defaultValue="anuncios" className="mt-10">
                 <TabsList className="h-auto w-full justify-start gap-6 overflow-x-auto rounded-none border-b border-border bg-transparent p-0">

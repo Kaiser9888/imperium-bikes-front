@@ -13,6 +13,7 @@ import { PESO, registrarInteresse } from "@/lib/videos/gosto";
 import type { VideoItem } from "@/lib/videos/types";
 import { VideoPlayer } from "@/components/videos/VideoPlayer";
 import { VideoActions } from "@/components/videos/VideoActions";
+import { DenunciarButton } from "@/components/ui/denunciar-button";
 import { VideoComments } from "@/components/videos/VideoComments";
 import { VideoSidebar } from "@/components/videos/VideoSidebar";
 import { VideoAvatar } from "@/components/videos/VideoAvatar";
@@ -156,6 +157,7 @@ export default function WatchPage() {
         onToggleDislike={() => void toggle("dislike")}
       />
     );
+    const denunciar = <DenunciarButton tipo="VIDEO" id={video.id} />;
 
     return (
       <div className="mx-auto max-w-7xl px-0 sm:px-6 lg:px-8 lg:py-8">
@@ -214,6 +216,7 @@ export default function WatchPage() {
                           </div>
                           {actions}
                       </div>
+                      <div className="mt-1 flex justify-end">{denunciar}</div>
 
                       {liveWaiting && (
                         <p className="type-body-small mt-4 rounded-xl border border-border bg-surface px-4 py-3 text-muted-foreground">

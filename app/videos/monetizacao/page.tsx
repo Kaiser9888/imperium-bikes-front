@@ -12,12 +12,10 @@ import { ErrorState } from "@/components/ui/error-state"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
-import { monetizacaoService, type MonetizacaoStatus } from "@/lib/ads"
+import { monetizacaoService, SAQUE_MINIMO, type MonetizacaoStatus } from "@/lib/ads"
 import { formatarPreco } from "@/lib/format"
 import { cn } from "@/lib/utils"
 import { mensagemDaApi } from "@/services/tournamentService"
-
-const SAQUE_MINIMO = 50
 
 type Estado = { status: "loading" } | { status: "error" } | { status: "ok"; dados: MonetizacaoStatus }
 
@@ -44,7 +42,7 @@ export default function MonetizacaoPage() {
         <BackButton href="/videos/meus-videos" label="Central de Vídeos" className="-ml-2.5" />
         <h1 className="type-h1 mt-2 text-foreground">Monetização</h1>
         <p className="type-body-small mt-1 text-muted-foreground">
-          Ganhe 55% do valor de cada anúncio exibido antes dos seus vídeos.
+          Ganhe 55% do valor de cada anúncio exibido antes dos seus vídeos. Sem anúncio exibido, não há ganho.
         </p>
 
         <div className="mt-8 flex flex-col gap-6">
@@ -99,7 +97,7 @@ function Painel({ dados, recarregar }: { dados: MonetizacaoStatus; recarregar: (
         )}
       </section>
 
-      {cumpriu && !dados.isEnabled && <Ativar onAtivado={recarregar} />}
+      {cumpriu && !dados.isEnabled && <Ativar stripeReady={dados.stripeReady} onAtivado={recarregar} />}
 
       {dados.isEnabled && <Ganhos dados={dados} onSaque={recarregar} />}
     </>
@@ -133,15 +131,24 @@ function Requisito({ icon: Icon, rotulo, atual, meta }: { icon: typeof Users; ro
   )
 }
 
-function Ativar({ onAtivado }: { onAtivado: () => Promise<void> }) {
-  const [pix, setPix] = useState("")
+function ContaStripe() {
+  return (
+    <p className="type-body-small mt-1 text-muted-foreground">
+      Os ganhos são pagos pelo Stripe, na mesma conta de recebimentos das suas vendas.{" "}
+      <Link href="/carteira" className="font-semibold text-primary underline underline-offset-2">
+        Conectar conta na Carteira
+      </Link>
+    </p>
+  )
+}
+
+function Ativar({ stripeReady, onAtivado }: { stripeReady: boolean; onAtivado: () => Promise<void> }) {
   const [salvando, setSalvando] = useState(false)
 
-  async function ativar(event: React.FormEvent) {
-    event.preventDefault()
+  async function ativar() {
     setSalvando(true)
     try {
-      await monetizacaoService.ativar(pix.trim())
+      await monetizacaoService.ativar()
       toast.success("Monetização ativada. Os anúncios começam a aparecer nos seus vídeos.")
       await onAtivado()
     } catch (cause) {
@@ -156,16 +163,14 @@ function Ativar({ onAtivado }: { onAtivado: () => Promise<void> }) {
       <h2 id="ativar-title" className="type-h3 text-foreground">
         Ative a monetização
       </h2>
-      <p className="type-body-small mt-1 text-muted-foreground">Informe a chave Pix que vai receber os saques.</p>
-      <form onSubmit={ativar} className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end">
-        <div className="flex flex-1 flex-col gap-2">
-          <Label htmlFor="pix">Chave Pix</Label>
-          <Input id="pix" required maxLength={140} value={pix} onChange={(e) => setPix(e.target.value)} placeholder="CPF, e-mail, telefone ou chave aleatória" />
-        </div>
-        <Button type="submit" loading={salvando} disabled={!pix.trim()}>
-          Ativar
-        </Button>
-      </form>
+      {stripeReady ? (
+        <p className="type-body-small mt-1 text-muted-foreground">Os saques vão para a sua conta de recebimentos (Stripe).</p>
+      ) : (
+        <ContaStripe />
+      )}
+      <Button className="mt-4" onClick={ativar} loading={salvando} disabled={!stripeReady}>
+        Ativar
+      </Button>
     </section>
   )
 }
@@ -186,7 +191,7 @@ function Ganhos({ dados, onSaque }: { dados: MonetizacaoStatus; onSaque: () => P
     setSacando(true)
     try {
       await monetizacaoService.sacar(Math.round(quantia * 100) / 100)
-      toast.success("Saque solicitado. Ele é conferido e pago via Pix.")
+      toast.success("Saque enviado para a sua conta Stripe. O depósito no banco segue o prazo do Stripe.")
       setValor("")
       await onSaque()
     } catch (cause) {
@@ -219,20 +224,21 @@ function Ganhos({ dados, onSaque }: { dados: MonetizacaoStatus; onSaque: () => P
             placeholder={`Mínimo ${SAQUE_MINIMO},00`}
             value={valor}
             onChange={(ev) => setValor(ev.target.value.replace(/[^\d.,]/g, ""))}
-            disabled={dados.hasPendingWithdrawal}
+            disabled={dados.hasPendingWithdrawal || !dados.stripeReady}
           />
         </div>
-        <Button type="submit" loading={sacando} disabled={dados.hasPendingWithdrawal || disponivel < SAQUE_MINIMO}>
+        <Button type="submit" loading={sacando} disabled={dados.hasPendingWithdrawal || !dados.stripeReady || disponivel < SAQUE_MINIMO}>
           Solicitar saque
         </Button>
       </form>
       <p className="type-caption mt-2 text-muted-foreground">
         {dados.hasPendingWithdrawal
-          ? "Você já tem um saque em análise. Espere ele ser pago para pedir outro."
+          ? "Você já tem um saque em andamento. Aguarde alguns instantes."
           : disponivel < SAQUE_MINIMO
             ? `O saque libera a partir de ${formatarPreco(SAQUE_MINIMO)} disponíveis.`
-            : "O saque é conferido e pago via Pix na chave cadastrada."}
+            : "O valor vai para a sua conta Stripe e de lá para o seu banco."}
       </p>
+      {!dados.stripeReady && <ContaStripe />}
     </section>
   )
 }
@@ -248,11 +254,11 @@ function Numero({ rotulo, valor, destaque }: { rotulo: string; valor: number; de
 
 function ComoFunciona() {
   const passos = [
-    "Ao bater 1.000 inscritos e 100 mil visualizações, ative a monetização com sua chave Pix.",
-    "Antes dos seus vídeos aparece um anúncio de uma marca parceira.",
+    "Ao bater 1.000 inscritos e 100 mil visualizações, conecte sua conta de recebimentos (Stripe) na Carteira e ative a monetização.",
+    "Antes dos seus vídeos passa um vídeo curto de uma marca, revisado e aprovado pela equipe.",
     "Cada anúncio que fica 5 segundos na tela conta como uma exibição. Repetições da mesma pessoa no mesmo dia não contam.",
-    "Você recebe 55% do valor de cada exibição, somado ao seu saldo de hora em hora.",
-    "Com R$ 50,00 ou mais disponíveis, peça o saque via Pix.",
+    "Você recebe 55% do valor de cada exibição, somado ao seu saldo de hora em hora. Só as exibições de anúncios geram ganho.",
+    "Com R$ 50,00 ou mais disponíveis, peça o saque: o valor vai pelo Stripe para a sua conta bancária.",
   ]
   return (
     <section aria-labelledby="como-title">

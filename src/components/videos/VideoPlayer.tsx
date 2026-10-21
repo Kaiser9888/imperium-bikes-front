@@ -64,6 +64,7 @@ export function VideoPlayer({ videoId, playbackId, title, poster, live = false }
   return (
     <div className="overflow-hidden rounded-lg bg-black">
       <MuxPlayer
+        disableCookies
         ref={playerRef}
         playbackId={playbackId}
         streamType={live ? "live" : "on-demand"}
@@ -79,9 +80,10 @@ export function VideoPlayer({ videoId, playbackId, title, poster, live = false }
 }
 
 /**
- * Arte do anunciante por alguns segundos antes do vídeo. A contagem só anda com a aba
- * visível; ao zerar, a exibição é registrada (é quando conta para o criador) e o
- * "Pular" aparece.
+ * Vídeo do anunciante antes do vídeo (ou a arte, nas campanhas antigas). A contagem só
+ * anda com o anúncio realmente passando (vídeo tocando / aba visível); ao zerar, a
+ * exibição é registrada (é quando conta para o criador) e o "Pular" aparece. Quando o
+ * vídeo do anúncio termina, o vídeo principal começa sozinho.
  */
 function AnuncioAntesDoVideo({
   anuncio,
@@ -94,17 +96,19 @@ function AnuncioAntesDoVideo({
 }) {
   const [restante, setRestante] = useState(anuncio.minSeconds);
   const registrado = useRef(false);
+  const ehVideo = Boolean(anuncio.videoPlaybackId);
 
   const acabou = restante <= 0;
 
   useEffect(() => {
-    if (acabou) return;
+    // No vídeo quem conta é o tempo que de fato tocou (onTimeUpdate abaixo)
+    if (acabou || ehVideo) return;
     // Só desconta com a aba visível: anúncio em aba escondida não conta como visto
     const timer = window.setInterval(() => {
       if (document.visibilityState === "visible") setRestante((s) => Math.max(0, s - 1));
     }, 1000);
     return () => window.clearInterval(timer);
-  }, [acabou]);
+  }, [acabou, ehVideo]);
 
   useEffect(() => {
     if (!acabou || registrado.current) return;
@@ -116,8 +120,26 @@ function AnuncioAntesDoVideo({
 
   return (
     <div className="relative aspect-video w-full overflow-hidden rounded-lg bg-black" role="region" aria-label="Anúncio">
-      {/* eslint-disable-next-line @next/next/no-img-element -- arte enviada pelo anunciante, domínio variável */}
-      <img src={urlDaArte(anuncio.imageUrl)} alt={anuncio.title} className="size-full object-contain" />
+      {anuncio.videoPlaybackId ? (
+        <MuxPlayer
+          disableCookies
+          playbackId={anuncio.videoPlaybackId}
+          streamType="on-demand"
+          // Sem som o navegador deixa tocar sozinho; a pessoa liga o som se quiser
+          autoPlay="muted"
+          accentColor="#d33a2c"
+          metadata={{ video_title: `Anúncio: ${anuncio.title}` }}
+          onTimeUpdate={(e) => {
+            const tocado = (e.target as MuxPlayerElement).currentTime ?? 0;
+            setRestante(Math.max(0, Math.ceil(anuncio.minSeconds - tocado)));
+          }}
+          onEnded={onFim}
+          className="size-full"
+        />
+      ) : anuncio.imageUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element -- arte enviada pelo anunciante, domínio variável
+        <img src={urlDaArte(anuncio.imageUrl)} alt={anuncio.title} className="size-full object-contain" />
+      ) : null}
 
       <span className="absolute left-3 top-3 rounded bg-black/75 px-2 py-1 text-xs font-semibold text-white">
         Anúncio · {anuncio.title}
@@ -127,7 +149,7 @@ function AnuncioAntesDoVideo({
         href={anuncio.clickUrl}
         target="_blank"
         rel="noopener noreferrer sponsored"
-        className="absolute bottom-3 left-3 inline-flex items-center gap-1.5 rounded-md bg-white px-3 py-2 text-sm font-semibold text-black shadow transition hover:bg-white/90"
+        className="absolute bottom-14 left-3 inline-flex items-center gap-1.5 rounded-md bg-white px-3 py-2 text-sm font-semibold text-black shadow transition hover:bg-white/90"
       >
         Saiba mais
         <ExternalLink className="size-4" aria-hidden="true" />
@@ -135,7 +157,7 @@ function AnuncioAntesDoVideo({
 
       {restante > 0 ? (
         <span
-          className="absolute bottom-3 right-3 rounded-md bg-black/75 px-3 py-2 text-sm font-medium tabular-nums text-white"
+          className="absolute bottom-14 right-3 rounded-md bg-black/75 px-3 py-2 text-sm font-medium tabular-nums text-white"
           aria-live="polite"
         >
           Pular em {restante}
@@ -145,7 +167,7 @@ function AnuncioAntesDoVideo({
           type="button"
           onClick={onFim}
           autoFocus
-          className="absolute bottom-3 right-3 inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-white/40 bg-black/80 px-3 py-2 text-sm font-semibold text-white transition hover:bg-black"
+          className="absolute bottom-14 right-3 inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-white/40 bg-black/80 px-3 py-2 text-sm font-semibold text-white transition hover:bg-black"
         >
           Pular anúncio
           <SkipForward className="size-4" aria-hidden="true" />

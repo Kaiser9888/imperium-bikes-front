@@ -2,13 +2,14 @@
 
 import { useCallback, useEffect, useState } from "react"
 import { Check, ExternalLink, X } from "lucide-react"
+import MuxPlayer from "@mux/mux-player-react"
 
 import { Button } from "@/components/ui/button"
 import { adsService, urlDaArte, type Campaign } from "@/lib/ads"
 import { formatarPreco } from "@/lib/format"
 import { mensagemDaApi } from "@/services/tournamentService"
 
-/** Campanhas pagas esperando aprovação: confere a arte e o link antes de ir ao ar. */
+/** Campanhas pagas esperando aprovação: assista ao vídeo inteiro e confira o link antes de ir ao ar. */
 export function AnunciosAdmin() {
     const [campanhas, setCampanhas] = useState<Campaign[] | null>(null)
     const [erro, setErro] = useState<string | null>(null)
@@ -49,7 +50,7 @@ export function AnunciosAdmin() {
     return (
         <div>
             <p className="type-body-small text-muted-foreground">
-                Campanhas já pagas aguardando aprovação. Recusar não devolve o dinheiro automaticamente: faça o reembolso pelo painel do Stripe.
+                Campanhas já pagas aguardando aprovação. Assista ao vídeo inteiro: sem conteúdo enganoso, promessas sem prova, material de terceiros sem permissão ou conteúdo impróprio. Recusar devolve o valor ao anunciante pelo Stripe.
             </p>
             {erro && (
                 <p role="alert" className="type-body-small mt-3 text-destructive">
@@ -62,12 +63,17 @@ export function AnunciosAdmin() {
             <ul className="mt-4 flex flex-col gap-4">
                 {campanhas?.map((c) => (
                     <li key={c.id} className="flex flex-col gap-4 rounded-xl border border-border bg-surface p-4 md:flex-row">
-                        {/* eslint-disable-next-line @next/next/no-img-element -- arte do anunciante */}
-                        <img src={urlDaArte(c.imageUrl)} alt="" className="aspect-video w-full rounded-lg object-cover md:w-64" />
+                        {c.videoPlaybackId ? (
+                            <MuxPlayer disableCookies playbackId={c.videoPlaybackId} accentColor="#d33a2c" className="aspect-video w-full overflow-hidden rounded-lg md:w-80" />
+                        ) : c.imageUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element -- arte do anunciante (campanhas antigas)
+                            <img src={urlDaArte(c.imageUrl)} alt={`Arte da campanha ${c.title}`} className="aspect-video w-full rounded-lg object-cover md:w-64" />
+                        ) : null}
                         <div className="min-w-0 flex-1">
                             <p className="type-label text-foreground">{c.title}</p>
                             <p className="type-caption mt-1 text-muted-foreground">
                                 {c.advertiserName ?? "Anunciante"} · orçamento {formatarPreco(Number(c.budget))}
+                                {c.videoDurationSeconds ? ` · ${c.videoDurationSeconds}s` : ""}
                             </p>
                             <a
                                 href={c.clickUrl}

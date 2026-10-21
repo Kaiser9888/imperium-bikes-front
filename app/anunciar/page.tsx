@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { useCallback, useEffect, useRef, useState } from "react"
 import { useAuth } from "@clerk/nextjs"
-import { ImagePlus, Megaphone, Pause, Play } from "lucide-react"
+import { Clapperboard, Megaphone, Pause, Play } from "lucide-react"
 import { toast } from "sonner"
 
 import { AppShell } from "@/components/layout/app-shell"
@@ -14,12 +14,13 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
 import { StatusBadge } from "@/components/ui/status-badge"
-import { adsService, STATUS_CAMPANHA, urlDaArte, type Campaign, type Pricing } from "@/lib/ads"
-import api from "@/lib/api"
+import MuxPlayer from "@mux/mux-player-react"
+import { adsService, capaDoAnuncio, STATUS_CAMPANHA, type Campaign, type Pricing } from "@/lib/ads"
 import { formatarPreco } from "@/lib/format"
 import { mensagemDaApi } from "@/services/tournamentService"
 
-const MAX_BYTES = 2 * 1024 * 1024
+/** Vídeo de até 60s em boa qualidade cabe folgado em 200 MB. */
+const MAX_BYTES = 200 * 1024 * 1024
 
 export default function AnunciarPage() {
   const { isLoaded, isSignedIn } = useAuth()
@@ -48,7 +49,7 @@ export default function AnunciarPage() {
       <main className="mx-auto w-full max-w-4xl px-4 pb-16 pt-4 sm:px-6">
         <PageHeading
           title="Anunciar nos vídeos"
-          description="Sua marca aparece antes dos vídeos da comunidade. Você paga só pelas exibições."
+          description="Seu vídeo de propaganda passa antes dos vídeos da comunidade. Toda campanha é revisada antes de ir ao ar e você paga só pelas exibições."
           back={{ href: "/", label: "Início" }}
         />
 
@@ -56,7 +57,7 @@ export default function AnunciarPage() {
           <dl className="mt-6 grid grid-cols-3 gap-px overflow-hidden rounded-2xl border border-border bg-border">
             <Info rotulo="Por mil exibições" valor={formatarPreco(Number(precos.cpm))} />
             <Info rotulo="Orçamento mínimo" valor={formatarPreco(Number(precos.minBudget))} />
-            <Info rotulo="Tempo na tela" valor={`${precos.minSeconds} segundos`} />
+            <Info rotulo="Duração máxima" valor={`${precos.maxVideoSeconds ?? 60} segundos`} />
           </dl>
         )}
 
@@ -92,50 +93,76 @@ function Info({ rotulo, valor }: { rotulo: string; valor: string }) {
   )
 }
 
+type Video = { estado: "enviando"; pct: number } | { estado: "processando"; uploadId: string } | { estado: "pronto"; uploadId: string; playbackId: string }
+
 function NovaCampanha({ precos, onCriada }: { precos: Pricing | null; onCriada: () => Promise<void> }) {
   const [titulo, setTitulo] = useState("")
   const [link, setLink] = useState("https://")
   const [orcamento, setOrcamento] = useState("")
-  const [arte, setArte] = useState<string | null>(null)
-  const [enviandoArte, setEnviandoArte] = useState(false)
+  const [video, setVideo] = useState<Video | null>(null)
   const [salvando, setSalvando] = useState(false)
+  const [aceite, setAceite] = useState(false)
   const arquivo = useRef<HTMLInputElement>(null)
 
   const valor = Number(orcamento.replace(/\./g, "").replace(",", "."))
   const exibicoes = precos && valor > 0 ? Math.floor((valor / Number(precos.cpm)) * 1000) : 0
+  const maxSegundos = precos?.maxVideoSeconds ?? 60
 
-  async function enviarArte(event: React.ChangeEvent<HTMLInputElement>) {
+  // Depois do envio o Mux leva alguns segundos para processar: confere até ficar pronto
+  const uploadProcessando = video?.estado === "processando" ? video.uploadId : null
+  useEffect(() => {
+    if (!uploadProcessando) return
+    let ativo = true
+    const conferir = async () => {
+      try {
+        const r = await adsService.statusVideo(uploadProcessando)
+        if (!ativo) return
+        if (r.ready && r.playbackId) setVideo({ estado: "pronto", uploadId: uploadProcessando, playbackId: r.playbackId })
+        else timer = window.setTimeout(conferir, 3000)
+      } catch (cause) {
+        if (!ativo) return
+        toast.error(mensagemDaApi(cause, "Não foi possível processar o vídeo."))
+        setVideo(null)
+      }
+    }
+    let timer = window.setTimeout(conferir, 3000)
+    return () => {
+      ativo = false
+      window.clearTimeout(timer)
+    }
+  }, [uploadProcessando])
+
+  async function enviarVideo(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0]
     event.target.value = ""
     if (!file) return
-    if (file.size > MAX_BYTES) {
-      toast.error("A arte deve ter no máximo 2 MB.")
+    if (!file.type.startsWith("video/")) {
+      toast.error("Escolha um arquivo de vídeo.")
       return
     }
-    setEnviandoArte(true)
+    if (file.size > MAX_BYTES) {
+      toast.error("O vídeo deve ter no máximo 200 MB.")
+      return
+    }
+    setVideo({ estado: "enviando", pct: 0 })
     try {
-      const form = new FormData()
-      form.append("file", file)
-      const { data } = await api.post("/api/files/upload/image", form, { headers: { "Content-Type": undefined } })
-      const url = data?.data?.publicUrl
-      if (typeof url !== "string") throw new Error("upload sem URL")
-      setArte(url)
+      const uploadId = await adsService.enviarVideo(file, (pct) => setVideo({ estado: "enviando", pct }))
+      setVideo({ estado: "processando", uploadId })
     } catch (cause) {
-      toast.error(mensagemDaApi(cause, "Não foi possível enviar a arte."))
-    } finally {
-      setEnviandoArte(false)
+      toast.error(mensagemDaApi(cause, "Não foi possível enviar o vídeo."))
+      setVideo(null)
     }
   }
 
   async function criar(event: React.FormEvent) {
     event.preventDefault()
-    if (!arte) {
-      toast.error("Envie a arte do anúncio.")
+    if (video?.estado !== "pronto") {
+      toast.error(video ? "Aguarde o vídeo terminar de processar." : "Envie o vídeo do anúncio.")
       return
     }
     setSalvando(true)
     try {
-      const campanha = await adsService.criar({ title: titulo.trim(), imageUrl: arte, clickUrl: link.trim(), budget: Math.round(valor * 100) / 100 })
+      const campanha = await adsService.criar({ title: titulo.trim(), videoUploadId: video.uploadId, clickUrl: link.trim(), budget: Math.round(valor * 100) / 100 })
       await onCriada()
       // Já leva para o pagamento; se fechar o checkout, dá para pagar depois pela lista
       window.location.assign(await adsService.pagar(campanha))
@@ -177,34 +204,51 @@ function NovaCampanha({ precos, onCriada }: { precos: Pricing | null; onCriada: 
         </div>
 
         <div className="flex flex-col gap-2">
-          <span className="type-label text-foreground">Arte (16:9)</span>
-          <button
-            type="button"
-            onClick={() => arquivo.current?.click()}
-            className="grid aspect-video w-full cursor-pointer place-items-center overflow-hidden rounded-xl border border-dashed border-border bg-surface-muted text-muted-foreground transition-colors hover:border-primary/50"
-            aria-label={arte ? "Trocar a arte" : "Enviar a arte"}
-          >
-            {arte ? (
-              // eslint-disable-next-line @next/next/no-img-element -- arte enviada agora, domínio da API
-              <img src={urlDaArte(arte)} alt="" className="size-full object-cover" />
-            ) : enviandoArte ? (
-              <span className="type-caption">Enviando...</span>
-            ) : (
-              <span className="flex flex-col items-center gap-1">
-                <ImagePlus className="size-6" aria-hidden="true" />
-                <span className="type-caption">1600×900, até 2 MB</span>
-              </span>
-            )}
-          </button>
-          <input ref={arquivo} type="file" accept="image/png,image/jpeg,image/webp" onChange={enviarArte} className="sr-only" tabIndex={-1} aria-hidden="true" />
+          <span id="video-rotulo" className="type-label text-foreground">Vídeo (até {maxSegundos}s)</span>
+          {video?.estado === "pronto" ? (
+            <div className="flex flex-col gap-2">
+              <MuxPlayer disableCookies playbackId={video.playbackId} accentColor="#d33a2c" className="aspect-video w-full overflow-hidden rounded-xl" />
+              <button type="button" onClick={() => arquivo.current?.click()} className="type-caption self-start font-semibold text-primary underline underline-offset-2">
+                Trocar o vídeo
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => arquivo.current?.click()}
+              disabled={video !== null}
+              aria-describedby="video-rotulo"
+              className="grid aspect-video w-full cursor-pointer place-items-center overflow-hidden rounded-xl border border-dashed border-border bg-surface-muted text-muted-foreground transition-colors hover:border-primary/50 disabled:cursor-wait"
+            >
+              {video?.estado === "enviando" ? (
+                <span className="type-caption" aria-live="polite">Enviando… {video.pct}%</span>
+              ) : video?.estado === "processando" ? (
+                <span className="type-caption" aria-live="polite">Processando o vídeo…</span>
+              ) : (
+                <span className="flex flex-col items-center gap-1">
+                  <Clapperboard className="size-6" aria-hidden="true" />
+                  <span className="type-caption">Escolher vídeo do dispositivo</span>
+                  <span className="type-caption">16:9, até {maxSegundos}s e 200 MB</span>
+                </span>
+              )}
+            </button>
+          )}
+          <input ref={arquivo} type="file" accept="video/*" onChange={enviarVideo} className="sr-only" tabIndex={-1} aria-hidden="true" />
         </div>
 
         <div className="md:col-span-2">
-          <Button type="submit" loading={salvando} disabled={enviandoArte}>
+          <label className="type-body-small flex items-start gap-2.5 text-muted-foreground">
+            <input type="checkbox" required checked={aceite} onChange={(e) => setAceite(e.target.checked)} className="mt-1 size-4 shrink-0 accent-[var(--primary)]" />
+            <span>
+              Declaro que tenho os direitos sobre o vídeo, as músicas e as marcas exibidas, e que o anúncio não faz promessas sem comprovação. Li as{" "}
+              <Link href="/termos#anuncios" className="font-semibold text-primary underline underline-offset-2">regras de anúncios</Link>.
+            </span>
+          </label>
+          <Button type="submit" className="mt-4" loading={salvando} disabled={video !== null && video.estado !== "pronto"}>
             Criar e pagar
           </Button>
           <p className="type-caption mt-2 text-muted-foreground">
-            Depois do pagamento a arte passa por aprovação antes de ir ao ar. Você paga só pelo que for exibido até o orçamento acabar.
+            Depois do pagamento o vídeo é revisado pela equipe antes de ir ao ar. Se for recusado, o valor é devolvido. Você paga só pelo que for exibido até o orçamento acabar.
           </p>
         </div>
       </form>
@@ -258,8 +302,8 @@ function MinhasCampanhas({ campanhas, onMudou }: { campanhas: Campaign[] | null;
             const pct = Math.min(100, (gasto / Number(c.budget)) * 100)
             return (
               <li key={c.id} className="flex flex-col gap-4 rounded-xl border border-border bg-surface p-4 sm:flex-row sm:items-center">
-                {/* eslint-disable-next-line @next/next/no-img-element -- arte do anunciante */}
-                <img src={urlDaArte(c.imageUrl)} alt="" className="aspect-video w-full shrink-0 rounded-lg object-cover sm:w-36" />
+                {/* eslint-disable-next-line @next/next/no-img-element -- quadro do vídeo no Mux */}
+                <img src={capaDoAnuncio(c) ?? "/placeholder.svg"} alt={`Prévia da campanha ${c.title}`} className="aspect-video w-full shrink-0 rounded-lg bg-surface-muted object-cover sm:w-36" />
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="type-label truncate text-foreground">{c.title}</p>

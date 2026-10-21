@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { useSignUp } from "@clerk/nextjs"
@@ -20,6 +21,8 @@ export function SignUpForm({ redirectTo }: { redirectTo: string }) {
     const [password, setPassword] = useState("")
     const [username, setUsername] = useState("")
     const [codigo, setCodigo] = useState("")
+    // Aceite dos Termos e da Política, obrigatório antes de criar a conta
+    const [aceite, setAceite] = useState(false)
     const [erro, setErro] = useState<string | null>(null)
     const [enviando, setEnviando] = useState(false)
 
@@ -87,6 +90,26 @@ export function SignUpForm({ redirectTo }: { redirectTo: string }) {
                         <Input id="password" type="password" autoComplete="new-password" required minLength={8} value={password} onChange={(event) => setPassword(event.target.value)} />
                         <p className="type-caption text-muted-foreground">Use pelo menos 8 caracteres.</p>
                     </div>
+                    <label className="type-body-small flex items-start gap-2.5 text-muted-foreground">
+                        <input
+                            type="checkbox"
+                            required
+                            checked={aceite}
+                            onChange={(event) => setAceite(event.target.checked)}
+                            className="mt-0.5 size-4 shrink-0 accent-[var(--primary)]"
+                        />
+                        <span>
+                            Li e aceito os{" "}
+                            <Link href="/termos" target="_blank" className="font-semibold text-primary underline underline-offset-2">
+                                Termos de Uso
+                            </Link>{" "}
+                            e a{" "}
+                            <Link href="/privacidade" target="_blank" className="font-semibold text-primary underline underline-offset-2">
+                                Política de Privacidade
+                            </Link>
+                            , e tenho 18 anos ou mais (ou autorização do meu responsável).
+                        </span>
+                    </label>
                 </>
             )}
 
@@ -121,7 +144,7 @@ export function SignUpForm({ redirectTo }: { redirectTo: string }) {
                 loading={carregando}
                 disabled={
                     etapa === "dados"
-                        ? !nome.trim() || !email.trim() || password.length < 8
+                        ? !nome.trim() || !email.trim() || password.length < 8 || !aceite
                         : etapa === "usuario"
                           ? !username.trim()
                           : !codigo.trim()

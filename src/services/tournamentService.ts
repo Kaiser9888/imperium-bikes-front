@@ -94,14 +94,18 @@ export const tournamentService = {
         return normalize((await api.get(`/api/tournaments/${id}`)).data)
     },
 
-    /** Cria e já publica: o backend cria como rascunho, que não aparece na lista. */
-    async criar(payload: CriarTorneio): Promise<Tournament> {
+    /** O backend cria como rascunho, que não aparece na lista; depois chame `publicar`. Devolve o id. */
+    async criarRascunho(payload: CriarTorneio): Promise<string> {
         const { data } = await api.post("/api/tournaments", {
             ...payload,
             // O prazo é LocalDateTime no backend; vale até o fim do dia escolhido
             registrationDeadline: `${payload.registrationDeadline || payload.startDate}T23:59:59`,
         })
-        return normalize((await api.post(`/api/tournaments/${data.id}/publish`)).data)
+        return String(data.id)
+    },
+
+    async publicar(id: string): Promise<Tournament> {
+        return normalize((await api.post(`/api/tournaments/${id}/publish`)).data)
     },
 
     /** Situação da inscrição do usuário logado: null se não está inscrito. */
@@ -128,6 +132,11 @@ export const tournamentService = {
 
     async inscrever(tournamentId: string): Promise<void> {
         await api.post(`/api/tournaments/${tournamentId}/join`, { category: "Geral" })
+    },
+
+    /** Sai do evento antes do início. Inscrição paga é devolvida pelo Stripe na forma de pagamento original. */
+    async sair(tournamentId: string): Promise<void> {
+        await api.post(`/api/tournaments/${tournamentId}/leave`)
     },
 
     /** Só o organizador, com o evento em andamento. É o que libera o repasse das inscrições. */

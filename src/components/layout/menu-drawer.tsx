@@ -7,6 +7,7 @@ import {
     CircleDollarSign,
     Clapperboard,
     Heart,
+    LifeBuoy,
     LayoutGrid,
     LogOut,
     Megaphone,
@@ -27,6 +28,7 @@ import {
 } from "lucide-react"
 
 import { OrcaMark } from "@/components/layout/logo"
+import { rotuloContador, useContadores } from "@/hooks/useContadores"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet"
 import { isRouteActive } from "@/lib/navigation"
@@ -37,7 +39,7 @@ type MenuDrawerProps = { open: boolean; onOpenChange: (open: boolean) => void }
 type MenuItem = { icon: LucideIcon; label: string; href: string }
 type MenuSection = { title: string; items: MenuItem[] }
 
-// Somente rotas que existem no app. Suporte volta quando tiver implementação real.
+// Somente rotas que existem no app.
 const menuSections: MenuSection[] = [
     {
         title: "Minha conta",
@@ -83,7 +85,10 @@ const menuSections: MenuSection[] = [
     },
     {
         title: "Sistema",
-        items: [{ icon: Settings, label: "Configurações", href: "/configuracoes" }],
+        items: [
+            { icon: LifeBuoy, label: "Central de Ajuda", href: "/ajuda" },
+            { icon: Settings, label: "Configurações", href: "/configuracoes" },
+        ],
     },
 ]
 
@@ -98,6 +103,8 @@ export function MenuDrawer({ open, onOpenChange }: MenuDrawerProps) {
     const { isAdmin } = useIsAdmin()
     const pathname = usePathname()
     const close = () => onOpenChange(false)
+    const contadores = useContadores()
+    const naoLidas: Record<string, number> = { "/chat": contadores.mensagens, "/notificacoes": contadores.notificacoes }
 
     const secoes = isAdmin ? [...menuSections, secaoAdmin] : menuSections
     const todosOsLinks = secoes.flatMap((section) => section.items.map((item) => item.href))
@@ -127,6 +134,7 @@ export function MenuDrawer({ open, onOpenChange }: MenuDrawerProps) {
                             <ul>
                                 {section.items.map(({ icon: Icon, label, href }) => {
                                     const selected = href === ativo
+                                    const n = naoLidas[href] ?? 0
                                     return (
                                         <li key={href}>
                                             <Link
@@ -146,6 +154,12 @@ export function MenuDrawer({ open, onOpenChange }: MenuDrawerProps) {
                                                     aria-hidden="true"
                                                 />
                                                 {label}
+                                                {n > 0 && (
+                                                    <span className="type-caption ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-accent px-1.5 font-bold text-accent-foreground">
+                                                        {rotuloContador(n)}
+                                                        <span className="sr-only"> não lidas</span>
+                                                    </span>
+                                                )}
                                             </Link>
                                         </li>
                                     )

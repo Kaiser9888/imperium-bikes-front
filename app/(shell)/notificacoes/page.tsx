@@ -10,6 +10,7 @@ import { EmptyState } from "@/components/ui/empty-state"
 import { ErrorState } from "@/components/ui/error-state"
 import { Loader } from "@/components/ui/loader"
 import api from "@/lib/api"
+import { atualizarContadores } from "@/hooks/useContadores"
 import { cn } from "@/lib/utils"
 
 type Notificacao = {
@@ -33,7 +34,7 @@ export default function NotificacoesPage() {
             const { data } = await api.get("/api/notifications", { params: { size: 50 } })
             setItens(data.content)
             // As não lidas continuam destacadas nesta visita; na próxima já aparecem como lidas.
-            void api.post("/api/notifications/read-all").catch(() => {})
+            void api.post("/api/notifications/read-all").then(atualizarContadores).catch(() => {})
         } catch {
             setFalhou(true)
         }

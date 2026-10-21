@@ -1,11 +1,14 @@
 import api from "@/lib/api"
 import { API_BASE_URL } from "@/lib/api-config"
+import { putFileWithRetry } from "@/lib/videos/upload"
 
 /** Anúncio sorteado para mostrar antes de um vídeo. */
 export type AdSlot = {
     campaignId: string
     title: string
-    imageUrl: string
+    /** Só campanhas antigas (arte); as novas são vídeo. */
+    imageUrl: string | null
+    videoPlaybackId: string | null
     clickUrl: string
     /** Prova assinada de que o anúncio foi entregue a esta pessoa. */
     token: string
@@ -18,7 +21,9 @@ export type CampaignStatus = "PENDING_PAYMENT" | "PENDING_REVIEW" | "ACTIVE" | "
 export type Campaign = {
     id: string
     title: string
-    imageUrl: string
+    imageUrl: string | null
+    videoPlaybackId: string | null
+    videoDurationSeconds: number | null
     clickUrl: string
     cpm: number
     budget: number
@@ -30,7 +35,7 @@ export type Campaign = {
     createdAt: string
 }
 
-export type Pricing = { cpm: number; minBudget: number; minSeconds: number }
+export type Pricing = { cpm: number; minBudget: number; minSeconds: number; maxVideoSeconds: number }
 
 export const STATUS_CAMPANHA: Record<CampaignStatus, { label: string; tone: "success" | "warning" | "info" | "destructive" | "neutral" }> = {
     PENDING_PAYMENT: { label: "Aguardando pagamento", tone: "warning" },
@@ -44,6 +49,12 @@ export const STATUS_CAMPANHA: Record<CampaignStatus, { label: string; tone: "suc
 /** Imagens enviadas ao backend voltam como caminho relativo (/api/files/...). */
 export function urlDaArte(imageUrl: string): string {
     return imageUrl.startsWith("/api/files/") ? `${API_BASE_URL}${imageUrl}` : imageUrl
+}
+
+/** Miniatura para listas: quadro do vídeo no Mux ou a arte das campanhas antigas. */
+export function capaDoAnuncio(c: { imageUrl: string | null; videoPlaybackId: string | null }): string | null {
+    if (c.videoPlaybackId) return `https://image.mux.com/${c.videoPlaybackId}/thumbnail.webp?width=640&time=1`
+    return c.imageUrl ? urlDaArte(c.imageUrl) : null
 }
 
 function authHeaders(token?: string | null): Record<string, string> {
@@ -86,7 +97,16 @@ export const adsService = {
     async minhas(): Promise<Campaign[]> {
         return (await api.get("/api/ads/campaigns/mine", { params: { size: 50 } })).data.content
     },
-    async criar(dados: { title: string; imageUrl: string; clickUrl: string; budget: number }): Promise<Campaign> {
+    /** Manda o arquivo direto ao Mux e devolve o id do upload (vai na criação da campanha). */
+    async enviarVideo(arquivo: File, onProgress?: (pct: number) => void): Promise<string> {
+        const { data } = await api.post("/api/ads/video-uploads")
+        await putFileWithRetry(data.url, arquivo, onProgress)
+        return data.uploadId
+    },
+    async statusVideo(uploadId: string): Promise<{ ready: boolean; playbackId?: string; durationSeconds?: number }> {
+        return (await api.get(`/api/ads/video-uploads/${encodeURIComponent(uploadId)}`)).data
+    },
+    async criar(dados: { title: string; videoUploadId: string; clickUrl: string; budget: number }): Promise<Campaign> {
         return (await api.post("/api/ads/campaigns", dados)).data
     },
     async pausar(id: string, pausar: boolean): Promise<Campaign> {
@@ -126,17 +146,19 @@ export type MonetizacaoStatus = {
     earnings: { total: number; available: number; pending: number; thisMonth: number; lastMonth: number }
     isEnabled: boolean
     hasPendingWithdrawal: boolean
+    /** Conta de recebimentos (Stripe) pronta na Carteira: é para onde vão os saques. */
+    stripeReady: boolean
 }
+
+/** Saque mínimo da monetização (igual ao backend). */
+export const SAQUE_MINIMO = 50
 
 export const monetizacaoService = {
     async status(): Promise<MonetizacaoStatus> {
         return (await api.get("/api/monetization/status")).data
     },
-    async ativar(pixKey: string): Promise<void> {
-        await api.post("/api/monetization/enable", { paymentMethod: "PIX", pixKey })
-    },
-    async trocarPix(pixKey: string): Promise<void> {
-        await api.put("/api/monetization/payment-config", { paymentMethod: "PIX", pixKey })
+    async ativar(): Promise<void> {
+        await api.post("/api/monetization/enable", { paymentMethod: "STRIPE" })
     },
     async sacar(amount: number): Promise<void> {
         await api.post("/api/monetization/withdraw", { amount })

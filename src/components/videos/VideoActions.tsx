@@ -32,6 +32,7 @@ export function VideoActions({
           type="button"
           onClick={onToggleLike}
           aria-pressed={liked}
+          aria-label={`Curtir, ${likesCount} curtidas`}
           className={`
                         flex items-center gap-2 px-4 py-2.5 text-sm font-medium
                         transition-all duration-200 hover:bg-muted/80
@@ -51,6 +52,7 @@ export function VideoActions({
           type="button"
           onClick={onToggleDislike}
           aria-pressed={disliked}
+          aria-label="Não curtir"
           className={`
                         flex items-center gap-2 px-4 py-2.5 text-sm font-medium
                         transition-all duration-200 hover:bg-muted/80

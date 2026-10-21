@@ -11,6 +11,7 @@ import { useParams } from "next/navigation"
 import { useEffect, useRef, useState } from "react"
 import type { Channel } from "stream-chat"
 import { useStreamClient } from "@/lib/stream"
+import { atualizarContadores } from "@/hooks/useContadores"
 
 import { BackButton } from "@/components/ui/back-button"
 
@@ -43,7 +44,7 @@ export default function ConversaPage() {
               if (!vivo) return
               setCanal(ch)
               setMensagens([...ch.state.messages])
-              ch.markRead()
+              void ch.markRead().then(atualizarContadores).catch(() => {})
               setLoading(false)
           })
           .catch((e) => {

@@ -42,7 +42,7 @@ function putFile(url: string, file: File, onProgress?: (percent: number) => void
     });
 }
 
-async function putFileWithRetry(url: string, file: File, onProgress?: (percent: number) => void): Promise<void> {
+export async function putFileWithRetry(url: string, file: File, onProgress?: (percent: number) => void): Promise<void> {
     let lastError: Error | null = null;
     for (let attempt = 1; attempt <= MAX_PUT_RETRIES; attempt++) {
         try {

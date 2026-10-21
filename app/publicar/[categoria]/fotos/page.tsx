@@ -179,7 +179,8 @@ export default function FotosPage() {
 
         <p className="publish-lead">
           Mostre o produto com imagens nítidas e de
-          vários ângulos.
+          vários ângulos. Use fotos reais do próprio item, tiradas por você:
+          fotos de outros sites ou do fabricante sem permissão podem tirar o anúncio do ar.
         </p>
 
         <div className="publish-progress">

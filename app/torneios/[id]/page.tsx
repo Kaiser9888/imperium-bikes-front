@@ -8,6 +8,7 @@ import { ArrowRight, CheckCircle, Loader2 } from "lucide-react"
 
 import { AppShell } from "@/components/layout/app-shell"
 import { BackButton } from "@/components/ui/back-button"
+import { DenunciarButton } from "@/components/ui/denunciar-button"
 import { ErrorState } from "@/components/ui/error-state"
 import { Loader } from "@/components/ui/loader"
 import { ShareButton } from "@/components/ui/share-button"
@@ -50,6 +51,25 @@ export default function TorneioDetalhesPage() {
         if (!isSignedIn) return
         tournamentService.minhaInscricao(id).then(setInscricao).catch(() => {})
     }, [id, isSignedIn])
+
+    async function sair() {
+        if (!torneio) return
+        const pago = inscricao === "PAGA" && torneio.valorInscricao > 0
+        const aviso = pago
+            ? `Cancelar sua inscrição? O valor de ${formatarPreco(torneio.valorInscricao)} volta na forma de pagamento original.`
+            : "Cancelar sua inscrição?"
+        if (!window.confirm(aviso)) return
+        setEnviando(true)
+        setErro(null)
+        try {
+            await tournamentService.sair(id)
+            setInscricao(null)
+            await carregar()
+        } catch (cause) {
+            setErro(mensagemDaApi(cause, "Não foi possível cancelar a inscrição."))
+        }
+        setEnviando(false)
+    }
 
     async function inscrever() {
         if (!torneio) return
@@ -131,7 +151,7 @@ export default function TorneioDetalhesPage() {
                 {/* eslint-disable-next-line @next/next/no-img-element -- capa enviada pelo organizador, domínio variável */}
                 <img
                     src={torneio.banner}
-                    alt=""
+                    alt={torneio.banner.endsWith("placeholder.svg") ? "" : `Capa do evento ${torneio.nome}`}
                     className={`mt-8 aspect-[16/9] w-full rounded-lg border border-foreground bg-surface-muted object-cover sm:aspect-[21/9] ${torneio.status === "encerrado" ? "grayscale" : ""}`}
                 />
 
@@ -162,10 +182,17 @@ export default function TorneioDetalhesPage() {
 
                         <div className="mt-6 flex flex-col items-start gap-5">
                             {inscricao === "PAGA" ? (
-                                <p role="status" className="type-label flex items-center gap-2 text-success">
-                                    <CheckCircle className="size-5" aria-hidden="true" />
-                                    Você está inscrito
-                                </p>
+                                <div className="flex flex-col items-start gap-2">
+                                    <p role="status" className="type-label flex items-center gap-2 text-success">
+                                        <CheckCircle className="size-5" aria-hidden="true" />
+                                        Você está inscrito
+                                    </p>
+                                    {torneio.status === "aberto" && !torneio.cancelado && (
+                                        <button type="button" onClick={sair} disabled={enviando} className="type-caption font-semibold text-muted-foreground underline underline-offset-2 hover:text-destructive">
+                                            Cancelar inscrição
+                                        </button>
+                                    )}
+                                </div>
                             ) : torneio.status === "aberto" && !torneio.cancelado ? (
                                 <button type="button" onClick={inscrever} disabled={enviando} aria-busy={enviando} className="line-btn line-btn--lg line-btn--accent">
                                     {inscricao === "PENDENTE" ? "Pagar inscrição" : "Quero participar"}
@@ -176,6 +203,12 @@ export default function TorneioDetalhesPage() {
                             )}
                             <ShareButton title={torneio.nome} variant="line" />
                         </div>
+                        {torneio.valorInscricao > 0 && (
+                            <p className="type-caption mt-4 text-muted-foreground">
+                                Pode cancelar até o início e receber o valor de volta. Evento cancelado é reembolsado automaticamente.{" "}
+                                <Link href="/reembolso#eventos" className="underline underline-offset-2">Política de reembolso</Link>
+                            </p>
+                        )}
                         {erro && (
                             <p role="alert" className="type-body-small mt-4 border-l-2 border-destructive pl-3 text-destructive">
                                 {erro}
@@ -205,6 +238,7 @@ export default function TorneioDetalhesPage() {
                                 </Link>
                             </p>
                         )}
+                        <DenunciarButton tipo="TOURNAMENT" id={torneio.id} className="mt-6" />
                     </article>
                 </div>
             </main>

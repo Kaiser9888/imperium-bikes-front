@@ -7,6 +7,7 @@ import { ChevronRight, Megaphone, Monitor, Moon, Sun, UserRound, type LucideIcon
 import { useTheme } from "next-themes"
 
 import { AppShell } from "@/components/layout/app-shell"
+import { ExcluirConta } from "@/components/configuracoes/excluir-conta"
 import { InstalarApp } from "@/components/layout/instalar-app"
 import { PageHeading } from "@/components/layout/page-heading"
 import { Button } from "@/components/ui/button"
@@ -74,6 +75,7 @@ export default function ConfiguracoesPage() {
                         <Button variant="outline" className="mt-6 w-full" onClick={() => signOut({ redirectUrl: "/" })}>
                             Sair da conta
                         </Button>
+                        <ExcluirConta />
                     </section>
                 )}
             </main>

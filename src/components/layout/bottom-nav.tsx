@@ -4,7 +4,6 @@ import Link from "next/link"
 import { House, Search, TvMinimalPlay, User, type LucideIcon } from "lucide-react"
 import { usePathname } from "next/navigation"
 
-import { useAppShell } from "@/components/layout/app-shell"
 import { TrophyIcon } from "@/components/ui/trophy-icon"
 import { isRouteActive } from "@/lib/navigation"
 import { cn } from "@/lib/utils"
@@ -28,8 +27,6 @@ function NavLink({ href, label, icon: Icon }: { href: string; label: string; ico
 }
 
 export function BottomNav() {
-    const { openMenu } = useAppShell()
-
     return (
         <nav
             aria-label="Navegação inferior"
@@ -37,10 +34,7 @@ export function BottomNav() {
         >
             <ul className="mx-auto grid h-16 max-w-md grid-cols-5">
                 <li>
-                    <button type="button" onClick={openMenu} className={cn(itemClasses, "text-muted-foreground")}>
-                        <House className="size-6" strokeWidth={1.8} aria-hidden="true" />
-                        Menu
-                    </button>
+                    <NavLink href="/" label="Início" icon={House} />
                 </li>
                 <li>
                     <NavLink href="/buscar" label="Busca" icon={Search} />

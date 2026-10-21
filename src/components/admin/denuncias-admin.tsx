@@ -20,13 +20,15 @@ const MOTIVO: Record<Denuncia["reason"], string> = {
     SCAM: "Golpe",
     INAPPROPRIATE: "Conteúdo impróprio",
     FAKE: "Falso",
+    COPYRIGHT: "Direitos autorais",
     OTHER: "Outro",
 }
 
 const TIPO: Record<TipoDenunciado, { label: string; href?: (id: string) => string }> = {
     PRODUCT: { label: "Anúncio", href: (id) => `/produtos/${id}` },
     USER: { label: "Usuário", href: (id) => `/perfil/${id}` },
-    VIDEO: { label: "Vídeo", href: (id) => `/videos/${id}` },
+    VIDEO: { label: "Vídeo", href: (id) => `/videos/watch/${id}` },
+    TOURNAMENT: { label: "Evento", href: (id) => `/torneios/${id}` },
     POST: { label: "Post do fórum" },
     COMMENT: { label: "Comentário" },
 }

@@ -442,6 +442,7 @@ function MementoFeedView() {
                 )}
                 {currentPlaybackId ? (
                     <MuxPlayer
+                      disableCookies
                         key={currentVideo.id}
                         ref={playerRef}
                         playbackId={currentPlaybackId}

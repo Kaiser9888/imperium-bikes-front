@@ -2,7 +2,7 @@
 "use client"
 import { Button } from "@/components/ui/button"
 
-import { useEffect, useMemo, useState, useCallback, useSyncExternalStore } from "react"
+import { useEffect, useMemo, useRef, useState, useCallback, useSyncExternalStore } from "react"
 import Link from "next/link"
 import { Logo } from "@/components/layout/logo"
 import { useUser } from "@clerk/nextjs"
@@ -143,6 +143,7 @@ export default function CentralVendedorPage() {
   }, [])
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- carga inicial
     if (isSignedIn) carregar()
   }, [isSignedIn, carregar])
 
@@ -656,14 +657,34 @@ function Sheet({
   onClose: () => void
   children: React.ReactNode
 }) {
+  const fechar = useRef<HTMLButtonElement>(null)
+  // onClose muda a cada render do pai; a ref evita reexecutar o efeito (e roubar o foco) ao digitar
+  const onCloseRef = useRef(onClose)
+  useEffect(() => {
+    onCloseRef.current = onClose
+  })
+
+  // Teclado: Esc fecha, o foco entra na janela e volta para onde estava ao fechar
+  useEffect(() => {
+    const anterior = document.activeElement as HTMLElement | null
+    fechar.current?.focus()
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onCloseRef.current()
+    document.addEventListener("keydown", onKey)
+    return () => {
+      document.removeEventListener("keydown", onKey)
+      anterior?.focus?.()
+    }
+  }, [])
+
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
-      <div className="absolute inset-0 bg-black/60" onClick={onClose} />
-      <div className="relative max-h-[88vh] w-full overflow-y-auto rounded-t-3xl bg-background px-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-3 shadow-2xl sm:max-w-md sm:rounded-3xl sm:pb-6">
+      <div className="absolute inset-0 bg-black/60" onClick={onClose} aria-hidden="true" />
+      <div role="dialog" aria-modal="true" aria-labelledby="sheet-titulo" className="relative max-h-[88vh] w-full overflow-y-auto rounded-t-3xl bg-background px-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-3 shadow-2xl sm:max-w-md sm:rounded-3xl sm:pb-6">
         <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-border sm:hidden" />
         <div className="mb-4 flex items-center justify-between gap-3">
-          <h2 className="line-clamp-1 font-heading text-base font-bold">{titulo}</h2>
+          <h2 id="sheet-titulo" className="line-clamp-1 font-heading text-base font-bold">{titulo}</h2>
           <Button
+            ref={fechar}
             onClick={onClose}
             aria-label="Fechar"
             variant="ghost" size="icon" className="shrink-0"

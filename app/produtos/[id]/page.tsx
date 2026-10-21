@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { DenunciarButton } from "@/components/ui/denunciar-button"
 import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
 import { useAuth } from "@clerk/nextjs"
@@ -511,6 +512,7 @@ function ProdutoPage() {
                         {erroChat}
                       </p>
                     )}
+                    <DenunciarButton tipo="PRODUCT" id={p.id} className="mt-2" />
                   </>
                 }
               />

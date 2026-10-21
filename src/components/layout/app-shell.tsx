@@ -39,6 +39,20 @@ export function AppShellProvider({ children }: { children: React.ReactNode }) {
 export function AppShell({ children }: { children: React.ReactNode }) {
     return (
         <div className="min-h-screen bg-background">
+            {/* Teclado: primeiro Tab mostra este atalho, que pula o cabeçalho */}
+            <a
+                href="#conteudo"
+                onClick={(event) => {
+                    const main = document.querySelector("main")
+                    if (!main) return
+                    event.preventDefault()
+                    main.setAttribute("tabindex", "-1")
+                    main.focus()
+                }}
+                className="type-label fixed left-3 top-3 z-[60] -translate-y-24 rounded-lg bg-foreground px-4 py-2.5 text-background transition-transform focus:translate-y-0"
+            >
+                Pular para o conteúdo
+            </a>
             <Header />
             {children}
             {/* Reserva a altura da BottomNav fixa para ela não cobrir o fim da página */}

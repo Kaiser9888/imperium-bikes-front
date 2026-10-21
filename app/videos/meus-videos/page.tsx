@@ -391,7 +391,7 @@ function CartaoMonetizacao({ dados }: { dados: MonetizacaoStatus }) {
     detalhe = `Este mês: ${formatarPreco(Number(dados.earnings.thisMonth ?? 0))} · 55% dos anúncios nos seus vídeos`;
   } else if (dados.isEligible) {
     titulo = "Você já pode monetizar";
-    detalhe = "Ative com sua chave Pix e comece a ganhar com os anúncios.";
+    detalhe = "Conecte sua conta de recebimentos e comece a ganhar com os anúncios.";
   } else {
     titulo = "Monetização";
     detalhe = req
