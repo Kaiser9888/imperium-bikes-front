@@ -9,7 +9,7 @@
 export const empresa = {
     marca: "Imperium Bikes",
     /** Nome empresarial (razão social) ou, sem empresa aberta, o nome do responsável. */
-    razaoSocial: "Kelvin Lopes de Oliveira",
+    razaoSocial: "",
     /** CNPJ no formato 00.000.000/0000-00, quando a empresa for aberta. */
     cnpj: "",
     /** Enquanto não houver CNPJ (pessoa física). */
@@ -19,7 +19,7 @@ export const empresa = {
     /** E-mail de atendimento. */
     emailContato: "imperiumbikes@gmail.com",
     /** Encarregado de dados (LGPD): quem responde pedidos sobre dados pessoais. */
-    encarregadoNome: "Kelvin Lopes de Oliveira",
+    encarregadoNome: "",
     encarregadoEmail: "imperiumbikes@gmail.com",
     site: "https://www.imperiumbikes0.com.br",
 } as const
