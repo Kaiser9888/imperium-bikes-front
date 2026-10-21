@@ -21,7 +21,7 @@ import api from "@/lib/api"
 import { formatarPreco } from "@/lib/format"
 import { mensagemDaApi, tournamentService, type Tournament } from "@/services/tournamentService"
 
-type Participant = { id: string; userName: string; paymentStatus: string }
+type Participant = { id: string; userName: string; paymentStatus: string; rankPosition: number | null }
 type Estado = { status: "loading" } | { status: "error" } | { status: "ok"; torneio: Tournament; participantes: Participant[] }
 
 const PAGAMENTO: Record<string, { texto: string; cor: string }> = {
@@ -29,6 +29,57 @@ const PAGAMENTO: Record<string, { texto: string; cor: string }> = {
   REFUNDED: { texto: "Reembolsado", cor: "bg-muted-foreground" },
 }
 const AGUARDANDO = { texto: "Aguardando pagamento", cor: "bg-warning" }
+
+/** Campo de colocação de um participante (o organizador digita 1, 2, 3...). */
+function Colocacao({ participante }: { participante: Participant }) {
+  const [valor, setValor] = useState(participante.rankPosition ? String(participante.rankPosition) : "")
+  const [salvo, setSalvo] = useState(participante.rankPosition)
+  const [salvando, setSalvando] = useState(false)
+  const [erro, setErro] = useState<string | null>(null)
+  const numero = Number(valor)
+  const mudou = Number.isInteger(numero) && numero > 0 && numero !== salvo
+
+  async function salvar(event: React.FormEvent) {
+    event.preventDefault()
+    if (!mudou) return
+    setSalvando(true)
+    setErro(null)
+    try {
+      await tournamentService.lancarColocacao(participante.id, numero)
+      setSalvo(numero)
+    } catch (cause) {
+      setErro(mensagemDaApi(cause, "Não foi possível salvar."))
+    } finally {
+      setSalvando(false)
+    }
+  }
+
+  return (
+    <form onSubmit={salvar} className="flex shrink-0 items-center gap-1.5">
+      <label htmlFor={`pos-${participante.id}`} className="sr-only">
+        Colocação de {participante.userName}
+      </label>
+      <input
+        id={`pos-${participante.id}`}
+        type="number"
+        inputMode="numeric"
+        min={1}
+        value={valor}
+        onChange={(e) => setValor(e.target.value)}
+        placeholder="Pos."
+        className="h-9 w-16 rounded-lg bg-surface px-2 text-center text-base tabular-nums md:text-sm"
+      />
+      <button type="submit" disabled={!mudou || salvando} className="line-btn line-btn--sm">
+        {salvando ? "…" : salvo && !mudou ? "Salvo" : "Salvar"}
+      </button>
+      {erro && (
+        <span role="alert" className="type-caption text-destructive">
+          {erro}
+        </span>
+      )}
+    </form>
+  )
+}
 
 export default function GerenciarTorneioPage() {
   const { id } = useParams<{ id: string }>()
@@ -146,6 +197,11 @@ export default function GerenciarTorneioPage() {
       )}
 
       <h2 className="type-h2 mt-12">Participantes</h2>
+      {torneio.status !== "aberto" && !torneio.cancelado && pagos > 0 && (
+        <p className="type-body-small mt-1 text-muted-foreground">
+          Lance a colocação de cada um: os três primeiros aparecem no pódio da página do evento.
+        </p>
+      )}
       {participantes.length === 0 ? (
         <p className="type-body-small mt-3 text-muted-foreground">Ninguém se inscreveu ainda. Compartilhe o link do evento para começar.</p>
       ) : (
@@ -160,6 +216,9 @@ export default function GerenciarTorneioPage() {
                   <span className={`size-1.5 rounded-full ${pg.cor}`} aria-hidden="true" />
                   {pg.texto}
                 </span>
+                {torneio.status !== "aberto" && !torneio.cancelado && p.paymentStatus === "PAID" && (
+                  <Colocacao participante={p} />
+                )}
               </li>
             )
           })}

@@ -14,7 +14,6 @@ import {
   Loader2,
   MapPin,
   MessageCircle,
-  PackageCheck,
   ShieldCheck,
   ShoppingCart,
   Truck,
@@ -352,10 +351,10 @@ function ProdutoPage() {
                 </Button>
               </div>
 
-              {(condicao || p.hasSecurePayment || freteGratis) && (
+              {(condicao || p.hasSecurePayment || freteGratis > 0) && (
                 <div className="mt-4 flex flex-wrap gap-2">
                   {condicao && <StatusBadge tone="neutral">{condicao}</StatusBadge>}
-                  {freteGratis && (
+                  {freteGratis > 0 && (
                     <StatusBadge tone="success">
                       <Truck className="size-3.5" aria-hidden="true" />
                       Frete grátis até {brl(freteGratis)}
@@ -371,6 +370,24 @@ function ProdutoPage() {
               )}
 
               <p className="type-display mt-5 tabular-nums text-foreground">{precoFormatado}</p>
+              {/* Ancoragem honesta: só com o preço anterior informado no anúncio e maior que o atual */}
+              {typeof p.price === "number" && typeof p.originalPrice === "number" && p.originalPrice > p.price && (
+                <p className="type-body-small mt-1 flex items-center gap-2 text-muted-foreground">
+                  <s className="tabular-nums">
+                    <span className="sr-only">Preço anterior: </span>
+                    {brl(p.originalPrice)}
+                  </s>
+                  <span className="type-caption rounded-full bg-success/12 px-2 py-0.5 font-semibold text-success">
+                    {Math.round((1 - p.price / p.originalPrice) * 100)}% off
+                  </span>
+                </p>
+              )}
+              {/* Escassez real: só aparece quando o estoque é de fato baixo */}
+              {!esgotado && p.stock > 0 && p.stock <= 3 && (
+                <p className="type-label mt-2 text-primary">
+                  {p.stock === 1 ? "Última unidade" : `Últimas ${p.stock} unidades`}
+                </p>
+              )}
 
               {localizacao && (
                 <p className="type-body-small mt-2 flex items-center gap-1.5 text-muted-foreground">
@@ -412,31 +429,23 @@ function ProdutoPage() {
                 </Button>
               </div>
 
-              <ul className="type-caption mt-6 flex flex-col gap-3 border-t border-border pt-5 text-muted-foreground">
-                <li className="flex gap-2.5">
-                  <ShieldCheck className="size-4 shrink-0 text-success" aria-hidden="true" />
-                  <span>
-                    <span className="font-semibold text-foreground">Pagamento retido até a entrega.</span> O vendedor só recebe
-                    depois que você confirma o recebimento.
-                  </span>
-                </li>
-                <li className="flex gap-2.5">
-                  <PackageCheck className="size-4 shrink-0 text-success" aria-hidden="true" />
-                  <span>
-                    <span className="font-semibold text-foreground">Avaliações reais.</span> Só quem recebeu o pedido pode avaliar o
-                    vendedor.
-                  </span>
-                </li>
-              </ul>
+              <p className="type-caption mt-5 flex items-start gap-2 text-muted-foreground">
+                <ShieldCheck className="size-4 shrink-0 text-success" aria-hidden="true" />
+                <span>
+                  O vendedor só recebe depois que você confirma a entrega.{" "}
+                  <Link href="/reembolso" className="underline underline-offset-2 hover:text-foreground">Como funciona</Link>
+                </span>
+              </p>
             </div>
 
             {/* FRETE */}
 
-            <div className="rounded-2xl border border-border bg-surface p-5">
-              <div className="flex items-center gap-2.5">
+            <details className="group rounded-2xl border border-border bg-surface px-5 py-1 open:pb-5">
+              <summary className="flex min-h-12 cursor-pointer list-none items-center gap-2.5 [&::-webkit-details-marker]:hidden">
                 <Truck className="size-5 text-primary" aria-hidden="true" />
-                <p className="type-label text-foreground">Calcule o frete</p>
-              </div>
+                <span className="type-label flex-1 text-foreground">Calcular frete</span>
+                <ChevronRight className="size-4 text-muted-foreground transition-transform group-open:rotate-90" aria-hidden="true" />
+              </summary>
 
               <form
                 className="mt-3 flex gap-2"
@@ -492,7 +501,7 @@ function ProdutoPage() {
                   ))}
                 </ul>
               )}
-            </div>
+            </details>
 
             {/* VENDEDOR */}
 
@@ -522,17 +531,18 @@ function ProdutoPage() {
 
         {/* DESCRIÇÃO + FICHA TÉCNICA */}
 
-        <section className="mt-14 grid items-start gap-10 border-t border-border pt-10 lg:grid-cols-[minmax(0,1fr)_400px] lg:gap-12 xl:grid-cols-[minmax(0,1fr)_440px]">
-          <div>
-            <Sobretitulo className="text-primary">Sobre este anúncio</Sobretitulo>
-            <h2 className="type-h2 mt-2 text-foreground">Descrição</h2>
-            <p className="type-body mt-4 max-w-prose whitespace-pre-line text-pretty text-muted-foreground">{descricao}</p>
-          </div>
+        <section className="mt-10 grid items-start gap-6 border-t border-border pt-8 lg:grid-cols-[minmax(0,1fr)_400px] lg:gap-12 xl:grid-cols-[minmax(0,1fr)_440px]">
+          <Descricao texto={descricao} />
 
           {specs.length > 0 && (
-            <aside className="rounded-2xl border border-border bg-surface p-5 sm:p-6">
-              <h2 className="type-h3 text-foreground">Ficha técnica</h2>
-              <dl className="type-body-small mt-4 divide-y divide-border">
+            <details className="group rounded-2xl border border-border bg-surface px-5 py-1 open:pb-5">
+              <summary className="flex min-h-12 cursor-pointer list-none items-center gap-2 [&::-webkit-details-marker]:hidden">
+                <span className="type-label flex-1 text-foreground">
+                  Ficha técnica <span className="font-normal text-muted-foreground">({specs.length})</span>
+                </span>
+                <ChevronRight className="size-4 text-muted-foreground transition-transform group-open:rotate-90" aria-hidden="true" />
+              </summary>
+              <dl className="type-body-small mt-2 divide-y divide-border">
                 {specs.map(([label, value]) => (
                   <div key={label} className="flex justify-between gap-4 py-3 first:pt-0 last:pb-0">
                     <dt className="text-muted-foreground">{label}</dt>
@@ -540,16 +550,36 @@ function ProdutoPage() {
                   </div>
                 ))}
               </dl>
-            </aside>
+            </details>
           )}
         </section>
 
-        {p.seller && <ProdutoAvaliacoes vendedorId={p.seller.id} />}
-
+        {/* Outros produtos antes das avaliações: é o que a pessoa procura ao rolar */}
         <ProdutosRelacionados produtoId={p.id} sport={p.sport} modality={p.modality} />
+
+        {p.seller && <ProdutoAvaliacoes vendedorId={p.seller.id} />}
       </div>
     </main>
   )
 }
 
 export default ProdutoPage
+
+/** Descrição em até 4 linhas; o resto abre com "Ler mais". */
+function Descricao({ texto }: { texto: string }) {
+  const [aberta, setAberta] = useState(false)
+  const longa = texto.length > 280 || texto.split("\n").length > 4
+  return (
+    <div>
+      <h2 className="type-h3 text-foreground">Descrição</h2>
+      <p className={cn("type-body mt-3 max-w-prose whitespace-pre-line text-pretty text-muted-foreground", longa && !aberta && "line-clamp-4")}>
+        {texto}
+      </p>
+      {longa && (
+        <button type="button" onClick={() => setAberta(!aberta)} aria-expanded={aberta} className="type-label mt-2 min-h-9 text-primary underline underline-offset-2">
+          {aberta ? "Ler menos" : "Ler mais"}
+        </button>
+      )}
+    </div>
+  )
+}

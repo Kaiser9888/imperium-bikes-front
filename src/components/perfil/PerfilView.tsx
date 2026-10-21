@@ -102,6 +102,19 @@ export function PerfilView({
     const vitorias = podios.filter((p) => p.posicao === 1).length
     const carregando = atividade.status === "loading"
 
+    // Perfil leve: número ou aba sem nada não aparece (enquanto carrega, só o que já se sabe)
+    const numeros = [
+        { rotulo: "Anúncios", valor: produtos.length },
+        { rotulo: "Torneios", valor: participacoes.length },
+        { rotulo: "Vitórias", valor: vitorias, destaque: true },
+        { rotulo: "Vídeos", valor: videos.length },
+    ].filter((n) => n.valor > 0)
+    const abas = [
+        produtos.length > 0 && "anuncios",
+        participacoes.length > 0 && "torneios",
+        videos.length > 0 && "videos",
+    ].filter(Boolean) as string[]
+
     const local = [perfil.cidade, perfil.estado].filter(Boolean).join(", ")
     const membroDesde = formatarData(perfil.membroDesde)
     const nivel = perfil.nivel ? NIVEIS[perfil.nivel] : undefined
@@ -165,22 +178,46 @@ export function PerfilView({
                 </div>
 
                 {/* gap-px sobre fundo de borda desenha as divisórias entre os números */}
-                <dl className="grid grid-cols-2 gap-px border-t border-border bg-border sm:grid-cols-4">
-                    <Numero rotulo="Anúncios" valor={produtos.length} />
-                    <Numero rotulo="Torneios" valor={participacoes.length} carregando={carregando} />
-                    <Numero rotulo="Vitórias" valor={vitorias} carregando={carregando} destaque={vitorias > 0} />
-                    <Numero rotulo="Vídeos" valor={videos.length} carregando={carregando} />
-                </dl>
+                {numeros.length > 0 && (
+                    <dl
+                        className={cn(
+                            "grid gap-px border-t border-border bg-border",
+                            numeros.length === 1 ? "grid-cols-1" : numeros.length === 3 ? "grid-cols-3" : "grid-cols-2 sm:grid-cols-4",
+                            numeros.length === 2 && "sm:grid-cols-2",
+                        )}
+                    >
+                        {numeros.map((n) => (
+                            <Numero key={n.rotulo} rotulo={n.rotulo} valor={n.valor} destaque={n.destaque} />
+                        ))}
+                    </dl>
+                )}
             </section>
 
             <SponsorBanners sponsors={perfil.sponsors} gerenciarHref={dono ? "/configuracoes/patrocinadores" : undefined} />
             {!dono && <DenunciarButton tipo="USER" id={perfil.id} className="mt-3" />}
 
-            <Tabs defaultValue="anuncios" className="mt-10">
+            {carregando && abas.length === 0 && <ListaCarregando />}
+            {!carregando && abas.length === 0 && (
+                <p className="type-body-small mt-10 text-muted-foreground">
+                    {dono ? (
+                        <>
+                            Seu perfil ainda está vazio.{" "}
+                            <Link href="/vendedor" className="font-semibold text-primary underline underline-offset-2">Anuncie</Link>,{" "}
+                            <Link href="/torneios" className="font-semibold text-primary underline underline-offset-2">participe de um evento</Link> ou{" "}
+                            <Link href="/videos/upload" className="font-semibold text-primary underline underline-offset-2">publique um vídeo</Link>.
+                        </>
+                    ) : (
+                        "Ainda não há anúncios, eventos ou vídeos por aqui."
+                    )}
+                </p>
+            )}
+
+            {abas.length > 0 && (
+            <Tabs key={abas.join()} defaultValue={abas[0]} className="mt-10">
                 <TabsList className="h-auto w-full justify-start gap-6 overflow-x-auto rounded-none border-b border-border bg-transparent p-0">
-                    <Aba value="anuncios" rotulo="Anúncios" total={produtos.length} />
-                    <Aba value="torneios" rotulo="Torneios" total={carregando ? undefined : participacoes.length} />
-                    <Aba value="videos" rotulo="Vídeos" total={carregando ? undefined : videos.length} />
+                    {abas.includes("anuncios") && <Aba value="anuncios" rotulo="Anúncios" total={produtos.length} />}
+                    {abas.includes("torneios") && <Aba value="torneios" rotulo="Torneios" total={participacoes.length} />}
+                    {abas.includes("videos") && <Aba value="videos" rotulo="Vídeos" total={videos.length} />}
                 </TabsList>
 
                 <TabsContent value="anuncios" className="mt-6">
@@ -283,16 +320,17 @@ export function PerfilView({
                     )}
                 </TabsContent>
             </Tabs>
+            )}
         </>
     )
 }
 
-function Numero({ rotulo, valor, carregando, destaque }: { rotulo: string; valor: number; carregando?: boolean; destaque?: boolean }) {
+function Numero({ rotulo, valor, destaque }: { rotulo: string; valor: number; destaque?: boolean }) {
     return (
         <div className="flex flex-col items-center gap-0.5 bg-surface px-3 py-4 text-center">
             <dt className="type-caption order-2 uppercase tracking-wider text-muted-foreground">{rotulo}</dt>
             <dd className={cn("type-h2 order-1 tabular-nums", destaque ? "text-warning" : "text-foreground")}>
-                {carregando ? <Skeleton className="h-7 w-8" /> : valor}
+                {valor}
             </dd>
         </div>
     )

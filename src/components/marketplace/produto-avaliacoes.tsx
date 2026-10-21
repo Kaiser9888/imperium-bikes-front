@@ -20,6 +20,7 @@ type Avaliacao = {
 export function ProdutoAvaliacoes({ vendedorId }: { vendedorId: string }) {
     const [lista, setLista] = useState<Avaliacao[] | null>(null)
     const [total, setTotal] = useState(0)
+    const [todas, setTodas] = useState(false)
 
     useEffect(() => {
         api.get(`/api/reviews/user/${vendedorId}`, { params: { size: 5 } })
@@ -30,21 +31,27 @@ export function ProdutoAvaliacoes({ vendedorId }: { vendedorId: string }) {
             .catch(() => setLista([]))
     }, [vendedorId])
 
+    if (lista === null) return null
+    // Sem avaliações: uma linha só, sem seção inteira
+    if (lista.length === 0) {
+        return (
+            <p className="type-caption mt-8 border-t border-border pt-6 text-muted-foreground">
+                Vendedor ainda sem avaliações. Só quem compra e recebe o produto pode avaliar.
+            </p>
+        )
+    }
+    const visiveis = todas ? lista : lista.slice(0, 2)
+
     return (
-        <section className="mt-14 border-t border-border pt-10" aria-labelledby="avaliacoes-title">
-            <p className="type-caption mb-2 font-semibold uppercase tracking-[0.16em] text-primary">Avaliações</p>
-            <h2 id="avaliacoes-title" className="type-h2 text-foreground">
-                O que dizem do vendedor
+        <section className="mt-10 border-t border-border pt-8" aria-labelledby="avaliacoes-title">
+            <h2 id="avaliacoes-title" className="type-h3 text-foreground">
+                Avaliações do vendedor <span className="font-normal text-muted-foreground">({total})</span>
             </h2>
 
-            {lista === null ? null : lista.length === 0 ? (
-                <p className="mt-5 text-sm text-muted-foreground">
-                    Este vendedor ainda não foi avaliado. Só quem compra e recebe o produto pode avaliar.
-                </p>
-            ) : (
+            {(
                 <>
-                    <ul className="mt-6 flex flex-col">
-                        {lista.map((a) => (
+                    <ul className="mt-4 flex flex-col">
+                        {visiveis.map((a) => (
                             <li key={a.id} className="border-b border-border py-5 first:pt-0">
                                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                                     <span className="flex" role="img" aria-label={`Nota ${a.rating} de 5`}>
@@ -67,7 +74,12 @@ export function ProdutoAvaliacoes({ vendedorId }: { vendedorId: string }) {
                             </li>
                         ))}
                     </ul>
-                    {total > lista.length && (
+                    {!todas && lista.length > visiveis.length && (
+                        <button type="button" onClick={() => setTodas(true)} className="type-label mt-3 min-h-9 text-primary underline underline-offset-2">
+                            Ver mais avaliações
+                        </button>
+                    )}
+                    {todas && total > lista.length && (
                         <p className="mt-4 text-xs text-muted-foreground">
                             Mostrando {lista.length} de {total} avaliações.
                         </p>

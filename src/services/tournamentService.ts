@@ -62,6 +62,16 @@ export interface Participacao {
     data: string
 }
 
+/** Inscrito confirmado, como aparece na página pública do evento (sem dados de pagamento). */
+export interface InscritoPublico {
+    userId: string
+    nome: string
+    avatarUrl: string | null
+    numero: number | null
+    /** Colocação lançada pelo organizador; null enquanto não há resultado. */
+    posicao: number | null
+}
+
 export interface CriarTorneio {
     name: string
     description: string
@@ -128,6 +138,25 @@ export const tournamentService = {
             finalizado: p.status === "FINISHED" || typeof p.rankPosition === "number",
             data: String(p.createdAt ?? ""),
         }))
+    },
+
+    async inscritos(tournamentId: string): Promise<InscritoPublico[]> {
+        const { data } = await api.get(`/api/tournaments/${tournamentId}/participants/public`)
+        return (data as Raw[]).map((p) => ({
+            userId: String(p.userId),
+            nome: String(p.userName ?? "Participante"),
+            avatarUrl: typeof p.userAvatarUrl === "string" && p.userAvatarUrl ? p.userAvatarUrl : null,
+            numero: typeof p.bibNumber === "number" ? p.bibNumber : null,
+            posicao: typeof p.rankPosition === "number" ? p.rankPosition : null,
+        }))
+    },
+
+    /** Só o organizador. Dar colocação já marca presença (check-in). */
+    async lancarColocacao(participantId: string, posicao: number): Promise<void> {
+        await api.put(`/api/tournaments/participants/${participantId}/result`, {
+            rank: posicao,
+            reason: "Resultado lançado pelo organizador",
+        })
     },
 
     async inscrever(tournamentId: string): Promise<void> {

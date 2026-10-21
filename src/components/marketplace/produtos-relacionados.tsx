@@ -28,14 +28,14 @@ export function ProdutosRelacionados({ produtoId, sport, modality }: Props) {
     if (produtos.length === 0) return null
 
     return (
-        <section className="mt-14 border-t border-border pt-10" aria-labelledby="relacionados-title">
-            <p className="type-caption mb-2 font-semibold uppercase tracking-[0.16em] text-primary">Você também pode gostar</p>
-            <h2 id="relacionados-title" className="type-h2 text-foreground">
-                Produtos relacionados
+        <section className="mt-10 border-t border-border pt-8" aria-labelledby="relacionados-title">
+            <h2 id="relacionados-title" className="type-h3 text-foreground">
+                Você também pode gostar
             </h2>
-            <ul className="mt-6 grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 lg:grid-cols-4">
+            {/* Celular: uma linha que rola de lado; telas maiores: grade */}
+            <ul className="-mx-4 mt-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2 [scrollbar-width:none] sm:mx-0 sm:grid sm:grid-cols-3 sm:gap-x-4 sm:gap-y-8 sm:overflow-visible sm:px-0 lg:grid-cols-4">
                 {produtos.map((p) => (
-                    <li key={p.id}>
+                    <li key={p.id} className="w-[44%] shrink-0 snap-start sm:w-auto">
                         <ProductCard id={p.id} title={p.title} price={p.price} oldPrice={p.originalPrice} category={p.brand || undefined} image={capa(p)} />
                     </li>
                 ))}

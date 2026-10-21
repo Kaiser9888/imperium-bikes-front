@@ -4,7 +4,7 @@ import Link from "next/link"
 import { useParams } from "next/navigation"
 import { useCallback, useEffect, useState } from "react"
 import { useUser } from "@clerk/nextjs"
-import { ArrowRight, CheckCircle, Loader2 } from "lucide-react"
+import { ArrowRight, CheckCircle, Loader2, MapPin } from "lucide-react"
 
 import { AppShell } from "@/components/layout/app-shell"
 import { BackButton } from "@/components/ui/back-button"
@@ -13,7 +13,7 @@ import { ErrorState } from "@/components/ui/error-state"
 import { Loader } from "@/components/ui/loader"
 import { ShareButton } from "@/components/ui/share-button"
 import { formatarPreco, partesDaData } from "@/lib/format"
-import { mensagemDaApi, tournamentService, type Tournament } from "@/services/tournamentService"
+import { mensagemDaApi, tournamentService, type InscritoPublico, type Tournament } from "@/services/tournamentService"
 
 const STATUS_LABEL = { aberto: "Inscrições abertas", andamento: "Acontecendo agora", encerrado: "Encerrado" }
 
@@ -23,6 +23,87 @@ function dataPorExtenso(iso: string) {
     return Number.isNaN(d.getTime()) ? "" : d.toLocaleDateString("pt-BR", { weekday: "short", day: "numeric", month: "long" })
 }
 
+function Avatar({ inscrito, className }: { inscrito: InscritoPublico; className: string }) {
+    return inscrito.avatarUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element -- foto do perfil, domínio do Clerk
+        <img src={inscrito.avatarUrl} alt="" className={`${className} rounded-full bg-surface-muted object-cover`} />
+    ) : (
+        <span aria-hidden="true" className={`${className} grid place-items-center rounded-full bg-surface-muted font-semibold text-muted-foreground`}>
+            {inscrito.nome.slice(0, 1).toUpperCase()}
+        </span>
+    )
+}
+
+/** Os três primeiros, com o campeão no meio e mais alto. Só aparece depois que o organizador lança as colocações. */
+function Podio({ inscritos }: { inscritos: InscritoPublico[] }) {
+    const lugar = (n: number) => inscritos.find((i) => i.posicao === n)
+    const degraus = [
+        { pos: 2, altura: "h-16", cor: "bg-surface-muted text-foreground", rotulo: "2º" },
+        { pos: 1, altura: "h-24", cor: "bg-warning/15 text-warning", rotulo: "1º" },
+        { pos: 3, altura: "h-12", cor: "bg-primary/10 text-primary", rotulo: "3º" },
+    ]
+    if (!degraus.some((d) => lugar(d.pos))) return null
+
+    return (
+        <section aria-labelledby="podio-titulo" className="mt-12 border-t border-border pt-8">
+            <h2 id="podio-titulo" className="type-h2">Pódio</h2>
+            <ol className="mt-6 grid grid-cols-3 items-end gap-3">
+                {degraus.map((d) => {
+                    const i = lugar(d.pos)
+                    return (
+                        <li key={d.pos} className="flex flex-col items-center text-center" aria-label={i ? `${d.rotulo} lugar: ${i.nome}` : `${d.rotulo} lugar: sem resultado`}>
+                            {i ? (
+                                <Link href={`/perfil/${i.userId}`} className="flex min-w-0 flex-col items-center gap-2">
+                                    <Avatar inscrito={i} className={d.pos === 1 ? "size-16 ring-2 ring-warning" : "size-12"} />
+                                    <span className="type-label line-clamp-2 break-words text-foreground">{i.nome}</span>
+                                </Link>
+                            ) : (
+                                <span className="type-caption text-muted-foreground">—</span>
+                            )}
+                            <span className={`mt-2 grid w-full place-items-center rounded-t-lg text-xl font-bold ${d.altura} ${d.cor}`}>{d.rotulo}</span>
+                        </li>
+                    )
+                })}
+            </ol>
+        </section>
+    )
+}
+
+function ListaInscritos({ inscritos }: { inscritos: InscritoPublico[] }) {
+    const [todos, setTodos] = useState(false)
+    if (inscritos.length === 0) return null
+    // Com resultado, a lista segue a classificação; sem, a ordem de inscrição
+    const ordenados = [...inscritos].sort((a, b) => (a.posicao ?? Infinity) - (b.posicao ?? Infinity))
+    const visiveis = todos ? ordenados : ordenados.slice(0, 12)
+
+    return (
+        <section aria-labelledby="inscritos-titulo" className="mt-12 border-t border-border pt-8">
+            <h2 id="inscritos-titulo" className="type-h2">
+                Inscritos <span className="text-muted-foreground tabular-nums">({inscritos.length})</span>
+            </h2>
+            <ul className="mt-4 divide-y divide-border">
+                {visiveis.map((i) => (
+                    <li key={i.userId}>
+                        <Link href={`/perfil/${i.userId}`} className="flex min-h-12 items-center gap-3 py-2 hover:bg-surface-muted">
+                            <span className="type-caption w-7 shrink-0 text-right font-semibold tabular-nums text-muted-foreground">
+                                {i.posicao ? `${i.posicao}º` : ""}
+                            </span>
+                            <Avatar inscrito={i} className="size-9 shrink-0" />
+                            <span className="type-body-small min-w-0 flex-1 truncate font-medium text-foreground">{i.nome}</span>
+                            {i.numero !== null && <span className="type-caption shrink-0 tabular-nums text-muted-foreground">nº {i.numero}</span>}
+                        </Link>
+                    </li>
+                ))}
+            </ul>
+            {ordenados.length > visiveis.length && (
+                <button type="button" onClick={() => setTodos(true)} className="line-btn line-btn--sm mt-4">
+                    Ver todos os {ordenados.length}
+                </button>
+            )}
+        </section>
+    )
+}
+
 export default function TorneioDetalhesPage() {
     const { isSignedIn, isLoaded } = useUser()
     const { id } = useParams<{ id: string }>()
@@ -30,6 +111,7 @@ export default function TorneioDetalhesPage() {
     const [torneio, setTorneio] = useState<Tournament | null>(null)
     const [falhou, setFalhou] = useState(false)
     const [inscricao, setInscricao] = useState<"PAGA" | "PENDENTE" | null>(null)
+    const [inscritos, setInscritos] = useState<InscritoPublico[]>([])
     const [enviando, setEnviando] = useState(false)
     const [erro, setErro] = useState<string | null>(null)
 
@@ -40,6 +122,8 @@ export default function TorneioDetalhesPage() {
         } catch {
             setFalhou(true)
         }
+        // Lista é complemento: se falhar, a página continua
+        tournamentService.inscritos(id).then(setInscritos).catch(() => setInscritos([]))
     }, [id])
 
     useEffect(() => {
@@ -145,6 +229,17 @@ export default function TorneioDetalhesPage() {
                         </p>
                         <h1 className="type-display mt-2 text-balance">{torneio.nome}</h1>
                         <p className="type-body mt-2 text-muted-foreground">{torneio.local}</p>
+                        {torneio.local && (
+                            <a
+                                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(torneio.local)}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="type-label mt-2 inline-flex min-h-9 items-center gap-1.5 text-primary underline underline-offset-2"
+                            >
+                                <MapPin className="size-4" aria-hidden="true" />
+                                Como chegar
+                            </a>
+                        )}
                     </div>
                 </header>
 
@@ -180,6 +275,27 @@ export default function TorneioDetalhesPage() {
                             </div>
                         </dl>
 
+                        {/* Escassez real: só quando as vagas estão mesmo acabando */}
+                        {limite && torneio.status === "aberto" && !torneio.cancelado && restantes > 0 && restantes <= Math.max(3, Math.ceil(torneio.maxParticipantes * 0.2)) && (
+                            <p className="type-label mt-4 text-primary">
+                                {restantes === 1 ? "Última vaga" : `Últimas ${restantes} vagas`}
+                            </p>
+                        )}
+
+                        {/* Prova social: quem já confirmou presença (dados reais da lista pública) */}
+                        {inscritos.length > 0 && (
+                            <div className="mt-4 flex items-center gap-3">
+                                <div className="flex -space-x-2" aria-hidden="true">
+                                    {inscritos.slice(0, 5).map((i) => (
+                                        <Avatar key={i.userId} inscrito={i} className="size-8 ring-2 ring-surface" />
+                                    ))}
+                                </div>
+                                <p className="type-caption text-muted-foreground">
+                                    {inscritos.length === 1 ? "1 pessoa confirmada" : `${inscritos.length} pessoas confirmadas`}
+                                </p>
+                            </div>
+                        )}
+
                         <div className="mt-6 flex flex-col items-start gap-5">
                             {inscricao === "PAGA" ? (
                                 <div className="flex flex-col items-start gap-2">
@@ -203,6 +319,11 @@ export default function TorneioDetalhesPage() {
                             )}
                             <ShareButton title={torneio.nome} variant="line" />
                         </div>
+                        {torneio.valorInscricao > 0 && inscricao === "PENDENTE" && (
+                            <p className="type-caption mt-4 text-muted-foreground">
+                                Sua vaga fica reservada por 30 minutos enquanto você paga. Depois disso, ela volta a ficar livre.
+                            </p>
+                        )}
                         {torneio.valorInscricao > 0 && (
                             <p className="type-caption mt-4 text-muted-foreground">
                                 Pode cancelar até o início e receber o valor de volta. Evento cancelado é reembolsado automaticamente.{" "}
@@ -238,6 +359,8 @@ export default function TorneioDetalhesPage() {
                                 </Link>
                             </p>
                         )}
+                        <Podio inscritos={inscritos} />
+                        <ListaInscritos inscritos={inscritos} />
                         <DenunciarButton tipo="TOURNAMENT" id={torneio.id} className="mt-6" />
                     </article>
                 </div>
