@@ -635,7 +635,13 @@ function MementoFeedView() {
                             </button>
                         </div>
                         <div className="min-h-0 flex-1">
-                            <VideoComments videoId={currentVideo.id} layout="sheet" onCountChange={setTotalComentarios} />
+                            <VideoComments
+                                videoId={currentVideo.id}
+                                initialCount={currentVideo.commentsCount ?? 0}
+                                creatorId={currentVideo.userId}
+                                layout="sheet"
+                                onCountChange={setTotalComentarios}
+                            />
                         </div>
                     </div>
                 </div>

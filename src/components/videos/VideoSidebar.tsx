@@ -10,7 +10,10 @@ interface VideoSidebarProps {
 export function VideoSidebar({ videos }: VideoSidebarProps) {
     return (
         <aside aria-label="Vídeos relacionados" className="lg:sticky lg:top-24">
-            <h2 className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Relacionados</h2>
+            <h2 className="flex items-center gap-3 text-xs font-bold uppercase tracking-[0.3em] text-foreground">
+                <span aria-hidden="true" className="h-4 w-1 bg-primary" />
+                Assista também
+            </h2>
             {videos.length === 0 ? (
                 <p className="mt-4 text-sm text-muted-foreground">Nenhum vídeo encontrado.</p>
             ) : (

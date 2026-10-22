@@ -181,6 +181,15 @@ function Publicacao({ post, categoria, meuId, votos, onExcluir, onRemovida }: Pu
         }
     }
 
+    /** Resposta a uma resposta: fica na mesma conversa, começando com @Nome. */
+    function responderA(resposta: ForumPost) {
+        const mencao = `@${resposta.userName.trim().split(/\s+/)[0] || "Usuário"} `
+        setTexto((atual) => (atual.startsWith(mencao) ? atual : mencao + atual))
+        const campo = document.getElementById(`resposta-${post.id}`) as HTMLTextAreaElement | null
+        campo?.focus()
+        requestAnimationFrame(() => campo?.setSelectionRange(campo.value.length, campo.value.length))
+    }
+
     async function responder(event: React.FormEvent) {
         event.preventDefault()
         setEnviando(true)
@@ -284,8 +293,13 @@ function Publicacao({ post, categoria, meuId, votos, onExcluir, onRemovida }: Pu
                                     )}
                                 </div>
                                 <p className="type-body-small mt-1.5 whitespace-pre-line break-words text-foreground">{resposta.content}</p>
-                                <div className="-ml-1.5 mt-1">
+                                <div className="-ml-1.5 mt-1 flex items-center gap-1">
                                     <Votos post={resposta} meuId={meuId} votoSalvo={votos[resposta.id] ?? null} onErro={setErro} />
+                                    {meuId && (
+                                        <button type="button" onClick={() => responderA(resposta)} className={botaoAcao}>
+                                            Responder
+                                        </button>
+                                    )}
                                 </div>
                             </div>
                         ))}
