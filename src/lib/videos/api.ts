@@ -238,15 +238,32 @@ export function sendWatchTime(id: string, seconds: number, token?: string | null
  * LIVES
  * ================================================================ */
 
-export async function createLive(token: string, title: string, description: string): Promise<LiveCredentials> {
+/** Com `tournamentId`, a live aparece no topo da página do evento (só o organizador pode). */
+export async function createLive(token: string, title: string, description: string, tournamentId?: string | null): Promise<LiveCredentials> {
     const res = await fetch(`${API_URL}/api/videos/live`, {
         method: "POST",
         headers: { "Content-Type": "application/json", ...authHeaders(token) },
-        body: JSON.stringify({ title, description }),
-        signal: AbortSignal.timeout(20000),
+        body: JSON.stringify({ title, description, tournamentId: tournamentId || null }),
+        // O backend grátis dorme e leva ~50s para acordar; com 20s a live "não ia"
+        signal: AbortSignal.timeout(75000),
     });
     if (!res.ok) throw await errorFrom(res);
     return (await res.json()) as LiveCredentials;
+}
+
+/** Live do organizador no ar agora na página do evento; null quando não há. */
+export async function fetchTournamentLive(tournamentId: string): Promise<VideoItem | null> {
+    try {
+        const res = await fetch(`${API_URL}/api/tournaments/${encodeURIComponent(tournamentId)}/live`, {
+            headers: { Accept: "application/json" },
+            signal: AbortSignal.timeout(TIMEOUT_MS),
+            cache: "no-store",
+        });
+        if (res.status === 204 || !res.ok) return null;
+        return normalizeVideo((await res.json()) as VideoItem);
+    } catch {
+        return null;
+    }
 }
 
 export function fetchLiveCredentials(token: string, videoId: string): Promise<LiveCredentials> {

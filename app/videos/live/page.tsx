@@ -23,7 +23,10 @@ export default function LivePage() {
 function LiveStudio() {
     const { getToken, isSignedIn, isLoaded } = useAuth();
     const router = useRouter();
-    const videoId = useSearchParams().get("id");
+    const params = useSearchParams();
+    const videoId = params.get("id");
+    // Vindo do evento (?torneio=): a live aparece no topo da página dele
+    const torneioId = params.get("torneio");
 
     const [credentials, setCredentials] = useState<LiveCredentials | null>(null);
     const [loadError, setLoadError] = useState<string | null>(null);
@@ -76,9 +79,9 @@ function LiveStudio() {
         try {
             const token = await getToken();
             if (!token) throw new Error("Sua sessão expirou. Entre de novo.");
-            const created = await createLive(token, title.trim(), description.trim());
+            const created = await createLive(token, title.trim(), description.trim(), torneioId);
             setCredentials(created);
-            router.replace(`/videos/live?id=${created.videoId}`);
+            router.replace(`/videos/live?id=${created.videoId}${torneioId ? `&torneio=${torneioId}` : ""}`);
         } catch (err) {
             toast.error(err instanceof Error ? err.message : "Não foi possível criar a live.");
         } finally {
@@ -130,6 +133,11 @@ function LiveStudio() {
                     <div className="mt-6 h-40 animate-pulse rounded-xl bg-secondary" />
                 ) : (
                     <form onSubmit={handleCreate} className="mt-6 space-y-4">
+                        {torneioId && (
+                            <p className="border-l-2 border-primary bg-primary/5 px-4 py-3 text-sm text-foreground">
+                                Transmissão do evento: enquanto estiver no ar, ela aparece no topo da página do evento para todo mundo.
+                            </p>
+                        )}
                         <p className="text-sm text-muted-foreground">
                             Dê um nome para a transmissão. Em seguida você recebe o servidor e a chave para colar no OBS,
                             Streamlabs ou app de live do celular. Quando a live termina, a gravação vira um vídeo no seu canal.
@@ -158,7 +166,7 @@ function LiveStudio() {
                         </div>
                         <Button type="submit" disabled={creating}>
                             <Radio aria-hidden="true" />
-                            {creating ? "Criando..." : "Criar live"}
+                            {creating ? "Criando (pode levar até 1 minuto)..." : "Criar live"}
                         </Button>
                     </form>
                 )
@@ -181,7 +189,11 @@ function LiveStudio() {
                     </p>
 
                     <div className="flex flex-wrap items-center gap-4 pt-2">
-                        <GlitchButton text="Ver a live" href={`/videos/watch/${credentials.videoId}`} icon={<Radio aria-hidden="true" />} />
+                        <GlitchButton
+                            text={torneioId ? "Ver no evento" : "Ver a live"}
+                            href={torneioId ? `/torneios/${torneioId}` : `/videos/watch/${credentials.videoId}`}
+                            icon={<Radio aria-hidden="true" />}
+                        />
                         <Button variant="outline" onClick={handleEnd} disabled={ending}>
                             <Square aria-hidden="true" />
                             {ending ? "Encerrando..." : "Encerrar live"}

@@ -4,7 +4,7 @@ import Link from "next/link"
 import { useParams } from "next/navigation"
 import { useCallback, useEffect, useState } from "react"
 import { useUser } from "@clerk/nextjs"
-import { ArrowRight, CheckCircle, Loader2, MapPin } from "lucide-react"
+import { ArrowRight, CheckCircle, Loader2, MapPin, Radio } from "lucide-react"
 
 import { AppShell } from "@/components/layout/app-shell"
 import { BackButton } from "@/components/ui/back-button"
@@ -12,8 +12,42 @@ import { DenunciarButton } from "@/components/ui/denunciar-button"
 import { ErrorState } from "@/components/ui/error-state"
 import { Loader } from "@/components/ui/loader"
 import { ShareButton } from "@/components/ui/share-button"
+import { VideoPlayer } from "@/components/videos/VideoPlayer"
+import api from "@/lib/api"
 import { formatarPreco, partesDaData } from "@/lib/format"
+import { fetchTournamentLive, playbackIdFrom } from "@/lib/videos/api"
+import type { VideoItem } from "@/lib/videos/types"
 import { mensagemDaApi, tournamentService, type InscritoPublico, type Tournament } from "@/services/tournamentService"
+
+/** De quanto em quanto tempo a página pergunta se o organizador entrou ou saiu do ar. */
+const CHECAR_LIVE_MS = 30_000
+
+/** Transmissão do organizador, no topo da página enquanto estiver no ar. */
+function AoVivo({ live }: { live: VideoItem }) {
+    return (
+        <section aria-label="Transmissão ao vivo" className="mt-4 overflow-hidden rounded-lg border border-foreground bg-black shadow-[4px_4px_0_var(--foreground)]">
+            <div className="relative">
+                <VideoPlayer
+                    videoId={live.id}
+                    playbackId={playbackIdFrom(live.videoUrl)}
+                    title={live.title}
+                    poster={live.thumbnailUrl || undefined}
+                    live
+                />
+                <span className="pointer-events-none absolute left-3 top-3 inline-flex items-center gap-1.5 rounded bg-primary px-2 py-0.5 text-[0.6875rem] font-bold uppercase tracking-widest text-primary-foreground">
+                    <span className="size-1.5 animate-pulse rounded-full bg-white" aria-hidden="true" />
+                    Ao vivo
+                </span>
+            </div>
+            <div className="flex items-center justify-between gap-3 border-t border-foreground bg-surface px-4 py-3">
+                <p className="type-label min-w-0 truncate text-foreground">{live.title}</p>
+                <Link href={`/videos/watch/${live.id}`} className="type-caption shrink-0 font-semibold text-primary underline-offset-2 hover:underline">
+                    Comentar na live
+                </Link>
+            </div>
+        </section>
+    )
+}
 
 const STATUS_LABEL = { aberto: "Inscrições abertas", andamento: "Acontecendo agora", encerrado: "Encerrado" }
 
@@ -114,6 +148,25 @@ export default function TorneioDetalhesPage() {
     const [inscritos, setInscritos] = useState<InscritoPublico[]>([])
     const [enviando, setEnviando] = useState(false)
     const [erro, setErro] = useState<string | null>(null)
+    const [live, setLive] = useState<VideoItem | null>(null)
+    const [meuId, setMeuId] = useState<string | null>(null)
+
+    // A live entra e sai do ar sozinha: confere de tempos em tempos
+    useEffect(() => {
+        let ativo = true
+        const checar = () => fetchTournamentLive(id).then((atual) => ativo && setLive((antes) => (antes?.id === atual?.id ? antes : atual)))
+        void checar()
+        const timer = setInterval(checar, CHECAR_LIVE_MS)
+        return () => {
+            ativo = false
+            clearInterval(timer)
+        }
+    }, [id])
+
+    useEffect(() => {
+        if (!isSignedIn) return
+        api.get("/api/users/me").then(({ data }) => setMeuId(data.id)).catch(() => {})
+    }, [isSignedIn])
 
     const carregar = useCallback(async () => {
         setFalhou(false)
@@ -201,6 +254,7 @@ export default function TorneioDetalhesPage() {
     const restantes = Math.max(0, torneio.maxParticipantes - torneio.participantes)
     const ocupacao = limite ? Math.min(1, torneio.participantes / torneio.maxParticipantes) : 0
     const status = torneio.cancelado ? "Cancelado" : STATUS_LABEL[torneio.status]
+    const organizador = !!meuId && meuId === torneio.organizadorId
 
     // Seções numeradas só com o que o organizador preencheu
     const secoes = [
@@ -213,6 +267,8 @@ export default function TorneioDetalhesPage() {
         <AppShell>
             <main className="mx-auto w-full max-w-5xl px-4 pb-16 pt-4 sm:px-6">
                 <BackButton href="/torneios" label="Eventos" className="-ml-2.5" />
+
+                {live && <AoVivo live={live} />}
 
                 <header className="mt-6 flex gap-5 sm:gap-7">
                     {inicio && (
@@ -318,6 +374,15 @@ export default function TorneioDetalhesPage() {
                                 <p className="type-body-small text-muted-foreground">Inscrições fechadas.</p>
                             )}
                             <ShareButton title={torneio.nome} variant="line" />
+                            {organizador && !torneio.cancelado && torneio.status !== "encerrado" && (
+                                <Link
+                                    href={live ? `/videos/live?id=${live.id}&torneio=${torneio.id}` : `/videos/live?torneio=${torneio.id}`}
+                                    className="line-btn line-btn--sm"
+                                >
+                                    <Radio aria-hidden="true" />
+                                    {live ? "Painel da transmissão" : "Transmitir ao vivo"}
+                                </Link>
+                            )}
                         </div>
                         {torneio.valorInscricao > 0 && inscricao === "PENDENTE" && (
                             <p className="type-caption mt-4 text-muted-foreground">
