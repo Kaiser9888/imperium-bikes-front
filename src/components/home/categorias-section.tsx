@@ -1,10 +1,10 @@
-import { CategoriasLista } from "@/components/home/categorias-lista"
+import { CategoriasDestaque } from "@/components/home/categorias-lista"
 import { HomeSection } from "@/components/home/home-section"
 
 export function CategoriasSection() {
     return (
         <HomeSection id="categorias" title="Categorias" href="/modalidades" hrefLabel="Ver todas" linkStyle="cta">
-            <CategoriasLista limite={5} />
+            <CategoriasDestaque />
         </HomeSection>
     )
 }

@@ -305,6 +305,37 @@
     grid-template-columns: repeat(5, minmax(0, 1fr));
 }
 
+/* Listas longas (esportes e tipos de produto): cartões menores, várias colunas */
+.choice-grid-compact {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.choice-grid-compact .choice-card {
+    min-height: 46px;
+    padding: 10px 12px;
+}
+
+.choice-grid-compact .choice-card-label {
+    font-size: 13px;
+    line-height: 1.3;
+}
+
+.choice-group + .choice-group {
+    margin-top: 22px;
+}
+
+.choice-group-title {
+    margin: 0;
+    color: var(--imperium-muted);
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.choice-group .choice-grid {
+    margin-top: 8px;
+}
+
 .choice-card {
     display: flex;
     min-height: 64px;
@@ -990,6 +1021,10 @@
     .choice-grid-types,
     .choice-grid-format {
         grid-template-columns: 1fr;
+    }
+
+    .choice-grid-compact {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
     .choice-grid-materials {

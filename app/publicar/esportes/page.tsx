@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 
+import { esportesPorGrupo } from "@/lib/esportes"
 import { writeDraft } from "@/lib/publicar/categorias"
 import { CATEGORIA_ESPORTES, OPCOES_ESPORTE, TIPOS_POR_ESPORTE } from "@/lib/publicar/taxonomia"
 
@@ -50,6 +51,18 @@ export default function PublicarEsportesPage() {
       step.key === "sport" ? { sport: optionId, tipo: "" } : { ...current, tipo: optionId },
     )
   }
+
+  const renderOption = (step: Step, option: Step["options"][number]) => (
+    <button
+      key={option.id}
+      type="button"
+      className={`choice-card ${answers[step.key] === option.id ? "choice-card-selected" : ""}`}
+      aria-pressed={answers[step.key] === option.id}
+      onClick={() => handleSelect(step, option.id)}
+    >
+      <span className="choice-card-label">{option.label}</span>
+    </button>
+  )
 
   const handleContinue = () => {
     if (!allAnswered) return
@@ -135,19 +148,25 @@ export default function PublicarEsportesPage() {
                   <div className="step-content">
                     <p className="field-label">{step.title}</p>
 
-                    <div className="choice-grid choice-grid-types">
-                      {step.options.map((option) => (
-                        <button
-                          key={option.id}
-                          type="button"
-                          className={`choice-card ${answers[step.key] === option.id ? "choice-card-selected" : ""}`}
-                          aria-pressed={answers[step.key] === option.id}
-                          onClick={() => handleSelect(step, option.id)}
-                        >
-                          <span className="choice-card-label">{option.label}</span>
-                        </button>
-                      ))}
-                    </div>
+                    {step.key === "sport" ? (
+                      <>
+                        {esportesPorGrupo.map(({ grupo, esportes }) => (
+                          <div key={grupo} className="choice-group" role="group" aria-label={grupo}>
+                            <p className="choice-group-title">{grupo}</p>
+                            <div className="choice-grid choice-grid-compact">
+                              {esportes.map(({ slug, nome }) => renderOption(step, { id: slug, label: nome }))}
+                            </div>
+                          </div>
+                        ))}
+                        <p className="field-note">
+                          Produto de bike? Volte e escolha Equipamentos ou Peças e acessórios.
+                        </p>
+                      </>
+                    ) : (
+                      <div className="choice-grid choice-grid-compact">
+                        {step.options.map((option) => renderOption(step, option))}
+                      </div>
+                    )}
 
                     {stepNumber < steps.length ? (
                       <button

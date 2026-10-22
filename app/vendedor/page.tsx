@@ -51,7 +51,7 @@ const tiposDeAnuncio = [
   { slug: "servicos", label: "Serviços", desc: "Aulas, manutenção, personal, aluguel", icon: Wrench },
   { slug: "produtos", label: "Produtos", desc: "Roupas, calçados e itens gerais", icon: ShoppingBag },
   { slug: "consumiveis", label: "Consumíveis", desc: "Suplementos, géis, hidratação", icon: Zap },
-  { slug: "esportes", label: "Artigos esportivos", desc: "Corrida, natação, futebol, musculação, lutas", icon: Dumbbell },
+  { slug: "esportes", label: "Artigos esportivos", desc: "Alta montanha, corrida, água, quadra e mais", icon: Dumbbell },
 ]
 
 /*

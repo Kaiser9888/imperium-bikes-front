@@ -10,7 +10,7 @@ export default function CategoriasPage() {
         <main className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 pb-16 pt-3 sm:px-6 lg:px-8 lg:pt-6">
             <PageHeading
                 title="Categorias"
-                description="Escolha uma categoria para ver os produtos."
+                description="Bikes e todos os outros esportes. Escolha um para ver os produtos."
                 back={{ href: "/", label: "Início" }}
             />
             <CategoriasLista />

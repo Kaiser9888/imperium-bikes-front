@@ -20,6 +20,18 @@ export const OPCOES_ESPORTE = esportes.map(({ slug, nome }) => ({ value: slug, l
 
 /** Tipos de produto oferecidos em /publicar/esportes, por esporte. */
 export const TIPOS_POR_ESPORTE: Record<string, string[]> = {
+  "alta-montanha": ["Bota de montanha", "Jaqueta e anorak", "Segunda pele", "Calça", "Luva", "Mochila cargueira", "Bastão de caminhada", "Crampon e piolet", "Capacete", "Saco de dormir", "Barraca", "Lanterna de cabeça", "Óculos de montanha", "Acessórios"],
+  escalada: ["Sapatilha", "Cadeirinha", "Corda", "Mosquetão e costura", "Freio e descensor", "Capacete", "Magnésio e saco", "Crash pad", "Roupas", "Acessórios"],
+  trilha: ["Bota e tênis de trilha", "Mochila", "Barraca", "Saco de dormir", "Isolante", "Fogareiro e cozinha", "Lanterna", "Bastão de caminhada", "Roupas", "Acessórios"],
+  esqui: ["Esqui", "Snowboard", "Bota", "Fixação", "Bastão", "Capacete", "Máscara (goggle)", "Jaqueta e calça", "Luva", "Acessórios"],
+  skate: ["Skate completo", "Shape", "Truck", "Rodas e rolamentos", "Patins", "Patinete", "Capacete", "Proteções", "Tênis", "Acessórios"],
+  yoga: ["Tapete", "Bloco e faixa", "Bola", "Roupas", "Acessórios"],
+  surf: ["Prancha", "Quilha", "Leash", "Parafina", "Roupa de neoprene", "Lycra", "Capa de prancha", "Bodyboard", "Acessórios"],
+  canoagem: ["Prancha de stand up", "Caiaque", "Remo", "Colete salva-vidas", "Leash", "Bolsa estanque", "Acessórios"],
+  pesca: ["Vara", "Molinete e carretilha", "Linha", "Isca", "Anzol e chumbada", "Caixa de pesca", "Roupas", "Acessórios"],
+  basquete: ["Tênis", "Bola", "Camisa e regata", "Shorts", "Tabela e aro", "Acessórios"],
+  volei: ["Bola", "Tênis", "Joelheira", "Rede", "Roupas", "Acessórios"],
+  tenis: ["Raquete", "Bola", "Corda", "Calçado", "Raqueteira", "Roupas", "Acessórios"],
   corrida: ["Tênis", "Camiseta", "Shorts e bermudas", "Meias", "Relógio e GPS", "Cinto e mochila de hidratação", "Viseira e boné", "Óculos", "Acessórios"],
   natacao: ["Óculos de natação", "Touca", "Sunga, maiô e bermuda", "Nadadeira", "Palmar", "Prancha e pullbuoy", "Roupa de neoprene", "Acessórios"],
   futebol: ["Chuteira", "Bola", "Camisa", "Shorts", "Meião", "Caneleira", "Luva de goleiro", "Bolsa e mochila", "Acessórios"],
