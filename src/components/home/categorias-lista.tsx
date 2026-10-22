@@ -3,22 +3,22 @@ import Link from "next/link"
 import { categoriasDestaque, categoriasPorGrupo, type Categoria } from "@/lib/esportes"
 import { cn } from "@/lib/utils"
 
-/** Pílula pequena e discreta; vários esportes cabem sem pesar na tela. */
+/**
+ * Mesmo botão sublinhado do "Publicar torneio", em tamanho menor.
+ * Com `rolar`, uma linha que rola de lado (Home); sem ele, quebra linha.
+ */
 function Itens({ itens, rolar }: { itens: Categoria[]; rolar?: boolean }) {
     return (
         <ul
             className={cn(
-                "flex gap-2",
-                rolar ? "-mx-4 overflow-x-auto px-4 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:px-0" : "flex-wrap",
+                "flex gap-x-6 gap-y-1",
+                rolar ? "-mx-4 overflow-x-auto whitespace-nowrap px-4 [scrollbar-width:none] sm:mx-0 sm:px-0" : "flex-wrap",
             )}
         >
             {itens.map(({ label, href }) => (
                 <li key={href} className="shrink-0">
-                    <Link
-                        href={href}
-                        className="inline-flex h-9 items-center whitespace-nowrap rounded-full border border-border bg-surface px-4 text-sm font-medium text-foreground transition-colors hover:border-primary/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                    >
-                        {label}
+                    <Link href={href} className="underline-btn underline-btn--ink underline-btn--sm inline-block">
+                        <span className="block py-1.5">{label}</span>
                     </Link>
                 </li>
             ))}

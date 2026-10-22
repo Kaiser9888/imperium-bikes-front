@@ -662,6 +662,13 @@ mux-player.mux-player-cover {
 .underline-btn--ink {
     color: var(--foreground);
 }
+/* Versão menor, para listas (Categorias) */
+.underline-btn--sm {
+    font-size: 0.9375rem;
+    @media (width < 40rem) {
+        font-size: 0.875rem;
+    }
+}
 .underline-btn:disabled {
     cursor: progress;
     opacity: 0.6;
