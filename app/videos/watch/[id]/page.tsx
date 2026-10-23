@@ -12,6 +12,7 @@ import { formatViews, timeAgo } from "@/lib/videos/format";
 import { PESO, registrarInteresse } from "@/lib/videos/gosto";
 import type { VideoItem } from "@/lib/videos/types";
 import { VideoPlayer } from "@/components/videos/VideoPlayer";
+import { YouTubePlayer } from "@/components/videos/YouTubePlayer";
 import { VideoActions } from "@/components/videos/VideoActions";
 import { DenunciarButton } from "@/components/ui/denunciar-button";
 import { VideoComments } from "@/components/videos/VideoComments";
@@ -185,6 +186,8 @@ export default function WatchPage() {
                                         : "Não foi possível processar este vídeo. Envie o arquivo novamente."}
                               </p>
                           </div>
+                      ) : video.platform === "YOUTUBE" && video.videoUrl ? (
+                          <YouTubePlayer embedUrl={video.videoUrl} title={video.title} autoplay={video.isLiveNow} />
                       ) : (
                           <VideoPlayer
                             videoId={video.id}

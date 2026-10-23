@@ -14,6 +14,7 @@ import { Loader } from "@/components/ui/loader"
 import { ShareButton } from "@/components/ui/share-button"
 import { VideoCard } from "@/components/videos/VideoCard"
 import { VideoPlayer } from "@/components/videos/VideoPlayer"
+import { YouTubePlayer } from "@/components/videos/YouTubePlayer"
 import api from "@/lib/api"
 import { formatarPreco, partesDaData } from "@/lib/format"
 import { fetchTournamentLive, fetchTournamentVideos, playbackIdFrom } from "@/lib/videos/api"
@@ -28,13 +29,17 @@ function AoVivo({ live }: { live: VideoItem }) {
     return (
         <section aria-label="Transmissão ao vivo" className="mt-4 overflow-hidden rounded-lg border border-foreground bg-black shadow-[4px_4px_0_var(--foreground)]">
             <div className="relative">
-                <VideoPlayer
-                    videoId={live.id}
-                    playbackId={playbackIdFrom(live.videoUrl)}
-                    title={live.title}
-                    poster={live.thumbnailUrl || undefined}
-                    live
-                />
+                {live.platform === "YOUTUBE" && live.videoUrl ? (
+                    <YouTubePlayer embedUrl={live.videoUrl} title={live.title} autoplay />
+                ) : (
+                    <VideoPlayer
+                        videoId={live.id}
+                        playbackId={playbackIdFrom(live.videoUrl)}
+                        title={live.title}
+                        poster={live.thumbnailUrl || undefined}
+                        live
+                    />
+                )}
                 <span className="pointer-events-none absolute left-3 top-3 inline-flex items-center gap-1.5 rounded bg-primary px-2 py-0.5 text-[0.6875rem] font-bold uppercase tracking-widest text-primary-foreground">
                     <span className="size-1.5 animate-pulse rounded-full bg-white" aria-hidden="true" />
                     Ao vivo

@@ -4,14 +4,30 @@ import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@clerk/nextjs";
-import { Check, CheckCircle2, Copy, Eye, EyeOff, Laptop, Loader2, Radio, Smartphone, Square, Trophy } from "lucide-react";
+import {
+    Check,
+    CheckCircle2,
+    Copy,
+    ExternalLink,
+    Eye,
+    EyeOff,
+    Laptop,
+    Loader2,
+    Radio,
+    Smartphone,
+    Square,
+    SquarePlay,
+    Trophy,
+    type LucideIcon,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { EventoPicker, type EventoEscolhido } from "@/components/videos/EventoPicker";
 import { GlitchButton } from "@/components/videos/GlitchButton";
 import { VideoPlayer } from "@/components/videos/VideoPlayer";
-import { createLive, endLive, fetchLiveCredentials, fetchMyVideos, fetchVideo, playbackIdFrom } from "@/lib/videos/api";
+import { YouTubePlayer } from "@/components/videos/YouTubePlayer";
+import { createLive, createYouTubeLive, endLive, fetchLiveCredentials, fetchMyVideos, fetchVideo, playbackIdFrom } from "@/lib/videos/api";
 import type { LiveCredentials, VideoItem } from "@/lib/videos/types";
 import { cn } from "@/lib/utils";
 import { tournamentService } from "@/services/tournamentService";
@@ -40,6 +56,8 @@ function LiveStudio() {
 
     const [credentials, setCredentials] = useState<LiveCredentials | null>(null);
     const [loadError, setLoadError] = useState<string | null>(null);
+    const [fonte, setFonte] = useState<"imperium" | "youtube">("imperium");
+    const [youtubeUrl, setYoutubeUrl] = useState("");
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
     const [evento, setEvento] = useState<EventoEscolhido | null>(null);
@@ -49,6 +67,7 @@ function LiveStudio() {
     const [ended, setEnded] = useState(false);
     const [live, setLive] = useState<VideoItem | null>(null);
     const isLiveNow = !ended && (live ? !!live.isLiveNow : !!credentials?.isLiveNow);
+    const youtube = credentials?.platform === "YOUTUBE";
 
     useEffect(() => {
         if (!torneioParam) return;
@@ -122,11 +141,18 @@ function LiveStudio() {
             toast.error("O título precisa de pelo menos 3 letras.");
             return;
         }
+        if (fonte === "youtube" && !youtubeUrl.trim()) {
+            toast.error("Cole o link da live do YouTube.");
+            return;
+        }
         setCreating(true);
         try {
             const token = await getToken();
             if (!token) throw new Error("Sua sessão expirou. Entre de novo.");
-            const created = await createLive(token, title.trim(), description.trim(), evento?.id);
+            const created =
+                fonte === "youtube"
+                    ? await createYouTubeLive(token, youtubeUrl.trim(), title.trim(), description.trim(), evento?.id)
+                    : await createLive(token, title.trim(), description.trim(), evento?.id);
             setCredentials(created);
             router.replace(`/videos/live?id=${created.videoId}`);
         } catch (err) {
@@ -137,14 +163,17 @@ function LiveStudio() {
     }
 
     async function handleEnd() {
-        if (!credentials || !window.confirm("Encerrar a transmissão agora? A gravação vira um vídeo no seu canal.")) return;
+        const aviso = youtube
+            ? "Tirar a live do site? Ela vira um vídeo no seu canal. A transmissão no YouTube você encerra no app do YouTube."
+            : "Encerrar a transmissão agora? A gravação vira um vídeo no seu canal.";
+        if (!credentials || !window.confirm(aviso)) return;
         setEnding(true);
         try {
             const token = await getToken();
             if (!token) throw new Error("Sua sessão expirou.");
             await endLive(token, credentials.videoId);
             setEnded(true);
-            toast("Live encerrada. O replay aparece no seu canal em alguns minutos.");
+            toast(youtube ? "Live encerrada no site." : "Live encerrada. O replay aparece no seu canal em alguns minutos.");
         } catch (err) {
             toast.error(err instanceof Error ? err.message : "Não foi possível encerrar.");
         } finally {
@@ -203,10 +232,47 @@ function LiveStudio() {
                         )}
 
                         <form onSubmit={handleCreate} className="mt-6 space-y-5">
-                            <p className="text-sm text-muted-foreground">
-                                Dê um nome para a transmissão. Em seguida você recebe o servidor e a chave para colar no OBS
-                                ou num app de live do celular. Quando a live termina, a gravação vira um vídeo no seu canal.
-                            </p>
+                            <div role="radiogroup" aria-label="Como você vai transmitir" className="grid gap-3 sm:grid-cols-2">
+                                <OpcaoFonte
+                                    ativa={fonte === "imperium"}
+                                    onClick={() => setFonte("imperium")}
+                                    Icone={Radio}
+                                    titulo="Transmitir pelo Imperium"
+                                    texto="Pelo OBS ou um app de live. Chat, views e monetização ficam aqui."
+                                />
+                                <OpcaoFonte
+                                    ativa={fonte === "youtube"}
+                                    onClick={() => setFonte("youtube")}
+                                    Icone={SquarePlay}
+                                    titulo="Usar uma live do YouTube"
+                                    texto="Transmita pelo app do YouTube e cole o link. Aparece aqui com o player dele."
+                                />
+                            </div>
+
+                            {fonte === "youtube" ? (
+                                <div>
+                                    <label htmlFor="live-youtube" className="text-sm font-medium">Link da live no YouTube</label>
+                                    <input
+                                        id="live-youtube"
+                                        type="url"
+                                        inputMode="url"
+                                        value={youtubeUrl}
+                                        onChange={(e) => setYoutubeUrl(e.target.value)}
+                                        placeholder="https://youtube.com/live/..."
+                                        className={campo}
+                                    />
+                                    <ol className="mt-2 list-decimal space-y-0.5 pl-5 text-xs text-muted-foreground">
+                                        <li>No app do YouTube: botão “+” → “Transmitir ao vivo” e comece a live.</li>
+                                        <li>Toque em “Compartilhar” → “Copiar link” e cole aqui.</li>
+                                        <li>A live entra no site na hora. Quando acabar, encerre aqui também.</li>
+                                    </ol>
+                                </div>
+                            ) : (
+                                <p className="text-sm text-muted-foreground">
+                                    Dê um nome para a transmissão. Em seguida você recebe o servidor e a chave para colar no OBS
+                                    ou num app de live do celular. Quando a live termina, a gravação vira um vídeo no seu canal.
+                                </p>
+                            )}
                             <div>
                                 <label htmlFor="live-title" className="text-sm font-medium">Título</label>
                                 <input
@@ -239,7 +305,7 @@ function LiveStudio() {
                             />
                             <Button type="submit" disabled={creating}>
                                 {creating ? <Loader2 className="animate-spin" aria-hidden="true" /> : <Radio aria-hidden="true" />}
-                                {creating ? "Criando (pode levar até 1 minuto)..." : "Criar live"}
+                                {creating ? "Criando (pode levar até 1 minuto)..." : fonte === "youtube" ? "Publicar live no site" : "Criar live"}
                             </Button>
                         </form>
                     </>
@@ -259,9 +325,19 @@ function LiveStudio() {
                         )}
                     </div>
 
-                    <StatusLive estado={ended ? "encerrada" : isLiveNow ? "no-ar" : "aguardando"} live={live} />
+                    <StatusLive estado={ended ? "encerrada" : isLiveNow ? "no-ar" : "aguardando"} live={live} youtube={youtube} />
 
-                    {!ended && (
+                    {youtube && !ended && credentials.externalUrl && (
+                        <p className="text-xs text-muted-foreground">
+                            A transmissão acontece no YouTube: câmera, chat dele e fim da live são pelo app do YouTube.{" "}
+                            <a href={credentials.externalUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 font-semibold text-primary hover:underline">
+                                Abrir no YouTube
+                                <ExternalLink className="size-3" aria-hidden="true" />
+                            </a>
+                        </p>
+                    )}
+
+                    {!ended && !youtube && (
                         <>
                             <ComoTransmitir />
 
@@ -284,7 +360,7 @@ function LiveStudio() {
                         {!ended && (
                             <Button variant="outline" onClick={handleEnd} disabled={ending}>
                                 <Square aria-hidden="true" />
-                                {ending ? "Encerrando..." : "Encerrar live"}
+                                {ending ? "Encerrando..." : youtube ? "Encerrar no site" : "Encerrar live"}
                             </Button>
                         )}
                     </div>
@@ -295,14 +371,18 @@ function LiveStudio() {
 }
 
 /** O que está acontecendo agora: esperando o sinal, no ar (com prévia) ou encerrada. */
-function StatusLive({ estado, live }: { estado: "aguardando" | "no-ar" | "encerrada"; live: VideoItem | null }) {
+function StatusLive({ estado, live, youtube }: { estado: "aguardando" | "no-ar" | "encerrada"; live: VideoItem | null; youtube: boolean }) {
     if (estado === "encerrada") {
         return (
             <div role="status" className="flex gap-3 rounded-xl border border-border bg-card p-4">
                 <CheckCircle2 className="size-5 shrink-0 text-success" aria-hidden="true" />
                 <div className="text-sm">
                     <p className="font-medium">Transmissão encerrada</p>
-                    <p className="mt-0.5 text-muted-foreground">A gravação está sendo preparada e aparece no seu canal em alguns minutos.</p>
+                    <p className="mt-0.5 text-muted-foreground">
+                        {youtube
+                            ? "A live virou um vídeo no seu canal, tocando pelo YouTube."
+                            : "A gravação está sendo preparada e aparece no seu canal em alguns minutos."}
+                    </p>
                 </div>
             </div>
         );
@@ -321,7 +401,9 @@ function StatusLive({ estado, live }: { estado: "aguardando" | "no-ar" | "encerr
     const playbackId = playbackIdFrom(live?.videoUrl);
     return (
         <div role="status" aria-live="polite" className="overflow-hidden rounded-xl border border-primary/50 bg-black">
-            {playbackId && live ? (
+            {youtube && live?.videoUrl ? (
+                <YouTubePlayer embedUrl={live.videoUrl} title={live.title} autoplay />
+            ) : playbackId && live && !youtube ? (
                 <VideoPlayer videoId={live.id} playbackId={playbackId} title={live.title} live />
             ) : (
                 <div className="aspect-video" />
@@ -331,6 +413,28 @@ function StatusLive({ estado, live }: { estado: "aguardando" | "no-ar" | "encerr
                 No ar. A prévia chega com alguns segundos de atraso.
             </p>
         </div>
+    );
+}
+
+/** Cartão de escolha: transmitir por aqui ou usar uma live do YouTube. */
+function OpcaoFonte({ ativa, onClick, Icone, titulo, texto }: { ativa: boolean; onClick: () => void; Icone: LucideIcon; titulo: string; texto: string }) {
+    return (
+        <button
+            type="button"
+            role="radio"
+            aria-checked={ativa}
+            onClick={onClick}
+            className={cn(
+                "flex cursor-pointer gap-3 rounded-xl border p-4 text-left transition-colors",
+                ativa ? "border-primary bg-primary/5 ring-2 ring-primary/20" : "border-border bg-card hover:border-primary/40",
+            )}
+        >
+            <Icone className={cn("mt-0.5 size-5 shrink-0", ativa ? "text-primary" : "text-muted-foreground")} aria-hidden="true" />
+            <span>
+                <span className="block text-sm font-semibold">{titulo}</span>
+                <span className="mt-0.5 block text-xs text-muted-foreground">{texto}</span>
+            </span>
+        </button>
     );
 }
 

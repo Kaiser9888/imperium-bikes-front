@@ -259,6 +259,24 @@ export async function createLive(token: string, title: string, description: stri
     return (await res.json()) as LiveCredentials;
 }
 
+/** Live feita no YouTube e exibida aqui pelo player dele: entra no ar na hora. */
+export async function createYouTubeLive(
+    token: string,
+    youtubeUrl: string,
+    title: string,
+    description: string,
+    tournamentId?: string | null
+): Promise<LiveCredentials> {
+    const res = await fetch(`${API_URL}/api/videos/live/youtube`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeaders(token) },
+        body: JSON.stringify({ youtubeUrl, title, description, tournamentId: tournamentId || null }),
+        signal: AbortSignal.timeout(75000),
+    });
+    if (!res.ok) throw await errorFrom(res);
+    return (await res.json()) as LiveCredentials;
+}
+
 /** Live do organizador no ar agora na página do evento; null quando não há. */
 export async function fetchTournamentLive(tournamentId: string): Promise<VideoItem | null> {
     try {

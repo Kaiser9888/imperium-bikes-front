@@ -1,4 +1,6 @@
-export type VideoStatus = "UPLOADING" | "PROCESSING" | "READY" | "PUBLISHED" | "FAILED" | "REMOVED";
+export type VideoPlatform = "DIRECT" | "YOUTUBE" | "VIMEO";
+
+export type VideoStatus ="UPLOADING" | "PROCESSING" | "READY" | "PUBLISHED" | "FAILED" | "REMOVED";
 
 export interface VideoItem {
     id: string;
@@ -27,6 +29,8 @@ export interface VideoItem {
     isLiveNow?: boolean;
     /** PROCESSING enquanto o Mux prepara o vídeo; PUBLISHED quando dá para assistir; READY = live aguardando. */
     status?: VideoStatus;
+    /** DIRECT = Mux (upload ou live daqui); YOUTUBE = player do YouTube em videoUrl (embed). */
+    platform?: VideoPlatform;
     /** Evento marcado no vídeo (aparece na página do evento). */
     tournamentId?: string | null;
     tournamentName?: string | null;
@@ -60,6 +64,9 @@ export interface LiveCredentials {
     title: string;
     tournamentId: string | null;
     tournamentName: string | null;
+    /** YOUTUBE: sem servidor/chave; o link da live vem em externalUrl. */
+    platform: VideoPlatform;
+    externalUrl: string | null;
 }
 
 /** recent = mais recentes (padrão); views = mais vistos. */
