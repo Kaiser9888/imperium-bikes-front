@@ -19,6 +19,8 @@ export default async function SignInPage({ searchParams }: Props) {
             title="Entrar"
             description="Acesse sua conta para comprar, vender e participar de eventos."
             image="/header/logindownhill.jpg"
+            kicker="Bem-vindo de volta"
+            headline="A trilha continua de onde você parou."
             footer={
                 <>
                     Ainda não tem conta?{" "}

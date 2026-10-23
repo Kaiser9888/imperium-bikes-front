@@ -19,6 +19,10 @@ export default async function SignUpPage({ searchParams }: Props) {
             title="Criar conta"
             description="Cadastre-se para anunciar, comprar e se inscrever em eventos."
             image="/header/cadastrodownhill.jpg"
+            kicker="Faça parte"
+            headline="Equipamento, eventos e a galera do esporte num lugar só."
+            headlineAt="top"
+            highlights={["Compre e venda", "Inscreva-se em eventos", "Publique seus vídeos", "Faça lives"]}
             footer={
                 <>
                     Já tem conta?{" "}
