@@ -27,6 +27,9 @@ export interface VideoItem {
     isLiveNow?: boolean;
     /** PROCESSING enquanto o Mux prepara o vídeo; PUBLISHED quando dá para assistir; READY = live aguardando. */
     status?: VideoStatus;
+    /** Evento marcado no vídeo (aparece na página do evento). */
+    tournamentId?: string | null;
+    tournamentName?: string | null;
 }
 
 export interface VideoPage {
@@ -54,6 +57,9 @@ export interface LiveCredentials {
     ingestUrl: string;
     streamKey: string;
     isLiveNow: boolean;
+    title: string;
+    tournamentId: string | null;
+    tournamentName: string | null;
 }
 
 /** recent = mais recentes (padrão); views = mais vistos. */

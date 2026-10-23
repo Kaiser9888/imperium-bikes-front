@@ -100,6 +100,18 @@ export const tournamentService = {
         return [...ativos.data.content, ...encerrados.data.content].map(normalize)
     },
 
+    /** Busca por nome, para marcar o evento num vídeo. */
+    async buscarPorNome(query: string): Promise<Tournament[]> {
+        const { data } = await api.get("/api/tournaments", { params: { query, size: 8 } })
+        return (data.content as Raw[]).map(normalize)
+    },
+
+    /** Eventos que o usuário logado organiza (inclui rascunhos). */
+    async meusEventos(): Promise<Tournament[]> {
+        const { data } = await api.get("/api/tournaments/my", { params: { size: 50 } })
+        return (data.content as Raw[]).map(normalize)
+    },
+
     async buscarPorId(id: string): Promise<Tournament> {
         return normalize((await api.get(`/api/tournaments/${id}`)).data)
     },

@@ -1,12 +1,23 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { BackButton } from "@/components/ui/back-button";
 import { UploadSelector, type UploadMode } from "@/components/videos/UploadSelector";
 import { UploadForm } from "@/components/videos/UploadForm";
 
 export default function UploadPage() {
+    return (
+      <Suspense fallback={null}>
+          <Upload />
+      </Suspense>
+    );
+}
+
+function Upload() {
     const [mode, setMode] = useState<UploadMode>("long");
+    // Vindo da página do evento (?torneio=): o vídeo já sai marcado com ele
+    const torneioId = useSearchParams().get("torneio");
 
     return (
       <div className="mx-auto max-w-5xl px-4 pb-16 pt-6 sm:px-6 lg:px-8 lg:pt-10">
@@ -20,7 +31,7 @@ export default function UploadPage() {
           </div>
 
           <div className="mt-8">
-              <UploadForm key={mode} mode={mode} />
+              <UploadForm key={mode} mode={mode} torneioId={torneioId} />
           </div>
       </div>
     );

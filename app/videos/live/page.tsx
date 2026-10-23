@@ -4,13 +4,23 @@ import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@clerk/nextjs";
-import { Check, Copy, Eye, EyeOff, Radio, Square } from "lucide-react";
+import { Check, CheckCircle2, Copy, Eye, EyeOff, Laptop, Loader2, Radio, Smartphone, Square, Trophy } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { EventoPicker, type EventoEscolhido } from "@/components/videos/EventoPicker";
 import { GlitchButton } from "@/components/videos/GlitchButton";
-import { createLive, endLive, fetchLiveCredentials, fetchVideo } from "@/lib/videos/api";
-import type { LiveCredentials } from "@/lib/videos/types";
+import { VideoPlayer } from "@/components/videos/VideoPlayer";
+import { createLive, endLive, fetchLiveCredentials, fetchMyVideos, fetchVideo, playbackIdFrom } from "@/lib/videos/api";
+import type { LiveCredentials, VideoItem } from "@/lib/videos/types";
+import { cn } from "@/lib/utils";
+import { tournamentService } from "@/services/tournamentService";
+
+/** Só o organizador transmite no evento; evento encerrado não recebe live. */
+const meusEventosAtivos = () => tournamentService.meusEventos().then((lista) => lista.filter((t) => t.status !== "encerrado"));
+
+const campo =
+    "mt-1 w-full rounded-lg border border-border bg-card px-4 py-3 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20";
 
 export default function LivePage() {
     return (
@@ -25,16 +35,47 @@ function LiveStudio() {
     const router = useRouter();
     const params = useSearchParams();
     const videoId = params.get("id");
-    // Vindo do evento (?torneio=): a live aparece no topo da página dele
-    const torneioId = params.get("torneio");
+    // Vindo do evento (?torneio=): a live já sai marcada com ele
+    const torneioParam = params.get("torneio");
 
     const [credentials, setCredentials] = useState<LiveCredentials | null>(null);
     const [loadError, setLoadError] = useState<string | null>(null);
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
+    const [evento, setEvento] = useState<EventoEscolhido | null>(null);
+    const [abertas, setAbertas] = useState<VideoItem[]>([]);
     const [creating, setCreating] = useState(false);
     const [ending, setEnding] = useState(false);
-    const [isLiveNow, setIsLiveNow] = useState(false);
+    const [ended, setEnded] = useState(false);
+    const [live, setLive] = useState<VideoItem | null>(null);
+    const isLiveNow = !ended && (live ? !!live.isLiveNow : !!credentials?.isLiveNow);
+
+    useEffect(() => {
+        if (!torneioParam) return;
+        let ativo = true;
+        tournamentService
+            .buscarPorId(torneioParam)
+            .then((t) => ativo && setEvento({ id: t.id, nome: t.nome }))
+            .catch(() => {});
+        return () => {
+            ativo = false;
+        };
+    }, [torneioParam]);
+
+    // Lives já criadas e ainda não encerradas: dá para voltar ao painel delas
+    useEffect(() => {
+        if (!isLoaded || !isSignedIn || videoId) return;
+        let ativo = true;
+        (async () => {
+            const token = await getToken();
+            if (!token) return;
+            const pagina = await fetchMyVideos(token, 0).catch(() => null);
+            if (ativo && pagina) setAbertas(pagina.content.filter((v) => v.isLive && v.status !== "REMOVED"));
+        })();
+        return () => {
+            ativo = false;
+        };
+    }, [isLoaded, isSignedIn, videoId, getToken]);
 
     // Live já criada (?id=): busca a chave (só o dono recebe)
     useEffect(() => {
@@ -45,10 +86,7 @@ function LiveStudio() {
                 const token = await getToken();
                 if (!token) return;
                 const data = await fetchLiveCredentials(token, videoId);
-                if (!cancelled) {
-                    setCredentials(data);
-                    setIsLiveNow(data.isLiveNow);
-                }
+                if (!cancelled) setCredentials(data);
             } catch (e) {
                 if (!cancelled) setLoadError(e instanceof Error ? e.message : "Não foi possível abrir esta live.");
             }
@@ -61,13 +99,22 @@ function LiveStudio() {
     // Status: o Mux avisa o backend quando o OBS conecta/desconecta
     const activeId = credentials?.videoId;
     useEffect(() => {
-        if (!activeId) return;
-        const timer = setInterval(async () => {
+        if (!activeId || ended) return;
+        let ativo = true;
+        const checar = async () => {
             const video = await fetchVideo(activeId, await getToken().catch(() => null));
-            if (video) setIsLiveNow(!!video.isLiveNow);
-        }, 5000);
-        return () => clearInterval(timer);
-    }, [activeId, getToken]);
+            if (!ativo || !video) return;
+            setLive(video);
+            // Já virou replay: a transmissão acabou
+            if (!video.isLive) setEnded(true);
+        };
+        void checar();
+        const timer = setInterval(checar, 5000);
+        return () => {
+            ativo = false;
+            clearInterval(timer);
+        };
+    }, [activeId, ended, getToken]);
 
     async function handleCreate(e: React.FormEvent) {
         e.preventDefault();
@@ -79,9 +126,9 @@ function LiveStudio() {
         try {
             const token = await getToken();
             if (!token) throw new Error("Sua sessão expirou. Entre de novo.");
-            const created = await createLive(token, title.trim(), description.trim(), torneioId);
+            const created = await createLive(token, title.trim(), description.trim(), evento?.id);
             setCredentials(created);
-            router.replace(`/videos/live?id=${created.videoId}${torneioId ? `&torneio=${torneioId}` : ""}`);
+            router.replace(`/videos/live?id=${created.videoId}`);
         } catch (err) {
             toast.error(err instanceof Error ? err.message : "Não foi possível criar a live.");
         } finally {
@@ -96,7 +143,7 @@ function LiveStudio() {
             const token = await getToken();
             if (!token) throw new Error("Sua sessão expirou.");
             await endLive(token, credentials.videoId);
-            setIsLiveNow(false);
+            setEnded(true);
             toast("Live encerrada. O replay aparece no seu canal em alguns minutos.");
         } catch (err) {
             toast.error(err instanceof Error ? err.message : "Não foi possível encerrar.");
@@ -117,11 +164,13 @@ function LiveStudio() {
         );
     }
 
+    const torneioId = credentials?.tournamentId;
+
     return (
         <div className="mx-auto max-w-2xl px-4 py-6 sm:px-6 lg:py-10">
             <h1 className="flex items-center gap-3 text-xs font-bold uppercase tracking-[0.3em] text-foreground">
                 <span className={isLiveNow ? "live-dot" : "h-4 w-1 bg-primary"} aria-hidden="true" />
-                {isLiveNow ? "Você está ao vivo" : "Fazer live"}
+                {isLiveNow ? "Você está ao vivo" : credentials ? "Painel da live" : "Fazer live"}
             </h1>
 
             {loadError ? (
@@ -132,74 +181,202 @@ function LiveStudio() {
                 videoId ? (
                     <div className="mt-6 h-40 animate-pulse rounded-xl bg-secondary" />
                 ) : (
-                    <form onSubmit={handleCreate} className="mt-6 space-y-4">
-                        {torneioId && (
-                            <p className="border-l-2 border-primary bg-primary/5 px-4 py-3 text-sm text-foreground">
-                                Transmissão do evento: enquanto estiver no ar, ela aparece no topo da página do evento para todo mundo.
-                            </p>
+                    <>
+                        {abertas.length > 0 && (
+                            <section aria-labelledby="lives-abertas" className="mt-6 rounded-xl border border-border bg-card p-4">
+                                <h2 id="lives-abertas" className="text-sm font-medium">Suas lives abertas</h2>
+                                <p className="mt-1 text-xs text-muted-foreground">Já criou e quer transmitir de novo? Use a mesma chave, sem criar outra.</p>
+                                <ul className="mt-3 divide-y divide-border">
+                                    {abertas.map((v) => (
+                                        <li key={v.id} className="flex items-center justify-between gap-3 py-2.5">
+                                            <span className="flex min-w-0 items-center gap-2 text-sm">
+                                                {v.isLiveNow && <span className="live-dot shrink-0" aria-label="No ar" />}
+                                                <span className="truncate">{v.title}</span>
+                                            </span>
+                                            <Link href={`/videos/live?id=${v.id}`} className="shrink-0 text-sm font-semibold text-primary hover:underline">
+                                                Abrir painel
+                                            </Link>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </section>
                         )}
-                        <p className="text-sm text-muted-foreground">
-                            Dê um nome para a transmissão. Em seguida você recebe o servidor e a chave para colar no OBS,
-                            Streamlabs ou app de live do celular. Quando a live termina, a gravação vira um vídeo no seu canal.
-                        </p>
-                        <div>
-                            <label htmlFor="live-title" className="text-sm font-medium">Título</label>
-                            <input
-                                id="live-title"
-                                value={title}
-                                onChange={(e) => setTitle(e.target.value)}
-                                maxLength={255}
-                                placeholder="Ex.: Descida ao vivo no Pico do Jaraguá #downhill"
-                                className="mt-1 w-full rounded-lg border border-border bg-card px-4 py-3 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+
+                        <form onSubmit={handleCreate} className="mt-6 space-y-5">
+                            <p className="text-sm text-muted-foreground">
+                                Dê um nome para a transmissão. Em seguida você recebe o servidor e a chave para colar no OBS
+                                ou num app de live do celular. Quando a live termina, a gravação vira um vídeo no seu canal.
+                            </p>
+                            <div>
+                                <label htmlFor="live-title" className="text-sm font-medium">Título</label>
+                                <input
+                                    id="live-title"
+                                    value={title}
+                                    onChange={(e) => setTitle(e.target.value)}
+                                    maxLength={255}
+                                    placeholder="Ex.: Descida ao vivo no Pico do Jaraguá #downhill"
+                                    className={campo}
+                                />
+                            </div>
+                            <div>
+                                <label htmlFor="live-description" className="text-sm font-medium">Descrição (opcional)</label>
+                                <textarea
+                                    id="live-description"
+                                    value={description}
+                                    onChange={(e) => setDescription(e.target.value)}
+                                    maxLength={5000}
+                                    rows={3}
+                                    className={campo}
+                                />
+                            </div>
+                            <EventoPicker
+                                value={evento}
+                                onChange={setEvento}
+                                carregar={meusEventosAtivos}
+                                listaFixa
+                                disabled={creating}
+                                ajuda="Só eventos que você organiza. Enquanto estiver no ar, a live aparece no topo da página do evento."
                             />
-                        </div>
-                        <div>
-                            <label htmlFor="live-description" className="text-sm font-medium">Descrição (opcional)</label>
-                            <textarea
-                                id="live-description"
-                                value={description}
-                                onChange={(e) => setDescription(e.target.value)}
-                                maxLength={5000}
-                                rows={3}
-                                className="mt-1 w-full rounded-lg border border-border bg-card px-4 py-3 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-                            />
-                        </div>
-                        <Button type="submit" disabled={creating}>
-                            <Radio aria-hidden="true" />
-                            {creating ? "Criando (pode levar até 1 minuto)..." : "Criar live"}
-                        </Button>
-                    </form>
+                            <Button type="submit" disabled={creating}>
+                                {creating ? <Loader2 className="animate-spin" aria-hidden="true" /> : <Radio aria-hidden="true" />}
+                                {creating ? "Criando (pode levar até 1 minuto)..." : "Criar live"}
+                            </Button>
+                        </form>
+                    </>
                 )
             ) : (
                 <div className="mt-6 space-y-5">
-                    <div className="rounded-xl border border-border bg-card p-4 text-sm">
-                        <p className="font-medium">Como entrar no ar</p>
-                        <ol className="mt-2 list-decimal space-y-1 pl-5 text-muted-foreground">
-                            <li>No OBS: Configurações → Transmissão → Serviço “Personalizado”.</li>
-                            <li>Cole o servidor e a chave abaixo.</li>
-                            <li>Clique em “Iniciar transmissão”. Em alguns segundos esta página mostra “ao vivo”.</li>
-                        </ol>
+                    <div>
+                        <p className="text-lg font-bold">{credentials.title}</p>
+                        {torneioId && (
+                            <Link
+                                href={`/torneios/${torneioId}`}
+                                className="mt-2 inline-flex max-w-full items-center gap-1.5 rounded-full border border-border px-3 py-1 text-sm hover:border-primary/50 hover:text-primary"
+                            >
+                                <Trophy className="size-3.5 shrink-0 text-primary" aria-hidden="true" />
+                                <span className="truncate">{credentials.tournamentName || "Ver o evento"}</span>
+                            </Link>
+                        )}
                     </div>
 
-                    <SecretField label="Servidor (RTMPS)" value={credentials.ingestUrl} />
-                    <SecretField label="Chave de transmissão" value={credentials.streamKey} secret />
+                    <StatusLive estado={ended ? "encerrada" : isLiveNow ? "no-ar" : "aguardando"} live={live} />
 
-                    <p className="text-xs text-muted-foreground">
-                        Não mostre a chave na tela durante a live: com ela qualquer pessoa transmite no seu canal.
-                    </p>
+                    {!ended && (
+                        <>
+                            <ComoTransmitir />
+
+                            <SecretField label="Servidor (RTMPS)" value={credentials.ingestUrl} />
+                            <SecretField label="Chave de transmissão" value={credentials.streamKey} secret />
+
+                            <p className="text-xs text-muted-foreground">
+                                Não mostre a chave na tela durante a live: com ela qualquer pessoa transmite no seu canal.
+                                Se o sinal cair, reconecte em até 1 minuto que a live continua a mesma.
+                            </p>
+                        </>
+                    )}
 
                     <div className="flex flex-wrap items-center gap-4 pt-2">
                         <GlitchButton
-                            text={torneioId ? "Ver no evento" : "Ver a live"}
-                            href={torneioId ? `/torneios/${torneioId}` : `/videos/watch/${credentials.videoId}`}
+                            text={ended ? "Ver no meu canal" : torneioId ? "Ver no evento" : "Ver a live"}
+                            href={ended ? "/videos/meus-videos" : torneioId ? `/torneios/${torneioId}` : `/videos/watch/${credentials.videoId}`}
                             icon={<Radio aria-hidden="true" />}
                         />
-                        <Button variant="outline" onClick={handleEnd} disabled={ending}>
-                            <Square aria-hidden="true" />
-                            {ending ? "Encerrando..." : "Encerrar live"}
-                        </Button>
+                        {!ended && (
+                            <Button variant="outline" onClick={handleEnd} disabled={ending}>
+                                <Square aria-hidden="true" />
+                                {ending ? "Encerrando..." : "Encerrar live"}
+                            </Button>
+                        )}
                     </div>
                 </div>
+            )}
+        </div>
+    );
+}
+
+/** O que está acontecendo agora: esperando o sinal, no ar (com prévia) ou encerrada. */
+function StatusLive({ estado, live }: { estado: "aguardando" | "no-ar" | "encerrada"; live: VideoItem | null }) {
+    if (estado === "encerrada") {
+        return (
+            <div role="status" className="flex gap-3 rounded-xl border border-border bg-card p-4">
+                <CheckCircle2 className="size-5 shrink-0 text-success" aria-hidden="true" />
+                <div className="text-sm">
+                    <p className="font-medium">Transmissão encerrada</p>
+                    <p className="mt-0.5 text-muted-foreground">A gravação está sendo preparada e aparece no seu canal em alguns minutos.</p>
+                </div>
+            </div>
+        );
+    }
+    if (estado === "aguardando") {
+        return (
+            <div role="status" aria-live="polite" className="flex gap-3 rounded-xl border border-dashed border-border bg-card p-4">
+                <Loader2 className="size-5 shrink-0 animate-spin text-primary" aria-hidden="true" />
+                <div className="text-sm">
+                    <p className="font-medium">Esperando o sinal</p>
+                    <p className="mt-0.5 text-muted-foreground">Comece a transmitir no OBS ou no app. Esta página muda sozinha quando o sinal chegar.</p>
+                </div>
+            </div>
+        );
+    }
+    const playbackId = playbackIdFrom(live?.videoUrl);
+    return (
+        <div role="status" aria-live="polite" className="overflow-hidden rounded-xl border border-primary/50 bg-black">
+            {playbackId && live ? (
+                <VideoPlayer videoId={live.id} playbackId={playbackId} title={live.title} live />
+            ) : (
+                <div className="aspect-video" />
+            )}
+            <p className="flex items-center gap-2 bg-card px-4 py-2.5 text-sm font-medium">
+                <span className="live-dot" aria-hidden="true" />
+                No ar. A prévia chega com alguns segundos de atraso.
+            </p>
+        </div>
+    );
+}
+
+/** Passo a passo para computador e celular. */
+function ComoTransmitir() {
+    const [aba, setAba] = useState<"pc" | "celular">("pc");
+    const abas = [
+        { id: "pc" as const, nome: "Computador", Icone: Laptop },
+        { id: "celular" as const, nome: "Celular", Icone: Smartphone },
+    ];
+
+    return (
+        <div className="rounded-xl border border-border bg-card p-4 text-sm">
+            <div role="tablist" aria-label="Onde você vai transmitir" className="flex gap-1 rounded-lg bg-secondary p-1">
+                {abas.map(({ id, nome, Icone }) => (
+                    <button
+                        key={id}
+                        type="button"
+                        role="tab"
+                        aria-selected={aba === id}
+                        onClick={() => setAba(id)}
+                        className={cn(
+                            "flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-md px-3 py-2 font-medium transition-colors",
+                            aba === id ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
+                        )}
+                    >
+                        <Icone className="size-4" aria-hidden="true" />
+                        {nome}
+                    </button>
+                ))}
+            </div>
+
+            {aba === "pc" ? (
+                <ol role="tabpanel" className="mt-3 list-decimal space-y-1 pl-5 text-muted-foreground">
+                    <li>No OBS ou Streamlabs: Configurações → Transmissão → Serviço “Personalizado”.</li>
+                    <li>Cole o servidor e a chave abaixo.</li>
+                    <li>Em Saída, use 720p ou 1080p a 30 fps, de 3.000 a 6.000 kbps, e intervalo de quadro-chave de 2 s.</li>
+                    <li>Clique em “Iniciar transmissão”. Em alguns segundos esta página mostra “ao vivo”.</li>
+                </ol>
+            ) : (
+                <ol role="tabpanel" className="mt-3 list-decimal space-y-1 pl-5 text-muted-foreground">
+                    <li>Instale um app que transmite por RTMP, como o Larix Broadcaster ou o PRISM Live (grátis, Android e iPhone).</li>
+                    <li>Crie uma conexão RTMP personalizada e cole o servidor e a chave abaixo (no Larix, junte os dois: servidor/chave).</li>
+                    <li>Grave na horizontal, em 720p, de preferência no Wi-Fi ou com 4G bom.</li>
+                    <li>Toque em transmitir. Em alguns segundos esta página mostra “ao vivo”.</li>
+                </ol>
             )}
         </div>
     );

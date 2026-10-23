@@ -6,6 +6,8 @@ export interface UploadPayload {
     description: string;
     hashtags: string;
     isShort: boolean;
+    /** Evento marcado no vídeo (opcional). */
+    tournamentId?: string | null;
     token?: string | null;
 }
 
@@ -66,7 +68,7 @@ export async function putFileWithRetry(url: string, file: File, onProgress?: (pe
  *    que era a causa dos vídeos longos sumirem.
  */
 export async function uploadVideo(
-  { file, title, description, hashtags, isShort, token }: UploadPayload,
+  { file, title, description, hashtags, isShort, tournamentId, token }: UploadPayload,
   { onProgress, onProcessing }: UploadCallbacks = {},
 ): Promise<{ id: string }> {
     const authHeaders: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
@@ -78,6 +80,7 @@ export async function uploadVideo(
             title,
             description: `${description} ${hashtags}`.trim(),
             isShort,
+            tournamentId: tournamentId || null,
         }),
     });
 

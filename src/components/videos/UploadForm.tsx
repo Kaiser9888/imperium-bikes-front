@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@clerk/nextjs";
 import {
@@ -21,6 +21,8 @@ import { Button } from "@/components/ui/button";
 import { formatBytes, formatDuration } from "@/lib/videos/format";
 import { uploadVideo } from "@/lib/videos/upload";
 import { cn } from "@/lib/utils";
+import { tournamentService } from "@/services/tournamentService";
+import { EventoPicker, type EventoEscolhido } from "./EventoPicker";
 import type { UploadMode } from "./UploadSelector";
 
 const MAX_SIZE_MB = 500;
@@ -35,10 +37,26 @@ type Status = "idle" | "uploading" | "processing" | "done";
 
 const limparTag = (tag: string) => tag.trim().replace(/^#+/, "").replace(/[^\p{L}0-9_]/gu, "").slice(0, 30);
 
-export function UploadForm({ mode }: { mode: UploadMode }) {
+const buscarEventos = (texto: string) => tournamentService.buscarPorNome(texto);
+
+/** `torneioId`: vindo da página do evento, o vídeo já sai marcado com ele. */
+export function UploadForm({ mode, torneioId }: { mode: UploadMode; torneioId?: string | null }) {
   const router = useRouter();
   const { getToken } = useAuth();
   const isMemento = mode === "memento";
+  const [evento, setEvento] = useState<EventoEscolhido | null>(null);
+
+  useEffect(() => {
+    if (!torneioId) return;
+    let ativo = true;
+    tournamentService
+      .buscarPorId(torneioId)
+      .then((t) => ativo && setEvento({ id: t.id, nome: t.nome }))
+      .catch(() => {});
+    return () => {
+      ativo = false;
+    };
+  }, [torneioId]);
 
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState("");
@@ -135,6 +153,7 @@ export function UploadForm({ mode }: { mode: UploadMode }) {
           // Com "#": é assim que o backend reconhece hashtag (antes ia sem e era ignorada)
           hashtags: tags.map((t) => `#${t}`).join(" "),
           isShort: isMemento,
+          tournamentId: evento?.id,
           token,
         },
         { onProgress: setProgress, onProcessing: () => setStatus("processing") },
@@ -366,6 +385,14 @@ export function UploadForm({ mode }: { mode: UploadMode }) {
                 ))}
               </div>
             </div>
+
+            <EventoPicker
+              value={evento}
+              onChange={setEvento}
+              carregar={buscarEventos}
+              disabled={busy}
+              ajuda="Gravou num evento? Marque e o vídeo aparece na página dele."
+            />
 
             <div className="flex gap-3 rounded-xl bg-surface-muted/60 p-4">
               <Lightbulb className="size-5 shrink-0 text-warning" aria-hidden="true" />

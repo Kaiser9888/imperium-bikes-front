@@ -4,7 +4,7 @@ import Link from "next/link"
 import { useParams } from "next/navigation"
 import { useCallback, useEffect, useState } from "react"
 import { useUser } from "@clerk/nextjs"
-import { ArrowRight, CheckCircle, Loader2, MapPin, Radio } from "lucide-react"
+import { ArrowRight, CheckCircle, Loader2, MapPin, Radio, Upload } from "lucide-react"
 
 import { AppShell } from "@/components/layout/app-shell"
 import { BackButton } from "@/components/ui/back-button"
@@ -12,10 +12,11 @@ import { DenunciarButton } from "@/components/ui/denunciar-button"
 import { ErrorState } from "@/components/ui/error-state"
 import { Loader } from "@/components/ui/loader"
 import { ShareButton } from "@/components/ui/share-button"
+import { VideoCard } from "@/components/videos/VideoCard"
 import { VideoPlayer } from "@/components/videos/VideoPlayer"
 import api from "@/lib/api"
 import { formatarPreco, partesDaData } from "@/lib/format"
-import { fetchTournamentLive, playbackIdFrom } from "@/lib/videos/api"
+import { fetchTournamentLive, fetchTournamentVideos, playbackIdFrom } from "@/lib/videos/api"
 import type { VideoItem } from "@/lib/videos/types"
 import { mensagemDaApi, tournamentService, type InscritoPublico, type Tournament } from "@/services/tournamentService"
 
@@ -49,7 +50,49 @@ function AoVivo({ live }: { live: VideoItem }) {
     )
 }
 
-const STATUS_LABEL = { aberto: "Inscrições abertas", andamento: "Acontecendo agora", encerrado: "Encerrado" }
+/** Vídeos que a galera marcou com o evento. Sem vídeos, só aparece o convite para quem está logado. */
+function VideosDoEvento({ torneioId, logado }: { torneioId: string; logado: boolean }) {
+    const [videos, setVideos] = useState<VideoItem[]>([])
+
+    useEffect(() => {
+        let ativo = true
+        fetchTournamentVideos(torneioId)
+            .then((pagina) => ativo && setVideos(pagina.content))
+            .catch(() => {})
+        return () => {
+            ativo = false
+        }
+    }, [torneioId])
+
+    if (videos.length === 0 && !logado) return null
+
+    return (
+        <section aria-labelledby="videos-evento" className="mt-10 border-t border-border pt-8">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+                <h2 id="videos-evento" className="type-h2">Vídeos do evento</h2>
+                {logado && (
+                    <Link href={`/videos/upload?torneio=${torneioId}`} className="line-btn line-btn--sm">
+                        <Upload aria-hidden="true" />
+                        Enviar vídeo
+                    </Link>
+                )}
+            </div>
+            {videos.length === 0 ? (
+                <p className="type-body-small mt-3 text-muted-foreground">
+                    Ninguém marcou um vídeo com este evento ainda. Gravou alguma coisa? Mande o primeiro.
+                </p>
+            ) : (
+                <div className="mt-5 grid gap-x-4 gap-y-6 sm:grid-cols-2">
+                    {videos.map((v) => (
+                        <VideoCard key={v.id} video={v} />
+                    ))}
+                </div>
+            )}
+        </section>
+    )
+}
+
+const STATUS_LABEL ={ aberto: "Inscrições abertas", andamento: "Acontecendo agora", encerrado: "Encerrado" }
 
 function dataPorExtenso(iso: string) {
     // Meio-dia evita o dia anterior por causa do fuso
@@ -426,6 +469,7 @@ export default function TorneioDetalhesPage() {
                         )}
                         <Podio inscritos={inscritos} />
                         <ListaInscritos inscritos={inscritos} />
+                        <VideosDoEvento torneioId={torneio.id} logado={!!isSignedIn} />
                         <DenunciarButton tipo="TOURNAMENT" id={torneio.id} className="mt-6" />
                     </article>
                 </div>

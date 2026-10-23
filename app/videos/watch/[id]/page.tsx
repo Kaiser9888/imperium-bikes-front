@@ -5,7 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useAuth } from "@clerk/nextjs";
-import { Radio } from "lucide-react";
+import { Radio, Trophy } from "lucide-react";
 import { toast } from "sonner";
 import { fetchRelated, fetchVideo, playbackIdFrom, likeVideo, dislikeVideo } from "@/lib/videos/api";
 import { formatViews, timeAgo } from "@/lib/videos/format";
@@ -218,6 +218,15 @@ export default function WatchPage() {
                         </p>
                       )}
                       <h1 className={`type-h2 break-words text-foreground ${(video.hashtags?.length ?? 0) > 0 ? "mt-1" : "mt-4"}`}>{video.title}</h1>
+                      {video.tournamentId && (
+                        <Link
+                          href={`/torneios/${video.tournamentId}`}
+                          className="type-label mt-2 inline-flex max-w-full items-center gap-1.5 rounded-full border border-border px-3 py-1 text-foreground transition-colors hover:border-primary/50 hover:text-primary"
+                        >
+                            <Trophy className="size-3.5 shrink-0 text-primary" aria-hidden="true" />
+                            <span className="truncate">{video.tournamentName || "Ver o evento"}</span>
+                        </Link>
+                      )}
 
                       {/* Canal + ações */}
                       <div className="mt-4 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">

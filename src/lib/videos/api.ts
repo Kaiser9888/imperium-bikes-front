@@ -155,6 +155,14 @@ export async function fetchLiveVideos(): Promise<VideoItem[]> {
     }
 }
 
+/** Vídeos marcados com o evento, para a página dele. */
+export async function fetchTournamentVideos(tournamentId: string, page = 0): Promise<VideoPage> {
+    const params = new URLSearchParams({ page: String(page), size: "12" });
+    return normalizePage(
+        await getJson<VideoPage>(`/api/videos/tournament/${encodeURIComponent(tournamentId)}?${params}`)
+    );
+}
+
 /** Todos os vídeos de quem está logado, em qualquer estado (Central de Vídeos e Perfil). */
 export async function fetchMyVideos(token: string, page: number): Promise<VideoPage> {
     const params = new URLSearchParams({ page: String(page), size: String(PAGE_SIZE) });
