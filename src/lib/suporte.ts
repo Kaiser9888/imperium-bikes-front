@@ -2,6 +2,7 @@ import api from "@/lib/api"
 
 /** Os mesmos ids aceitos pelo backend (SupportController). */
 export const CATEGORIAS_SUPORTE = [
+    { id: "ERRO", label: "Erro no site (versão beta)" },
     { id: "COMPRAS", label: "Compras e pedidos" },
     { id: "VENDAS", label: "Vendas e anúncios de produtos" },
     { id: "PAGAMENTOS", label: "Pagamentos, Carteira e saques" },

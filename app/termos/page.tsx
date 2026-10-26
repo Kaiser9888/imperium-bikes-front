@@ -207,6 +207,11 @@ export default function TermosPage() {
                         fornecedores.
                     </li>
                     <li>
+                        O app está em versão beta (fase de testes): algumas funções podem mudar ou apresentar erros. Se encontrar um
+                        problema, avise pela <Link href="/ajuda/contato">Central de Ajuda</Link>. Pagamentos e pedidos continuam protegidos
+                        como descrito nestes Termos.
+                    </li>
+                    <li>
                         Não respondemos pelo que é de responsabilidade exclusiva de outro usuário (como a qualidade do produto de um
                         vendedor ou a realização de um evento), sem prejuízo dos direitos garantidos pelo Código de Defesa do Consumidor.
                     </li>

@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import { createContext, useCallback, useContext, useMemo, useState } from "react"
 
 import { BottomNav } from "@/components/layout/bottom-nav"
@@ -54,6 +55,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 Pular para o conteúdo
             </a>
             <Header />
+            {/* ponytail: tirar quando sair do beta */}
+            <p className="border-b border-border bg-muted px-4 py-2 text-center text-xs text-muted-foreground">
+                <strong className="text-foreground">Versão beta:</strong> o site ainda está em testes e pode ter erros.{" "}
+                <Link href="/ajuda/contato" className="font-medium text-foreground underline underline-offset-2">
+                    Reportar um erro
+                </Link>
+            </p>
             {children}
             {/* Reserva a altura da BottomNav fixa para ela não cobrir o fim da página */}
             <div className="h-[calc(4rem+env(safe-area-inset-bottom))]" aria-hidden="true" />
