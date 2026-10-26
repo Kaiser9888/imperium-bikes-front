@@ -23,6 +23,10 @@ const nextConfig = {
   // Não anuncia a tecnologia do servidor no cabeçalho X-Powered-By.
   poweredByHeader: false,
 
+  experimental: {
+    agentUpgrade: 'security',
+  },
+
   async headers() {
     return [{ source: '/:path*', headers: securityHeaders }]
   },
