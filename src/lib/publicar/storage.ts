@@ -14,10 +14,11 @@ export interface LocalizacaoFrete {
 
 export interface FreteDraft {
   localizacao: LocalizacaoFrete
-  peso_g: number
-  altura_cm: number
-  largura_cm: number
-  comprimento_cm: number
+  // Serviço não é enviado: só tem a localização
+  peso_g?: number
+  altura_cm?: number
+  largura_cm?: number
+  comprimento_cm?: number
   pagador?: "vendedor" | "comprador" | "retirada_local"
   /** Com pagador "vendedor": quanto ele cobre do frete, em centavos. */
   limite_frete_centavos?: number

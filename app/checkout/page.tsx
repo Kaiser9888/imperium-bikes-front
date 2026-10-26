@@ -53,13 +53,19 @@ function CheckoutContent() {
     if (!productId) return
     let active = true
     productService.getById(productId)
-      .then((result) => { if (active) setProduct(result) })
+      .then((result) => {
+        if (!active) return
+        setProduct(result)
+        // Serviço não é enviado: data e local são combinados com o prestador
+        if (result.categorySlug === "servicos") setEntrega({ tipo: "combinar" })
+      })
       .catch(() => { if (active) setError("Não foi possível carregar este produto.") })
       .finally(() => { if (active) setLoading(false) })
     return () => { active = false }
   }, [getToken, isLoaded, isSignedIn, productId, router])
 
   const disponivel = product != null && product.status === "ACTIVE" && product.stock > 0
+  const servico = product?.categorySlug === "servicos"
   const belowMinimum = product != null && product.price < MIN_AMOUNT
   const frete = entrega?.tipo === "envio" ? Number(entrega.opcao.valor) : 0
   const total = (product?.price ?? 0) + frete
@@ -152,6 +158,14 @@ function CheckoutContent() {
               e não pode ser comprado pelo site no momento.
             </p>
           </div>
+        ) : servico ? (
+          <p className="type-body-small mt-6 flex items-start gap-3 rounded-2xl border border-border bg-surface p-5 text-muted-foreground">
+            <Handshake className="mt-0.5 size-5 shrink-0 text-primary" aria-hidden="true" />
+            <span>
+              Este é um serviço{product?.city ? ` em ${[product.city, product.state].filter(Boolean).join(", ")}` : ""}.
+              Depois do pagamento, combine a data e o local com o prestador pelo chat.
+            </span>
+          </p>
         ) : (
           product && (
             <section aria-labelledby="entrega-title" className="mt-6 rounded-2xl border border-border bg-surface p-5">
@@ -240,8 +254,8 @@ function CheckoutContent() {
 
         {product && disponivel && !belowMinimum && (
           <dl className="mt-6 flex flex-col gap-2 border-t border-border pt-4 text-sm">
-            <div className="flex justify-between"><dt className="text-muted-foreground">Produto</dt><dd className="tabular-nums">{formatarPreco(product.price)}</dd></div>
-            <div className="flex justify-between">
+            <div className="flex justify-between"><dt className="text-muted-foreground">{servico ? "Serviço" : "Produto"}</dt><dd className="tabular-nums">{formatarPreco(product.price)}</dd></div>
+            <div className={cn("flex justify-between", servico && "hidden")}>
               <dt className="text-muted-foreground">Frete</dt>
               <dd className="tabular-nums">{entrega?.tipo === "envio" ? (frete === 0 ? "Grátis" : formatarPreco(frete)) : entrega?.tipo === "combinar" ? "Combinar" : "—"}</dd>
             </div>
@@ -261,7 +275,7 @@ function CheckoutContent() {
         </Button>
         <p className="type-caption mt-3 flex items-center justify-center gap-1.5 text-muted-foreground">
           <ShieldCheck className="size-4 text-success" aria-hidden="true" />
-          Pagamento retido até você confirmar o recebimento.
+          {servico ? "Pagamento retido até você confirmar que o serviço foi feito." : "Pagamento retido até você confirmar o recebimento."}
         </p>
 
         <Link href={`/produtos/${productId}`} className="mt-4 block text-center text-sm text-muted-foreground underline">

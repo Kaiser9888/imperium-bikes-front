@@ -16,7 +16,7 @@ type Consulta = { status: string; type?: string; referenceId?: string }
 const TEXTOS: Record<Exclude<Status, "LOADING">, { titulo: string; descricao: string }> = {
   PAGO: { titulo: "Pagamento confirmado", descricao: "Recebemos seu pagamento." },
   PENDING: { titulo: "Pagamento em confirmação", descricao: "Ainda não recebemos a confirmação. Atualize esta página em alguns instantes." },
-  FAILED: { titulo: "Não foi possível confirmar", descricao: "Não encontramos a confirmação deste pagamento. Se o valor foi cobrado, fale com o suporte." },
+  FAILED: { titulo: "Não foi possível confirmar", descricao: "Não conseguimos confirmar este pagamento agora. Se o valor foi cobrado, a compra aparece em Pedidos em alguns minutos; se não aparecer, fale com o suporte." },
 }
 
 function SuccessContent() {
@@ -50,7 +50,11 @@ function SuccessContent() {
         if (attempts >= 10) return setStatus("PENDING")
         timer = setTimeout(check, 2000)
       } catch {
-        if (active) setStatus("FAILED")
+        // Na volta do Stripe o login às vezes ainda não está pronto (401): tenta de novo antes de desistir
+        if (!active) return
+        attempts += 1
+        if (attempts >= 6) return setStatus("FAILED")
+        timer = setTimeout(check, 2000)
       }
     }
     void check()

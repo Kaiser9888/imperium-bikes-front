@@ -19,7 +19,10 @@ export default function OnboardingRefreshPage() {
       .then((data) => {
         if (data.onboardingUrl) window.location.href = data.onboardingUrl;
       })
-      .catch(() => setErro("Não foi possível gerar um novo link. Volte à carteira e tente de novo."));
+      .catch((cause) => {
+        const motivo = cause instanceof Error ? cause.message.match(/^Erro 503: (.+)$/)?.[1] : undefined;
+        setErro(motivo ?? "Não foi possível gerar um novo link. Volte à carteira e tente de novo.");
+      });
   }, [isLoaded, getToken]);
 
   return (

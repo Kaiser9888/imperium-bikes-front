@@ -235,17 +235,25 @@ const limiteCentavos = Math.round(
   Number(limite.replace(/\./g, '').replace(',', '.')) * 100,
 ) || 0
 
-const pronto =
+// Serviço não é enviado: esta etapa vira só o local de atendimento
+const servico = categoria === 'servicos'
+
+const localPronto =
   cepNumerico.length === 8 &&
   Boolean(cidade) &&
-  Boolean(estado) &&
-  pesoValido &&
-  alturaValida &&
-  larguraValida &&
-  comprimentoValido &&
-  Boolean(pagador) &&
-  // "Eu arco com o frete" precisa dizer até quanto
-  (pagador !== 'vendedor' || limiteCentavos > 0)
+  Boolean(estado)
+
+const pronto =
+  localPronto &&
+  (servico || (
+    pesoValido &&
+    alturaValida &&
+    larguraValida &&
+    comprimentoValido &&
+    Boolean(pagador) &&
+    // "Eu arco com o frete" precisa dizer até quanto
+    (pagador !== 'vendedor' || limiteCentavos > 0)
+  ))
 
 const medidasProntas =
   cepNumerico.length === 8 && pesoValido && alturaValida && larguraValida && comprimentoValido
@@ -295,14 +303,16 @@ function continuar() {
     pesoNumerico * 1000,
   )
 
+  const localizacao = {
+    endereco,
+    cidade,
+    estado,
+    cep: cepNumerico,
+  }
+
   saveDraft(categoria, {
-    frete: {
-      localizacao: {
-        endereco,
-        cidade,
-        estado,
-        cep: cepNumerico,
-      },
+    frete: servico ? { localizacao } : {
+      localizacao,
       peso_g: pesoEmGramas,
       altura_cm: alturaNumerica,
       largura_cm: larguraNumerica,
@@ -360,12 +370,13 @@ return (
       </p>
 
       <h1>
-        Frete e entrega
+        {servico ? 'Local de atendimento' : 'Frete e entrega'}
       </h1>
 
       <p className="publish-lead">
-        Informe o local de envio e os dados
-        básicos da embalagem.
+        {servico
+          ? 'Informe onde você atende. O cliente combina data e local com você pelo chat depois do pagamento.'
+          : 'Informe o local de envio e os dados básicos da embalagem.'}
       </p>
 
       <div className="publish-progress">
@@ -378,7 +389,7 @@ return (
 
       <section className="publish-card publish-form">
         <label>
-          CEP de origem
+          {servico ? 'CEP do local de atendimento' : 'CEP de origem'}
 
           <input
             inputMode="numeric"
@@ -395,8 +406,9 @@ return (
           />
 
           <small>
-            Informe o CEP de onde o produto será
-            enviado.
+            {servico
+              ? 'A cidade aparece no anúncio para o cliente saber onde você atende.'
+              : 'Informe o CEP de onde o produto será enviado.'}
           </small>
         </label>
 
@@ -434,6 +446,8 @@ return (
           </div>
         )}
 
+        {!servico && (
+        <>
         <div className="frete-dimensoes-grid">
           <label>
             Peso (kg)
@@ -559,6 +573,7 @@ return (
           O frete é calculado pelo Melhor Envio com este CEP, o peso e as medidas da embalagem.
         </small>
 
+
         <fieldset>
           <legend>
             Quem paga o frete?
@@ -645,6 +660,8 @@ return (
               </small>
             </label>
           </div>
+        )}
+        </>
         )}
       </section>
     </div>

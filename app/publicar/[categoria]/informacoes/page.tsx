@@ -33,10 +33,23 @@ const condicoes = [
   },
 ]
 
+// Serviço pode ser vendido várias vezes: o estoque fica alto e não aparece para ninguém
+const ESTOQUE_SERVICO = 999
+
+const PLACEHOLDER_TITULO: Record<string, string> = {
+  servicos: 'Ex.: Revisão completa com troca de cabos',
+  consumiveis: 'Ex.: Gel de carboidrato 30 g, caixa com 10',
+  pecas: 'Ex.: Cassete Shimano Deore 12v 10-51',
+}
+
 export default function InformacoesPage() {
   const { categoria } = useParams<{ categoria: string }>()
   const router = useRouter()
   const config = getCategoriaConfig(categoria)
+
+  // Serviço: sem marca, modelo, condição nem quantidade. Consumível: sempre novo.
+  const servico = categoria === 'servicos'
+  const semCondicao = servico || categoria === 'consumiveis'
 
   const [titulo, setTitulo] = useState('')
   const [descricao, setDescricao] = useState('')
@@ -74,12 +87,12 @@ export default function InformacoesPage() {
     }
   }, [categoria])
 
-  const quantidadeNumerica = Number(quantidade)
+  const quantidadeNumerica = servico ? ESTOQUE_SERVICO : Number(quantidade)
 
   const pronto =
     titulo.trim().length >= 10 &&
     descricao.trim().length >= 10 &&
-    Boolean(condicao) &&
+    (semCondicao || Boolean(condicao)) &&
     opcoesDestino.some(item => item.value === destino) &&
     Number.isInteger(quantidadeNumerica) &&
     quantidadeNumerica >= 1 &&
@@ -91,10 +104,10 @@ export default function InformacoesPage() {
     writeDraft(categoria, {
       titulo: titulo.trim(),
       descricao: descricao.trim(),
-      condicao,
+      condicao: semCondicao ? 'novo' : condicao,
       quantidade: quantidadeNumerica,
-      marca: marca.trim(),
-      modelo: modelo.trim(),
+      marca: servico ? '' : marca.trim(),
+      modelo: servico ? '' : modelo.trim(),
       ...(porEsporte ? { sport: destino } : { modality: destino }),
     })
 
@@ -125,7 +138,9 @@ export default function InformacoesPage() {
         <h1>Informações do anúncio</h1>
 
         <p className="publish-lead">
-          Apresente o produto com clareza para ajudar o comprador a decidir.
+          {servico
+            ? 'Explique o que está incluso no serviço para ajudar o cliente a decidir.'
+            : 'Apresente o produto com clareza para ajudar o comprador a decidir.'}
         </p>
 
         <div className="publish-progress">
@@ -134,13 +149,13 @@ export default function InformacoesPage() {
 
         <section className="publish-card publish-form">
           <label>
-            Título do produto
+            {servico ? 'Título do serviço' : 'Título do produto'}
 
             <input
               value={titulo}
               onChange={e => setTitulo(e.target.value)}
               maxLength={80}
-              placeholder="Ex.: Mountain Bike Caloi Elite"
+              placeholder={PLACEHOLDER_TITULO[categoria] ?? 'Ex.: Mountain Bike Caloi Elite'}
             />
 
             <small>{titulo.length}/80</small>
@@ -154,7 +169,13 @@ export default function InformacoesPage() {
               onChange={e => setDescricao(e.target.value)}
               maxLength={1000}
               rows={6}
-              placeholder="Informe detalhes, componentes, tempo de uso e condições."
+              placeholder={
+                servico
+                  ? 'O que está incluso, prazo, se atende na oficina ou busca a bike.'
+                  : categoria === 'consumiveis'
+                    ? 'Sabor, quantidade por embalagem, validade.'
+                    : 'Informe detalhes, componentes, tempo de uso e condições.'
+              }
             />
 
             <small>{descricao.length}/1000</small>
@@ -190,6 +211,8 @@ export default function InformacoesPage() {
             </div>
           </fieldset>
 
+          {!servico && (
+          <>
           <label>
             Marca (opcional)
 
@@ -211,7 +234,10 @@ export default function InformacoesPage() {
               placeholder="Ex.: Deore M6100"
             />
           </label>
+          </>
+          )}
 
+          {!semCondicao && (
           <fieldset>
             <legend>Condição do produto</legend>
 
@@ -233,7 +259,9 @@ export default function InformacoesPage() {
               ))}
             </div>
           </fieldset>
+          )}
 
+          {!servico && (
           <label>
             Quantidade disponível
 
@@ -264,6 +292,7 @@ export default function InformacoesPage() {
               Informe quantas unidades deste produto estão disponíveis.
             </small>
           </label>
+          )}
         </section>
       </div>
 

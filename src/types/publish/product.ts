@@ -126,6 +126,8 @@ export interface ProductResponse {
     }
 
     category: string
+    /** Slug da categoria (ex.: "servicos", que não tem frete). */
+    categorySlug?: string | null
     /** Slugs de identificação do anúncio (ver lib/publicar/taxonomia). */
     sport?: string | null
     modality?: string | null

@@ -10,6 +10,7 @@ import {
   Check,
   ChevronLeft,
   ChevronRight,
+  Handshake,
   Heart,
   Loader2,
   MapPin,
@@ -199,7 +200,9 @@ function ProdutoPage() {
       ? { label: esporte.nome, href: `/esportes/${esporte.slug}` }
       : null
 
-  const condicao = PRODUCT_CONDITIONS.find((c) => c.value === p.condition)?.label
+  const servico = p.categorySlug === "servicos"
+  // Serviço não tem "novo/usado" nem estoque à mostra
+  const condicao = servico ? undefined : PRODUCT_CONDITIONS.find((c) => c.value === p.condition)?.label
   // Vendido, pausado ou sem estoque: não dá para comprar
   const esgotado = p.status !== "ACTIVE" || p.stock < 1
   const freteGratis = p.freeShippingLimit ? Number(p.freeShippingLimit) : 0
@@ -211,7 +214,7 @@ function ProdutoPage() {
     ["Modelo", p.model],
     ["Ano", p.year ? String(p.year) : undefined],
     ["Tipo", p.productType],
-    ["Estoque", p.stock > 1 ? `${p.stock} unidades` : undefined],
+    ["Estoque", !servico && p.stock > 1 ? `${p.stock} unidades` : undefined],
     ["Peso", p.weightKg ? `${p.weightKg.toLocaleString("pt-BR")} kg` : undefined],
   ] as [string, string | undefined | null][]).filter((s): s is [string, string] => Boolean(s[1]))
 
@@ -456,8 +459,16 @@ function ProdutoPage() {
               </p>
             </div>
 
-            {/* FRETE */}
+            {/* FRETE (serviço não é enviado: data e local são combinados pelo chat) */}
 
+            {servico ? (
+              <p className="type-body-small flex items-start gap-2.5 rounded-2xl border border-border bg-surface px-5 py-4 text-muted-foreground">
+                <Handshake className="mt-0.5 size-5 shrink-0 text-primary" aria-hidden="true" />
+                <span>
+                  Serviço{localizacao ? ` em ${localizacao}` : ""}. Depois do pagamento, combine data e local com o prestador pelo chat.
+                </span>
+              </p>
+            ) : (
             <details className="group rounded-2xl border border-border bg-surface px-5 py-1 open:pb-5">
               <summary className="flex min-h-12 cursor-pointer list-none items-center gap-2.5 [&::-webkit-details-marker]:hidden">
                 <Truck className="size-5 text-primary" aria-hidden="true" />
@@ -520,6 +531,7 @@ function ProdutoPage() {
                 </ul>
               )}
             </details>
+            )}
 
             {/* VENDEDOR */}
 

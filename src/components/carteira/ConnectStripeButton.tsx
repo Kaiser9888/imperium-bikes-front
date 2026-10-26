@@ -24,8 +24,10 @@ export default function ConnectStripeButton() {
       if (data.onboardingUrl) {
         window.location.href = data.onboardingUrl;
       }
-    } catch {
-      setErro("Não foi possível iniciar a conexão com a Stripe.");
+    } catch (cause) {
+      // 503: o backend já manda o motivo em português (ex.: recebimentos ainda em configuração)
+      const motivo = cause instanceof Error ? cause.message.match(/^Erro 503: (.+)$/)?.[1] : undefined;
+      setErro(motivo ?? "Não foi possível iniciar a conexão com a Stripe.");
       setCarregando(false);
     }
   }
