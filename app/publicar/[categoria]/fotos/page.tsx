@@ -186,7 +186,7 @@ export default function FotosPage() {
         <div className="publish-progress">
           <span
             style={{
-              width: '40%',
+              width: '50%',
             }}
           />
         </div>

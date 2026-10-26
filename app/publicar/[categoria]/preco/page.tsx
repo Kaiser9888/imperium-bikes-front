@@ -4,6 +4,12 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { formatarPreco } from '@/lib/format'
 import {
+  PRECO_MINIMO_CENTAVOS,
+  TAXA_PAGAMENTO_FIXA_CENTAVOS,
+  TAXA_PAGAMENTO_PERCENTUAL,
+  taxaPagamentoCentavos,
+} from '@/lib/taxas'
+import {
   ArrowRight,
   X,
 } from 'lucide-react'
@@ -112,8 +118,12 @@ export default function PrecoPage() {
   }, [categoria])
 
   const valor = parseMoney(preco)
+  const abaixoDoMinimo = valor > 0 && valor < PRECO_MINIMO_CENTAVOS
+  const taxa = valor > 0 ? taxaPagamentoCentavos(valor) : 0
+  const recebe = Math.max(valor - taxa, 0)
   // O frete coberto não pode passar do preço, senão a venda dá prejuízo
-  const freteMaiorQuePreco = limiteFrete > 0 && valor > 0 && limiteFrete > valor
+  const freteMaiorQuePreco = limiteFrete > 0 && valor > 0 && limiteFrete > recebe
+  const bloqueado = valor <= 0 || abaixoDoMinimo || freteMaiorQuePreco
 
   function voltar() {
     router.push(
@@ -127,7 +137,7 @@ export default function PrecoPage() {
   }
 
   function continuar() {
-    if (valor <= 0 || freteMaiorQuePreco) {
+    if (bloqueado) {
       return
     }
 
@@ -190,7 +200,7 @@ export default function PrecoPage() {
         <div className="publish-progress">
           <span
             style={{
-              width: '80%',
+              width: '83%',
             }}
           />
         </div>
@@ -236,23 +246,56 @@ export default function PrecoPage() {
             />
           </label>
 
-          {valor > 0 && (
-            <div className="price-summary">
-              <span>
-                Valor do anúncio
-              </span>
-
-              <b>
-                {money(valor)}
-              </b>
-            </div>
+          {abaixoDoMinimo && (
+            <small role="alert">
+              O preço mínimo é {money(PRECO_MINIMO_CENTAVOS)}.
+            </small>
           )}
 
-          {valor > 0 && limiteFrete > 0 && (
+          {valor > 0 && !abaixoDoMinimo && (
+            <>
+              <div className="price-summary">
+                <span>
+                  Valor do anúncio
+                </span>
+
+                <b>
+                  {money(valor)}
+                </b>
+              </div>
+
+              <div className="price-summary">
+                <span>
+                  Taxa de pagamento ({String(TAXA_PAGAMENTO_PERCENTUAL).replace('.', ',')}% + {money(TAXA_PAGAMENTO_FIXA_CENTAVOS)})
+                </span>
+
+                <b>
+                  − {money(taxa)}
+                </b>
+              </div>
+
+              <div className="price-summary">
+                <span>
+                  Você recebe
+                </span>
+
+                <b>
+                  {money(recebe)}
+                </b>
+              </div>
+
+              <small>
+                A taxa de pagamento cobre a operadora do cartão e é descontada em cada venda. Se você escolher um destaque
+                na próxima etapa, a comissão dele também é descontada.
+              </small>
+            </>
+          )}
+
+          {valor > 0 && !abaixoDoMinimo && limiteFrete > 0 && (
             <small role={freteMaiorQuePreco ? 'alert' : undefined}>
               {freteMaiorQuePreco
-                ? `Você cobre até ${money(limiteFrete)} de frete, mais que o preço. Aumente o preço ou volte e diminua o limite do frete.`
-                : `Você cobre até ${money(limiteFrete)} de frete: no pior caso recebe ${money(valor - limiteFrete)} (antes da comissão).`}
+                ? `Você cobre até ${money(limiteFrete)} de frete, mais do que recebe pela venda. Aumente o preço ou volte e diminua o limite do frete.`
+                : `Você cobre até ${money(limiteFrete)} de frete: no pior caso recebe ${money(recebe - limiteFrete)} (antes da comissão do destaque).`}
             </small>
           )}
         </section>
@@ -261,7 +304,7 @@ export default function PrecoPage() {
       <footer className="publish-footer">
         <button
           type="button"
-          disabled={valor <= 0 || freteMaiorQuePreco}
+          disabled={bloqueado}
           onClick={continuar}
         >
           Continuar

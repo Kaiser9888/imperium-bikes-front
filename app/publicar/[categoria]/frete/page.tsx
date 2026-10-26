@@ -371,7 +371,7 @@ return (
       <div className="publish-progress">
           <span
             style={{
-              width: '60%',
+              width: '67%',
             }}
           />
       </div>

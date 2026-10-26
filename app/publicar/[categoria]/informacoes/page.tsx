@@ -120,7 +120,7 @@ export default function InformacoesPage() {
       </header>
 
       <div className="publish-shell">
-        <p className="publish-kicker">Etapa 1 de 5</p>
+        <p className="publish-kicker">Etapa 2 de 6</p>
 
         <h1>Informações do anúncio</h1>
 
@@ -129,7 +129,7 @@ export default function InformacoesPage() {
         </p>
 
         <div className="publish-progress">
-          <span style={{ width: '20%' }} />
+          <span style={{ width: '33%' }} />
         </div>
 
         <section className="publish-card publish-form">

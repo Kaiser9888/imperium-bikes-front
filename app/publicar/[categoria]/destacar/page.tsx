@@ -13,6 +13,7 @@ import {
   saveDraft,
 } from '@/lib/publicar/storage'
 import { apiFetch, API_URL } from '@/lib/apiClient'
+import { taxaPagamentoCentavos } from '@/lib/taxas'
 import { useUserSync } from '@/lib/UserSyncContext'
 
 import { BackButton } from "@/components/ui/back-button"
@@ -474,6 +475,11 @@ if (precoCentavos === null) {
   return null
 }
 
+const taxaPagamento = taxaPagamentoCentavos(precoCentavos)
+const comissao = taxaCentavos(
+  TIERS.find((tier) => tier.id === tierSelecionado)?.percentual ?? 0,
+)
+
 return (
   <main className="publish-page">
     <header className="publish-header">
@@ -601,6 +607,45 @@ return (
             )}
           </b>
         </div>
+
+        <div className="price-summary">
+          <span>
+            Taxa de pagamento
+          </span>
+
+          <b>
+            − {formatarMoeda(taxaPagamento)}
+          </b>
+        </div>
+
+        {comissao > 0 && (
+          <div className="price-summary">
+            <span>
+              Comissão do destaque
+            </span>
+
+            <b>
+              − {formatarMoeda(comissao)}
+            </b>
+          </div>
+        )}
+
+        <div className="price-summary">
+          <span>
+            Você recebe por venda
+          </span>
+
+          <b>
+            {formatarMoeda(
+              Math.max(precoCentavos - taxaPagamento - comissao, 0),
+            )}
+          </b>
+        </div>
+
+        <small>
+          Valores descontados só quando o produto é vendido. O frete, se você aceitou cobrir parte dele, também sai
+          desse valor.
+        </small>
       </section>
     </div>
 

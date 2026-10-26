@@ -73,7 +73,7 @@ export const topicos: Topico[] = [
             },
             {
                 pergunta: "Quanto o Imperium Bikes cobra?",
-                resposta: "10% sobre o preço do produto vendido. O frete não entra no cálculo. Anunciar é grátis; destacar o anúncio é opcional e pago.",
+                resposta: "Anunciar é grátis. Só quando vende, saem do valor a taxa de pagamento (3,99% + R$ 0,39, que cobre a operadora do cartão) e, se você escolheu destaque, a comissão dele (2%, 5% ou 7%). As duas são sobre o preço do produto, sem o frete, e aparecem antes de publicar. O preço mínimo de um anúncio é R$ 5,00.",
             },
             {
                 pergunta: "Quando recebo o dinheiro da venda?",

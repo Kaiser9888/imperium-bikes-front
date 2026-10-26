@@ -103,8 +103,11 @@ export default function TermosPage() {
                         bancária, nos prazos do Stripe.
                     </li>
                     <li>
-                        <strong>Vendas:</strong> taxa de 10% sobre o preço do produto (o frete não entra no cálculo). O restante vai para o
-                        vendedor quando o valor é liberado.
+                        <strong>Vendas:</strong> em cada venda são descontados do vendedor (1) a taxa de pagamento, de 3,99% + R$ 0,39,
+                        que cobre a operadora do cartão, e (2) a comissão do destaque escolhido ao anunciar: 0% no Gratuito, 2% no
+                        Básico, 5% no Avançado e 7% no Topo. As duas são calculadas sobre o preço do produto (o frete não entra) e
+                        aparecem para o vendedor antes de publicar. O restante vai para o vendedor quando o valor é liberado. O preço
+                        mínimo de um anúncio é R$ 5,00.
                     </li>
                     <li><strong>Eventos pagos:</strong> 90% de cada inscrição vai para o organizador quando ele encerra o evento.</li>
                     <li><strong>Anúncios:</strong> 55% do valor de cada exibição vai para o criador do vídeo.</li>

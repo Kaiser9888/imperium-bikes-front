@@ -7,6 +7,8 @@ import { esportesPorGrupo } from "@/lib/esportes"
 import { writeDraft } from "@/lib/publicar/categorias"
 import { CATEGORIA_ESPORTES, OPCOES_ESPORTE, TIPOS_POR_ESPORTE } from "@/lib/publicar/taxonomia"
 
+import { X } from "lucide-react"
+
 import { BackButton } from "@/components/ui/back-button"
 
 type Answers = { sport: string; tipo: string }
@@ -73,21 +75,19 @@ export default function PublicarEsportesPage() {
 
   return (
     <main className="imperium-page">
-      <header className="imperium-header">
+      <header className="publish-header">
         <BackButton href="/vendedor" />
 
-        <div className="brand-mark" aria-label="Imperium Bikes">
-          IB
-        </div>
+        <strong>Artigos esportivos</strong>
 
-        <div>
-          <p className="brand-name m-0 text-base">Imperium Bikes</p>
-          <p className="header-context">Publicar anúncio</p>
-        </div>
-
-        <span className="header-divider" aria-hidden="true" />
-
-        <p className="header-category">Artigos esportivos</p>
+        <button
+          type="button"
+          className="publish-cancel"
+          onClick={() => router.push("/vendedor")}
+        >
+          <X />
+          Cancelar
+        </button>
       </header>
 
       <div className="classification-layout">
@@ -101,9 +101,8 @@ export default function PublicarEsportesPage() {
             quem está procurando.
           </p>
 
-          <div className="progress-line" aria-label="Etapa 1 de 6">
-            <span className="progress-active" />
-            <span />
+          <div className="publish-progress" aria-label="Etapa 1 de 6">
+            <span style={{ width: "17%" }} />
           </div>
 
           {esporte ? (
@@ -195,10 +194,6 @@ export default function PublicarEsportesPage() {
           </div>
 
           <div className="summary-actions">
-            <button type="button" className="secondary-action" onClick={() => router.push("/vendedor")}>
-              Cancelar anúncio
-            </button>
-
             <button type="button" className="primary-action" disabled={!allAnswered} onClick={handleContinue}>
               Continuar
             </button>

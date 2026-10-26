@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 
 import { startDraft } from '@/lib/publicar/categorias'
 
+import { X } from "lucide-react"
+
 import { BackButton } from "@/components/ui/back-button"
 
 type BikeType =
@@ -527,34 +529,19 @@ export default function BikesClassificationPage() {
 
   return (
     <main className="imperium-page">
-      <header className="imperium-header">
+      <header className="publish-header">
         <BackButton href="/vendedor" />
 
-        <div
-          className="brand-mark"
-          aria-label="Imperium Bikes"
+        <strong>Bikes</strong>
+
+        <button
+          type="button"
+          className="publish-cancel"
+          onClick={handleCancel}
         >
-          IB
-        </div>
-
-        <div>
-          <p className="brand-name m-0 text-base">
-            Imperium Bikes
-          </p>
-
-          <p className="header-context">
-            Publicar anúncio
-          </p>
-        </div>
-
-        <span
-          className="header-divider"
-          aria-hidden="true"
-        />
-
-        <p className="header-category">
-          Bikes
-        </p>
+          <X />
+          Cancelar
+        </button>
       </header>
 
       <div className="classification-layout">
@@ -576,12 +563,8 @@ export default function BikesClassificationPage() {
             com facilidade.
           </p>
 
-          <div
-            className="progress-line"
-            aria-label="Etapa 1 de 5 concluída parcialmente"
-          >
-            <span className="progress-active" />
-            <span />
+          <div className="publish-progress" aria-label="Etapa 1 de 6">
+            <span style={{ width: "17%" }} />
           </div>
         </section>
 
@@ -1140,14 +1123,6 @@ export default function BikesClassificationPage() {
           </div>
 
           <div className="summary-actions">
-            <button
-              type="button"
-              className="secondary-action"
-              onClick={handleCancel}
-            >
-              Cancelar anúncio
-            </button>
-
             <button
               type="button"
               className="primary-action"
