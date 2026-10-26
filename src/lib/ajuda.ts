@@ -72,6 +72,11 @@ export const topicos: Topico[] = [
                 link: { href: "/vendedor", label: "Central do vendedor" },
             },
             {
+                pergunta: "Como embalo e envio uma bike?",
+                resposta: "Desmonte roda, pedais e guidão, proteja câmbio e freios, monte numa caixa de bike (bicicletarias costumam dar) e informe no anúncio o peso e as medidas da caixa fechada. A cartilha tem o passo a passo completo.",
+                link: { href: "/ajuda/envio-de-bike", label: "Ver a cartilha de envio" },
+            },
+            {
                 pergunta: "Quanto o Imperium Bikes cobra?",
                 resposta: "Anunciar é grátis. Só quando vende, saem do valor a taxa de pagamento (3,99% + R$ 0,39, que cobre a operadora do cartão) e, se você escolheu destaque, a comissão dele (2%, 5% ou 7%). As duas são sobre o preço do produto, sem o frete, e aparecem antes de publicar. O preço mínimo de um anúncio é R$ 5,00.",
             },

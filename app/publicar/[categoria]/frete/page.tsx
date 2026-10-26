@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { ArrowRight, Check, Loader2, Truck, X } from 'lucide-react'
 import {
@@ -573,6 +574,12 @@ return (
           O frete é calculado pelo Melhor Envio com este CEP, o peso e as medidas da embalagem.
         </small>
 
+        <small>
+          Vai enviar uma bike?{' '}
+          <Link href="/ajuda/envio-de-bike" target="_blank" className="font-semibold text-primary underline underline-offset-2">
+            Veja como embalar e medir a caixa
+          </Link>
+        </small>
 
         <fieldset>
           <legend>
