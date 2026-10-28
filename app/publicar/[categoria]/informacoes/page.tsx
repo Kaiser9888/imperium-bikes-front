@@ -57,6 +57,9 @@ export default function InformacoesPage() {
   const [quantidade, setQuantidade] = useState('1')
   const [marca, setMarca] = useState('')
   const [modelo, setModelo] = useState('')
+  const [numeroSerie, setNumeroSerie] = useState('')
+  // Bike completa e quadro (em peças) são o que se rouba e revende
+  const pedeNumeroSerie = categoria === 'bikes' || categoria === 'pecas'
 
   // Onde o anúncio aparece: esporte (em /publicar/esportes) ou modalidade de ciclismo
   const porEsporte = categoria === CATEGORIA_ESPORTES
@@ -68,6 +71,7 @@ export default function InformacoesPage() {
 
     setMarca(String(d.marca || ''))
     setModelo(String(d.modelo || ''))
+    setNumeroSerie(String(d.numeroSerie || ''))
     setDestino(
       categoria === CATEGORIA_ESPORTES
         ? String(d.sport || '')
@@ -108,6 +112,7 @@ export default function InformacoesPage() {
       quantidade: quantidadeNumerica,
       marca: servico ? '' : marca.trim(),
       modelo: servico ? '' : modelo.trim(),
+      numeroSerie: pedeNumeroSerie ? numeroSerie.trim() : '',
       ...(porEsporte ? { sport: destino } : { modality: destino }),
     })
 
@@ -235,6 +240,25 @@ export default function InformacoesPage() {
             />
           </label>
           </>
+          )}
+
+          {pedeNumeroSerie && (
+          <label>
+            Número de série do quadro (opcional)
+
+            <input
+              value={numeroSerie}
+              onChange={e => setNumeroSerie(e.target.value)}
+              maxLength={60}
+              autoCapitalize="characters"
+              placeholder="Fica gravado embaixo do movimento central"
+            />
+
+            <small>
+              Anúncio com número de série ganha o selo &quot;Nº de série informado&quot; e passa mais confiança. Só os 4 últimos dígitos
+              aparecem; o número é conferido no cadastro de bikes roubadas.
+            </small>
+          </label>
           )}
 
           {!semCondicao && (

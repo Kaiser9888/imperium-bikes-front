@@ -95,6 +95,8 @@ export interface ProductResponse {
     brand: string
     model: string
     year?: number
+    /** Só os 4 últimos dígitos do número de série; null quando o vendedor não informou. */
+    numeroSerieFinal?: string | null
     stock: number
     negotiable: boolean
     city: string

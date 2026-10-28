@@ -58,6 +58,8 @@ export interface PublishDraft {
   modality?: string
   marca?: string
   modelo?: string
+  /** Número de série do quadro (opcional): vira o selo no anúncio. */
+  numeroSerie?: string
 
   // Etapa: informações
   title?: string

@@ -175,6 +175,11 @@ export const topicos: Topico[] = [
                 resposta: "Use o botão Denunciar na página. A denúncia é anônima para quem publicou e a equipe analisa. Para uso indevido de foto, vídeo ou marca sua, escolha 'Usa sem autorização' e diga onde está o original.",
             },
             {
+                pergunta: "Roubaram minha bike. Como aviso?",
+                resposta: "Registre o alerta com o número de série do quadro e o número do boletim de ocorrência. A equipe confere o boletim e, a partir daí, ninguém consegue anunciar uma bike com esse número no Imperium; anúncios que já estavam no ar com ele saem. Antes de comprar uma usada, você também pode consultar o número de série na mesma página.",
+                link: { href: "/seguranca/bike-roubada", label: "Bike roubada" },
+            },
+            {
                 pergunta: "Acho que invadiram minha conta. O que faço?",
                 resposta: "Em Configurações > Segurança, toque em Congelar minha conta: todos os aparelhos saem na hora e ninguém entra até o suporte confirmar que você é o dono. Se o e-mail da conta foi trocado, use o link \"Não fui eu\" que mandamos para o e-mail antigo. Seu dinheiro não muda de destino: saques e repasses só vão para a sua conta de recebimentos no Stripe. Para evitar, ligue a verificação em duas etapas.",
                 link: { href: "/configuracoes#seguranca", label: "Abrir Segurança" },

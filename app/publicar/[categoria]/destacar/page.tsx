@@ -402,6 +402,9 @@ async function handlePublicar() {
           model:
             draftFinal.modelo || undefined,
 
+          numeroSerie:
+            draftFinal.numeroSerie || undefined,
+
           stock:
           draftFinal.quantidade,
 

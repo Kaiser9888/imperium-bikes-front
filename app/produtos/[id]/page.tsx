@@ -7,6 +7,7 @@ import { useParams, useRouter } from "next/navigation"
 import { useAuth } from "@clerk/nextjs"
 import {
   ArrowLeft,
+  BadgeCheck,
   Check,
   ChevronLeft,
   ChevronRight,
@@ -213,6 +214,8 @@ function ProdutoPage() {
     ["Marca", p.brand],
     ["Modelo", p.model],
     ["Ano", p.year ? String(p.year) : undefined],
+    // Bike sem número de série: o comprador vê que não foi informado (perde um pouco de confiança, não é proibido)
+    ["Nº de série", p.numeroSerieFinal ?? (p.categorySlug === "bikes" ? "Não informado" : undefined)],
     ["Tipo", p.productType],
     ["Estoque", !servico && p.stock > 1 ? `${p.stock} unidades` : undefined],
     ["Peso", p.weightKg ? `${p.weightKg.toLocaleString("pt-BR")} kg` : undefined],
@@ -372,9 +375,15 @@ function ProdutoPage() {
                 </Button>
               </div>
 
-              {(condicao || p.hasSecurePayment || freteGratis > 0) && (
+              {(condicao || p.hasSecurePayment || freteGratis > 0 || p.numeroSerieFinal) && (
                 <div className="mt-4 flex flex-wrap gap-2">
                   {condicao && <StatusBadge tone="neutral">{condicao}</StatusBadge>}
+                  {p.numeroSerieFinal && (
+                    <StatusBadge tone="success" title="Número conferido no cadastro de bikes roubadas na hora de anunciar">
+                      <BadgeCheck className="size-3.5" aria-hidden="true" />
+                      Nº de série informado
+                    </StatusBadge>
+                  )}
                   {freteGratis > 0 && (
                     <StatusBadge tone="success">
                       <Truck className="size-3.5" aria-hidden="true" />

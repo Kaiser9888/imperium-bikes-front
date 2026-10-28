@@ -8,6 +8,7 @@ import { Loader2, ShieldAlert } from "lucide-react"
 
 import { AnunciosAdmin } from "@/components/admin/anuncios-admin"
 import { BannersAdmin } from "@/components/admin/banners-admin"
+import { BikesRoubadasAdmin } from "@/components/admin/bikes-roubadas-admin"
 import { DenunciasAdmin } from "@/components/admin/denuncias-admin"
 import { SuporteAdmin } from "@/components/admin/suporte-admin"
 import { UsuariosAdmin } from "@/components/admin/usuarios-admin"
@@ -22,6 +23,7 @@ const ABAS = [
     { id: "denuncias", label: "Denúncias" },
     { id: "suporte", label: "Suporte" },
     { id: "usuarios", label: "Usuários" },
+    { id: "bikes-roubadas", label: "Bikes roubadas" },
 ] as const
 
 type Aba = (typeof ABAS)[number]["id"]
@@ -80,6 +82,7 @@ export default function AdminPage() {
                     {aba === "denuncias" && <DenunciasAdmin />}
                     {aba === "suporte" && <SuporteAdmin />}
                     {aba === "usuarios" && <UsuariosAdmin />}
+                    {aba === "bikes-roubadas" && <BikesRoubadasAdmin />}
                 </div>
             </>
         )
