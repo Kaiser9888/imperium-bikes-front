@@ -175,6 +175,11 @@ export const topicos: Topico[] = [
                 resposta: "Use o botão Denunciar na página. A denúncia é anônima para quem publicou e a equipe analisa. Para uso indevido de foto, vídeo ou marca sua, escolha 'Usa sem autorização' e diga onde está o original.",
             },
             {
+                pergunta: "Acho que invadiram minha conta. O que faço?",
+                resposta: "Em Configurações > Segurança, toque em Congelar minha conta: todos os aparelhos saem na hora e ninguém entra até o suporte confirmar que você é o dono. Se o e-mail da conta foi trocado, use o link \"Não fui eu\" que mandamos para o e-mail antigo. Seu dinheiro não muda de destino: saques e repasses só vão para a sua conta de recebimentos no Stripe. Para evitar, ligue a verificação em duas etapas.",
+                link: { href: "/configuracoes#seguranca", label: "Abrir Segurança" },
+            },
+            {
                 pergunta: "O conteúdo é revisado antes de ser publicado?",
                 resposta: "Produtos, vídeos, eventos e posts entram no ar na hora e são analisados quando alguém denuncia. Anúncios pagos são revisados antes de ir ao ar.",
             },

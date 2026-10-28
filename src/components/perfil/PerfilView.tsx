@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useEffect, useState } from "react"
-import { CalendarDays, Clapperboard, MapPin, Medal, Star, Trophy, type LucideIcon } from "lucide-react"
+import { CalendarDays, Clapperboard, MapPin, Medal, ShieldCheck, Star, Trophy, type LucideIcon } from "lucide-react"
 
 import { ProdutoGrid } from "@/components/perfil/ProdutoGrid"
 import { SponsorBanners, type Sponsor } from "@/components/perfil/SponsorBanners"
@@ -31,6 +31,10 @@ export type PerfilResumo = {
     membroDesde?: string | null
     reputacao?: number | null
     totalAvaliacoes?: number | null
+    /** Verificação em duas etapas ligada. */
+    contaProtegida?: boolean
+    /** Congelada pelo dono ("não fui eu") até o suporte liberar. */
+    congelada?: boolean
     sponsors: Sponsor[]
 }
 
@@ -146,7 +150,18 @@ export function PerfilView({
                         <div className="flex flex-wrap items-center gap-2">
                             <h1 className="type-h1 min-w-0 truncate text-foreground">{perfil.nome}</h1>
                             {nivel && <StatusBadge tone="info">{nivel}</StatusBadge>}
+                            {perfil.contaProtegida && !perfil.congelada && (
+                                <StatusBadge tone="success">
+                                    <ShieldCheck className="size-3.5" aria-hidden="true" />
+                                    Conta protegida
+                                </StatusBadge>
+                            )}
                         </div>
+                        {perfil.congelada && (
+                            <p role="note" className="type-body-small mt-2 rounded-lg bg-warning/10 px-3 py-2 text-foreground">
+                                Esta conta está em verificação de segurança. Não feche negócio com ela até a verificação terminar.
+                            </p>
+                        )}
                         {perfil.username && <p className="type-body-small text-muted-foreground">@{perfil.username}</p>}
 
                         <ul className="type-body-small mt-3 flex flex-wrap gap-x-4 gap-y-1.5 text-muted-foreground">

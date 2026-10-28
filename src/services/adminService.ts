@@ -78,6 +78,8 @@ export type UsuarioAdmin = {
     avatarUrl: string | null
     status: StatusUsuario
     admin: boolean | null
+    /** Congelada pelo dono ("não fui eu"): só o admin libera, depois de confirmar quem é. */
+    congelada?: boolean
     createdAt: string
 }
 
@@ -94,5 +96,8 @@ export const usuarioAdminService = {
     },
     async desbanir(id: string): Promise<void> {
         await api.post(`/api/users/${id}/unban`)
+    },
+    async descongelar(id: string): Promise<void> {
+        await api.post(`/api/seguranca/descongelar/${id}`)
     },
 }

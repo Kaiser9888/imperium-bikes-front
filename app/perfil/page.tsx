@@ -21,7 +21,16 @@ import { sellerProductService, type ProdutoItem } from "@/services/publish/selle
 
 type Perfil = { fullName: string; bio: string; city: string; state: string; country: string }
 /** Dados do backend que o perfil só exibe (não são editados aqui). */
-type Extras = { id: string; nivel?: string; membroDesde?: string; reputacao?: number; totalAvaliacoes?: number; sponsors: Sponsor[] }
+type Extras = {
+    id: string
+    nivel?: string
+    membroDesde?: string
+    reputacao?: number
+    totalAvaliacoes?: number
+    contaProtegida?: boolean
+    congelada?: boolean
+    sponsors: Sponsor[]
+}
 type Carregado = { status: "ok"; perfil: Perfil; extras: Extras; produtos: ProdutoItem[] }
 type Estado = { status: "loading" } | { status: "error" } | Carregado
 
@@ -78,6 +87,8 @@ export default function PerfilPage() {
                     membroDesde: data.createdAt,
                     reputacao: data.reputationScore,
                     totalAvaliacoes: data.totalReviews,
+                    contaProtegida: Boolean(data.doisFatores),
+                    congelada: Boolean(data.congelada),
                     sponsors: data.sponsors ?? [],
                 },
                 perfil: {

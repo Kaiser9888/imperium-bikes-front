@@ -89,6 +89,16 @@ export function UsuariosAdmin() {
         }
     }
 
+    async function descongelar(u: UsuarioAdmin) {
+        setErro(null)
+        try {
+            await usuarioAdminService.descongelar(u.userId)
+            setLista((l) => l?.map((x) => (x.userId === u.userId ? { ...x, congelada: false } : x)) ?? null)
+        } catch (cause) {
+            setErro(mensagemDaApi(cause, "Não foi possível descongelar a conta."))
+        }
+    }
+
     return (
         <section>
             <div className="flex flex-wrap items-center gap-6">
@@ -131,6 +141,16 @@ export function UsuariosAdmin() {
                                     <span className={`size-1.5 rounded-full ${st.cor}`} aria-hidden="true" />
                                     {st.texto}
                                 </span>
+                                {u.congelada && (
+                                    <button
+                                        type="button"
+                                        onClick={() => descongelar(u)}
+                                        title="Congelada pelo dono. Libere só depois de confirmar a identidade (documento, pedidos, cartão usado)."
+                                        className="line-btn line-btn--sm"
+                                    >
+                                        Congelada · descongelar
+                                    </button>
+                                )}
                                 {!u.admin && (
                                     <div className="flex gap-5">
                                         {u.status === "ACTIVE" ? (

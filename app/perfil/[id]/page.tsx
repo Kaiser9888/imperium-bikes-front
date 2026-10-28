@@ -45,6 +45,8 @@ export default function PerfilPublicoPage() {
                     membroDesde: data.createdAt,
                     reputacao: data.reputationScore,
                     totalAvaliacoes: data.totalReviews,
+                    contaProtegida: Boolean(data.doisFatores),
+                    congelada: Boolean(data.congelada),
                     sponsors: data.sponsors ?? [],
                 },
             })
