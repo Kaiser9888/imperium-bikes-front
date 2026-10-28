@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { useCallback, useEffect, useState } from "react"
 import { useAuth } from "@clerk/nextjs"
-import { BadgeCheck, CircleDollarSign, Eye, Users } from "lucide-react"
+import { BadgeCheck, CircleDollarSign } from "lucide-react"
 import { toast } from "sonner"
 
 import { BackButton } from "@/components/ui/back-button"
@@ -71,29 +71,28 @@ export default function MonetizacaoPage() {
 }
 
 function Painel({ dados, recarregar }: { dados: MonetizacaoStatus; recarregar: () => Promise<void> }) {
-  const requisitos = dados.nextTierRequirements
   const cumpriu = dados.isEligible
 
   return (
     <>
-      <section aria-labelledby="requisitos-title" className="rounded-2xl border border-border bg-surface p-5 sm:p-6">
+      <section aria-labelledby="elegibilidade-title" className="rounded-2xl border border-border bg-surface p-5 sm:p-6">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h2 id="requisitos-title" className="type-h3 text-foreground">
-              Requisitos
+            <h2 id="elegibilidade-title" className="type-h3 text-foreground">
+              {cumpriu ? "Seu canal está liberado" : "Seu canal ainda não está liberado"}
             </h2>
             <p className="type-body-small mt-1 text-muted-foreground">
-              {cumpriu ? `Nível ${dados.currentTierLabel}: você já pode ganhar com anúncios.` : "Alcance os dois para liberar os anúncios nos seus vídeos."}
+              {cumpriu
+                ? "Você já pode ganhar com os anúncios exibidos antes dos seus vídeos."
+                : "A liberação é revista todos os dias e considera vários fatores do canal e da conta. Continue publicando: a gente avisa quando liberar."}
             </p>
           </div>
-          {cumpriu && <BadgeCheck className="size-7 shrink-0 text-success" aria-label="Requisitos cumpridos" />}
+          {cumpriu && <BadgeCheck className="size-7 shrink-0 text-success" aria-label="Canal liberado" />}
         </div>
-
-        {!cumpriu && requisitos && (
-          <div className="mt-5 flex flex-col gap-5">
-            <Requisito icon={Users} rotulo="Inscritos" atual={dados.stats.followers} meta={requisitos.followers} />
-            <Requisito icon={Eye} rotulo="Visualizações" atual={dados.stats.totalViews} meta={requisitos.totalViews} />
-          </div>
+        {!cumpriu && (
+          <Link href="/ajuda#videos" className="type-body-small mt-4 inline-block font-semibold text-primary underline underline-offset-2">
+            O que contamos na análise
+          </Link>
         )}
       </section>
 
@@ -101,33 +100,6 @@ function Painel({ dados, recarregar }: { dados: MonetizacaoStatus; recarregar: (
 
       {dados.isEnabled && <Ganhos dados={dados} onSaque={recarregar} />}
     </>
-  )
-}
-
-function Requisito({ icon: Icon, rotulo, atual, meta }: { icon: typeof Users; rotulo: string; atual: number; meta: number }) {
-  const pct = meta > 0 ? Math.min(100, (atual / meta) * 100) : 100
-  return (
-    <div>
-      <div className="flex items-center justify-between gap-3">
-        <span className="type-label flex items-center gap-2 text-foreground">
-          <Icon className="size-4 text-muted-foreground" aria-hidden="true" />
-          {rotulo}
-        </span>
-        <span className="type-body-small tabular-nums text-muted-foreground">
-          <span className="font-semibold text-foreground">{atual.toLocaleString("pt-BR")}</span> / {meta.toLocaleString("pt-BR")}
-        </span>
-      </div>
-      <div
-        className="mt-2 h-2 overflow-hidden rounded-full bg-surface-muted"
-        role="progressbar"
-        aria-label={rotulo}
-        aria-valuenow={Math.round(pct)}
-        aria-valuemin={0}
-        aria-valuemax={100}
-      >
-        <div className={cn("h-full rounded-full", pct >= 100 ? "bg-success" : "bg-primary")} style={{ width: `${pct}%` }} />
-      </div>
-    </div>
   )
 }
 
@@ -211,7 +183,7 @@ function Ganhos({ dados, onSaque }: { dados: MonetizacaoStatus; onSaque: () => P
       <dl className="mt-5 grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-border bg-border sm:grid-cols-4">
         <Numero rotulo="Disponível" valor={disponivel} destaque />
         <Numero rotulo="Este mês" valor={Number(e.thisMonth ?? 0)} />
-        <Numero rotulo="Em saque" valor={Number(e.pending ?? 0)} />
+        <Numero rotulo="A liberar" valor={Number(e.pending ?? 0)} />
         <Numero rotulo="Total ganho" valor={Number(e.total ?? 0)} />
       </dl>
 
@@ -254,10 +226,10 @@ function Numero({ rotulo, valor, destaque }: { rotulo: string; valor: number; de
 
 function ComoFunciona() {
   const passos = [
-    "Ao bater 1.000 inscritos e 100 mil visualizações, conecte sua conta de recebimentos (Stripe) na Carteira e ative a monetização.",
-    "Antes dos seus vídeos passa um vídeo curto de uma marca, revisado e aprovado pela equipe.",
+    "Quando o canal for liberado, conecte sua conta de recebimentos (Stripe) na Carteira e ative a monetização.",
+    "Antes dos seus vídeos passa um vídeo curto de uma marca, revisado e aprovado pela equipe. Só há ganho quando há anunciante com campanha no ar.",
     "Cada anúncio que fica 5 segundos na tela conta como uma exibição. Repetições da mesma pessoa no mesmo dia não contam.",
-    "Você recebe 55% do valor de cada exibição, somado ao seu saldo de hora em hora. Só as exibições de anúncios geram ganho.",
+    "Você recebe 55% do valor de cada exibição. O valor fica \"A liberar\" por 30 dias (prazo para conferir as exibições e o pagamento do anunciante) e depois passa para o disponível.",
     "Com R$ 50,00 ou mais disponíveis, peça o saque: o valor vai pelo Stripe para a sua conta bancária.",
   ]
   return (

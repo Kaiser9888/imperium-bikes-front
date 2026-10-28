@@ -248,7 +248,7 @@ function NovaCampanha({ precos, onCriada }: { precos: Pricing | null; onCriada: 
             Criar e pagar
           </Button>
           <p className="type-caption mt-2 text-muted-foreground">
-            Depois do pagamento o vídeo é revisado pela equipe antes de ir ao ar. Se for recusado, o valor é devolvido. Você paga só pelo que for exibido até o orçamento acabar.
+            Depois do pagamento o vídeo é revisado pela equipe antes de ir ao ar. Se for recusado, o valor é devolvido. Você paga só pelo que for exibido até o orçamento acabar. A primeira campanha vai até R$ 1.000,00.
           </p>
         </div>
       </form>

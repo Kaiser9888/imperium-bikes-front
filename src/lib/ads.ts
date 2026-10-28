@@ -139,10 +139,8 @@ export type MonetizacaoStatus = {
     currentTier: string
     currentTierLabel: string
     revenueShare: number
-    nextTier: string | null
-    nextTierProgress: number
-    nextTierRequirements: { followers: number; totalViews: number } | null
     stats: { followers: number; totalViews: number; totalVideos: number }
+    /** pending = ganhos ainda na carência de 30 dias. */
     earnings: { total: number; available: number; pending: number; thisMonth: number; lastMonth: number }
     isEnabled: boolean
     hasPendingWithdrawal: boolean

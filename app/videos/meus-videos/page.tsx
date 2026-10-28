@@ -381,9 +381,8 @@ function Numero({ rotulo, valor }: { rotulo: string; valor: string | null }) {
   );
 }
 
-/** Atalho para a monetização: progresso até os requisitos ou o saldo para sacar. */
+/** Atalho para a monetização: situação do canal ou o saldo para sacar. */
 function CartaoMonetizacao({ dados }: { dados: MonetizacaoStatus }) {
-  const req = dados.nextTierRequirements;
   let titulo: string;
   let detalhe: string;
   if (dados.isEnabled) {
@@ -394,11 +393,8 @@ function CartaoMonetizacao({ dados }: { dados: MonetizacaoStatus }) {
     detalhe = "Conecte sua conta de recebimentos e comece a ganhar com os anúncios.";
   } else {
     titulo = "Monetização";
-    detalhe = req
-      ? `${dados.stats.followers.toLocaleString("pt-BR")} de ${req.followers.toLocaleString("pt-BR")} inscritos · ${formatViews(dados.stats.totalViews)} de ${formatViews(req.totalViews)} views`
-      : "Ganhe 55% dos anúncios exibidos nos seus vídeos.";
+    detalhe = "Ganhe 55% dos anúncios exibidos nos seus vídeos quando o canal for liberado.";
   }
-  const progresso = !dados.isEligible ? Math.min(100, Math.round(dados.nextTierProgress)) : null;
 
   return (
     <Link
@@ -411,11 +407,6 @@ function CartaoMonetizacao({ dados }: { dados: MonetizacaoStatus }) {
       <span className="min-w-0 flex-1">
         <span className="type-label block text-foreground">{titulo}</span>
         <span className="type-caption block truncate text-muted-foreground">{detalhe}</span>
-        {progresso !== null && (
-          <span className="mt-2 block h-1.5 overflow-hidden rounded-full bg-surface-muted" aria-hidden="true">
-            <span className="block h-full rounded-full bg-primary" style={{ width: `${progresso}%` }} />
-          </span>
-        )}
       </span>
       <ChevronRight className="size-5 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
     </Link>
