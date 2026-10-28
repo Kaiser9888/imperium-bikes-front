@@ -121,6 +121,7 @@ export default function PrivacidadePage() {
                     <li><strong>Melhor Envio</strong> — cotação e envio de fretes.</li>
                     <li><strong>Vercel</strong> — hospedagem do site e estatísticas de uso (quando você aceita).</li>
                     <li><strong>Render</strong> — hospedagem do servidor e do banco de dados.</li>
+                    <li><strong>Sentry</strong> — registro de erros técnicos do site e do servidor, para corrigirmos falhas (sem cookies).</li>
                 </ul>
                 <p>
                     Entre usuários: o seu nome, foto e perfil público aparecem para os outros. Numa compra, o vendedor recebe os dados
