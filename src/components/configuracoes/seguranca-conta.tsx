@@ -27,6 +27,8 @@ export function SegurancaConta() {
     const [confirmando, setConfirmando] = useState(false)
     const [congelando, setCongelando] = useState(false)
     const protegida = Boolean(user?.twoFactorEnabled)
+    // Duas etapas é do plano Pro do Clerk: o quadro só aparece quando ele for ativado (NEXT_PUBLIC_CLERK_MFA=1 na Vercel)
+    const duasEtapasDisponivel = process.env.NEXT_PUBLIC_CLERK_MFA === "1" || protegida
 
     async function congelar() {
         setCongelando(true)
@@ -48,6 +50,7 @@ export function SegurancaConta() {
                 Segurança
             </h2>
 
+            {duasEtapasDisponivel && (
             <div className="mt-4 rounded-xl border border-border bg-surface p-4">
                 <p className="type-label flex items-center gap-2 text-foreground">
                     {protegida ? (
@@ -66,8 +69,9 @@ export function SegurancaConta() {
                     {protegida ? "Gerenciar segurança" : "Ligar verificação em duas etapas"}
                 </Button>
             </div>
+            )}
 
-            <div className="mt-3 rounded-xl border border-border bg-surface p-4">
+            <div className={duasEtapasDisponivel ? "mt-3 rounded-xl border border-border bg-surface p-4" : "mt-4 rounded-xl border border-border bg-surface p-4"}>
                 <p className="type-label flex items-center gap-2 text-foreground">
                     <Snowflake className="size-5 text-primary" aria-hidden="true" />
                     Não fui eu
