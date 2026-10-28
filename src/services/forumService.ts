@@ -17,9 +17,13 @@ export interface ForumPost {
     content: string
     createdAt: string
     replyCount: number
+    /** Quantidade de "Pedais" (só existe voto positivo). */
     karmaTotal: number
+    /** Na resposta: é a que resolveu. Na pergunta: já foi resolvida. */
+    isSolution?: boolean
 }
 
+/** Só existe o "Pedal" (positivo); "DOWN" fica no tipo por votos antigos. */
 export type Voto = "UP" | "DOWN"
 
 export const forumService = {
@@ -45,9 +49,14 @@ export const forumService = {
         return (await api.post(`/api/forum/posts/${post.id}/reply`, { categoryId: post.categoryId, content })).data
     },
 
-    /** Votar de novo no mesmo sentido retira o voto. Devolve o saldo e o voto atual. */
-    async votar(postId: string, voto: Voto): Promise<{ score: number; userVote: Voto | null }> {
-        return (await api.post(`/api/forum/posts/${postId}/karma/${voto.toLowerCase()}`)).data
+    /** Dá ou tira o Pedal (tocar de novo retira). Devolve o total e se o usuário pedalou. */
+    async pedalar(postId: string): Promise<{ score: number; userVote: Voto | null }> {
+        return (await api.post(`/api/forum/posts/${postId}/karma/up`)).data
+    },
+
+    /** Quem perguntou marca (ou desmarca) a resposta que resolveu. */
+    async marcarResolveu(respostaId: string): Promise<void> {
+        await api.post(`/api/forum/posts/${respostaId}/solution`)
     },
 
     /** Votos que o usuário logado já deu, por id de publicação ou resposta. */

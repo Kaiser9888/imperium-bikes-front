@@ -3,10 +3,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useUser } from "@clerk/nextjs"
 import {
-    ArrowBigDown,
-    ArrowBigUp,
     Bike,
     CalendarDays,
+    CircleCheck,
     CircleHelp,
     Flame,
     Clock,
@@ -66,11 +65,14 @@ function IconeCategoria({ slug, className }: { slug?: string; className?: string
     return <Icone className={className} aria-hidden="true" />
 }
 
+/** Categorias de oficina: quem pergunta marca a resposta que resolveu. */
+const OFICINA = new Set(["duvidas", "mecanica", "equipamentos"])
+
 type Ordem = "recentes" | "alta" | "sem-resposta"
 const ORDENS: { value: Ordem; label: string; icon: LucideIcon }[] = [
     { value: "recentes", label: "Recentes", icon: Clock },
-    { value: "alta", label: "Em alta", icon: Flame },
-    { value: "sem-resposta", label: "Sem resposta", icon: CircleHelp },
+    { value: "alta", label: "Mais pedaladas", icon: Flame },
+    { value: "sem-resposta", label: "Esperando ajuda", icon: CircleHelp },
 ]
 
 function tempoAtras(iso: string): string {
@@ -96,7 +98,7 @@ function Iniciais({ nome, className }: { nome: string; className?: string }) {
 const botaoAcao =
     "type-label inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-full px-2.5 text-muted-foreground transition-colors hover:bg-surface-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
 
-type VotosProps = {
+type PedalProps = {
     post: ForumPost
     meuId: string | null
     /** Voto que o usuário já tinha dado antes desta visita. */
@@ -106,42 +108,46 @@ type VotosProps = {
     vertical?: boolean
 }
 
-/** Setas de voto com o saldo. Serve para publicação e para resposta. */
-function Votos({ post, meuId, votoSalvo, onErro, vertical = false }: VotosProps) {
-    const [saldo, setSaldo] = useState(post.karmaTotal ?? 0)
-    // undefined: ainda não votou nesta visita, então vale o voto salvo no servidor
-    const [votoAgora, setVotoAgora] = useState<Voto | null | undefined>(undefined)
-    const meuVoto = votoAgora === undefined ? votoSalvo : votoAgora
+/**
+ * "Pedal": o reconhecimento da comunidade. Só positivo, sem voto negativo (quem discorda
+ * responde). Serve para publicação e para resposta; tocar de novo retira.
+ */
+function Pedal({ post, meuId, votoSalvo, onErro, vertical = false }: PedalProps) {
+    const [total, setTotal] = useState(post.karmaTotal ?? 0)
+    // undefined: ainda não tocou nesta visita, então vale o que está salvo no servidor
+    const [agora, setAgora] = useState<boolean | undefined>(undefined)
+    const pedalou = agora === undefined ? votoSalvo === "UP" : agora
     const proprio = meuId === post.userId
 
-    async function votar(voto: Voto) {
+    async function pedalar() {
         if (!meuId) return window.location.assign(ENTRAR)
         onErro(null)
         try {
-            const resultado = await forumService.votar(post.id, voto)
-            setSaldo(resultado.score)
-            setVotoAgora(resultado.userVote)
+            const resultado = await forumService.pedalar(post.id)
+            setTotal(resultado.score)
+            setAgora(resultado.userVote === "UP")
         } catch (cause) {
-            onErro(mensagemDaApi(cause, "Não foi possível registrar o voto."))
+            onErro(mensagemDaApi(cause, "Não foi possível dar o pedal."))
         }
     }
 
-    const seta = "grid size-8 cursor-pointer place-items-center rounded-full text-muted-foreground transition-colors hover:bg-surface-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
     return (
-        <div className={cn("flex items-center", vertical ? "flex-col gap-0.5" : "gap-1")}>
-            <button type="button" onClick={() => votar("UP")} disabled={proprio} aria-pressed={meuVoto === "UP"} aria-label="Útil" className={cn(seta, meuVoto === "UP" && "bg-accent/10 text-accent")}>
-                <ArrowBigUp className={cn("size-5", meuVoto === "UP" && "fill-current")} aria-hidden="true" />
-            </button>
-            <span
-                className={cn("type-label min-w-6 text-center tabular-nums", saldo > 0 ? "text-foreground" : "text-muted-foreground")}
-                aria-label={`Saldo de votos: ${saldo}`}
-            >
-                {saldo}
-            </span>
-            <button type="button" onClick={() => votar("DOWN")} disabled={proprio} aria-pressed={meuVoto === "DOWN"} aria-label="Não útil" className={cn(seta, meuVoto === "DOWN" && "bg-accent/10 text-accent")}>
-                <ArrowBigDown className={cn("size-5", meuVoto === "DOWN" && "fill-current")} aria-hidden="true" />
-            </button>
-        </div>
+        <button
+            type="button"
+            onClick={pedalar}
+            disabled={proprio}
+            aria-pressed={pedalou}
+            aria-label={`${pedalou ? "Tirar o pedal" : "Dar um pedal"}: ${total} ${total === 1 ? "pedal" : "pedais"}`}
+            title={proprio ? "Você não pode dar pedal no que escreveu" : "Ajudou ou curtiu? Dê um pedal"}
+            className={cn(
+                "group inline-flex cursor-pointer items-center justify-center rounded-full border transition-colors disabled:cursor-default disabled:opacity-60",
+                vertical ? "w-12 flex-col gap-0.5 py-2" : "h-9 gap-1.5 px-3",
+                pedalou ? "border-primary/40 bg-primary/10 text-primary" : "border-border text-muted-foreground hover:border-primary/40 hover:text-foreground",
+            )}
+        >
+            <Bike className={cn("size-5 transition-transform", !proprio && "group-hover:-rotate-6", pedalou && "stroke-[2.5]")} aria-hidden="true" />
+            <span className="type-label tabular-nums">{total}</span>
+        </button>
     )
 }
 
@@ -163,8 +169,28 @@ function Publicacao({ post, categoria, meuId, votos, onExcluir, onRemovida }: Pu
     const minha = meuId === post.userId
 
     const ehDuvida = categoria?.slug === "duvidas"
+    // Na oficina (dúvidas, mecânica, equipamento) quem perguntou marca a resposta que resolveu
+    const oficina = OFICINA.has(categoria?.slug ?? "")
+    const [resolvida, setResolvida] = useState(Boolean(post.isSolution))
 
     const [respostas, setRespostas] = useState<ForumPost[] | null>(null)
+    // A que resolveu vem primeiro; o resto na ordem da conversa
+    const ordenadas = useMemo(
+        () => (respostas ? [...respostas].sort((a, b) => Number(Boolean(b.isSolution)) - Number(Boolean(a.isSolution))) : null),
+        [respostas],
+    )
+
+    async function marcarResolveu(resposta: ForumPost) {
+        setErro(null)
+        try {
+            await forumService.marcarResolveu(resposta.id)
+            const agora = !resposta.isSolution
+            setRespostas((atuais) => atuais?.map((r) => ({ ...r, isSolution: r.id === resposta.id ? agora : false })) ?? null)
+            setResolvida(agora)
+        } catch (cause) {
+            setErro(mensagemDaApi(cause, "Não foi possível marcar a resposta."))
+        }
+    }
     const [totalRespostas, setTotalRespostas] = useState(post.replyCount ?? 0)
     const [mostrarRespostas, setMostrarRespostas] = useState(false)
     const [texto, setTexto] = useState("")
@@ -209,7 +235,7 @@ function Publicacao({ post, categoria, meuId, votos, onExcluir, onRemovida }: Pu
     return (
         <article className="flex gap-3 rounded-2xl border border-border bg-surface p-4 transition-colors hover:border-primary/30 sm:gap-4 sm:p-5">
             <div className="-ml-1 hidden sm:block">
-                <Votos post={post} meuId={meuId} votoSalvo={votos[post.id] ?? null} onErro={setErro} vertical />
+                <Pedal post={post} meuId={meuId} votoSalvo={votos[post.id] ?? null} onErro={setErro} vertical />
             </div>
 
             <div className="min-w-0 flex-1">
@@ -218,11 +244,16 @@ function Publicacao({ post, categoria, meuId, votos, onExcluir, onRemovida }: Pu
                         <IconeCategoria slug={categoria?.slug} className="size-3.5" />
                         {post.categoryName}
                     </span>
-                    {ehDuvida &&
-                        (totalRespostas === 0 ? (
-                            <StatusBadge tone="warning">Aguardando resposta</StatusBadge>
+                    {oficina &&
+                        (resolvida ? (
+                            <StatusBadge tone="success">
+                                <CircleCheck className="size-3.5" aria-hidden="true" />
+                                Resolvida
+                            </StatusBadge>
+                        ) : totalRespostas === 0 ? (
+                            <StatusBadge tone="warning">Esperando ajuda</StatusBadge>
                         ) : (
-                            <StatusBadge tone="success">Respondida</StatusBadge>
+                            <StatusBadge tone="info">Em aberto</StatusBadge>
                         ))}
                 </div>
 
@@ -244,7 +275,7 @@ function Publicacao({ post, categoria, meuId, votos, onExcluir, onRemovida }: Pu
 
                 <div className="mt-4 flex flex-wrap items-center gap-1 border-t border-border pt-3">
                     <div className="sm:hidden">
-                        <Votos post={post} meuId={meuId} votoSalvo={votos[post.id] ?? null} onErro={setErro} />
+                        <Pedal post={post} meuId={meuId} votoSalvo={votos[post.id] ?? null} onErro={setErro} />
                     </div>
                     <button type="button" onClick={alternarRespostas} aria-expanded={mostrarRespostas} className={cn(botaoAcao, "-ml-2.5 max-sm:ml-1")}>
                         <MessageSquare className="size-4" aria-hidden="true" />
@@ -267,8 +298,20 @@ function Publicacao({ post, categoria, meuId, votos, onExcluir, onRemovida }: Pu
                 {mostrarRespostas && (
                     <div className="mt-4 flex flex-col gap-3 border-l-2 border-border pl-4">
                         {!respostas && !erro && <Loader className="py-4" />}
-                        {respostas?.map((resposta) => (
-                            <div key={resposta.id} className="rounded-xl bg-surface-muted/60 px-4 py-3">
+                        {ordenadas?.map((resposta) => (
+                            <div
+                                key={resposta.id}
+                                className={cn(
+                                    "rounded-xl px-4 py-3",
+                                    resposta.isSolution ? "border border-success/40 bg-success/5" : "bg-surface-muted/60",
+                                )}
+                            >
+                                {resposta.isSolution && (
+                                    <p className="type-caption mb-1.5 inline-flex items-center gap-1 font-semibold uppercase tracking-wider text-success">
+                                        <CircleCheck className="size-3.5" aria-hidden="true" />
+                                        Resolveu
+                                    </p>
+                                )}
                                 <div className="flex items-center justify-between gap-3">
                                     <p className="type-caption flex items-center gap-2 text-muted-foreground">
                                         <Iniciais nome={resposta.userName} className="size-5 text-[0.625rem]" />
@@ -294,10 +337,21 @@ function Publicacao({ post, categoria, meuId, votos, onExcluir, onRemovida }: Pu
                                 </div>
                                 <p className="type-body-small mt-1.5 whitespace-pre-line break-words text-foreground">{resposta.content}</p>
                                 <div className="-ml-1.5 mt-1 flex items-center gap-1">
-                                    <Votos post={resposta} meuId={meuId} votoSalvo={votos[resposta.id] ?? null} onErro={setErro} />
+                                    <Pedal post={resposta} meuId={meuId} votoSalvo={votos[resposta.id] ?? null} onErro={setErro} />
                                     {meuId && (
                                         <button type="button" onClick={() => responderA(resposta)} className={botaoAcao}>
                                             Responder
+                                        </button>
+                                    )}
+                                    {minha && oficina && resposta.userId !== meuId && (
+                                        <button
+                                            type="button"
+                                            onClick={() => marcarResolveu(resposta)}
+                                            aria-pressed={Boolean(resposta.isSolution)}
+                                            className={cn(botaoAcao, resposta.isSolution ? "text-success" : "hover:text-success")}
+                                        >
+                                            <CircleCheck className="size-4" aria-hidden="true" />
+                                            {resposta.isSolution ? "Desmarcar" : "Resolveu"}
                                         </button>
                                     )}
                                 </div>
@@ -448,35 +502,41 @@ export default function ForumPage() {
             <BackButton href="/" label="Início" className="-ml-2.5" />
 
             {/* ===== Topo ===== */}
-            <section aria-labelledby="comunidade-title" className="mt-3 overflow-hidden rounded-2xl border border-border bg-surface">
-                <div className="relative px-5 py-7 sm:px-8 sm:py-9">
-                    <div
-                        aria-hidden="true"
-                        className="pointer-events-none absolute inset-0 bg-[radial-gradient(90%_120%_at_100%_0%,color-mix(in_oklch,var(--primary)_22%,transparent)_0%,transparent_60%)]"
-                    />
-                    <div className="relative flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+            <section aria-labelledby="comunidade-title" className="relative mt-3 overflow-hidden rounded-2xl border border-border bg-[#0d0d0d] text-white">
+                {/* Foto de trilha ao fundo: a comunidade é de quem pedala */}
+                {/* eslint-disable-next-line @next/next/no-img-element -- imagem local decorativa */}
+                <img src="/images/mountain-poster.png" alt="" aria-hidden="true" className="absolute inset-0 size-full object-cover opacity-45" />
+                <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/60 to-black/10" />
+                <div className="relative px-5 py-8 sm:px-8 sm:py-11">
+                    <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
                         <div className="max-w-xl">
                             <p className="type-caption flex items-center gap-1.5 font-semibold uppercase tracking-[0.16em] text-primary">
                                 <Users className="size-4" aria-hidden="true" />
                                 Comunidade Imperium
                             </p>
-                            <h1 id="comunidade-title" className="type-h1 mt-2 text-foreground">
-                                Notícias, dúvidas e conversa
+                            <h1 id="comunidade-title" className="type-h1 mt-2 text-white">
+                                Oficina, trilha e resenha
                             </h1>
-                            <p className="type-body mt-2 text-muted-foreground">
-                                Fique por dentro das novidades, tire dúvidas de mecânica e equipamento e ajude outros ciclistas.
+                            <p className="type-body mt-2 text-white/75">
+                                Leve a dúvida de mecânica para a oficina, conte do pedal de hoje e fique por dentro do mundo da bike. Ninguém pedala
+                                sozinho.
                             </p>
                         </div>
                         <div className="flex flex-wrap gap-2">
                             {duvidas && (
                                 <Button onClick={() => abrirFormulario(duvidas.id)}>
-                                    <CircleHelp aria-hidden="true" />
-                                    Fazer uma pergunta
+                                    <Wrench aria-hidden="true" />
+                                    Levar para a oficina
                                 </Button>
                             )}
-                            <Button variant="outline" onClick={() => abrirFormulario()} disabled={!categorias?.length}>
+                            <Button
+                                variant="outline"
+                                onClick={() => abrirFormulario()}
+                                disabled={!categorias?.length}
+                                className="border-white/40 bg-white/5 text-white hover:bg-white/15 hover:text-white"
+                            >
                                 <PenLine aria-hidden="true" />
-                                Publicar
+                                Contar do pedal
                             </Button>
                         </div>
                     </div>
@@ -537,8 +597,8 @@ export default function ForumPage() {
                         {posts && visiveis.length === 0 && (
                             <EmptyState
                                 icon={ordem === "sem-resposta" ? CircleHelp : MessagesSquare}
-                                title={ordem === "sem-resposta" ? "Tudo respondido por aqui" : "Nada publicado ainda"}
-                                description={ordem === "sem-resposta" ? "Todas as publicações já têm resposta." : "Comece a conversa: faça uma pergunta ou compartilhe uma novidade."}
+                                title={ordem === "sem-resposta" ? "Ninguém parado no acostamento" : "Pista livre por aqui"}
+                                description={ordem === "sem-resposta" ? "Todas as perguntas já tiveram ajuda." : "Puxe o pelotão: leve uma dúvida para a oficina ou conte do seu pedal."}
                                 className="rounded-2xl border border-dashed border-border"
                             />
                         )}
@@ -560,13 +620,19 @@ export default function ForumPage() {
                 <aside className="flex flex-col gap-4 lg:sticky lg:top-24">
                     <section aria-labelledby="regras-title" className="rounded-2xl border border-border bg-surface p-5">
                         <h2 id="regras-title" className="type-label text-foreground">
-                            Boas práticas
+                            Regras do pedal
                         </h2>
                         <ul className="type-body-small mt-3 flex flex-col gap-2.5 text-muted-foreground">
-                            <li>Pesquise antes: sua dúvida pode já ter resposta.</li>
                             <li>No título, diga o problema e o modelo da bike ou da peça.</li>
-                            <li>Vote nas respostas úteis para elas subirem.</li>
-                            <li>Respeito sempre. Golpes e ofensas são removidos.</li>
+                            <li className="flex gap-2">
+                                <Bike className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
+                                <span>Ajudou ou curtiu? Dê um pedal. Aqui não tem voto negativo: discordou, responda explicando.</span>
+                            </li>
+                            <li className="flex gap-2">
+                                <CircleCheck className="mt-0.5 size-4 shrink-0 text-success" aria-hidden="true" />
+                                <span>Deu certo? Marque a resposta que resolveu: ela fica no topo para o próximo ciclista.</span>
+                            </li>
+                            <li>Respeito sempre. Golpes, ofensas e pedido de pagamento por fora saem.</li>
                         </ul>
                     </section>
 
@@ -616,7 +682,7 @@ export default function ForumPage() {
             <Dialog open={escrevendo} onOpenChange={(open) => !enviando && setEscrevendo(open)}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>{perguntando ? "Fazer uma pergunta" : "Nova publicação"}</DialogTitle>
+                        <DialogTitle>{perguntando ? "Levar para a oficina" : "Contar do pedal"}</DialogTitle>
                         <DialogDescription>
                             {perguntando ? "Explique o problema com detalhes: quanto mais claro, melhores as respostas." : "Aparece para todos assim que você publicar."}
                         </DialogDescription>
