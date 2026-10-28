@@ -1,0 +1,133 @@
+"use client"
+
+import { useCallback, useEffect, useState } from "react"
+import { CheckCircle2, Loader2, type LucideIcon, Megaphone, Flag, LifeBuoy, Snowflake, ShieldAlert, Scale } from "lucide-react"
+
+import api from "@/lib/api"
+import { cn } from "@/lib/utils"
+import { usuarioAdminService } from "@/services/adminService"
+import { mensagemDaApi } from "@/services/tournamentService"
+
+type Contagens = { campanhas: number; denuncias: number; chamados: number; contasCongeladas: number; bikesRoubadas: number; disputas: number }
+type ContaCongelada = { userId: string; fullName: string | null; email: string | null; congeladaEm: string }
+
+/** Abas do painel que cada fila abre. */
+export type AbaPendencia = "disputas" | "anuncios" | "denuncias" | "suporte" | "bikes-roubadas"
+
+const FILAS: { chave: keyof Contagens; aba?: AbaPendencia; titulo: string; texto: string; icon: LucideIcon; urgente?: boolean }[] = [
+    { chave: "disputas", aba: "disputas", titulo: "Disputas de pedido", texto: "Dinheiro retido esperando decisão", icon: Scale, urgente: true },
+    { chave: "contasCongeladas", titulo: "Contas congeladas", texto: "Confirme quem é o dono antes de liberar", icon: Snowflake, urgente: true },
+    { chave: "bikesRoubadas", aba: "bikes-roubadas", titulo: "Alertas de bike roubada", texto: "Conferir o boletim de ocorrência", icon: ShieldAlert },
+    { chave: "campanhas", aba: "anuncios", titulo: "Anúncios em vídeo", texto: "Campanhas pagas esperando aprovação", icon: Megaphone },
+    { chave: "denuncias", aba: "denuncias", titulo: "Denúncias", texto: "Conteúdo denunciado para analisar", icon: Flag },
+    { chave: "chamados", aba: "suporte", titulo: "Suporte, ideias e erros", texto: "Chamados sem resposta", icon: LifeBuoy },
+]
+
+/** Primeira aba do painel: tudo que espera uma decisão, com atalho para a fila. */
+export function PendenciasAdmin({ onAbrir }: { onAbrir: (aba: AbaPendencia) => void }) {
+    const [contagens, setContagens] = useState<Contagens | null>(null)
+    const [congeladas, setCongeladas] = useState<ContaCongelada[]>([])
+    const [erro, setErro] = useState<string | null>(null)
+
+    const carregar = useCallback(async () => {
+        setErro(null)
+        try {
+            const [c, contas] = await Promise.all([
+                api.get<Contagens>("/api/admin/pendencias"),
+                api.get<ContaCongelada[]>("/api/admin/pendencias/contas-congeladas"),
+            ])
+            setContagens(c.data)
+            setCongeladas(contas.data)
+        } catch (cause) {
+            setErro(mensagemDaApi(cause, "Não foi possível carregar as pendências."))
+        }
+    }, [])
+
+    useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- carga ao abrir a aba
+        void carregar()
+    }, [carregar])
+
+    async function descongelar(conta: ContaCongelada) {
+        setErro(null)
+        try {
+            await usuarioAdminService.descongelar(conta.userId)
+            await carregar()
+        } catch (cause) {
+            setErro(mensagemDaApi(cause, "Não foi possível descongelar a conta."))
+        }
+    }
+
+    if (!contagens) {
+        return erro ? <p role="alert" className="type-body-small border-l-2 border-destructive pl-3 text-destructive">{erro}</p> : <Loader2 className="size-5 animate-spin text-muted-foreground" />
+    }
+
+    const total = FILAS.reduce((soma, f) => soma + contagens[f.chave], 0)
+
+    return (
+        <section>
+            <p className="type-body-small text-muted-foreground">
+                {total === 0 ? "Nada esperando por você. Tudo em dia." : `${total} ${total === 1 ? "item espera" : "itens esperam"} uma decisão.`}
+            </p>
+            {erro && <p role="alert" className="type-body-small mt-3 border-l-2 border-destructive pl-3 text-destructive">{erro}</p>}
+
+            <ul className="mt-5 grid gap-3 sm:grid-cols-2">
+                {FILAS.map((f) => {
+                    const n = contagens[f.chave]
+                    const Icone = n === 0 ? CheckCircle2 : f.icon
+                    const conteudo = (
+                        <>
+                            <Icone className={cn("mt-0.5 size-5 shrink-0", n === 0 ? "text-success" : f.urgente ? "text-destructive" : "text-primary")} aria-hidden="true" />
+                            <span className="min-w-0 flex-1">
+                                <span className="type-label block text-foreground">{f.titulo}</span>
+                                <span className="type-caption block text-muted-foreground">{n === 0 ? "Nada esperando" : f.texto}</span>
+                            </span>
+                            <span className={cn("type-h3 tabular-nums", n === 0 ? "text-muted-foreground" : "text-foreground")}>{n}</span>
+                        </>
+                    )
+                    return (
+                        <li key={f.chave}>
+                            {f.aba && n > 0 ? (
+                                <button
+                                    type="button"
+                                    onClick={() => onAbrir(f.aba!)}
+                                    className="flex w-full cursor-pointer items-start gap-3 rounded-xl border border-border bg-surface p-4 text-left transition-colors hover:border-primary/40"
+                                >
+                                    {conteudo}
+                                </button>
+                            ) : (
+                                <div className="flex items-start gap-3 rounded-xl border border-border bg-surface p-4">{conteudo}</div>
+                            )}
+                        </li>
+                    )
+                })}
+            </ul>
+
+            {congeladas.length > 0 && (
+                <section aria-labelledby="congeladas-title" className="mt-8">
+                    <h2 id="congeladas-title" className="type-label uppercase tracking-wider text-muted-foreground">
+                        Contas congeladas
+                    </h2>
+                    <p className="type-caption mt-1 text-muted-foreground">
+                        O dono pede para voltar pelo suporte. Libere só depois de confirmar que é ele (documento, pedidos antigos, cartão usado).
+                    </p>
+                    <ul className="mt-3 divide-y divide-border border-y border-border">
+                        {congeladas.map((c) => (
+                            <li key={c.userId} className="flex flex-wrap items-center gap-x-4 gap-y-1 py-3">
+                                <div className="min-w-0 flex-1">
+                                    <p className="truncate text-sm font-semibold">{c.fullName || "Sem nome"}</p>
+                                    <p className="truncate text-xs text-muted-foreground">
+                                        {c.email} · congelada em {new Date(c.congeladaEm).toLocaleString("pt-BR")}
+                                    </p>
+                                </div>
+                                <button type="button" onClick={() => descongelar(c)} className="line-btn line-btn--sm">
+                                    Descongelar
+                                </button>
+                            </li>
+                        ))}
+                    </ul>
+                </section>
+            )}
+        </section>
+    )
+}

@@ -9,6 +9,8 @@ import { Loader2, ShieldAlert } from "lucide-react"
 import { AnunciosAdmin } from "@/components/admin/anuncios-admin"
 import { BannersAdmin } from "@/components/admin/banners-admin"
 import { BikesRoubadasAdmin } from "@/components/admin/bikes-roubadas-admin"
+import { DisputasAdmin } from "@/components/admin/disputas-admin"
+import { PendenciasAdmin } from "@/components/admin/pendencias-admin"
 import { DenunciasAdmin } from "@/components/admin/denuncias-admin"
 import { SuporteAdmin } from "@/components/admin/suporte-admin"
 import { UsuariosAdmin } from "@/components/admin/usuarios-admin"
@@ -18,6 +20,9 @@ import { BackButton } from "@/components/ui/back-button"
 import { useIsAdmin } from "@/lib/use-is-admin"
 
 const ABAS = [
+    // Pendências primeiro: o que espera decisão, com atalho para cada fila
+    { id: "pendencias", label: "Pendências" },
+    { id: "disputas", label: "Disputas" },
     { id: "banners", label: "Banners" },
     { id: "anuncios", label: "Anúncios" },
     { id: "denuncias", label: "Denúncias" },
@@ -31,7 +36,7 @@ type Aba = (typeof ABAS)[number]["id"]
 export default function AdminPage() {
     const { isLoaded, isSignedIn } = useUser()
     const { isAdmin, carregando } = useIsAdmin()
-    const [aba, setAba] = useState<Aba>("banners")
+    const [aba, setAba] = useState<Aba>("pendencias")
 
     let conteudo: React.ReactNode
     if (!isLoaded || (isSignedIn && carregando)) {
@@ -77,6 +82,8 @@ export default function AdminPage() {
                     </div>
                 </nav>
                 <div className="mt-6">
+                    {aba === "pendencias" && <PendenciasAdmin onAbrir={setAba} />}
+                    {aba === "disputas" && <DisputasAdmin />}
                     {aba === "banners" && <BannersAdmin />}
                     {aba === "anuncios" && <AnunciosAdmin />}
                     {aba === "denuncias" && <DenunciasAdmin />}
