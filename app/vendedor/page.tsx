@@ -101,7 +101,7 @@ const assinarStorage = (avisar: () => void) => {
   return () => window.removeEventListener("storage", avisar)
 }
 
-type Status = "ATIVO" | "PAUSADO" | "VENDIDO"
+type Status = "ATIVO" | "PAUSADO" | "VENDIDO" | "EM_ANALISE"
 type Filtro = "TODOS" | Status
 
 const statusDe = (p: ProdutoItem): Status => (p.status as Status) ?? "ATIVO"
@@ -153,6 +153,7 @@ export default function CentralVendedorPage() {
       ATIVO: produtos.filter((p) => statusDe(p) === "ATIVO").length,
       PAUSADO: produtos.filter((p) => statusDe(p) === "PAUSADO").length,
       VENDIDO: produtos.filter((p) => statusDe(p) === "VENDIDO").length,
+      EM_ANALISE: produtos.filter((p) => statusDe(p) === "EM_ANALISE").length,
     }),
     [produtos]
   )
@@ -480,6 +481,10 @@ export default function CentralVendedorPage() {
                         {vendido ? (
                           <span className="rounded-full bg-info/10 px-2.5 py-1 text-xs font-semibold text-info">
                             Vendido
+                          </span>
+                        ) : st === "EM_ANALISE" ? (
+                          <span className="rounded-full bg-warning/10 px-2.5 py-1 text-xs font-semibold text-warning">
+                            Em análise
                           </span>
                         ) : (
                           <>

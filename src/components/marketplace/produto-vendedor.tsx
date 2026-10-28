@@ -21,6 +21,8 @@ type Props = {
 export function ProdutoVendedor({ id, nome, avatarUrl, acao, className }: Props) {
     const [nota, setNota] = useState<{ average: number; count: number } | null>(null)
     const [ativos, setAtivos] = useState<number | null>(null)
+    // Foto antiga do disco do Render some (404): cai nas iniciais em vez de um buraco
+    const [avatarQuebrado, setAvatarQuebrado] = useState(false)
 
     useEffect(() => {
         api.get(`/api/reviews/user/${id}/rating`).then((r) => setNota(r.data)).catch(() => {})
@@ -36,9 +38,9 @@ export function ProdutoVendedor({ id, nome, avatarUrl, acao, className }: Props)
             <p className="type-caption font-semibold uppercase tracking-[0.14em] text-muted-foreground">Vendido por</p>
             <div className="mt-3 flex items-center justify-between gap-4">
                 <div className="flex min-w-0 items-center gap-3">
-                    {avatarUrl ? (
+                    {avatarUrl && !avatarQuebrado ? (
                         // eslint-disable-next-line @next/next/no-img-element -- avatar externo do Clerk
-                        <img src={avatarUrl} alt="" className="size-12 shrink-0 rounded-full object-cover" />
+                        <img src={avatarUrl} alt="" onError={() => setAvatarQuebrado(true)} className="size-12 shrink-0 rounded-full object-cover" />
                     ) : (
                         <div className="grid size-12 shrink-0 place-items-center rounded-full bg-surface-muted text-sm font-bold">
                             {iniciais || <User className="size-5" />}

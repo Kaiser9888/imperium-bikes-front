@@ -10,6 +10,7 @@ export type ProductStatus =
   | 'ACTIVE'
   | 'DISABLED'
   | 'SOLD'
+  | 'EM_ANALISE'
   | 'DELETED'
 
 export type ShippingType =

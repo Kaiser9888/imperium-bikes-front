@@ -31,7 +31,7 @@ export function formatarPreco(v?: number) {
     : "Sob consulta"
 }
 
-// O backend fala ACTIVE / DISABLED / SOLD; o front usa ATIVO / PAUSADO / VENDIDO.
+// O backend fala ACTIVE / DISABLED / SOLD / EM_ANALISE; o front usa ATIVO / PAUSADO / VENDIDO / EM_ANALISE.
 const STATUS_DO_BACKEND: Record<string, string> = {
   ACTIVE: "ATIVO",
   DISABLED: "PAUSADO",

@@ -253,7 +253,7 @@ function ProdutoPage() {
   // ---------- RENDER ----------
 
   return (
-    <main className="min-h-screen bg-background pb-16 text-foreground">
+    <main className="min-h-screen bg-background pb-32 text-foreground lg:pb-16">
       <Topo />
 
       <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
@@ -598,6 +598,23 @@ function ProdutoPage() {
 
         {p.seller && <ProdutoAvaliacoes vendedorId={p.seller.id} />}
       </div>
+
+      {/* Celular: preço e Comprar sempre à mão enquanto a pessoa rola as fotos e a descrição */}
+      {!esgotado && (
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 backdrop-blur lg:hidden">
+          <div className="mx-auto flex max-w-xl items-center gap-4">
+            <p className="type-h3 min-w-0 flex-1 truncate tabular-nums text-foreground">{precoFormatado}</p>
+            <button
+              type="button"
+              className="pay-btn !w-auto flex-1"
+              onClick={() => router.push(`/checkout?productId=${encodeURIComponent(p.id)}`)}
+            >
+              Comprar
+              <IconeCartao />
+            </button>
+          </div>
+        </div>
+      )}
     </main>
   )
 }

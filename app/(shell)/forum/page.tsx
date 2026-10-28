@@ -44,6 +44,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { StatusBadge } from "@/components/ui/status-badge"
 import { Textarea } from "@/components/ui/textarea"
 import api from "@/lib/api"
+import { useIsAdmin } from "@/lib/use-is-admin"
 import { cn } from "@/lib/utils"
 import { esportes } from "@/lib/esportes"
 import { esporteDoPost, forumService, type ForumCategory, type ForumPost, type Voto } from "@/services/forumService"
@@ -395,7 +396,20 @@ function Publicacao({ post, categoria, meuId, votos, onExcluir, onRemovida }: Pu
     )
 }
 
+// ponytail: fora do ar para o público até ganhar movimento; o admin continua vendo. Para abrir, exporte ForumConteudo direto.
 export default function ForumPage() {
+    const { isAdmin, carregando } = useIsAdmin()
+    if (carregando) return <Loader />
+    if (isAdmin) return <ForumConteudo />
+    return (
+        <main className="mx-auto w-full max-w-6xl px-4 pb-16 pt-4 sm:px-6">
+            <BackButton href="/" label="Início" className="-ml-2.5" />
+            <EmptyState icon={MessagesSquare} title="Comunidade em breve" className="mt-10" />
+        </main>
+    )
+}
+
+function ForumConteudo() {
     const { isSignedIn } = useUser()
     const [categorias, setCategorias] = useState<ForumCategory[] | null>(null)
     const [filtro, setFiltro] = useState(TODAS)

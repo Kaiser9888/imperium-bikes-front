@@ -73,26 +73,23 @@ export function AvisoCookies() {
                     role="dialog"
                     aria-labelledby="cookies-titulo"
                     aria-describedby="cookies-texto"
-                    className="fixed inset-x-3 bottom-[calc(5rem+env(safe-area-inset-bottom))] z-50 mx-auto max-w-lg rounded-2xl border border-border bg-surface p-4 shadow-lg md:bottom-6"
+                    className="fixed inset-x-3 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-50 mx-auto flex max-w-lg items-center gap-3 rounded-xl border border-border bg-surface px-3 py-2 shadow-lg md:bottom-6"
                 >
-                    <p id="cookies-titulo" className="type-label text-foreground">
+                    <p id="cookies-titulo" className="sr-only">
                         Cookies e privacidade
                     </p>
-                    <p id="cookies-texto" className="type-body-small mt-1 text-muted-foreground">
-                        Usamos só o necessário para você entrar na conta e pagar com segurança. Com sua permissão, também contamos visitas
-                        de forma anônima, sem cookies, para melhorar o app.{" "}
-                        <Link href="/privacidade#cookies" className="font-semibold text-primary underline underline-offset-2">
+                    <p id="cookies-texto" className="type-caption min-w-0 flex-1 text-muted-foreground">
+                        Estatísticas anônimas?{" "}
+                        <Link href="/privacidade#cookies" className="underline underline-offset-2 hover:text-foreground">
                             Saiba mais
                         </Link>
                     </p>
-                    <div className="mt-3 flex flex-wrap gap-2">
-                        <Button size="sm" onClick={() => salvar("aceito")}>
-                            Aceitar estatísticas
-                        </Button>
-                        <Button size="sm" variant="outline" onClick={() => salvar("recusado")}>
-                            Só o necessário
-                        </Button>
-                    </div>
+                    <Button size="sm" variant="ghost" onClick={() => salvar("recusado")}>
+                        Não
+                    </Button>
+                    <Button size="sm" onClick={() => salvar("aceito")}>
+                        Aceitar
+                    </Button>
                 </div>
             )}
         </>

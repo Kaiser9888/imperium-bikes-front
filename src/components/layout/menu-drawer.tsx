@@ -21,7 +21,6 @@ import {
     Store,
     Trophy,
     Bell,
-    Users,
     Package,
     User,
     Wallet,
@@ -80,7 +79,6 @@ const menuSections: MenuSection[] = [
         items: [
             { icon: Clapperboard, label: "Vídeos", href: "/videos" },
             { icon: CircleDollarSign, label: "Monetização", href: "/videos/monetizacao" },
-            { icon: Users, label: "Comunidade", href: "/forum" },
             { icon: LayoutGrid, label: "Categorias", href: "/modalidades" },
         ],
     },

@@ -1,15 +1,18 @@
 "use client"
 
+import Link from "next/link"
 import { useCallback, useEffect, useState } from "react"
-import { CheckCircle2, Loader2, type LucideIcon, Megaphone, Flag, LifeBuoy, Snowflake, ShieldAlert, Scale } from "lucide-react"
+import { CheckCircle2, Loader2, type LucideIcon, Megaphone, Flag, LifeBuoy, Snowflake, ShieldAlert, Scale, Tag } from "lucide-react"
 
 import api from "@/lib/api"
+import { formatarPreco } from "@/lib/format"
 import { cn } from "@/lib/utils"
 import { usuarioAdminService } from "@/services/adminService"
 import { mensagemDaApi } from "@/services/tournamentService"
 
-type Contagens = { campanhas: number; denuncias: number; chamados: number; contasCongeladas: number; bikesRoubadas: number; disputas: number }
+type Contagens = { campanhas: number; denuncias: number; chamados: number; contasCongeladas: number; bikesRoubadas: number; disputas: number; anunciosEmAnalise: number }
 type ContaCongelada = { userId: string; fullName: string | null; email: string | null; congeladaEm: string }
+type AnuncioEmAnalise = { productId: string; title: string; price: number; vendedor: string | null; contaCriadaEm: string | null; createdAt: string }
 
 /** Abas do painel que cada fila abre. */
 export type AbaPendencia = "disputas" | "anuncios" | "denuncias" | "suporte" | "bikes-roubadas"
@@ -17,6 +20,7 @@ export type AbaPendencia = "disputas" | "anuncios" | "denuncias" | "suporte" | "
 const FILAS: { chave: keyof Contagens; aba?: AbaPendencia; titulo: string; texto: string; icon: LucideIcon; urgente?: boolean }[] = [
     { chave: "disputas", aba: "disputas", titulo: "Disputas de pedido", texto: "Dinheiro retido esperando decisão", icon: Scale, urgente: true },
     { chave: "contasCongeladas", titulo: "Contas congeladas", texto: "Confirme quem é o dono antes de liberar", icon: Snowflake, urgente: true },
+    { chave: "anunciosEmAnalise", titulo: "Anúncios caros em análise", texto: "Conta nova ou sem vendas", icon: Tag },
     { chave: "bikesRoubadas", aba: "bikes-roubadas", titulo: "Alertas de bike roubada", texto: "Conferir o boletim de ocorrência", icon: ShieldAlert },
     { chave: "campanhas", aba: "anuncios", titulo: "Anúncios em vídeo", texto: "Campanhas pagas esperando aprovação", icon: Megaphone },
     { chave: "denuncias", aba: "denuncias", titulo: "Denúncias", texto: "Conteúdo denunciado para analisar", icon: Flag },
@@ -27,17 +31,20 @@ const FILAS: { chave: keyof Contagens; aba?: AbaPendencia; titulo: string; texto
 export function PendenciasAdmin({ onAbrir }: { onAbrir: (aba: AbaPendencia) => void }) {
     const [contagens, setContagens] = useState<Contagens | null>(null)
     const [congeladas, setCongeladas] = useState<ContaCongelada[]>([])
+    const [emAnalise, setEmAnalise] = useState<AnuncioEmAnalise[]>([])
     const [erro, setErro] = useState<string | null>(null)
 
     const carregar = useCallback(async () => {
         setErro(null)
         try {
-            const [c, contas] = await Promise.all([
+            const [c, contas, anuncios] = await Promise.all([
                 api.get<Contagens>("/api/admin/pendencias"),
                 api.get<ContaCongelada[]>("/api/admin/pendencias/contas-congeladas"),
+                api.get<AnuncioEmAnalise[]>("/api/admin/pendencias/anuncios-em-analise"),
             ])
             setContagens(c.data)
             setCongeladas(contas.data)
+            setEmAnalise(anuncios.data)
         } catch (cause) {
             setErro(mensagemDaApi(cause, "Não foi possível carregar as pendências."))
         }
@@ -55,6 +62,16 @@ export function PendenciasAdmin({ onAbrir }: { onAbrir: (aba: AbaPendencia) => v
             await carregar()
         } catch (cause) {
             setErro(mensagemDaApi(cause, "Não foi possível descongelar a conta."))
+        }
+    }
+
+    async function decidir(anuncio: AnuncioEmAnalise, aprovar: boolean) {
+        setErro(null)
+        try {
+            await api.post(`/api/admin/pendencias/anuncios-em-analise/${anuncio.productId}`, null, { params: { aprovar } })
+            await carregar()
+        } catch (cause) {
+            setErro(mensagemDaApi(cause, "Não foi possível decidir o anúncio."))
         }
     }
 
@@ -102,6 +119,35 @@ export function PendenciasAdmin({ onAbrir }: { onAbrir: (aba: AbaPendencia) => v
                     )
                 })}
             </ul>
+
+            {emAnalise.length > 0 && (
+                <section aria-labelledby="em-analise-title" className="mt-8">
+                    <h2 id="em-analise-title" className="type-label uppercase tracking-wider text-muted-foreground">
+                        Anúncios caros em análise
+                    </h2>
+                    <ul className="mt-3 divide-y divide-border border-y border-border">
+                        {emAnalise.map((a) => (
+                            <li key={a.productId} className="flex flex-wrap items-center gap-x-4 gap-y-2 py-3">
+                                <div className="min-w-0 flex-1">
+                                    <Link href={`/produtos/${a.productId}`} className="block truncate text-sm font-semibold hover:underline">
+                                        {a.title} · {formatarPreco(Number(a.price))}
+                                    </Link>
+                                    <p className="truncate text-xs text-muted-foreground">
+                                        {a.vendedor || "Sem nome"}
+                                        {a.contaCriadaEm && ` · conta de ${new Date(a.contaCriadaEm).toLocaleDateString("pt-BR")}`}
+                                    </p>
+                                </div>
+                                <button type="button" onClick={() => decidir(a, false)} className="line-btn line-btn--sm line-btn--danger">
+                                    Recusar
+                                </button>
+                                <button type="button" onClick={() => decidir(a, true)} className="line-btn line-btn--sm">
+                                    Aprovar
+                                </button>
+                            </li>
+                        ))}
+                    </ul>
+                </section>
+            )}
 
             {congeladas.length > 0 && (
                 <section aria-labelledby="congeladas-title" className="mt-8">
