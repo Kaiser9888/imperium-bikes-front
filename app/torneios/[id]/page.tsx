@@ -213,7 +213,7 @@ export default function TorneioDetalhesPage() {
 
     useEffect(() => {
         if (!isSignedIn) return
-        api.get("/api/users/me").then(({ data }) => setMeuId(data.id)).catch(() => {})
+        api.get("/api/users/me").then(({ data }) => setMeuId(String(data.userId ?? data.id))).catch(() => {})
     }, [isSignedIn])
 
     const carregar = useCallback(async () => {

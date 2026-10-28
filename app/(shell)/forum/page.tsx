@@ -356,7 +356,7 @@ export default function ForumPage() {
 
     useEffect(() => {
         if (!isSignedIn) return
-        api.get("/api/users/me").then(({ data }) => setMeuId(data.id)).catch(() => {})
+        api.get("/api/users/me").then(({ data }) => setMeuId(String(data.userId ?? data.id))).catch(() => {})
         forumService.meusVotos().then(setVotos).catch(() => {})
     }, [isSignedIn])
 
