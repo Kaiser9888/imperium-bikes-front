@@ -204,8 +204,7 @@ export default function PedidosPage() {
                         )}
                         {pedido.status === "PAGO" && pedido.retiradaEmMaos && !pedido.comprador && (
                             <p className="type-body-small mt-3 text-muted-foreground">
-                                Entregue o produto e peça ao comprador o código de retirada. O pagamento é liberado quando você digitar o código.
-                                Não aceite pagamento por fora.
+                                Na entrega, peça o código ao comprador. Não aceite pagamento por fora.
                             </p>
                         )}
                         {pedido.status === "PAGO" && !pedido.retiradaEmMaos && (
@@ -348,7 +347,7 @@ export default function PedidosPage() {
                     <DialogHeader>
                         <DialogTitle>Código de retirada</DialogTitle>
                         <DialogDescription>
-                            Digite o código de 6 números que o comprador te passou depois de conferir o produto. O pagamento é liberado em seguida.
+                            O comprador te passa depois de conferir o produto.
                         </DialogDescription>
                     </DialogHeader>
                     <form

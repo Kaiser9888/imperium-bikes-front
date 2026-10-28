@@ -255,8 +255,7 @@ export default function InformacoesPage() {
             />
 
             <small>
-              Anúncio com número de série ganha o selo &quot;Nº de série informado&quot; e passa mais confiança. Só os 4 últimos dígitos
-              aparecem; o número é conferido no cadastro de bikes roubadas.
+              Opcional. Ganha selo de confiança; só os 4 últimos dígitos aparecem.
             </small>
           </label>
           )}
@@ -312,9 +311,6 @@ export default function InformacoesPage() {
               placeholder="Ex.: 1"
             />
 
-            <small>
-              Informe quantas unidades deste produto estão disponíveis.
-            </small>
           </label>
           )}
         </section>

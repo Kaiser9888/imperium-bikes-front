@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useCallback, useEffect, useState } from "react"
-import { CheckCircle2, Loader2, type LucideIcon, Megaphone, Flag, LifeBuoy, Snowflake, ShieldAlert, Scale, Tag } from "lucide-react"
+import { CheckCircle2, Loader2, type LucideIcon, Megaphone, Flag, LifeBuoy, Snowflake, ShieldAlert, Scale, Tag, Timer } from "lucide-react"
 
 import api from "@/lib/api"
 import { formatarPreco } from "@/lib/format"
@@ -10,9 +10,10 @@ import { cn } from "@/lib/utils"
 import { usuarioAdminService } from "@/services/adminService"
 import { mensagemDaApi } from "@/services/tournamentService"
 
-type Contagens = { campanhas: number; denuncias: number; chamados: number; contasCongeladas: number; bikesRoubadas: number; disputas: number; anunciosEmAnalise: number }
+type Contagens = { campanhas: number; denuncias: number; chamados: number; contasCongeladas: number; bikesRoubadas: number; disputas: number; anunciosEmAnalise: number; retiradasParadas: number }
 type ContaCongelada = { userId: string; fullName: string | null; email: string | null; congeladaEm: string }
 type AnuncioEmAnalise = { productId: string; title: string; price: number; vendedor: string | null; contaCriadaEm: string | null; createdAt: string }
+type RetiradaParada = { orderId: string; productTitle: string; valor: number; comprador: string | null; vendedor: string | null; createdAt: string }
 
 /** Abas do painel que cada fila abre. */
 export type AbaPendencia = "disputas" | "anuncios" | "denuncias" | "suporte" | "bikes-roubadas"
@@ -21,6 +22,7 @@ const FILAS: { chave: keyof Contagens; aba?: AbaPendencia; titulo: string; texto
     { chave: "disputas", aba: "disputas", titulo: "Disputas de pedido", texto: "Dinheiro retido esperando decisão", icon: Scale, urgente: true },
     { chave: "contasCongeladas", titulo: "Contas congeladas", texto: "Confirme quem é o dono antes de liberar", icon: Snowflake, urgente: true },
     { chave: "anunciosEmAnalise", titulo: "Anúncios caros em análise", texto: "Conta nova ou sem vendas", icon: Tag },
+    { chave: "retiradasParadas", titulo: "Retiradas paradas", texto: "Pagas há mais de 30 dias sem o código", icon: Timer, urgente: true },
     { chave: "bikesRoubadas", aba: "bikes-roubadas", titulo: "Alertas de bike roubada", texto: "Conferir o boletim de ocorrência", icon: ShieldAlert },
     { chave: "campanhas", aba: "anuncios", titulo: "Anúncios em vídeo", texto: "Campanhas pagas esperando aprovação", icon: Megaphone },
     { chave: "denuncias", aba: "denuncias", titulo: "Denúncias", texto: "Conteúdo denunciado para analisar", icon: Flag },
@@ -32,19 +34,22 @@ export function PendenciasAdmin({ onAbrir }: { onAbrir: (aba: AbaPendencia) => v
     const [contagens, setContagens] = useState<Contagens | null>(null)
     const [congeladas, setCongeladas] = useState<ContaCongelada[]>([])
     const [emAnalise, setEmAnalise] = useState<AnuncioEmAnalise[]>([])
+    const [retiradas, setRetiradas] = useState<RetiradaParada[]>([])
     const [erro, setErro] = useState<string | null>(null)
 
     const carregar = useCallback(async () => {
         setErro(null)
         try {
-            const [c, contas, anuncios] = await Promise.all([
+            const [c, contas, anuncios, paradas] = await Promise.all([
                 api.get<Contagens>("/api/admin/pendencias"),
                 api.get<ContaCongelada[]>("/api/admin/pendencias/contas-congeladas"),
                 api.get<AnuncioEmAnalise[]>("/api/admin/pendencias/anuncios-em-analise"),
+                api.get<RetiradaParada[]>("/api/admin/pendencias/retiradas-paradas"),
             ])
             setContagens(c.data)
             setCongeladas(contas.data)
             setEmAnalise(anuncios.data)
+            setRetiradas(paradas.data)
         } catch (cause) {
             setErro(mensagemDaApi(cause, "Não foi possível carregar as pendências."))
         }
@@ -119,6 +124,24 @@ export function PendenciasAdmin({ onAbrir }: { onAbrir: (aba: AbaPendencia) => v
                     )
                 })}
             </ul>
+
+            {retiradas.length > 0 && (
+                <section aria-labelledby="retiradas-title" className="mt-8">
+                    <h2 id="retiradas-title" className="type-label uppercase tracking-wider text-muted-foreground">
+                        Retiradas paradas
+                    </h2>
+                    <ul className="mt-3 divide-y divide-border border-y border-border">
+                        {retiradas.map((r) => (
+                            <li key={r.orderId} className="py-3">
+                                <p className="truncate text-sm font-semibold">{r.productTitle} · {formatarPreco(Number(r.valor))}</p>
+                                <p className="truncate text-xs text-muted-foreground">
+                                    {r.comprador} → {r.vendedor} · pago em {new Date(r.createdAt).toLocaleDateString("pt-BR")}
+                                </p>
+                            </li>
+                        ))}
+                    </ul>
+                </section>
+            )}
 
             {emAnalise.length > 0 && (
                 <section aria-labelledby="em-analise-title" className="mt-8">

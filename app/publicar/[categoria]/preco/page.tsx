@@ -285,8 +285,7 @@ export default function PrecoPage() {
               </div>
 
               <small>
-                A taxa de pagamento cobre a operadora do cartão e é descontada em cada venda. Se você escolher um destaque
-                na próxima etapa, a comissão dele também é descontada.
+                Descontado só quando vender.
               </small>
             </>
           )}

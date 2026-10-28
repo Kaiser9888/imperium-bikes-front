@@ -479,8 +479,7 @@ return (
 
             {pesoNumerico > PESO_CORREIOS_KG && pesoNumerico <= LIMITE_PESO_KG && (
               <small>
-                Acima de 30 kg os Correios não levam e poucas transportadoras atendem. Se ninguém atender, o comprador
-                poderá combinar a entrega com você.
+                Acima de 30 kg: poucas transportadoras levam.
               </small>
             )}
           </label>
@@ -571,10 +570,6 @@ return (
         </div>
 
         <small>
-          O frete é calculado pelo Melhor Envio com este CEP, o peso e as medidas da embalagem.
-        </small>
-
-        <small>
           Vai enviar uma bike?{' '}
           <Link href="/ajuda/envio-de-bike" target="_blank" className="font-semibold text-primary underline underline-offset-2">
             Veja como embalar e medir a caixa
@@ -662,8 +657,7 @@ return (
                 placeholder="Ex.: 40,00"
               />
               <small>
-                Se o frete passar desse valor, o comprador paga só a diferença. O que você cobrir é descontado do valor
-                da venda, então o frete nunca custa mais do que você aceitou.
+                Passou disso, o comprador paga a diferença.
               </small>
             </label>
           </div>

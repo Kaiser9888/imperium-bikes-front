@@ -646,8 +646,7 @@ return (
         </div>
 
         <small>
-          Valores descontados só quando o produto é vendido. O frete, se você aceitou cobrir parte dele, também sai
-          desse valor.
+          Descontado só quando vender.
         </small>
       </section>
     </div>

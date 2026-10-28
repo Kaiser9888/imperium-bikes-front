@@ -245,7 +245,7 @@ function CheckoutContent() {
                   <span className="min-w-0 flex-1">
                     <span className="type-label block">Retirar ou combinar com o vendedor</span>
                     <span className="type-caption text-muted-foreground">
-                      Sem frete pelo site. Você paga aqui e recebe um código: entregue ao vendedor só depois de conferir o produto. Não leve dinheiro ao encontro.
+                      Passe o código ao vendedor só depois de conferir. Não leve dinheiro.
                     </span>
                   </span>
                 </button>
