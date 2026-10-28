@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useUser } from "@clerk/nextjs"
 import {
+    BicepsFlexed,
     Bike,
     CalendarDays,
     CircleCheck,
@@ -44,10 +45,15 @@ import { StatusBadge } from "@/components/ui/status-badge"
 import { Textarea } from "@/components/ui/textarea"
 import api from "@/lib/api"
 import { cn } from "@/lib/utils"
-import { forumService, type ForumCategory, type ForumPost, type Voto } from "@/services/forumService"
+import { esportes } from "@/lib/esportes"
+import { esporteDoPost, forumService, type ForumCategory, type ForumPost, type Voto } from "@/services/forumService"
 import { mensagemDaApi } from "@/services/tournamentService"
 
 const TODAS = ""
+
+/** Ciclismo primeiro (a casa), depois os outros esportes da plataforma. */
+const ESPORTES_FORUM = [{ slug: "ciclismo", nome: "Ciclismo" }, ...esportes.map(({ slug, nome }) => ({ slug, nome }))]
+const NOME_ESPORTE = new Map(ESPORTES_FORUM.map((e) => [e.slug, e.nome]))
 const ENTRAR = "/sign-in?redirect_url=%2Fforum"
 
 const ICONES: Record<string, LucideIcon> = {
@@ -65,13 +71,13 @@ function IconeCategoria({ slug, className }: { slug?: string; className?: string
     return <Icone className={className} aria-hidden="true" />
 }
 
-/** Categorias de oficina: quem pergunta marca a resposta que resolveu. */
+/** Categorias de ajuda (dúvidas, manutenção, equipamento): quem pergunta marca a resposta que resolveu. */
 const OFICINA = new Set(["duvidas", "mecanica", "equipamentos"])
 
 type Ordem = "recentes" | "alta" | "sem-resposta"
 const ORDENS: { value: Ordem; label: string; icon: LucideIcon }[] = [
     { value: "recentes", label: "Recentes", icon: Clock },
-    { value: "alta", label: "Mais pedaladas", icon: Flame },
+    { value: "alta", label: "Em alta", icon: Flame },
     { value: "sem-resposta", label: "Esperando ajuda", icon: CircleHelp },
 ]
 
@@ -98,7 +104,7 @@ function Iniciais({ nome, className }: { nome: string; className?: string }) {
 const botaoAcao =
     "type-label inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-full px-2.5 text-muted-foreground transition-colors hover:bg-surface-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
 
-type PedalProps = {
+type ForcaProps = {
     post: ForumPost
     meuId: string | null
     /** Voto que o usuário já tinha dado antes desta visita. */
@@ -109,43 +115,43 @@ type PedalProps = {
 }
 
 /**
- * "Pedal": o reconhecimento da comunidade. Só positivo, sem voto negativo (quem discorda
+ * "Força" (de "dar uma força"): o reconhecimento da comunidade. Só positivo, sem voto negativo (quem discorda
  * responde). Serve para publicação e para resposta; tocar de novo retira.
  */
-function Pedal({ post, meuId, votoSalvo, onErro, vertical = false }: PedalProps) {
+function Forca({ post, meuId, votoSalvo, onErro, vertical = false }: ForcaProps) {
     const [total, setTotal] = useState(post.karmaTotal ?? 0)
     // undefined: ainda não tocou nesta visita, então vale o que está salvo no servidor
     const [agora, setAgora] = useState<boolean | undefined>(undefined)
-    const pedalou = agora === undefined ? votoSalvo === "UP" : agora
+    const deu = agora === undefined ? votoSalvo === "UP" : agora
     const proprio = meuId === post.userId
 
-    async function pedalar() {
+    async function darForca() {
         if (!meuId) return window.location.assign(ENTRAR)
         onErro(null)
         try {
-            const resultado = await forumService.pedalar(post.id)
+            const resultado = await forumService.darForca(post.id)
             setTotal(resultado.score)
             setAgora(resultado.userVote === "UP")
         } catch (cause) {
-            onErro(mensagemDaApi(cause, "Não foi possível dar o pedal."))
+            onErro(mensagemDaApi(cause, "Não foi possível dar a força."))
         }
     }
 
     return (
         <button
             type="button"
-            onClick={pedalar}
+            onClick={darForca}
             disabled={proprio}
-            aria-pressed={pedalou}
-            aria-label={`${pedalou ? "Tirar o pedal" : "Dar um pedal"}: ${total} ${total === 1 ? "pedal" : "pedais"}`}
-            title={proprio ? "Você não pode dar pedal no que escreveu" : "Ajudou ou curtiu? Dê um pedal"}
+            aria-pressed={deu}
+            aria-label={`${deu ? "Tirar a força" : "Dar uma força"}: ${total} ${total === 1 ? "força" : "forças"}`}
+            title={proprio ? "Você não pode dar força no que escreveu" : "Ajudou ou curtiu? Dê uma força"}
             className={cn(
                 "group inline-flex cursor-pointer items-center justify-center rounded-full border transition-colors disabled:cursor-default disabled:opacity-60",
                 vertical ? "w-12 flex-col gap-0.5 py-2" : "h-9 gap-1.5 px-3",
-                pedalou ? "border-primary/40 bg-primary/10 text-primary" : "border-border text-muted-foreground hover:border-primary/40 hover:text-foreground",
+                deu ? "border-primary/40 bg-primary/10 text-primary" : "border-border text-muted-foreground hover:border-primary/40 hover:text-foreground",
             )}
         >
-            <Bike className={cn("size-5 transition-transform", !proprio && "group-hover:-rotate-6", pedalou && "stroke-[2.5]")} aria-hidden="true" />
+            <BicepsFlexed className={cn("size-5 transition-transform", !proprio && "group-hover:-rotate-6", deu && "stroke-[2.5]")} aria-hidden="true" />
             <span className="type-label tabular-nums">{total}</span>
         </button>
     )
@@ -169,7 +175,7 @@ function Publicacao({ post, categoria, meuId, votos, onExcluir, onRemovida }: Pu
     const minha = meuId === post.userId
 
     const ehDuvida = categoria?.slug === "duvidas"
-    // Na oficina (dúvidas, mecânica, equipamento) quem perguntou marca a resposta que resolveu
+    // Em dúvidas, manutenção e equipamento quem perguntou marca a resposta que resolveu
     const oficina = OFICINA.has(categoria?.slug ?? "")
     const [resolvida, setResolvida] = useState(Boolean(post.isSolution))
 
@@ -235,7 +241,7 @@ function Publicacao({ post, categoria, meuId, votos, onExcluir, onRemovida }: Pu
     return (
         <article className="flex gap-3 rounded-2xl border border-border bg-surface p-4 transition-colors hover:border-primary/30 sm:gap-4 sm:p-5">
             <div className="-ml-1 hidden sm:block">
-                <Pedal post={post} meuId={meuId} votoSalvo={votos[post.id] ?? null} onErro={setErro} vertical />
+                <Forca post={post} meuId={meuId} votoSalvo={votos[post.id] ?? null} onErro={setErro} vertical />
             </div>
 
             <div className="min-w-0 flex-1">
@@ -243,6 +249,9 @@ function Publicacao({ post, categoria, meuId, votos, onExcluir, onRemovida }: Pu
                     <span className="type-caption inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 font-semibold text-primary">
                         <IconeCategoria slug={categoria?.slug} className="size-3.5" />
                         {post.categoryName}
+                    </span>
+                    <span className="type-caption rounded-full border border-border px-2.5 py-1 font-medium text-muted-foreground">
+                        {NOME_ESPORTE.get(esporteDoPost(post)) ?? "Ciclismo"}
                     </span>
                     {oficina &&
                         (resolvida ? (
@@ -275,7 +284,7 @@ function Publicacao({ post, categoria, meuId, votos, onExcluir, onRemovida }: Pu
 
                 <div className="mt-4 flex flex-wrap items-center gap-1 border-t border-border pt-3">
                     <div className="sm:hidden">
-                        <Pedal post={post} meuId={meuId} votoSalvo={votos[post.id] ?? null} onErro={setErro} />
+                        <Forca post={post} meuId={meuId} votoSalvo={votos[post.id] ?? null} onErro={setErro} />
                     </div>
                     <button type="button" onClick={alternarRespostas} aria-expanded={mostrarRespostas} className={cn(botaoAcao, "-ml-2.5 max-sm:ml-1")}>
                         <MessageSquare className="size-4" aria-hidden="true" />
@@ -337,7 +346,7 @@ function Publicacao({ post, categoria, meuId, votos, onExcluir, onRemovida }: Pu
                                 </div>
                                 <p className="type-body-small mt-1.5 whitespace-pre-line break-words text-foreground">{resposta.content}</p>
                                 <div className="-ml-1.5 mt-1 flex items-center gap-1">
-                                    <Pedal post={resposta} meuId={meuId} votoSalvo={votos[resposta.id] ?? null} onErro={setErro} />
+                                    <Forca post={resposta} meuId={meuId} votoSalvo={votos[resposta.id] ?? null} onErro={setErro} />
                                     {meuId && (
                                         <button type="button" onClick={() => responderA(resposta)} className={botaoAcao}>
                                             Responder
@@ -390,12 +399,14 @@ export default function ForumPage() {
     const { isSignedIn } = useUser()
     const [categorias, setCategorias] = useState<ForumCategory[] | null>(null)
     const [filtro, setFiltro] = useState(TODAS)
+    const [esporteFiltro, setEsporteFiltro] = useState(TODAS)
     const [ordem, setOrdem] = useState<Ordem>("recentes")
     const [posts, setPosts] = useState<ForumPost[] | null>(null)
     const [falhou, setFalhou] = useState(false)
 
     const [escrevendo, setEscrevendo] = useState(false)
     const [categoriaId, setCategoriaId] = useState("")
+    const [esporte, setEsporte] = useState("ciclismo")
     const [titulo, setTitulo] = useState("")
     const [conteudo, setConteudo] = useState("")
     const [enviando, setEnviando] = useState(false)
@@ -462,11 +473,12 @@ export default function ForumPage() {
     }, [])
 
     const visiveis = useMemo(() => {
-        const lista = [...(posts ?? [])]
+        // ponytail: filtra o esporte nas 30 publicações carregadas; com volume, filtrar no backend pela etiqueta
+        const lista = (posts ?? []).filter((p) => !esporteFiltro || esporteDoPost(p) === esporteFiltro)
         if (ordem === "alta") return lista.sort((a, b) => (b.karmaTotal ?? 0) + (b.replyCount ?? 0) - ((a.karmaTotal ?? 0) + (a.replyCount ?? 0)))
         if (ordem === "sem-resposta") return lista.filter((p) => (p.replyCount ?? 0) === 0)
         return lista
-    }, [posts, ordem])
+    }, [posts, ordem, esporteFiltro])
 
     function abrirFormulario(categoriaInicial?: string) {
         if (!isSignedIn) {
@@ -475,6 +487,8 @@ export default function ForumPage() {
         }
         setErro(null)
         setCategoriaId(categoriaInicial || filtro || categorias?.[0]?.id || "")
+        // Quem está vendo um esporte provavelmente vai escrever sobre ele
+        setEsporte(esporteFiltro || "ciclismo")
         setEscrevendo(true)
     }
 
@@ -483,7 +497,7 @@ export default function ForumPage() {
         setEnviando(true)
         setErro(null)
         try {
-            await forumService.publicar({ categoryId: categoriaId, title: titulo.trim(), content: conteudo.trim() })
+            await forumService.publicar({ categoryId: categoriaId, title: titulo.trim(), content: conteudo.trim(), esporte })
             setTitulo("")
             setConteudo("")
             setEscrevendo(false)
@@ -503,7 +517,7 @@ export default function ForumPage() {
 
             {/* ===== Topo ===== */}
             <section aria-labelledby="comunidade-title" className="relative mt-3 overflow-hidden rounded-2xl border border-border bg-[#0d0d0d] text-white">
-                {/* Foto de trilha ao fundo: a comunidade é de quem pedala */}
+                {/* Foto de trilha ao fundo: a comunidade é de quem treina, de qualquer esporte */}
                 {/* eslint-disable-next-line @next/next/no-img-element -- imagem local decorativa */}
                 <img src="/images/mountain-poster.png" alt="" aria-hidden="true" className="absolute inset-0 size-full object-cover opacity-45" />
                 <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/60 to-black/10" />
@@ -515,18 +529,18 @@ export default function ForumPage() {
                                 Comunidade Imperium
                             </p>
                             <h1 id="comunidade-title" className="type-h1 mt-2 text-white">
-                                Oficina, trilha e resenha
+                                Treino, oficina e resenha
                             </h1>
                             <p className="type-body mt-2 text-white/75">
-                                Leve a dúvida de mecânica para a oficina, conte do pedal de hoje e fique por dentro do mundo da bike. Ninguém pedala
+                                Tire dúvidas de equipamento e manutenção, conte do treino de hoje e acompanhe o seu esporte. Bike, corrida, surf, escalada e o que mais você pratica. Ninguém treina
                                 sozinho.
                             </p>
                         </div>
                         <div className="flex flex-wrap gap-2">
                             {duvidas && (
                                 <Button onClick={() => abrirFormulario(duvidas.id)}>
-                                    <Wrench aria-hidden="true" />
-                                    Levar para a oficina
+                                    <CircleHelp aria-hidden="true" />
+                                    Fazer uma pergunta
                                 </Button>
                             )}
                             <Button
@@ -536,7 +550,7 @@ export default function ForumPage() {
                                 className="border-white/40 bg-white/5 text-white hover:bg-white/15 hover:text-white"
                             >
                                 <PenLine aria-hidden="true" />
-                                Contar do pedal
+                                Contar do treino
                             </Button>
                         </div>
                     </div>
@@ -572,6 +586,26 @@ export default function ForumPage() {
                               })}
                     </div>
 
+                    {/* Esporte: a comunidade é de todos, não só de bike */}
+                    <div className="mt-4 flex items-center gap-2">
+                        <Label htmlFor="filtro-esporte" className="type-caption shrink-0 text-muted-foreground">
+                            Esporte
+                        </Label>
+                        <select
+                            id="filtro-esporte"
+                            value={esporteFiltro}
+                            onChange={(e) => setEsporteFiltro(e.target.value)}
+                            className="h-9 min-w-0 rounded-full border border-border bg-surface px-3 text-sm text-foreground"
+                        >
+                            <option value={TODAS}>Todos os esportes</option>
+                            {ESPORTES_FORUM.map((e) => (
+                                <option key={e.slug} value={e.slug}>
+                                    {e.nome}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
                     {/* Ordenação */}
                     <div role="group" aria-label="Ordenar" className="mt-4 flex gap-5 border-b border-border">
                         {ORDENS.map(({ value, label, icon: Icone }) => (
@@ -597,8 +631,8 @@ export default function ForumPage() {
                         {posts && visiveis.length === 0 && (
                             <EmptyState
                                 icon={ordem === "sem-resposta" ? CircleHelp : MessagesSquare}
-                                title={ordem === "sem-resposta" ? "Ninguém parado no acostamento" : "Pista livre por aqui"}
-                                description={ordem === "sem-resposta" ? "Todas as perguntas já tiveram ajuda." : "Puxe o pelotão: leve uma dúvida para a oficina ou conte do seu pedal."}
+                                title={ordem === "sem-resposta" ? "Ninguém esperando ajuda" : "Nada por aqui ainda"}
+                                description={ordem === "sem-resposta" ? "Todas as perguntas já tiveram ajuda." : "Comece a resenha: faça uma pergunta ou conte do seu treino."}
                                 className="rounded-2xl border border-dashed border-border"
                             />
                         )}
@@ -620,17 +654,17 @@ export default function ForumPage() {
                 <aside className="flex flex-col gap-4 lg:sticky lg:top-24">
                     <section aria-labelledby="regras-title" className="rounded-2xl border border-border bg-surface p-5">
                         <h2 id="regras-title" className="type-label text-foreground">
-                            Regras do pedal
+                            Regras da casa
                         </h2>
                         <ul className="type-body-small mt-3 flex flex-col gap-2.5 text-muted-foreground">
-                            <li>No título, diga o problema e o modelo da bike ou da peça.</li>
+                            <li>No título, diga o problema e o esporte, o modelo ou o equipamento.</li>
                             <li className="flex gap-2">
-                                <Bike className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
-                                <span>Ajudou ou curtiu? Dê um pedal. Aqui não tem voto negativo: discordou, responda explicando.</span>
+                                <BicepsFlexed className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
+                                <span>Ajudou ou curtiu? Dê uma força. Aqui não tem voto negativo: discordou, responda explicando.</span>
                             </li>
                             <li className="flex gap-2">
                                 <CircleCheck className="mt-0.5 size-4 shrink-0 text-success" aria-hidden="true" />
-                                <span>Deu certo? Marque a resposta que resolveu: ela fica no topo para o próximo ciclista.</span>
+                                <span>Deu certo? Marque a resposta que resolveu: ela fica no topo para quem tiver a mesma dúvida.</span>
                             </li>
                             <li>Respeito sempre. Golpes, ofensas e pedido de pagamento por fora saem.</li>
                         </ul>
@@ -682,7 +716,7 @@ export default function ForumPage() {
             <Dialog open={escrevendo} onOpenChange={(open) => !enviando && setEscrevendo(open)}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>{perguntando ? "Levar para a oficina" : "Contar do pedal"}</DialogTitle>
+                        <DialogTitle>{perguntando ? "Fazer uma pergunta" : "Contar do treino"}</DialogTitle>
                         <DialogDescription>
                             {perguntando ? "Explique o problema com detalhes: quanto mais claro, melhores as respostas." : "Aparece para todos assim que você publicar."}
                         </DialogDescription>
@@ -702,6 +736,21 @@ export default function ForumPage() {
                                 </RadioCard>
                             ))}
                         </fieldset>
+                        <div className="flex flex-col gap-2">
+                            <Label htmlFor="post-esporte">Esporte</Label>
+                            <select
+                                id="post-esporte"
+                                value={esporte}
+                                onChange={(e) => setEsporte(e.target.value)}
+                                className="h-11 rounded-lg border border-input bg-surface px-3 text-base text-foreground md:text-sm"
+                            >
+                                {ESPORTES_FORUM.map((e) => (
+                                    <option key={e.slug} value={e.slug}>
+                                        {e.nome}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
                         <div className="flex flex-col gap-2">
                             <Label htmlFor="post-titulo">{perguntando ? "Sua pergunta" : "Título"}</Label>
                             <Input

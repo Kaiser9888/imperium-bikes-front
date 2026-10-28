@@ -17,13 +17,23 @@ export interface ForumPost {
     content: string
     createdAt: string
     replyCount: number
-    /** Quantidade de "Pedais" (só existe voto positivo). */
+    /** Quantidade de "Forças" (só existe voto positivo). */
     karmaTotal: number
     /** Na resposta: é a que resolveu. Na pergunta: já foi resolvida. */
     isSolution?: boolean
+    /** Etiquetas; o esporte vai como "esporte:<slug>" (ver esporteDoPost). */
+    tags?: string[]
 }
 
-/** Só existe o "Pedal" (positivo); "DOWN" fica no tipo por votos antigos. */
+const PREFIXO_ESPORTE = "esporte:"
+
+/** Esporte da publicação; posts antigos (sem etiqueta) são de ciclismo. */
+export function esporteDoPost(post: ForumPost): string {
+    const tag = post.tags?.find((t) => t.startsWith(PREFIXO_ESPORTE))
+    return tag ? tag.slice(PREFIXO_ESPORTE.length) : "ciclismo"
+}
+
+/** Só existe a "Força" (positivo); "DOWN" fica no tipo por votos antigos. */
 export type Voto = "UP" | "DOWN"
 
 export const forumService = {
@@ -37,8 +47,8 @@ export const forumService = {
         return (await api.get(path, { params: { size: 30 } })).data.content
     },
 
-    async publicar(post: { categoryId: string; title: string; content: string }): Promise<ForumPost> {
-        return (await api.post("/api/forum/posts", post)).data
+    async publicar({ esporte, ...post }: { categoryId: string; title: string; content: string; esporte: string }): Promise<ForumPost> {
+        return (await api.post("/api/forum/posts", { ...post, tags: [PREFIXO_ESPORTE + esporte] })).data
     },
 
     async respostas(postId: string): Promise<ForumPost[]> {
@@ -49,8 +59,8 @@ export const forumService = {
         return (await api.post(`/api/forum/posts/${post.id}/reply`, { categoryId: post.categoryId, content })).data
     },
 
-    /** Dá ou tira o Pedal (tocar de novo retira). Devolve o total e se o usuário pedalou. */
-    async pedalar(postId: string): Promise<{ score: number; userVote: Voto | null }> {
+    /** Dá ou tira a Força (tocar de novo retira). Devolve o total e se o usuário deu. */
+    async darForca(postId: string): Promise<{ score: number; userVote: Voto | null }> {
         return (await api.post(`/api/forum/posts/${postId}/karma/up`)).data
     },
 
