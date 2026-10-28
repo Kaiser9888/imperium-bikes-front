@@ -4,7 +4,7 @@
 import { Button } from "@/components/ui/button"
 
 import { useUser } from "@clerk/nextjs"
-import { Loader2, Send } from "lucide-react"
+import { Loader2, Send, ShieldAlert } from "lucide-react"
 import Link from "next/link"
 import { Logo } from "@/components/layout/logo"
 import { useParams } from "next/navigation"
@@ -12,6 +12,7 @@ import { useEffect, useRef, useState } from "react"
 import type { Channel } from "stream-chat"
 import { useStreamClient } from "@/lib/stream"
 import { atualizarContadores } from "@/hooks/useContadores"
+import { AVISO_PAGAMENTO_FORA, pareceNegociacaoFora } from "@/lib/seguranca"
 
 import { BackButton } from "@/components/ui/back-button"
 
@@ -130,7 +131,11 @@ export default function ConversaPage() {
               </div>
           </header>
 
-          <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-4 pb-24">
+          <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-4 pb-32">
+              <p className="mb-2 flex items-start gap-2 rounded-lg bg-surface-muted px-3 py-2 text-xs text-muted-foreground">
+                  <ShieldAlert className="mt-0.5 size-3.5 shrink-0 text-primary" aria-hidden="true" />
+                  Pague só pelo botão Comprar do anúncio. Na retirada em mãos, entregue o código só depois de conferir o produto.
+              </p>
               {visiveis.length === 0 && (
                 <p className="py-10 text-center text-sm text-muted-foreground">Nenhuma mensagem ainda. Envie a primeira!</p>
               )}
@@ -176,6 +181,12 @@ export default function ConversaPage() {
                                   {hora(m.created_at)}
                               </p>
                             )}
+                            {!apagada && !minha && pareceNegociacaoFora(m.text) && (
+                              <p role="note" className="mt-2 flex items-start gap-1.5 border-t border-border pt-2 text-xs font-medium text-warning">
+                                  <ShieldAlert className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
+                                  {AVISO_PAGAMENTO_FORA}
+                              </p>
+                            )}
                         </div>
                     </div>
                   )
@@ -184,6 +195,12 @@ export default function ConversaPage() {
           </main>
 
           <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-border bg-background px-4 py-3">
+              {pareceNegociacaoFora(texto) && (
+                <p role="status" className="mx-auto mb-2 flex max-w-2xl items-start gap-1.5 text-xs font-medium text-warning">
+                    <ShieldAlert className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
+                    {AVISO_PAGAMENTO_FORA}
+                </p>
+              )}
               <div className="mx-auto flex max-w-2xl items-center gap-2">
                   <input
                     type="text"

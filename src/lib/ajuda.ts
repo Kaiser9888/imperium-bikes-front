@@ -36,7 +36,7 @@ export const topicos: Topico[] = [
         perguntas: [
             {
                 pergunta: "Como sei que meu dinheiro está protegido?",
-                resposta: "O pagamento é feito pelo Stripe e fica retido até você confirmar que recebeu, ou até acabar o prazo de disputa (7 dias mais o prazo do frete). Se der problema nesse período, abra uma disputa no pedido e o valor não vai para o vendedor.",
+                resposta: "O pagamento é feito pelo Stripe e fica retido até você confirmar que recebeu, ou até acabar o prazo de disputa (7 dias mais o prazo do frete). Na retirada em mãos, ele só é liberado com o seu código de retirada. Se der problema, abra uma disputa no pedido e o valor não vai para o vendedor.",
             },
             {
                 pergunta: "Quais formas de pagamento posso usar?",
@@ -58,7 +58,12 @@ export const topicos: Topico[] = [
             },
             {
                 pergunta: "Posso pagar por fora do app?",
-                resposta: "Não recomendamos e é contra as regras: fora do app não há como proteger a compra nem devolver o dinheiro.",
+                resposta: "Não. O pagamento é sempre pelo Imperium, até na retirada em mãos. Pix, depósito, dinheiro ou link fora do app não têm retenção, código de retirada, disputa nem reembolso: quem paga por fora assume o risco. Se o vendedor pedir pagamento por fora, denuncie.",
+            },
+            {
+                pergunta: "Como funciona a retirada em mãos?",
+                resposta: "Você paga pelo app e recebe um código de 6 números em Pedidos. No encontro, confira o produto e só então passe o código ao vendedor: é ele que libera o pagamento. Sem o código, o dinheiro não sai, e se algo der errado você abre uma disputa. Combine em local público e movimentado e não leve dinheiro.",
+                link: { href: "/pedidos", label: "Abrir Pedidos" },
             },
         ],
     },
@@ -125,8 +130,16 @@ export const topicos: Topico[] = [
             },
             {
                 pergunta: "Como funciona a monetização?",
-                resposta: "Canais com 1.000 inscritos e 100 mil visualizações podem ativar. Você ganha 55% de cada anúncio exibido antes dos seus vídeos. Só os anúncios geram ganho: visualizações sozinhas não são pagas.",
+                resposta: "Quando o canal é liberado, você ganha 55% de cada anúncio exibido antes dos seus vídeos. Só os anúncios geram ganho: visualizações sozinhas não são pagas, e só há ganho quando há anunciante com campanha no ar.",
                 link: { href: "/videos/monetizacao", label: "Ver minha monetização" },
+            },
+            {
+                pergunta: "O que conta para liberar a monetização?",
+                resposta: "Vários fatores: audiência e engajamento reais, regularidade das publicações, tempo e situação da conta, histórico de denúncias e a procura de anunciantes. A análise é revista todo dia. Não divulgamos números exatos para não estimular seguidores ou visualizações artificiais, e bater uma meta de audiência sozinha não garante a liberação.",
+            },
+            {
+                pergunta: "Por que meu ganho fica \"a liberar\"?",
+                resposta: "Cada exibição fica 30 dias a liberar antes de ir para o saldo disponível. É o prazo para confirmar as exibições e o pagamento do anunciante. Depois disso, você pode sacar.",
             },
             {
                 pergunta: "Qual o saque mínimo?",
@@ -142,6 +155,10 @@ export const topicos: Topico[] = [
                 pergunta: "Como funciona o anúncio?",
                 resposta: "Você envia um vídeo de até 60 segundos, define o link e o orçamento e paga pelo Stripe. A equipe revisa antes de ir ao ar. Você paga por mil exibições até o orçamento acabar.",
                 link: { href: "/anunciar", label: "Anunciar" },
+            },
+            {
+                pergunta: "Quem pode anunciar?",
+                resposta: "Contas com e-mail confirmado, pelo menos 7 dias de cadastro, sem suspensão e sem denúncias procedentes recentes. A primeira campanha vai até R$ 1.000,00; depois da primeira aprovada, o limite sobe. Cada conta pode ter até 2 campanhas em análise ao mesmo tempo.",
             },
             {
                 pergunta: "O que faz um anúncio ser recusado?",

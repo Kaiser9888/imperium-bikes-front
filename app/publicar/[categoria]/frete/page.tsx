@@ -36,7 +36,7 @@ const pagadores = [
     id: 'retirada_local',
     label: 'Retirada no local',
     description:
-      'Combine a retirada diretamente com o comprador.',
+      'O comprador paga pelo app e combina a retirada com você. O pagamento é liberado quando você digitar o código que ele te passa na entrega. Não aceite pagamento por fora.',
   },
 ] as const
 

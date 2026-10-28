@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { EmptyState } from "@/components/ui/empty-state"
 import { ErrorState } from "@/components/ui/error-state"
+import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Loader } from "@/components/ui/loader"
 import { StatusBadge, type StatusBadgeProps } from "@/components/ui/status-badge"
@@ -43,6 +44,10 @@ type Pedido = {
     disputaMotivo: string | null
     createdAt: string
     prazoDisputa: string
+    /** Sem frete pelo site: o pagamento só libera com o código de retirada. */
+    retiradaEmMaos: boolean
+    /** Só vem para o comprador, enquanto espera a retirada. */
+    codigoRetirada: string | null
 }
 
 const STATUS: Record<Status, { label: string; tone: StatusBadgeProps["tone"] }> = {
@@ -88,6 +93,8 @@ export default function PedidosPage() {
     const [confirmando, setConfirmando] = useState<{ pedido: Pedido; acao: Acao } | null>(null)
     const [disputando, setDisputando] = useState<Pedido | null>(null)
     const [motivo, setMotivo] = useState("")
+    const [retirando, setRetirando] = useState<Pedido | null>(null)
+    const [codigo, setCodigo] = useState("")
     const [enviando, setEnviando] = useState(false)
     const [erro, setErro] = useState<string | null>(null)
 
@@ -125,6 +132,8 @@ export default function PedidosPage() {
             setConfirmando(null)
             setDisputando(null)
             setMotivo("")
+            setRetirando(null)
+            setCodigo("")
             setAvaliando(null)
             await carregar()
         } catch (cause) {
@@ -158,7 +167,7 @@ export default function PedidosPage() {
                 ))}
             </div>
 
-            {erro && !disputando && !avaliando && (
+            {erro && !disputando && !avaliando && !retirando && (
                 <p role="alert" className="type-body-small mt-4 rounded-lg bg-destructive/10 px-3 py-2.5 text-destructive">
                     {erro}
                 </p>
@@ -182,7 +191,24 @@ export default function PedidosPage() {
                             {!pedido.comprador && " líquidos"}
                         </p>
 
-                        {pedido.status === "PAGO" && (
+                        {pedido.status === "PAGO" && pedido.retiradaEmMaos && pedido.comprador && pedido.codigoRetirada && (
+                            <div className="mt-3 rounded-lg border border-primary/30 bg-primary/5 px-3 py-3">
+                                <p className="type-caption uppercase tracking-wider text-muted-foreground">Código de retirada</p>
+                                <p className="type-h2 mt-0.5 font-mono tracking-[0.3em] text-foreground">{pedido.codigoRetirada}</p>
+                                <p className="type-body-small mt-2 text-muted-foreground">
+                                    Só passe este código ao vendedor <strong className="text-foreground">depois de conferir o produto</strong>. Com ele, o
+                                    pagamento é liberado. Combine a entrega em local público e movimentado, e não leve dinheiro: o pagamento já foi feito
+                                    pelo Imperium.
+                                </p>
+                            </div>
+                        )}
+                        {pedido.status === "PAGO" && pedido.retiradaEmMaos && !pedido.comprador && (
+                            <p className="type-body-small mt-3 text-muted-foreground">
+                                Entregue o produto e peça ao comprador o código de retirada. O pagamento é liberado quando você digitar o código.
+                                Não aceite pagamento por fora.
+                            </p>
+                        )}
+                        {pedido.status === "PAGO" && !pedido.retiradaEmMaos && (
                             <p className="type-body-small mt-3 text-muted-foreground">
                                 {pedido.comprador
                                     ? `Se algo der errado, avise até ${dia(pedido.prazoDisputa)}. Depois disso o pagamento é liberado ao vendedor.`
@@ -199,11 +225,26 @@ export default function PedidosPage() {
                         )}
 
                         <div className="mt-3 flex flex-wrap gap-2 empty:hidden">
+                            {!pedido.comprador && pedido.status === "PAGO" && pedido.retiradaEmMaos && (
+                                <Button
+                                    size="sm"
+                                    onClick={() => {
+                                        setErro(null)
+                                        setCodigo("")
+                                        setRetirando(pedido)
+                                    }}
+                                >
+                                    Digitar código de retirada
+                                </Button>
+                            )}
                             {pedido.comprador && pedido.status === "PAGO" && (
                                 <>
-                                    <Button size="sm" onClick={() => setConfirmando({ pedido, acao: "recebido" })}>
-                                        Recebi o produto
-                                    </Button>
+                                    {/* Na retirada em mãos, quem confirma é o código; o botão fica só para envio */}
+                                    {!pedido.retiradaEmMaos && (
+                                        <Button size="sm" onClick={() => setConfirmando({ pedido, acao: "recebido" })}>
+                                            Recebi o produto
+                                        </Button>
+                                    )}
                                     <Button
                                         size="sm"
                                         variant="outline"
@@ -296,6 +337,51 @@ export default function PedidosPage() {
                             </Button>
                             <Button type="submit" loading={enviando} disabled={!motivo.trim()}>
                                 Abrir disputa
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={retirando !== null} onOpenChange={(open) => !open && !enviando && setRetirando(null)}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Código de retirada</DialogTitle>
+                        <DialogDescription>
+                            Digite o código de 6 números que o comprador te passou depois de conferir o produto. O pagamento é liberado em seguida.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <form
+                        className="flex flex-col gap-4"
+                        onSubmit={(event) => {
+                            event.preventDefault()
+                            if (retirando) void executar(() => api.post(`/api/orders/${retirando.id}/retirada`, { codigo }))
+                        }}
+                    >
+                        <div className="flex flex-col gap-2">
+                            <Label htmlFor="codigo-retirada">Código</Label>
+                            <Input
+                                id="codigo-retirada"
+                                inputMode="numeric"
+                                autoComplete="one-time-code"
+                                maxLength={6}
+                                required
+                                value={codigo}
+                                onChange={(e) => setCodigo(e.target.value.replace(/\D/g, ""))}
+                                className="font-mono text-lg tracking-[0.3em]"
+                            />
+                        </div>
+                        {erro && (
+                            <p role="alert" className="type-body-small rounded-lg bg-destructive/10 px-3 py-2.5 text-destructive">
+                                {erro}
+                            </p>
+                        )}
+                        <DialogFooter>
+                            <Button type="button" variant="outline" onClick={() => setRetirando(null)} disabled={enviando}>
+                                Cancelar
+                            </Button>
+                            <Button type="submit" loading={enviando} disabled={codigo.length !== 6}>
+                                Confirmar entrega
                             </Button>
                         </DialogFooter>
                     </form>

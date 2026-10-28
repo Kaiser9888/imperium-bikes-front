@@ -244,7 +244,9 @@ function CheckoutContent() {
                   <Handshake className="size-5 shrink-0 text-muted-foreground" aria-hidden="true" />
                   <span className="min-w-0 flex-1">
                     <span className="type-label block">Retirar ou combinar com o vendedor</span>
-                    <span className="type-caption text-muted-foreground">Sem frete pelo site. Combine pelo chat depois da compra.</span>
+                    <span className="type-caption text-muted-foreground">
+                      Sem frete pelo site. Você paga aqui e recebe um código: entregue ao vendedor só depois de conferir o produto. Não leve dinheiro ao encontro.
+                    </span>
                   </span>
                 </button>
               </div>

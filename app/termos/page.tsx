@@ -89,6 +89,11 @@ export default function TermosPage() {
                         disputa (7 dias mais o prazo do frete). Se houver problema, o comprador abre a disputa pela página do pedido.
                     </li>
                     <li>
+                        <strong>Retirada em mãos:</strong> o comprador paga pelo app e recebe um código de retirada. Ele só passa o código
+                        ao vendedor depois de conferir o produto, e o pagamento só é liberado ao vendedor com esse código, sem liberação
+                        automática por prazo. Recomendamos combinar a entrega em local público e movimentado.
+                    </li>
+                    <li>
                         Trocas, devoluções e arrependimento seguem a <Link href="/reembolso">Política de Reembolso</Link> e o Código de
                         Defesa do Consumidor.
                     </li>
@@ -97,6 +102,16 @@ export default function TermosPage() {
 
             <Secao id="pagamentos" titulo="5. Pagamentos, taxas e repasses">
                 <ul>
+                    <li>
+                        <strong>
+                            Todo pagamento de compra, inscrição ou anúncio deve ser feito dentro do Imperium Bikes, inclusive na retirada em
+                            mãos.
+                        </strong>{" "}
+                        É proibido pedir ou aceitar Pix, depósito, transferência, dinheiro em espécie, boleto ou link de pagamento fora do
+                        app. Quem combina, faz ou recebe um pagamento por fora age por conta e risco próprios: essa operação não tem
+                        nenhuma das proteções destes Termos (retenção do valor, código de retirada, disputa e reembolso), e o Imperium
+                        Bikes não responde por ela. Pedir pagamento por fora pode levar à suspensão da conta.
+                    </li>
                     <li>
                         Todo pagamento e repasse passa pelo <strong>Stripe</strong>. O dinheiro não fica conosco: o que aparece na sua
                         Carteira é o que está ou será transferido para a sua conta de recebimentos no Stripe, e de lá para a sua conta
@@ -158,6 +173,11 @@ export default function TermosPage() {
                         depois de 5 segundos.
                     </li>
                     <li>
+                        Para anunciar, a conta precisa ter e-mail confirmado, pelo menos 7 dias de cadastro, estar em dia (sem
+                        suspensão) e sem denúncias procedentes recentes. A primeira campanha tem orçamento de até R$ 1.000,00; o limite
+                        sobe depois da primeira aprovada. Cada conta pode ter até 2 campanhas em análise ao mesmo tempo.
+                    </li>
+                    <li>
                         <strong>Toda campanha é revisada pela equipe antes de ir ao ar.</strong> Recusamos anúncios enganosos ou abusivos
                         (Código de Defesa do Consumidor, art. 37), com promessas sem comprovação, de produtos proibidos, com conteúdo
                         impróprio ou com material de terceiros sem permissão.
@@ -177,8 +197,18 @@ export default function TermosPage() {
             <Secao id="monetizacao" titulo="9. Monetização">
                 <ul>
                     <li>
-                        A monetização é liberada para canais com pelo menos 1.000 inscritos e 100 mil visualizações, com a conta de
-                        recebimentos do Stripe conectada.
+                        A liberação da monetização é decidida pelo Imperium Bikes e revista periodicamente. Ela considera vários
+                        fatores, entre eles audiência e engajamento reais do canal, regularidade das publicações, tempo e situação da
+                        conta, histórico de denúncias procedentes e a disponibilidade de anunciantes. Os critérios exatos não são
+                        divulgados, para não estimular números artificiais, e podem mudar sem aviso.
+                    </li>
+                    <li>
+                        Cumprir números de audiência não garante a liberação, e o canal liberado pode perdê-la se deixar de atender aos
+                        critérios. A conta de recebimentos do Stripe precisa estar conectada.
+                    </li>
+                    <li>
+                        Os ganhos de cada exibição ficam &quot;a liberar&quot; por 30 dias antes de entrar no saldo disponível. Esse prazo é
+                        para confirmar as exibições e o pagamento do anunciante. Exibições invalidadas nesse período não são pagas.
                     </li>
                     <li>
                         <strong>O criador ganha somente com anúncios exibidos antes dos seus vídeos.</strong> Visualizações, inscritos e
@@ -214,6 +244,15 @@ export default function TermosPage() {
                     <li>
                         Não respondemos pelo que é de responsabilidade exclusiva de outro usuário (como a qualidade do produto de um
                         vendedor ou a realização de um evento), sem prejuízo dos direitos garantidos pelo Código de Defesa do Consumidor.
+                    </li>
+                    <li>
+                        O app oferece meios de proteção (pagamento retido, código de retirada, disputa, avisos no chat). Quem os contorna,
+                        por exemplo pagando por fora ou entregando o código antes de conferir o produto, assume o risco dessa escolha.
+                    </li>
+                    <li>
+                        Quem cometer fraude, golpe, furto, roubo ou outro crime usando o app responde pessoalmente por ele. Guardamos os
+                        registros de acesso exigidos pelo Marco Civil da Internet e, junto com cadastro, conversas, pedidos e pagamentos,
+                        podemos fornecê-los às autoridades e à vítima nos termos da lei, inclusive por ordem judicial.
                     </li>
                 </ul>
             </Secao>
