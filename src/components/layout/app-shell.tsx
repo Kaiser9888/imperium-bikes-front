@@ -55,14 +55,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 Pular para o conteúdo
             </a>
             <Header />
-            {/* ponytail: tirar quando sair do beta */}
-            <p className="border-b border-border bg-muted px-4 py-2 text-center text-xs text-muted-foreground">
-                <strong className="text-foreground">Versão beta:</strong> o site ainda está em testes e pode ter erros.{" "}
-                <Link href="/ajuda/contato" className="font-medium text-foreground underline underline-offset-2">
-                    Reportar um erro
+            {children}
+            {/* Beta discreto no fim da página; ideias de quem usa de verdade valem ouro. ponytail: tirar o "beta" quando sair do beta */}
+            <p className="px-4 pb-3 pt-8 text-center text-[0.6875rem] text-muted-foreground/80">
+                Versão beta ·{" "}
+                <Link href="/ajuda/contato?assunto=IDEIA" className="underline-offset-2 hover:text-foreground hover:underline">
+                    Sugerir uma ideia
+                </Link>{" "}
+                ·{" "}
+                <Link href="/ajuda/contato?assunto=ERRO" className="underline-offset-2 hover:text-foreground hover:underline">
+                    Reportar erro
                 </Link>
             </p>
-            {children}
             {/* Reserva a altura da BottomNav fixa para ela não cobrir o fim da página */}
             <div className="h-[calc(4rem+env(safe-area-inset-bottom))]" aria-hidden="true" />
             <BottomNav />

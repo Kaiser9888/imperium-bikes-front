@@ -74,6 +74,13 @@ function NovoChamado({ onAberto }: { onAberto: () => Promise<void> }) {
     const [mensagem, setMensagem] = useState("")
     const [enviando, setEnviando] = useState(false)
 
+    // Vindo de "Sugerir uma ideia" / "Reportar erro" (?assunto=IDEIA): o assunto já vem escolhido
+    useEffect(() => {
+        const pedido = new URLSearchParams(window.location.search).get("assunto")
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- só lê a URL ao abrir
+        if (pedido && CATEGORIAS_SUPORTE.some((c) => c.id === pedido)) setCategoria(pedido)
+    }, [])
+
     async function enviar(event: React.FormEvent) {
         event.preventDefault()
         setEnviando(true)

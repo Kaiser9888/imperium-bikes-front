@@ -8,6 +8,7 @@ import {
     Clapperboard,
     Heart,
     LifeBuoy,
+    Lightbulb,
     LayoutGrid,
     LogOut,
     Megaphone,
@@ -87,6 +88,7 @@ const menuSections: MenuSection[] = [
         title: "Sistema",
         items: [
             { icon: LifeBuoy, label: "Central de Ajuda", href: "/ajuda" },
+            { icon: Lightbulb, label: "Sugerir uma ideia", href: "/ajuda/contato?assunto=IDEIA" },
             { icon: Settings, label: "Configurações", href: "/configuracoes" },
         ],
     },

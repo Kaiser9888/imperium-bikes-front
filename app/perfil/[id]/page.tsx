@@ -47,6 +47,7 @@ export default function PerfilPublicoPage() {
                     totalAvaliacoes: data.totalReviews,
                     contaProtegida: Boolean(data.doisFatores),
                     congelada: Boolean(data.congelada),
+                    capaUrl: data.capaUrl ?? null,
                     sponsors: data.sponsors ?? [],
                 },
             })

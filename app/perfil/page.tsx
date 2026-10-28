@@ -4,7 +4,7 @@ import axios from "axios"
 import Link from "next/link"
 import { useCallback, useEffect, useRef, useState } from "react"
 import { useUser } from "@clerk/nextjs"
-import { Camera, Pencil, Store, UserRound } from "lucide-react"
+import { Camera, Image as ImageIcon, Pencil, Store, UserRound } from "lucide-react"
 
 import { AppShell } from "@/components/layout/app-shell"
 import { PerfilView, PerfilViewSkeleton, type PerfilResumo } from "@/components/perfil/PerfilView"
@@ -29,6 +29,7 @@ type Extras = {
     totalAvaliacoes?: number
     contaProtegida?: boolean
     congelada?: boolean
+    capaUrl?: string | null
     sponsors: Sponsor[]
 }
 type Carregado = { status: "ok"; perfil: Perfil; extras: Extras; produtos: ProdutoItem[] }
@@ -69,6 +70,8 @@ export default function PerfilPage() {
     const [erroSalvar, setErroSalvar] = useState<string | null>(null)
     const [erroFoto, setErroFoto] = useState<string | null>(null)
     const [enviandoFoto, setEnviandoFoto] = useState(false)
+    const [enviandoCapa, setEnviandoCapa] = useState(false)
+    const capaInput = useRef<HTMLInputElement>(null)
     const fotoInput = useRef<HTMLInputElement>(null)
 
     const carregar = useCallback(async () => {
@@ -89,6 +92,7 @@ export default function PerfilPage() {
                     totalAvaliacoes: data.totalReviews,
                     contaProtegida: Boolean(data.doisFatores),
                     congelada: Boolean(data.congelada),
+                    capaUrl: data.capaUrl ?? null,
                     sponsors: data.sponsors ?? [],
                 },
                 perfil: {
@@ -129,6 +133,33 @@ export default function PerfilPage() {
             setErroSalvar(motivoDaFalha(cause))
         } finally {
             setSalvando(false)
+        }
+    }
+
+    /** Capa: sobe pelo nosso upload (R2) e grava o caminho no perfil. */
+    async function trocarCapa(event: React.ChangeEvent<HTMLInputElement>) {
+        const file = event.target.files?.[0]
+        event.target.value = ""
+        if (!file) return
+        setErroFoto(null)
+        if (file.size > 5 * 1024 * 1024) {
+            setErroFoto("A capa deve ter no máximo 5 MB.")
+            return
+        }
+        setEnviandoCapa(true)
+        try {
+            const form = new FormData()
+            form.append("file", file)
+            // Content-Type indefinido: o navegador define o multipart com o boundary correto
+            const { data } = await api.post("/api/files/upload/image", form, { headers: { "Content-Type": undefined } })
+            const capaUrl = data?.data?.publicUrl
+            if (typeof capaUrl !== "string") throw new Error("upload sem URL")
+            await api.put("/api/users/me/capa", { capaUrl })
+            setEstado((atual) => (atual.status === "ok" ? { ...atual, extras: { ...atual.extras, capaUrl } } : atual))
+        } catch (cause) {
+            setErroFoto(`Não foi possível trocar a capa. ${motivoDaFalha(cause)}`)
+        } finally {
+            setEnviandoCapa(false)
         }
     }
 
@@ -180,6 +211,30 @@ export default function PerfilPage() {
                         dono
                         perfil={resumo(estado, user)}
                         produtos={estado.produtos}
+                        capaExtra={
+                            <>
+                                <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="outline"
+                                    loading={enviandoCapa}
+                                    onClick={() => capaInput.current?.click()}
+                                    className="absolute right-3 top-3 border-white/40 bg-black/40 text-white backdrop-blur hover:bg-black/60 hover:text-white"
+                                >
+                                    {!enviandoCapa && <ImageIcon aria-hidden="true" />}
+                                    {estado.extras.capaUrl ? "Trocar capa" : "Colocar capa"}
+                                </Button>
+                                <input
+                                    ref={capaInput}
+                                    type="file"
+                                    accept="image/png,image/jpeg,image/webp"
+                                    onChange={trocarCapa}
+                                    className="sr-only"
+                                    tabIndex={-1}
+                                    aria-hidden="true"
+                                />
+                            </>
+                        }
                         avatarExtra={
                             <>
                                 <Button

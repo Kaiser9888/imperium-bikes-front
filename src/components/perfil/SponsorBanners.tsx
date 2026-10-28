@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { Megaphone, Plus } from "lucide-react"
+import { Plus } from "lucide-react"
 
 import { API_BASE_URL } from "@/lib/api-config"
 
@@ -16,29 +16,28 @@ export function sponsorImageUrl(imageUrl: string): string {
  */
 export function SponsorBanners({ sponsors, gerenciarHref }: { sponsors: Sponsor[]; gerenciarHref?: string }) {
     if (sponsors.length === 0 && !gerenciarHref) return null
+    // Dono sem patrocinador: só um atalho discreto, sem ocupar uma seção vazia
+    if (sponsors.length === 0) {
+        return (
+            <Link href={gerenciarHref!} className="type-caption mt-3 inline-flex items-center gap-1.5 text-muted-foreground hover:text-foreground">
+                <Plus className="size-3.5" aria-hidden="true" />
+                Adicionar marcas que te patrocinam
+            </Link>
+        )
+    }
     return (
         <section aria-labelledby="patrocinadores-title" className="mt-8">
             <div className="flex items-center justify-between gap-3">
                 <h2 id="patrocinadores-title" className="type-label uppercase tracking-wider text-muted-foreground">
                     Marcas parceiras
                 </h2>
-                {gerenciarHref && sponsors.length > 0 && (
+                {gerenciarHref && (
                     <Link href={gerenciarHref} className="type-label text-primary hover:underline">
                         Gerenciar
                     </Link>
                 )}
             </div>
 
-            {sponsors.length === 0 ? (
-                <Link
-                    href={gerenciarHref!}
-                    className="mt-3 flex items-center gap-3 rounded-xl border border-dashed border-border px-4 py-4 text-muted-foreground transition-colors hover:border-primary/50 hover:text-foreground"
-                >
-                    <Megaphone className="size-5 shrink-0" aria-hidden="true" />
-                    <span className="type-body-small flex-1">Mostre no seu perfil as marcas que te patrocinam.</span>
-                    <Plus className="size-4 shrink-0" aria-hidden="true" />
-                </Link>
-            ) : (
                 <ul className="mt-3 grid grid-cols-3 gap-3 sm:grid-cols-6">
                     {sponsors.map((sponsor, index) => {
                         const banner = (
@@ -63,7 +62,7 @@ export function SponsorBanners({ sponsors, gerenciarHref }: { sponsors: Sponsor[
                         )
                     })}
                 </ul>
-            )}
+
         </section>
     )
 }

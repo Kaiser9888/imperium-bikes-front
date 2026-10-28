@@ -5,7 +5,7 @@ import { useEffect, useState } from "react"
 import { CalendarDays, Clapperboard, MapPin, Medal, ShieldCheck, Star, Trophy, type LucideIcon } from "lucide-react"
 
 import { ProdutoGrid } from "@/components/perfil/ProdutoGrid"
-import { SponsorBanners, type Sponsor } from "@/components/perfil/SponsorBanners"
+import { SponsorBanners, sponsorImageUrl, type Sponsor } from "@/components/perfil/SponsorBanners"
 import { DenunciarButton } from "@/components/ui/denunciar-button"
 import { VideoCard } from "@/components/videos/VideoCard"
 import { Button } from "@/components/ui/button"
@@ -35,6 +35,8 @@ export type PerfilResumo = {
     contaProtegida?: boolean
     /** Congelada pelo dono ("não fui eu") até o suporte liberar. */
     congelada?: boolean
+    /** Capa do perfil enviada pelo usuário (/api/files/...); sem ela, a capa padrão. */
+    capaUrl?: string | null
     sponsors: Sponsor[]
 }
 
@@ -69,6 +71,7 @@ export function PerfilView({
     dono = false,
     acoes,
     avatarExtra,
+    capaExtra,
     aviso,
 }: {
     perfil: PerfilResumo
@@ -79,6 +82,8 @@ export function PerfilView({
     acoes?: React.ReactNode
     /** Sobreposto ao avatar (ex.: botão de trocar foto). */
     avatarExtra?: React.ReactNode
+    /** Sobreposto à capa (ex.: botão de trocar capa). */
+    capaExtra?: React.ReactNode
     /** Mensagem logo abaixo da bio (ex.: erro ao trocar foto). */
     aviso?: React.ReactNode
 }) {
@@ -106,12 +111,11 @@ export function PerfilView({
     const vitorias = podios.filter((p) => p.posicao === 1).length
     const carregando = atividade.status === "loading"
 
-    // Perfil leve: número ou aba sem nada não aparece (enquanto carrega, só o que já se sabe)
+    // Só o que as abas não mostram: anúncios e vídeos já aparecem com a contagem na aba
     const numeros = [
-        { rotulo: "Anúncios", valor: produtos.length },
-        { rotulo: "Torneios", valor: participacoes.length },
+        { rotulo: "Eventos", valor: participacoes.length },
+        { rotulo: "Pódios", valor: podios.length },
         { rotulo: "Vitórias", valor: vitorias, destaque: true },
-        { rotulo: "Vídeos", valor: videos.length },
     ].filter((n) => n.valor > 0)
     const abas = [
         produtos.length > 0 && "anuncios",
@@ -126,11 +130,18 @@ export function PerfilView({
     return (
         <>
             <section aria-label="Perfil" className="overflow-hidden rounded-2xl border border-border bg-surface">
-                {/* Capa: faixa com a cor da marca, sem imagem */}
-                <div
-                    aria-hidden="true"
-                    className="h-28 bg-[radial-gradient(120%_140%_at_0%_0%,var(--primary)_0%,transparent_55%),linear-gradient(135deg,var(--surface-muted),var(--surface-secondary))] opacity-90 sm:h-36"
-                />
+                {/* Capa: a imagem que a pessoa subiu; sem ela, uma trilha escurecida (identidade de bike) */}
+                <div className="relative h-32 overflow-hidden bg-[#111] sm:h-48">
+                    {/* eslint-disable-next-line @next/next/no-img-element -- capa enviada pelo usuário ou imagem local */}
+                    <img
+                        src={perfil.capaUrl ? sponsorImageUrl(perfil.capaUrl) : "/images/mountain-poster.png"}
+                        alt=""
+                        aria-hidden="true"
+                        className={cn("size-full object-cover", !perfil.capaUrl && "opacity-50")}
+                    />
+                    {!perfil.capaUrl && <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-t from-black/70 to-black/10" />}
+                    {capaExtra}
+                </div>
 
                 <div className="px-5 pb-6 sm:px-8">
                     <div className="-mt-12 flex flex-col gap-4 sm:-mt-14 sm:flex-row sm:items-end sm:justify-between">
