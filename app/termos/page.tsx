@@ -97,6 +97,13 @@ export default function TermosPage() {
                         Trocas, devoluções e arrependimento seguem a <Link href="/reembolso">Política de Reembolso</Link> e o Código de
                         Defesa do Consumidor.
                     </li>
+                    <li id="servicos" className="scroll-mt-24">
+                        <strong>Serviços:</strong> o prestador escolhe entre <em>valor fixo</em>, pago pelo app com as mesmas proteções de
+                        uma compra, ou <em>&quot;a partir de&quot;</em>, quando o valor depende de avaliação. No &quot;a partir de&quot;, o
+                        anúncio serve só para divulgar o serviço: valor final, data e pagamento são combinados direto entre cliente e
+                        prestador, fora do app, sem retenção do valor, disputa, reembolso nem qualquer garantia do Imperium Bikes. O
+                        prestador continua responsável pelo que anuncia.
+                    </li>
                 </ul>
             </Secao>
 
@@ -107,6 +114,7 @@ export default function TermosPage() {
                             Todo pagamento de compra, inscrição ou anúncio deve ser feito dentro do Imperium Bikes, inclusive na retirada em
                             mãos.
                         </strong>{" "}
+                        A única exceção são os serviços anunciados como &quot;a partir de&quot; (item 4), que são combinados direto.{" "}
                         É proibido pedir ou aceitar Pix, depósito, transferência, dinheiro em espécie, boleto ou link de pagamento fora do
                         app. Quem combina, faz ou recebe um pagamento por fora age por conta e risco próprios: essa operação não tem
                         nenhuma das proteções destes Termos (retenção do valor, código de retirada, disputa e reembolso), e o Imperium

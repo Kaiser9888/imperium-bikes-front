@@ -30,6 +30,7 @@ export type ResultadoProduto = {
     image?: string | null
     city?: string | null
     state?: string | null
+    precoAPartirDe?: boolean
 }
 
 export type BuscaResultado = {

@@ -58,7 +58,12 @@ export const topicos: Topico[] = [
             },
             {
                 pergunta: "Posso pagar por fora do app?",
-                resposta: "Não. O pagamento é sempre pelo Imperium, até na retirada em mãos. Pix, depósito, dinheiro ou link fora do app não têm retenção, código de retirada, disputa nem reembolso: quem paga por fora assume o risco. Se o vendedor pedir pagamento por fora, denuncie.",
+                resposta: "Não. O pagamento é sempre pelo Imperium, até na retirada em mãos. Pix, depósito, dinheiro ou link fora do app não têm retenção, código de retirada, disputa nem reembolso: quem paga por fora assume o risco. Se o vendedor pedir pagamento por fora, denuncie. A exceção são os serviços \"a partir de\", combinados direto com o prestador.",
+            },
+            {
+                pergunta: "O que é um serviço \"a partir de\"?",
+                resposta: "É um serviço cujo valor depende de avaliação, como um reparo. O anúncio mostra o preço inicial e o local; você fala com o prestador pelo chat e combinam o valor final e o pagamento direto, sem garantia do Imperium. Serviços com valor fixo são pagos pelo app, com a mesma proteção de uma compra.",
+                link: { href: "/termos#servicos", label: "Ver nos Termos" },
             },
             {
                 pergunta: "Como funciona a retirada em mãos?",

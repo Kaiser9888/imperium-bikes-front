@@ -10,6 +10,9 @@ export interface LocalizacaoFrete {
   cidade: string
   estado: string
   cep: string
+  /** Serviço: bairro e endereço da oficina que aparecem no anúncio. */
+  bairro?: string
+  endereco_publico?: string
 }
 
 export interface FreteDraft {
@@ -27,6 +30,8 @@ export interface FreteDraft {
 export interface PrecoDraft {
   valor_centavos: number
   custos?: CustoItem[]
+  /** Serviço: valor depende de avaliação ("a partir de", combinado direto). */
+  a_partir_de?: boolean
 }
 
 export interface DestacarDraft {

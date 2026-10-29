@@ -72,6 +72,9 @@ export default function PrecoPage() {
 
   const [preco, setPreco] = useState('')
   const [custos, setCustos] = useState('')
+  // Serviço: null até escolher; true = depende de avaliação ("a partir de", combinado direto)
+  const [aPartirDe, setAPartirDe] = useState<boolean | null>(null)
+  const servico = categoria === 'servicos'
   // "Eu arco com o frete" (etapa anterior): até quanto o vendedor cobre, em centavos
   const [limiteFrete, setLimiteFrete] = useState(0)
 
@@ -87,6 +90,10 @@ export default function PrecoPage() {
     }
 
     if (draft.preco) {
+      if (typeof draft.preco.a_partir_de === 'boolean') {
+        setAPartirDe(draft.preco.a_partir_de)
+      }
+
       const valorCentavos =
         draft.preco.valor_centavos
 
@@ -123,7 +130,8 @@ export default function PrecoPage() {
   const recebe = Math.max(valor - taxa, 0)
   // O frete coberto não pode passar do preço, senão a venda dá prejuízo
   const freteMaiorQuePreco = limiteFrete > 0 && valor > 0 && limiteFrete > recebe
-  const bloqueado = valor <= 0 || abaixoDoMinimo || freteMaiorQuePreco
+  const combinadoDireto = servico && aPartirDe === true
+  const bloqueado = valor <= 0 || abaixoDoMinimo || freteMaiorQuePreco || (servico && aPartirDe === null)
 
   function voltar() {
     router.push(
@@ -144,6 +152,7 @@ export default function PrecoPage() {
     saveDraft(categoria, {
       preco: {
         valor_centavos: valor,
+        a_partir_de: combinadoDireto,
       },
     })
 
@@ -206,8 +215,34 @@ export default function PrecoPage() {
         </div>
 
         <section className="publish-card publish-form">
+          {servico && (
+            <fieldset>
+              <legend>O valor é fixo ou depende de avaliação?</legend>
+
+              <div className="publish-options">
+                {[
+                  { id: false, label: 'Valor fixo', description: 'O cliente paga pelo site, com pagamento protegido.' },
+                  { id: true, label: 'Depende de avaliação', description: 'Aparece "a partir de". Valor e pagamento combinados direto com o cliente.' },
+                ].map(item => (
+                  <button
+                    type="button"
+                    key={String(item.id)}
+                    className={aPartirDe === item.id ? 'is-selected' : ''}
+                    aria-pressed={aPartirDe === item.id}
+                    onClick={() => setAPartirDe(item.id)}
+                  >
+                    <span>
+                      <b>{item.label}</b>
+                      <small>{item.description}</small>
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </fieldset>
+          )}
+
           <label>
-            Preço de venda
+            {combinadoDireto ? 'Valor a partir de' : servico ? 'Preço do serviço' : 'Preço de venda'}
 
             <div className="money-input">
               <span>
@@ -252,7 +287,13 @@ export default function PrecoPage() {
             </small>
           )}
 
-          {valor > 0 && !abaixoDoMinimo && (
+          {valor > 0 && !abaixoDoMinimo && combinadoDireto && (
+            <small>
+              Sem taxa: o cliente fala com você pelo chat e vocês combinam o valor final e o pagamento.
+            </small>
+          )}
+
+          {valor > 0 && !abaixoDoMinimo && !combinadoDireto && (
             <>
               <div className="price-summary">
                 <span>

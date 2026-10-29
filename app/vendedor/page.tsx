@@ -475,7 +475,7 @@ export default function CentralVendedorPage() {
                         </Button>
                       </div>
 
-                      <p className="text-base font-bold text-primary">{formatarPreco(p.price)}</p>
+                      <p className="text-base font-bold text-primary">{p.precoAPartirDe && <span className="mr-1 text-xs font-medium text-muted-foreground">a partir de</span>}{formatarPreco(p.price)}</p>
 
                       <div className="mt-auto flex items-center justify-between pt-2">
                         {vendido ? (

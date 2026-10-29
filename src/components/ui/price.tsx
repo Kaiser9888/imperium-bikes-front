@@ -21,12 +21,15 @@ interface PriceProps extends React.HTMLAttributes<HTMLSpanElement>, VariantProps
     valor: number;
     /** Preço anterior real vindo da API; só aparece se for maior que o atual. */
     valorAntigo?: number | null;
+    /** Serviço com valor que depende de avaliação: mostra "a partir de" antes do preço. */
+    aPartirDe?: boolean;
 }
 
-function Price({ valor, valorAntigo, size, className, ...props }: PriceProps) {
-    const temAntigo = typeof valorAntigo === "number" && valorAntigo > valor;
+function Price({ valor, valorAntigo, aPartirDe = false, size, className, ...props }: PriceProps) {
+    const temAntigo = !aPartirDe && typeof valorAntigo === "number" && valorAntigo > valor;
     return (
         <span className={cn("inline-flex flex-wrap items-baseline gap-x-2", className)} {...props}>
+            {aPartirDe && <span className="text-xs font-medium text-muted-foreground">a partir de</span>}
             <span className={priceVariants({ size })}>{formatarPreco(valor)}</span>
             {temAntigo && (
                 <s className="text-xs text-muted-foreground tabular-nums">

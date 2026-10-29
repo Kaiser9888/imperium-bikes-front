@@ -14,6 +14,8 @@ export interface ProdutoItem {
   originPostalCode?: string | null
   /** "Eu pago o frete até R$ X"; null quando o comprador paga tudo. */
   freeShippingLimit?: number | null
+  /** Serviço "a partir de": combinado direto com o prestador. */
+  precoAPartirDe?: boolean
   city?: string
   state?: string
   photos?: string[]
@@ -90,7 +92,7 @@ export const sellerProductService = {
   // O PUT do backend exige o anúncio inteiro (condição, CEP, peso, medidas...),
   // então busca o atual e envia junto com o que foi editado.
   async update(id: string | number, data: Partial<ProdutoItem>) {
-    const { data: atual } = await api.get(`/api/products/${id}`)
+    const { data: atual } = await api.get(`/api/products/${id}`, { params: { contarVisita: false } })
     const r = await api.put(`/api/products/${id}`, {
       title: atual.title,
       description: atual.description,
@@ -105,6 +107,9 @@ export const sellerProductService = {
       stock: atual.stock,
       hasSecurePayment: atual.hasSecurePayment,
       negotiable: atual.negotiable,
+      precoAPartirDe: atual.precoAPartirDe,
+      bairro: atual.bairro,
+      enderecoAtendimento: atual.enderecoAtendimento,
       city: atual.city,
       state: atual.state,
       originPostalCode: atual.originPostalCode,

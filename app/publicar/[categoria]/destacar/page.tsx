@@ -439,6 +439,11 @@ async function handlePublicar() {
 
           originPostalCode,
 
+          // Serviço: "a partir de" (combinado direto) e local que aparece no anúncio
+          precoAPartirDe: Boolean(draftFinal.preco?.a_partir_de),
+          bairro: draftFinal.frete?.localizacao?.bairro || undefined,
+          enderecoAtendimento: draftFinal.frete?.localizacao?.endereco_publico || undefined,
+
           // "Eu arco com o frete": quanto o vendedor cobre (o comprador paga o que passar)
           freeShippingLimit:
             draftFinal.frete?.pagador === 'vendedor' && draftFinal.frete.limite_frete_centavos

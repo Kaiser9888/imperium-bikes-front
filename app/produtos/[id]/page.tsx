@@ -207,6 +207,9 @@ function ProdutoPage() {
   // Vendido, pausado ou sem estoque: não dá para comprar
   const esgotado = p.status !== "ACTIVE" || p.stock < 1
   const freteGratis = p.freeShippingLimit ? Number(p.freeShippingLimit) : 0
+  // Serviço "a partir de": vitrine, sem compra pelo site (valor e pagamento combinados direto)
+  const combinadoDireto = servico && Boolean(p.precoAPartirDe)
+  const localDoServico = [p.bairro, localizacao].filter(Boolean).join(" · ")
 
   // Ficha técnica só com o que o vendedor preencheu
   const specs = ([
@@ -399,7 +402,8 @@ function ProdutoPage() {
                 </div>
               )}
 
-              <p className="type-display mt-5 tabular-nums text-foreground">{precoFormatado}</p>
+              {combinadoDireto && <p className="type-label mt-5 text-muted-foreground">A partir de</p>}
+              <p className={cn("type-display tabular-nums text-foreground", combinadoDireto ? "mt-0.5" : "mt-5")}>{precoFormatado}</p>
               {/* Ancoragem honesta: só com o preço anterior informado no anúncio e maior que o atual */}
               {typeof p.price === "number" && typeof p.originalPrice === "number" && p.originalPrice > p.price && (
                 <p className="type-body-small mt-1 flex items-center gap-2 text-muted-foreground">
@@ -419,10 +423,11 @@ function ProdutoPage() {
                 </p>
               )}
 
-              {localizacao && (
+              {(servico ? localDoServico : localizacao) && (
                 <p className="type-body-small mt-2 flex items-center gap-1.5 text-muted-foreground">
                   <MapPin className="size-4 shrink-0" aria-hidden="true" />
-                  Enviado de <span className="font-medium text-foreground">{localizacao}</span>
+                  {servico ? "Atende em" : "Enviado de"}{" "}
+                  <span className="font-medium text-foreground">{servico ? localDoServico : localizacao}</span>
                 </p>
               )}
 
@@ -432,6 +437,23 @@ function ProdutoPage() {
                 </p>
               )}
 
+              {combinadoDireto ? (
+              <div className="mt-6 flex flex-col gap-3">
+                <button type="button" className="pay-btn" disabled={esgotado || abrindoChat} onClick={falarComVendedor}>
+                  {abrindoChat ? "Abrindo conversa..." : "Falar com o prestador"}
+                  <MessageCircle aria-hidden="true" />
+                </button>
+                {erroChat && <p role="alert" className="type-caption font-semibold text-destructive">{erroChat}</p>}
+                <p className="type-caption flex items-start gap-2 text-muted-foreground">
+                  <Handshake className="size-4 shrink-0 text-primary" aria-hidden="true" />
+                  <span>
+                    Valor e pagamento combinados direto com o prestador, sem garantia do Imperium.{" "}
+                    <Link href="/termos#servicos" className="underline underline-offset-2 hover:text-foreground">Saiba mais</Link>
+                  </span>
+                </p>
+              </div>
+              ) : (
+              <>
               <div className="mt-6 flex flex-col gap-3">
                 <button
                   type="button"
@@ -466,6 +488,8 @@ function ProdutoPage() {
                   <Link href="/reembolso" className="underline underline-offset-2 hover:text-foreground">Como funciona</Link>
                 </span>
               </p>
+              </>
+              )}
             </div>
 
             {/* FRETE (serviço não é enviado: data e local são combinados pelo chat) */}
@@ -474,7 +498,9 @@ function ProdutoPage() {
               <p className="type-body-small flex items-start gap-2.5 rounded-2xl border border-border bg-surface px-5 py-4 text-muted-foreground">
                 <Handshake className="mt-0.5 size-5 shrink-0 text-primary" aria-hidden="true" />
                 <span>
-                  Serviço{localizacao ? ` em ${localizacao}` : ""}. Depois do pagamento, combine data e local com o prestador pelo chat.
+                  {combinadoDireto
+                    ? <>Atendimento{localDoServico ? ` em ${localDoServico}` : ""}.{p.enderecoAtendimento ? <> Endereço: <span className="font-medium text-foreground">{p.enderecoAtendimento}</span>.</> : ""} O valor final depende da avaliação: combine com o prestador pelo chat.</>
+                    : `Serviço${localDoServico ? ` em ${localDoServico}` : ""}. Depois do pagamento, combine data e local com o prestador pelo chat.`}
                 </span>
               </p>
             ) : (
@@ -553,7 +579,7 @@ function ProdutoPage() {
                   <>
                     <Button type="button" variant="outline" className="w-full" onClick={falarComVendedor} loading={abrindoChat}>
                       {!abrindoChat && <MessageCircle aria-hidden="true" />}
-                      {abrindoChat ? "Abrindo conversa..." : "Falar com vendedor"}
+                      {abrindoChat ? "Abrindo conversa..." : servico ? "Falar com o prestador" : "Falar com vendedor"}
                     </Button>
                     {erroChat && (
                       <p role="alert" className="type-caption mt-3 font-semibold text-destructive">
@@ -603,7 +629,16 @@ function ProdutoPage() {
       {!esgotado && (
         <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 backdrop-blur lg:hidden">
           <div className="mx-auto flex max-w-xl items-center gap-4">
-            <p className="type-h3 min-w-0 flex-1 truncate tabular-nums text-foreground">{precoFormatado}</p>
+            <p className="type-h3 min-w-0 flex-1 truncate tabular-nums text-foreground">
+              {combinadoDireto && <span className="type-caption block font-medium text-muted-foreground">a partir de</span>}
+              {precoFormatado}
+            </p>
+            {combinadoDireto ? (
+              <button type="button" className="pay-btn !w-auto flex-1" disabled={abrindoChat} onClick={falarComVendedor}>
+                Falar com o prestador
+                <MessageCircle aria-hidden="true" />
+              </button>
+            ) : (
             <button
               type="button"
               className="pay-btn !w-auto flex-1"
@@ -612,6 +647,7 @@ function ProdutoPage() {
               Comprar
               <IconeCartao />
             </button>
+            )}
           </div>
         </div>
       )}

@@ -13,13 +13,15 @@ export type ProductCardProps = {
     price: number
     /** Preço anterior real vindo da API; nunca inventado. */
     oldPrice?: number | null
+    /** Serviço "a partir de" (combinado direto). */
+    aPartirDe?: boolean
     category?: string
     image?: string | null
     favorite?: boolean
     onToggleFavorite?: () => void
 }
 
-export function ProductCard({ id, title, price, oldPrice, category, image, favorite = false, onToggleFavorite }: ProductCardProps) {
+export function ProductCard({ id, title, price, oldPrice, aPartirDe, category, image, favorite = false, onToggleFavorite }: ProductCardProps) {
     return (
         <article className="group relative flex flex-col gap-3">
             <Link href={`/produtos/${id}`} className="flex flex-col gap-3 rounded-xl">
@@ -35,7 +37,7 @@ export function ProductCard({ id, title, price, oldPrice, category, image, favor
                     <h3 className="type-body-small line-clamp-2 font-medium text-foreground group-hover:text-primary">
                         {title}
                     </h3>
-                    <Price valor={price} valorAntigo={oldPrice} className="mt-0.5" />
+                    <Price valor={price} valorAntigo={oldPrice} aPartirDe={aPartirDe} className="mt-0.5" />
                 </div>
             </Link>
 

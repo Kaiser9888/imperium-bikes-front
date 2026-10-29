@@ -36,7 +36,7 @@ export function ProdutosRelacionados({ produtoId, sport, modality }: Props) {
             <ul className="-mx-4 mt-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2 [scrollbar-width:none] sm:mx-0 sm:grid sm:grid-cols-3 sm:gap-x-4 sm:gap-y-8 sm:overflow-visible sm:px-0 lg:grid-cols-4">
                 {produtos.map((p) => (
                     <li key={p.id} className="w-[44%] shrink-0 snap-start sm:w-auto">
-                        <ProductCard id={p.id} title={p.title} price={p.price} oldPrice={p.originalPrice} category={p.brand || undefined} image={capa(p)} />
+                        <ProductCard id={p.id} title={p.title} price={p.price} oldPrice={p.originalPrice} aPartirDe={p.precoAPartirDe} category={p.brand || undefined} image={capa(p)} />
                     </li>
                 ))}
             </ul>

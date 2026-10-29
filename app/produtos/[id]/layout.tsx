@@ -10,6 +10,7 @@ type Produto = {
     city?: string | null
     state?: string | null
     status?: string
+    precoAPartirDe?: boolean
     images?: unknown[] | null
 }
 
@@ -22,7 +23,8 @@ export async function generateMetadata({ params }: Pick<Props, "params">): Promi
     if (!p) return { title: "Anúncio | Imperium Bikes" }
 
     const local = [p.city, p.state].filter(Boolean).join("/")
-    const linha = [formatarPreco(Number(p.price)), local].filter(Boolean).join(" · ")
+    const preco = `${p.precoAPartirDe ? "A partir de " : ""}${formatarPreco(Number(p.price))}`
+    const linha = [preco, local].filter(Boolean).join(" · ")
     return {
         ...previa({
             titulo: p.title,

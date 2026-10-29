@@ -100,6 +100,10 @@ export interface ProductResponse {
     numeroSerieFinal?: string | null
     stock: number
     negotiable: boolean
+    /** Serviço "a partir de": sem compra pelo site, combinado direto com o prestador. */
+    precoAPartirDe?: boolean
+    bairro?: string | null
+    enderecoAtendimento?: string | null
     city: string
     state: string
 

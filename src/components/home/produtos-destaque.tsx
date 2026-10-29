@@ -22,6 +22,7 @@ interface Produto {
     preco?: number
     price?: number
     precoAntigo?: number
+    precoAPartirDe?: boolean
     oldPrice?: number
     img?: string
     imageUrl?: string
@@ -141,6 +142,7 @@ export function ProdutosDestaque() {
                                     title={nome}
                                     price={preco}
                                     oldPrice={produto.precoAntigo ?? produto.oldPrice}
+                                    aPartirDe={produto.precoAPartirDe}
                                     category={produto.modalidade || produto.category}
                                     image={img}
                                     favorite={favoritos.includes(id)}

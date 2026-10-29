@@ -57,7 +57,7 @@ export function ProdutoGrid({ produtos, dono = false }: Props) {
             </div>
             <div className="p-3">
               <p className="truncate text-sm font-medium text-foreground">{p.title}</p>
-              <p className="mt-0.5 text-sm font-bold text-primary">{formatarPreco(p.price)}</p>
+              <p className="mt-0.5 text-sm font-bold text-primary">{p.precoAPartirDe && <span className="mr-1 text-xs font-medium text-muted-foreground">a partir de</span>}{formatarPreco(p.price)}</p>
               {p.status && p.status !== "ATIVO" && (
                 <span className="mt-1 inline-block rounded-full bg-secondary px-2 py-0.5 text-[10px] uppercase text-muted-foreground">
                   {p.status.toLowerCase()}

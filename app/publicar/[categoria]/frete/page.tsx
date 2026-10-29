@@ -64,6 +64,9 @@ export default function FretePage() {
   const [cidade, setCidade] = useState('')
   const [estado, setEstado] = useState('')
   const [endereco, setEndereco] = useState('')
+  // Serviço: o que aparece no anúncio para o cliente achar o local
+  const [bairro, setBairro] = useState('')
+  const [enderecoPublico, setEnderecoPublico] = useState('')
 
   const [peso, setPeso] = useState('')
   const [altura, setAltura] = useState('')
@@ -95,6 +98,8 @@ export default function FretePage() {
     setCidade(frete.localizacao?.cidade ?? '')
     setEstado(frete.localizacao?.estado ?? '')
     setEndereco(frete.localizacao?.endereco ?? '')
+    setBairro(frete.localizacao?.bairro ?? '')
+    setEnderecoPublico(frete.localizacao?.endereco_publico ?? '')
 
     if (frete.peso_g) {
       setPeso(
@@ -172,6 +177,7 @@ if (data.erro) {
 }
 
 setEndereco(data.logradouro ?? '')
+setBairro(data.bairro ?? '')
 setCidade(data.localidade ?? '')
 setEstado(data.uf ?? '')
 } catch {
@@ -309,6 +315,7 @@ function continuar() {
     cidade,
     estado,
     cep: cepNumerico,
+    ...(servico ? { bairro: bairro.trim(), endereco_publico: enderecoPublico.trim() } : {}),
   }
 
   saveDraft(categoria, {
@@ -445,6 +452,40 @@ return (
               />
             </label>
           </div>
+        )}
+
+        {servico && (cidade || estado) && !erroCep && (
+          <>
+            <label>
+              Bairro
+
+              <input
+                value={bairro}
+                onChange={(event) => setBairro(event.target.value)}
+                maxLength={100}
+                placeholder="Ex.: Centro"
+              />
+            </label>
+
+            <label>
+              Endereço da oficina
+
+              <span className="optional">
+                Opcional
+              </span>
+
+              <input
+                value={enderecoPublico}
+                onChange={(event) => setEnderecoPublico(event.target.value)}
+                maxLength={200}
+                placeholder="Ex.: Rua das Flores, 120"
+              />
+
+              <small>
+                Aparece no anúncio. Deixe vazio se atende em domicílio ou prefere passar pelo chat.
+              </small>
+            </label>
+          </>
         )}
 
         {!servico && (
