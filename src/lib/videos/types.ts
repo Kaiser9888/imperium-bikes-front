@@ -9,6 +9,8 @@ export interface VideoItem {
     description?: string;
     videoUrl?: string;
     thumbnailUrl: string;
+    /** thumbnailUrl é uma capa que o criador subiu. */
+    hasCapa?: boolean;
     durationSeconds?: number;
     formattedDuration: string;
     viewCount: number;

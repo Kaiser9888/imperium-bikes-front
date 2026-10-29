@@ -83,7 +83,8 @@ function normalizeVideo(video: VideoItem): VideoItem {
     return {
         ...video,
         videoUrl: normalizeVideoUrl(video.videoUrl),
-        thumbnailUrl: video.thumbnailUrl ?? "",
+        // Capa enviada pelo criador volta relativa (/api/files/...)
+        thumbnailUrl: video.thumbnailUrl?.startsWith("/api/files/") ? `${API_URL}${video.thumbnailUrl}` : video.thumbnailUrl ?? "",
         formattedDuration: video.formattedDuration ?? "",
         description: video.description ?? undefined,
         likesCount: video.likesCount ?? 0,
@@ -316,4 +317,47 @@ export async function deleteVideo(token: string, videoId: string): Promise<void>
         signal: AbortSignal.timeout(TIMEOUT_MS),
     });
     if (!res.ok) throw await errorFrom(res);
+}
+
+/* ================================================================
+ * SALVOS, CURTIDOS E CAPA (Central de Vídeos)
+ * ================================================================ */
+
+async function send(path: string, token: string, method: "POST" | "PUT" | "DELETE", body?: unknown): Promise<Response> {
+    const res = await fetch(`${API_URL}${path}`, {
+        method,
+        headers: {
+            ...authHeaders(token),
+            ...(body !== undefined ? { "Content-Type": "application/json" } : {}),
+        },
+        body: body !== undefined ? JSON.stringify(body) : undefined,
+        signal: AbortSignal.timeout(TIMEOUT_MS),
+    });
+    if (!res.ok) throw await errorFrom(res);
+    return res;
+}
+
+export async function fetchSavedVideos(token: string, page: number): Promise<VideoPage> {
+    const params = new URLSearchParams({ page: String(page), size: String(PAGE_SIZE) });
+    return normalizePage(await getJson<VideoPage>(`/api/videos/saved?${params}`, token));
+}
+
+export async function fetchLikedVideos(token: string, page: number): Promise<VideoPage> {
+    const params = new URLSearchParams({ page: String(page), size: String(PAGE_SIZE) });
+    return normalizePage(await getJson<VideoPage>(`/api/videos/liked?${params}`, token));
+}
+
+export async function fetchSavedIds(token: string): Promise<string[]> {
+    const ids = await getJson<string[]>("/api/videos/saved/ids", token);
+    return Array.isArray(ids) ? ids : [];
+}
+
+export async function saveVideo(token: string, videoId: string, saved: boolean): Promise<void> {
+    await send(`/api/videos/${encodeURIComponent(videoId)}/save`, token, saved ? "POST" : "DELETE");
+}
+
+/** capaUrl = caminho do nosso upload (/api/files/...); null volta à miniatura automática. */
+export async function setVideoCapa(token: string, videoId: string, capaUrl: string | null): Promise<VideoItem> {
+    const res = await send(`/api/videos/${encodeURIComponent(videoId)}/capa`, token, "PUT", { capaUrl: capaUrl ?? "" });
+    return normalizeVideo((await res.json()) as VideoItem);
 }

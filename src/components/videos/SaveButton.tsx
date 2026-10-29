@@ -16,7 +16,7 @@ export function SaveButton({ videoId, iconOnly = false, className = "" }: { vide
                 // dentro de cards com link: salva sem abrir o vídeo
                 e.preventDefault();
                 e.stopPropagation();
-                toggle(videoId);
+                void toggle(videoId);
             }}
             aria-pressed={saved}
             aria-label={iconOnly ? label : undefined}
