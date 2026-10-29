@@ -16,6 +16,22 @@ export interface CreatePaymentRequest {
   cepDestino?: string
   /** Opção de frete escolhida na cotação. */
   freteServiceId?: string
+  /** Com frete: para onde o vendedor envia (vai na etiqueta). */
+  endereco?: EnderecoEntrega
+}
+
+export interface EnderecoEntrega {
+  nome: string
+  /** DDD + número, só dígitos. */
+  telefone: string
+  /** 11 dígitos. */
+  cpf: string
+  logradouro: string
+  numero: string
+  complemento?: string
+  bairro: string
+  cidade: string
+  uf: string
 }
 
 export interface PaymentResponse {

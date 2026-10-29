@@ -86,7 +86,15 @@ export default function TermosPage() {
                     </li>
                     <li>
                         Depois do pagamento, o valor fica retido até o comprador confirmar o recebimento ou até terminar o prazo para abrir
-                        disputa (7 dias mais o prazo do frete). Se houver problema, o comprador abre a disputa pela página do pedido.
+                        disputa (7 dias mais o prazo do frete, contados do envio). Se houver problema, o comprador abre a disputa pela página
+                        do pedido.
+                    </li>
+                    <li id="envio" className="scroll-mt-24">
+                        <strong>Envio:</strong> o vendedor compra a etiqueta na transportadora e no serviço escolhidos pelo comprador (pelo
+                        Melhor Envio, para o valor bater com o frete pago), posta em até 3 dias úteis do pagamento e informa o código de
+                        rastreio no pedido. O frete pago pelo comprador é repassado ao vendedor junto com a venda. Sem o código de rastreio,
+                        o prazo de liberação não começa; se o vendedor não postar, o comprador pode pedir o reembolso integral. O endereço
+                        de entrega é usado só para o envio daquele pedido.
                     </li>
                     <li>
                         <strong>Retirada em mãos:</strong> o comprador paga pelo app e recebe um código de retirada. Ele só passa o código
@@ -126,11 +134,11 @@ export default function TermosPage() {
                         bancária, nos prazos do Stripe.
                     </li>
                     <li>
-                        <strong>Vendas:</strong> em cada venda são descontados do vendedor (1) a taxa de pagamento, de 3,99% + R$ 0,39,
-                        que cobre a operadora do cartão, e (2) a comissão do destaque escolhido ao anunciar: 0% no Gratuito, 2% no
+                        <strong>Vendas:</strong> em cada venda são descontados do vendedor (1) a taxa de segurança, de 3,99% + R$ 0,39,
+                        que cobre o pagamento protegido, e (2) a comissão do destaque escolhido ao anunciar: 0% no Gratuito, 2% no
                         Básico, 5% no Avançado e 7% no Topo. As duas são calculadas sobre o preço do produto (o frete não entra) e
-                        aparecem para o vendedor antes de publicar. O restante vai para o vendedor quando o valor é liberado. O preço
-                        mínimo de um anúncio é R$ 5,00.
+                        aparecem para o vendedor antes de publicar. O restante, mais o frete pago pelo comprador, vai para o vendedor quando
+                        o valor é liberado. O preço mínimo de um anúncio é R$ 5,00.
                     </li>
                     <li><strong>Eventos pagos:</strong> 90% de cada inscrição vai para o organizador quando ele encerra o evento.</li>
                     <li><strong>Anúncios:</strong> 55% do valor de cada exibição vai para o criador do vídeo.</li>

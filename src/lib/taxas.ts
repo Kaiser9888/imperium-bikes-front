@@ -1,4 +1,4 @@
-// Taxa de pagamento e preço mínimo dos anúncios.
+// Taxa de segurança (custo do pagamento protegido) e preço mínimo dos anúncios.
 // Mantenha igual a TaxaPagamento.java no backend e aos Termos (seção 5).
 
 /** Tarifa do cartão no Stripe (3,99% + R$ 0,39), descontada do vendedor em cada venda. */

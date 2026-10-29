@@ -14,12 +14,60 @@ import { cn } from "@/lib/utils"
 import { paymentService } from "@/services/publish/payment.service"
 import { productService } from "@/services/publish/product.service"
 import type { ProductResponse, ShippingQuote } from "@/types/publish/product"
+import type { EnderecoEntrega } from "@/types/payment"
+import { Label } from "@/components/ui/label"
 
 // Valor mínimo aceito pelo Stripe em BRL. Mantenha igual ao MIN_AMOUNT do PaymentService.
 const MIN_AMOUNT = 0.5
 
 /** "combinar": retirada ou entrega combinada com o vendedor, sem frete pelo site. */
 type Entrega = { tipo: "envio"; opcao: ShippingQuote } | { tipo: "combinar" } | null
+
+const ENDERECO_VAZIO: EnderecoEntrega = { nome: "", telefone: "", cpf: "", logradouro: "", numero: "", complemento: "", bairro: "", cidade: "", uf: "" }
+// O endereço fica no aparelho para a próxima compra; o CPF não é guardado
+const ENDERECO_KEY = "imperium:endereco-entrega"
+
+function lerEnderecoSalvo(): EnderecoEntrega {
+  try {
+    const salvo = JSON.parse(localStorage.getItem(ENDERECO_KEY) ?? "null")
+    return salvo && typeof salvo === "object" ? { ...ENDERECO_VAZIO, ...salvo, cpf: "" } : ENDERECO_VAZIO
+  } catch {
+    return ENDERECO_VAZIO
+  }
+}
+
+function guardarEndereco(e: EnderecoEntrega) {
+  try {
+    const semCpf: Partial<EnderecoEntrega> = { ...e }
+    delete semCpf.cpf
+    localStorage.setItem(ENDERECO_KEY, JSON.stringify(semCpf))
+  } catch {
+    // armazenamento bloqueado: só não lembra na próxima vez
+  }
+}
+
+const soDigitos = (v: string) => v.replace(/\D/g, "")
+
+/** CPF com dígitos verificadores certos (evita etiqueta recusada por número digitado errado). */
+function cpfValido(valor: string): boolean {
+  const cpf = soDigitos(valor)
+  if (cpf.length !== 11 || /^(\d)\1{10}$/.test(cpf)) return false
+  const dv = (n: number) => {
+    let soma = 0
+    for (let i = 0; i < n; i++) soma += Number(cpf[i]) * (n + 1 - i)
+    const resto = (soma * 10) % 11
+    return resto === 10 ? 0 : resto
+  }
+  return dv(9) === Number(cpf[9]) && dv(10) === Number(cpf[10])
+}
+
+function enderecoCompleto(e: EnderecoEntrega): boolean {
+  const tel = soDigitos(e.telefone)
+  return Boolean(
+    e.nome.trim() && (tel.length === 10 || tel.length === 11) && cpfValido(e.cpf) &&
+    e.logradouro.trim() && e.numero.trim() && e.bairro.trim() && e.cidade.trim() && /^[A-Za-z]{2}$/.test(e.uf.trim()),
+  )
+}
 
 function mensagemDe(cause: unknown, padrao: string): string {
   const data = (cause as { response?: { data?: { message?: unknown } } })?.response?.data
@@ -42,6 +90,12 @@ function CheckoutContent() {
   const [cotando, setCotando] = useState(false)
   const [erroFrete, setErroFrete] = useState<string | null>(null)
   const [entrega, setEntrega] = useState<Entrega>(null)
+  const [endereco, setEndereco] = useState<EnderecoEntrega>(ENDERECO_VAZIO)
+  const campo = (chave: keyof EnderecoEntrega) => ({
+    id: `entrega-${chave}`,
+    value: endereco[chave] ?? "",
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) => setEndereco((atual) => ({ ...atual, [chave]: e.target.value })),
+  })
 
   useEffect(() => {
     if (!isLoaded) return
@@ -86,6 +140,23 @@ function CheckoutContent() {
       const ordenada = [...lista].sort((a, b) => Number(a.valor) - Number(b.valor))
       setOpcoes(ordenada)
       if (ordenada[0]) setEntrega({ tipo: "envio", opcao: ordenada[0] })
+      // Rua, bairro e cidade vêm do CEP; o resto fica do que a pessoa já usou neste aparelho
+      const salvo = lerEnderecoSalvo()
+      const viaCep = await fetch(`https://viacep.com.br/ws/${digitos}/json/`, { signal: AbortSignal.timeout(6000) })
+        .then((r) => (r.ok ? r.json() : null))
+        .catch(() => null) as { logradouro?: string; bairro?: string; localidade?: string; uf?: string; erro?: boolean } | null
+      setEndereco((atual) => ({
+        ...salvo,
+        nome: atual.nome || salvo.nome,
+        telefone: atual.telefone || salvo.telefone,
+        cpf: atual.cpf,
+        logradouro: viaCep?.logradouro || (viaCep ? "" : salvo.logradouro),
+        bairro: viaCep?.bairro || (viaCep ? "" : salvo.bairro),
+        cidade: viaCep?.localidade || salvo.cidade,
+        uf: viaCep?.uf || salvo.uf,
+        numero: viaCep && viaCep.logradouro !== salvo.logradouro ? "" : salvo.numero,
+        complemento: viaCep && viaCep.logradouro !== salvo.logradouro ? "" : salvo.complemento,
+      }))
     } catch (cause) {
       setErroFrete(mensagemDe(cause, "Não foi possível calcular o frete."))
     } finally {
@@ -93,17 +164,27 @@ function CheckoutContent() {
     }
   }
 
+  const faltaEndereco = entrega?.tipo === "envio" && !enderecoCompleto(endereco)
+
   async function startPayment() {
-    if (!productId || !product || sending || belowMinimum || !entrega) return
+    if (!productId || !product || sending || belowMinimum || !entrega || faltaEndereco) return
     setSending(true)
     setError(null)
     try {
+      const destino: EnderecoEntrega = {
+        ...endereco,
+        nome: endereco.nome.trim(),
+        telefone: soDigitos(endereco.telefone),
+        cpf: soDigitos(endereco.cpf),
+        uf: endereco.uf.trim().toUpperCase(),
+      }
+      if (entrega.tipo === "envio") guardarEndereco(destino)
       const payment = await paymentService.create({
         type: "PRODUCT_PURCHASE",
         referenceId: productId,
         referenceType: "PRODUCT",
         description: product.title,
-        ...(entrega.tipo === "envio" ? { cepDestino: cep.replace(/\D/g, ""), freteServiceId: entrega.opcao.id } : {}),
+        ...(entrega.tipo === "envio" ? { cepDestino: cep.replace(/\D/g, ""), freteServiceId: entrega.opcao.id, endereco: destino } : {}),
       }, getToken)
       if (!payment.checkoutUrl) throw new Error("O serviço de pagamento não retornou o endereço do checkout.")
       window.location.assign(payment.checkoutUrl)
@@ -250,6 +331,54 @@ function CheckoutContent() {
                   </span>
                 </button>
               </div>
+
+              {entrega?.tipo === "envio" && (
+                <fieldset className="mt-6 border-t border-border pt-5">
+                  <legend className="type-label">Para onde enviar</legend>
+                  <p className="type-caption mt-1 text-muted-foreground">Vai na etiqueta da transportadora. Só o vendedor deste pedido vê.</p>
+                  <div className="mt-4 grid grid-cols-6 gap-3">
+                    <div className="col-span-6">
+                      <Label htmlFor="entrega-nome">Nome de quem recebe</Label>
+                      <Input {...campo("nome")} autoComplete="name" maxLength={120} className="mt-1.5" />
+                    </div>
+                    <div className="col-span-6 sm:col-span-3">
+                      <Label htmlFor="entrega-cpf">CPF</Label>
+                      <Input {...campo("cpf")} inputMode="numeric" maxLength={14} placeholder="Só números" className="mt-1.5" aria-invalid={endereco.cpf.length >= 11 && !cpfValido(endereco.cpf)} />
+                    </div>
+                    <div className="col-span-6 sm:col-span-3">
+                      <Label htmlFor="entrega-telefone">Telefone</Label>
+                      <Input {...campo("telefone")} type="tel" autoComplete="tel-national" maxLength={15} placeholder="DDD + número" className="mt-1.5" />
+                    </div>
+                    <div className="col-span-6 sm:col-span-4">
+                      <Label htmlFor="entrega-logradouro">Rua</Label>
+                      <Input {...campo("logradouro")} autoComplete="address-line1" maxLength={200} className="mt-1.5" />
+                    </div>
+                    <div className="col-span-2">
+                      <Label htmlFor="entrega-numero">Número</Label>
+                      <Input {...campo("numero")} maxLength={20} className="mt-1.5" />
+                    </div>
+                    <div className="col-span-4">
+                      <Label htmlFor="entrega-complemento">Complemento <span className="font-normal text-muted-foreground">(opcional)</span></Label>
+                      <Input {...campo("complemento")} autoComplete="address-line2" maxLength={100} placeholder="Apto, bloco" className="mt-1.5" />
+                    </div>
+                    <div className="col-span-6 sm:col-span-3">
+                      <Label htmlFor="entrega-bairro">Bairro</Label>
+                      <Input {...campo("bairro")} maxLength={100} className="mt-1.5" />
+                    </div>
+                    <div className="col-span-4 sm:col-span-2">
+                      <Label htmlFor="entrega-cidade">Cidade</Label>
+                      <Input {...campo("cidade")} autoComplete="address-level2" maxLength={100} className="mt-1.5" />
+                    </div>
+                    <div className="col-span-2 sm:col-span-1">
+                      <Label htmlFor="entrega-uf">UF</Label>
+                      <Input {...campo("uf")} autoComplete="address-level1" maxLength={2} className="mt-1.5 uppercase" />
+                    </div>
+                  </div>
+                  {endereco.cpf.length >= 11 && !cpfValido(endereco.cpf) && (
+                    <p role="alert" className="type-caption mt-2 font-semibold text-destructive">Confira o CPF: os números não batem.</p>
+                  )}
+                </fieldset>
+              )}
             </section>
           )
         )}
@@ -269,11 +398,11 @@ function CheckoutContent() {
 
         <Button
           onClick={startPayment}
-          disabled={!product || !disponivel || sending || belowMinimum || !entrega}
+          disabled={!product || !disponivel || sending || belowMinimum || !entrega || faltaEndereco}
           size="lg" className="mt-6 w-full"
         >
           {sending && <Loader2 className="size-4 animate-spin" />}
-          {sending ? "Redirecionando..." : !entrega ? "Escolha a entrega" : "Continuar para pagamento"}
+          {sending ? "Redirecionando..." : !entrega ? "Escolha a entrega" : faltaEndereco ? "Preencha o endereço" : "Continuar para pagamento"}
         </Button>
         <p className="type-caption mt-3 flex items-center justify-center gap-1.5 text-muted-foreground">
           <ShieldCheck className="size-4 text-success" aria-hidden="true" />

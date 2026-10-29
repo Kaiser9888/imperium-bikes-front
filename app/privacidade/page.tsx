@@ -60,7 +60,9 @@ export default function PrivacidadePage() {
                     </li>
                     <li>
                         <strong>Compras e vendas:</strong> produtos anunciados, pedidos, CEP e dados de entrega usados para calcular e
-                        enviar o frete, e o histórico de disputas.
+                        enviar o frete, e o histórico de disputas. Numa compra com envio, o nome, endereço, telefone e CPF de quem recebe
+                        são mostrados só ao vendedor daquele pedido, para ele gerar a etiqueta da transportadora (o telefone e o CPF
+                        deixam de aparecer para ele quando o pedido é enviado).
                     </li>
                     <li>
                         <strong>Pagamentos:</strong> o pagamento é feito na página do Stripe. Os dados do cartão (ou do Pix/boleto, quando

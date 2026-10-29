@@ -618,7 +618,7 @@ return (
 
         <div className="price-summary">
           <span>
-            Taxa de pagamento
+            Taxa de segurança
           </span>
 
           <b>

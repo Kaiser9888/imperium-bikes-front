@@ -295,26 +295,7 @@ export default function PrecoPage() {
 
           {valor > 0 && !abaixoDoMinimo && !combinadoDireto && (
             <>
-              <div className="price-summary">
-                <span>
-                  Valor do anúncio
-                </span>
-
-                <b>
-                  {money(valor)}
-                </b>
-              </div>
-
-              <div className="price-summary">
-                <span>
-                  Taxa de pagamento ({String(TAXA_PAGAMENTO_PERCENTUAL).replace('.', ',')}% + {money(TAXA_PAGAMENTO_FIXA_CENTAVOS)})
-                </span>
-
-                <b>
-                  − {money(taxa)}
-                </b>
-              </div>
-
+              {/* Um número só em destaque; o cálculo fica a um toque para quem quiser conferir */}
               <div className="price-summary">
                 <span>
                   Você recebe
@@ -325,9 +306,35 @@ export default function PrecoPage() {
                 </b>
               </div>
 
-              <small>
-                Descontado só quando vender.
-              </small>
+              <details>
+                <summary>
+                  <small>Ver cálculo</small>
+                </summary>
+
+                <div className="price-summary">
+                  <span>
+                    Valor do anúncio
+                  </span>
+
+                  <b>
+                    {money(valor)}
+                  </b>
+                </div>
+
+                <div className="price-summary">
+                  <span>
+                    Taxa de segurança ({String(TAXA_PAGAMENTO_PERCENTUAL).replace('.', ',')}% + {money(TAXA_PAGAMENTO_FIXA_CENTAVOS)})
+                  </span>
+
+                  <b>
+                    − {money(taxa)}
+                  </b>
+                </div>
+
+                <small>
+                  Cobre o pagamento protegido: o comprador paga pelo site e o valor fica retido até a entrega. Só é descontada quando vender.
+                </small>
+              </details>
             </>
           )}
 

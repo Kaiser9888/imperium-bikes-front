@@ -6,6 +6,7 @@ import { useUser } from "@clerk/nextjs"
 import { Package, Star } from "lucide-react"
 
 import { PageHeading } from "@/components/layout/page-heading"
+import { EnvioDoComprador, EnvioDoVendedor, type Envio } from "@/components/marketplace/envio-pedido"
 import {
     AlertDialog,
     AlertDialogAction,
@@ -48,6 +49,8 @@ type Pedido = {
     retiradaEmMaos: boolean
     /** Só vem para o comprador, enquanto espera a retirada. */
     codigoRetirada: string | null
+    /** Com frete pelo site: etiqueta, destinatário e rastreio. */
+    envio: Envio | null
 }
 
 const STATUS: Record<Status, { label: string; tone: StatusBadgeProps["tone"] }> = {
@@ -207,7 +210,26 @@ export default function PedidosPage() {
                                 Na entrega, peça o código ao comprador. Não aceite pagamento por fora.
                             </p>
                         )}
-                        {pedido.status === "PAGO" && !pedido.retiradaEmMaos && (
+                        {pedido.status === "PAGO" && pedido.envio && (
+                            pedido.comprador ? (
+                                <EnvioDoComprador envio={pedido.envio} />
+                            ) : (
+                                <EnvioDoVendedor
+                                    envio={pedido.envio}
+                                    onInformar={async (codigo) => {
+                                        setErro(null)
+                                        try {
+                                            await api.post(`/api/orders/${pedido.id}/envio`, { codigo })
+                                            await carregar()
+                                        } catch (cause) {
+                                            setErro(mensagemDaApi(cause, "Não foi possível salvar o código. Tente novamente."))
+                                            throw cause
+                                        }
+                                    }}
+                                />
+                            )
+                        )}
+                        {pedido.status === "PAGO" && !pedido.retiradaEmMaos && pedido.envio?.enviadoEm && (
                             <p className="type-body-small mt-3 text-muted-foreground">
                                 {pedido.comprador
                                     ? `Se algo der errado, avise até ${dia(pedido.prazoDisputa)}. Depois disso o pagamento é liberado ao vendedor.`
@@ -238,8 +260,8 @@ export default function PedidosPage() {
                             )}
                             {pedido.comprador && pedido.status === "PAGO" && (
                                 <>
-                                    {/* Na retirada em mãos, quem confirma é o código; o botão fica só para envio */}
-                                    {!pedido.retiradaEmMaos && (
+                                    {/* Na retirada em mãos, quem confirma é o código; no envio, só depois de postado */}
+                                    {!pedido.retiradaEmMaos && pedido.envio?.enviadoEm && (
                                         <Button size="sm" onClick={() => setConfirmando({ pedido, acao: "recebido" })}>
                                             Recebi o produto
                                         </Button>

@@ -36,7 +36,7 @@ export const topicos: Topico[] = [
         perguntas: [
             {
                 pergunta: "Como sei que meu dinheiro está protegido?",
-                resposta: "O pagamento é feito pelo Stripe e fica retido até você confirmar que recebeu, ou até acabar o prazo de disputa (7 dias mais o prazo do frete). Na retirada em mãos, ele só é liberado com o seu código de retirada. Se der problema, abra uma disputa no pedido e o valor não vai para o vendedor.",
+                resposta: "O pagamento é feito pelo Stripe e fica retido até você confirmar que recebeu, ou até acabar o prazo de disputa (7 dias mais o prazo do frete, contados de quando o vendedor posta). Na retirada em mãos, ele só é liberado com o seu código de retirada. Se der problema, abra uma disputa no pedido e o valor não vai para o vendedor.",
             },
             {
                 pergunta: "Quais formas de pagamento posso usar?",
@@ -88,12 +88,17 @@ export const topicos: Topico[] = [
             },
             {
                 pergunta: "Quanto o Imperium Bikes cobra?",
-                resposta: "Anunciar é grátis. Só quando vende, saem do valor a taxa de pagamento (3,99% + R$ 0,39, que cobre a operadora do cartão) e, se você escolheu destaque, a comissão dele (2%, 5% ou 7%). As duas são sobre o preço do produto, sem o frete, e aparecem antes de publicar. O preço mínimo de um anúncio é R$ 5,00.",
+                resposta: "Anunciar é grátis. Só quando vende, saem do valor a taxa de segurança (3,99% + R$ 0,39, que cobre o pagamento protegido) e, se você escolheu destaque, a comissão dele (2%, 5% ou 7%). As duas são sobre o preço do produto, sem o frete, e aparecem antes de publicar. O preço mínimo de um anúncio é R$ 5,00.",
             },
             {
                 pergunta: "Quando recebo o dinheiro da venda?",
-                resposta: "Quando o comprador confirma o recebimento, ou quando acaba o prazo de disputa. Aí o valor é transferido pelo Stripe para a sua conta de recebimentos, e o Stripe deposita na sua conta bancária.",
+                resposta: "Quando o comprador confirma o recebimento, ou quando acaba o prazo de disputa. O frete que o comprador pagou vem junto. Aí o valor é transferido pelo Stripe para a sua conta de recebimentos, e o Stripe deposita na sua conta bancária.",
                 link: { href: "/carteira", label: "Abrir Carteira" },
+            },
+            {
+                pergunta: "Vendi com envio. Como despacho?",
+                resposta: "Em Pedidos aparecem o endereço de quem recebe e o serviço de frete escolhido. Compre a etiqueta no Melhor Envio nesse mesmo serviço (assim o valor bate com o frete pago, que você recebe junto com a venda), use a caixa com o peso e as medidas do anúncio, poste em até 3 dias úteis e informe o código de rastreio no pedido. O prazo de liberação só começa depois disso.",
+                link: { href: "/pedidos", label: "Abrir Pedidos" },
             },
             {
                 pergunta: "Preciso cadastrar uma conta para receber?",
