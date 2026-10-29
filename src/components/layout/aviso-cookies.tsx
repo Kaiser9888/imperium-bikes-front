@@ -4,14 +4,17 @@ import Link from "next/link"
 import { useEffect, useSyncExternalStore } from "react"
 import { Analytics } from "@vercel/analytics/next"
 
+import { GoogleAnalytics, negarGoogleAnalytics } from "@/components/layout/google-analytics"
 import { Button } from "@/components/ui/button"
 
 /*
   Consentimento (LGPD, art. 7º, I e art. 8º): cookies necessários (login, pagamento) não
-  dependem de aceite; as estatísticas de uso (Vercel Analytics, sem cookies) só carregam
-  depois do "Aceitar". A escolha fica no aparelho e pode ser revista pelo rodapé.
+  dependem de aceite; as estatísticas de uso (Vercel Analytics, sem cookies, e Google
+  Analytics, com cookies) só carregam depois do "Aceitar". A escolha fica no aparelho e
+  pode ser revista pelo rodapé.
 */
-const CHAVE = "imperium:consentimento-cookies"
+// v2: entrou o Google Analytics (com cookies); quem aceitou só o Vercel precisa escolher de novo
+const CHAVE = "imperium:consentimento-cookies-v2"
 const REABRIR = "imperium:preferencias-cookies"
 type Escolha = "aceito" | "recusado" | null
 
@@ -33,6 +36,7 @@ function salvar(escolha: Exclude<Escolha, null>) {
     } catch {
         // sem armazenamento: vale só nesta visita
     }
+    if (escolha === "recusado") negarGoogleAnalytics()
     memoria = escolha
     reaberto = false
     ouvintes.forEach((avisar) => avisar())
@@ -67,7 +71,12 @@ export function AvisoCookies() {
 
     return (
         <>
-            {escolha === "aceito" && <Analytics />}
+            {escolha === "aceito" && (
+                <>
+                    <Analytics />
+                    <GoogleAnalytics />
+                </>
+            )}
             {mostrar && escolha !== "pendente" && (
                 <div
                     role="dialog"
@@ -79,7 +88,7 @@ export function AvisoCookies() {
                         Cookies e privacidade
                     </p>
                     <p id="cookies-texto" className="type-caption min-w-0 flex-1 text-muted-foreground">
-                        Estatísticas anônimas?{" "}
+                        Cookies de estatísticas?{" "}
                         <Link href="/privacidade#cookies" className="underline underline-offset-2 hover:text-foreground">
                             Saiba mais
                         </Link>

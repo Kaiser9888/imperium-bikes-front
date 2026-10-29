@@ -120,7 +120,10 @@ export default function PrivacidadePage() {
                     <li><strong>Stream</strong> — chat entre usuários.</li>
                     <li><strong>Melhor Envio</strong> — cotação e envio de fretes.</li>
                     <li><strong>Vercel</strong> — hospedagem do site e estatísticas de uso (quando você aceita).</li>
-                    <li><strong>Render</strong> — hospedagem do servidor e do banco de dados.</li>
+                    <li><strong>Google Analytics</strong> — estatísticas de uso do site, como páginas vistas, origem da visita e tipo de aparelho (quando você aceita).</li>
+                    <li><strong>Render</strong> — hospedagem do servidor.</li>
+                    <li><strong>Neon</strong> — banco de dados.</li>
+                    <li><strong>Resend</strong> — envio de e-mails do app (avisos de conta e de pedidos).</li>
                     <li><strong>Sentry</strong> — registro de erros técnicos do site e do servidor, para corrigirmos falhas (sem cookies).</li>
                 </ul>
                 <p>
@@ -149,7 +152,9 @@ export default function PrivacidadePage() {
                     </li>
                     <li>
                         <strong>Estatísticas (opcional):</strong> Vercel Web Analytics, que conta visitas de forma agregada e não usa
-                        cookies. Só é ativado se você aceitar no aviso de cookies.
+                        cookies, e Google Analytics, que usa cookies próprios (como <code>_ga</code>) para contar visitantes e sessões,
+                        com os recursos de publicidade e Google Signals desligados. Os dois só são ativados se você aceitar no aviso de
+                        cookies, e você pode mudar a escolha em &quot;Preferências de cookies&quot;, no rodapé.
                     </li>
                 </ul>
                 <p>O player de vídeo funciona sem cookies de rastreamento. Não usamos cookies de publicidade de terceiros.</p>
