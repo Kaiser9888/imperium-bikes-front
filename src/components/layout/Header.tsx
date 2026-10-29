@@ -1,9 +1,11 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Bell, Menu, ShoppingCart, User } from "lucide-react"
+import { Bell, Menu, ShoppingCart, Trophy, TvMinimalPlay, User } from "lucide-react"
 import { UserButton } from "@clerk/nextjs"
 import Link from "next/link"
+import { usePathname } from "next/navigation"
+import { isRouteActive } from "@/lib/navigation"
 import { Logo } from "@/components/layout/logo"
 
 import { Authed, Guest } from "@/components/auth/auth-gates"
@@ -17,6 +19,7 @@ import { rotuloContador, useContadores } from "@/hooks/useContadores"
   Celular:  [logo] Imperium Bikes        sino  carrinho  conta  menu
             ( busca em linha própria )
   md+:      [logo] Imperium Bikes   ( busca central )   sino  carrinho  conta  menu
+  lg+:      + Eventos e Vídeos antes dos ícones (a barra de baixo some)
 
   O sino mostra as notificações não lidas; o ponto no menu avisa mensagem nova no chat.
 */
@@ -31,8 +34,14 @@ function Selo({ children }: { children: React.ReactNode }) {
     )
 }
 
+const SECOES = [
+    { href: "/torneios", label: "Eventos", icon: Trophy },
+    { href: "/videos", label: "Vídeos", icon: TvMinimalPlay },
+]
+
 export function Header() {
     const { openMenu } = useAppShell()
+    const pathname = usePathname()
     const [cartCount, setCartCount] = useState(0)
     const { notificacoes, mensagens } = useContadores()
 
@@ -56,6 +65,21 @@ export function Header() {
                 <Logo className="order-1" />
 
                 <div className="order-2 ml-auto flex items-center gap-1 md:order-3 md:ml-0">
+                    {/* Computador: sem a barra de baixo, Eventos e Vídeos ficam aqui */}
+                    <nav aria-label="Seções" className="mr-2 hidden items-center gap-1 lg:flex">
+                        {SECOES.map(({ href, label, icon: Icone }) => (
+                            <Link
+                                key={href}
+                                href={href}
+                                aria-current={isRouteActive(pathname, href) ? "page" : undefined}
+                                className="type-label inline-flex h-10 items-center gap-2 rounded-full px-3.5 text-muted-foreground transition-colors hover:bg-surface-muted hover:text-foreground aria-[current=page]:text-primary"
+                            >
+                                <Icone className="size-5" aria-hidden="true" />
+                                {label}
+                            </Link>
+                        ))}
+                    </nav>
+
                     <Authed>
                         <Button asChild variant="ghost" size="icon" className="relative rounded-full">
                             <Link
