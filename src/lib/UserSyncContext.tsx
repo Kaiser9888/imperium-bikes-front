@@ -10,6 +10,7 @@ import {
 } from "react";
 import { useUser } from "@clerk/nextjs";
 import api from "@/lib/api";
+import { sincronizarFavoritos } from "@/lib/favorites";
 
 interface UserSyncContextValue {
   /**
@@ -66,9 +67,9 @@ export function UserSyncProvider({ children }: { children: ReactNode }) {
     api
       .post("/api/users/sync")
       .then((res) => {
-        console.log("[AutoSync] Usuário sincronizado:", res.data?.id);
         setBackendUserId(res.data?.id ? String(res.data.id) : null);
-        setBackendUserId(res.data?.id ? String(res.data.id) : null);
+        // Favoritos da conta aparecem em qualquer aparelho
+        void sincronizarFavoritos();
         setIsSynced(true);
       })
       .catch((err) => {

@@ -2,16 +2,39 @@
 
 import { Suspense } from "react"
 import { useSearchParams } from "next/navigation"
-import Link from "next/link"
+import { PageHeading } from "@/components/layout/page-heading"
 import { ProductsCatalog } from "@/components/marketplace/ProductsCatalog"
 import { Loader } from "@/components/ui/loader"
+
+/** Slug da categoria (?categoria=) → nome que a pessoa lê. */
+const NOMES: Record<string, string> = {
+  bikes: "Bicicletas",
+  pecas: "Peças",
+  servicos: "Serviços",
+  produtos: "Produtos e acessórios",
+  consumiveis: "Consumíveis",
+  esportes: "Artigos esportivos",
+}
 
 function ProductsContent() {
   const params = useSearchParams()
   const category = params.get("categoria") ?? undefined
-  return <main className="mx-auto min-h-screen max-w-7xl px-4 py-8"><Link href="/" className="text-sm text-muted-foreground hover:text-foreground">← Início</Link><h1 className="mt-4 font-heading text-2xl font-bold">{category ? `Produtos: ${category}` : "Todos os produtos"}</h1><p className="mb-6 mt-1 text-sm text-muted-foreground">Encontre bikes, peças e equipamentos.</p><ProductsCatalog category={category} /></main>
+  return (
+    <main className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 pb-16 pt-3 sm:px-6 lg:px-8 lg:pt-6">
+      <PageHeading
+        title={category ? (NOMES[category] ?? "Produtos") : "Todos os produtos"}
+        description="Bikes, peças e equipamentos anunciados."
+        back={{ href: "/", label: "Início" }}
+      />
+      <ProductsCatalog category={category} />
+    </main>
+  )
 }
 
 export default function ProductsPage() {
-  return <Suspense fallback={<Loader className="py-12" />}><ProductsContent /></Suspense>
+  return (
+    <Suspense fallback={<Loader className="py-12" />}>
+      <ProductsContent />
+    </Suspense>
+  )
 }

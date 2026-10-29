@@ -24,7 +24,7 @@ import {
   type BuscaParams,
   type BuscaResultado,
   type Filtro,
-} from "@/lib/meilisearch"
+} from "@/lib/busca"
 import { cn } from "@/lib/utils"
 
 const HISTORICO_KEY = "imperium-product-search-history"

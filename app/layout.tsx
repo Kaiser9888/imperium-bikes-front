@@ -23,9 +23,20 @@ const caesarDressing = Caesar_Dressing({
 })
 
 export const metadata: Metadata = {
+  // Base dos links absolutos da prévia (og:image, canonical) no endereço com www
+  metadataBase: new URL('https://www.imperiumbikes0.com.br'),
   title: 'Imperium Bikes',
   description: 'Bikes, peças, eventos e vídeos de ciclismo em um só lugar.',
   applicationName: 'Imperium Bikes',
+  // Prévia padrão no WhatsApp/Instagram para páginas sem prévia própria
+  openGraph: {
+    siteName: 'Imperium Bikes',
+    locale: 'pt_BR',
+    type: 'website',
+    title: 'Imperium Bikes',
+    description: 'Bikes, peças, eventos e vídeos de ciclismo em um só lugar.',
+    images: [{ url: '/logo.jpg', width: 1024, height: 1024 }],
+  },
   icons: {
     icon: [{ url: '/favicon.ico' }, { url: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' }],
     apple: [{ url: '/icons/apple-touch-icon.png', sizes: '180x180' }],
