@@ -3,7 +3,7 @@
 import Script from "next/script"
 
 /** Google Analytics 4. Só é montado depois do "Aceitar" no aviso de cookies. */
-export const GA_ID = process.env.NEXT_PUBLIC_GA_ID || "G-QN9F2SG63V"
+export const GA_ID = process.env.NEXT_PUBLIC_GA_ID || "G-DRGKFJ1GZ6"
 
 type Gtag = (...args: unknown[]) => void
 
