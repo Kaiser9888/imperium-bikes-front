@@ -16,6 +16,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { ErrorState } from "@/components/ui/error-state"
+import { EditarEvento } from "@/components/torneios/EditarEvento"
 import { PlacarOrganizador } from "@/components/torneios/PlacarOrganizador"
 import { RotaOrganizador } from "@/components/torneios/RotaOrganizador"
 import { Loader } from "@/components/ui/loader"
@@ -180,6 +181,7 @@ export default function GerenciarTorneioPage() {
       </dl>
 
       <div className="mt-6 flex flex-wrap items-center gap-x-8 gap-y-3">
+        {!torneio.cancelado && torneio.status !== "encerrado" && <EditarEvento torneioId={id} aoSalvar={recarregarTorneio} />}
         {torneio.status === "andamento" && (
           <AlertDialog>
             <AlertDialogTrigger asChild>

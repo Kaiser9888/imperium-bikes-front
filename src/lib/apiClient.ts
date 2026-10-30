@@ -2,6 +2,7 @@
 "use client";
 
 import { API_BASE_URL } from "@/lib/api-config";
+import { fetchRenovando } from "@/lib/fetch-renovando";
 
 export const API_URL = API_BASE_URL;
 
@@ -12,7 +13,8 @@ export async function apiFetch<T>(
 ): Promise<T> {
   const token = await getToken();
 
-  const res = await fetch(`${API_URL}${path}`, {
+  // Token vencido (ex.: backend acordando depois de deploy): renova e tenta de novo uma vez
+  const res = await fetchRenovando(`${API_URL}${path}`, {
     ...options,
     headers: {
       "Content-Type": "application/json",

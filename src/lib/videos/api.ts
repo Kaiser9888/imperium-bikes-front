@@ -6,6 +6,7 @@ import type {
     VideoPage,
 } from "./types";
 import { API_BASE_URL } from "@/lib/api-config";
+import { fetchRenovando } from "@/lib/fetch-renovando";
 
 export const API_URL = API_BASE_URL;
 
@@ -34,7 +35,7 @@ async function errorFrom(res: Response): Promise<Error> {
 }
 
 async function getJson<T>(path: string, token?: string | null): Promise<T> {
-    const res = await fetch(`${API_URL}${path}`, {
+    const res = await fetchRenovando(`${API_URL}${path}`, {
         headers: { Accept: "application/json", ...authHeaders(token) },
         signal: AbortSignal.timeout(TIMEOUT_MS),
         cache: "no-store",
@@ -207,7 +208,7 @@ export async function fetchRelated(id: string): Promise<VideoItem[]> {
 async function react(id: string, token: string, kind: "like" | "dislike"): Promise<ReactionResponse | null> {
     if (!id || !token) return null;
     try {
-        const res = await fetch(`${API_URL}/api/videos/${encodeURIComponent(id)}/${kind}`, {
+        const res = await fetchRenovando(`${API_URL}/api/videos/${encodeURIComponent(id)}/${kind}`, {
             method: "POST",
             headers: { Accept: "application/json", ...authHeaders(token) },
             signal: AbortSignal.timeout(TIMEOUT_MS),
@@ -233,7 +234,7 @@ export const dislikeVideo = (id: string, token: string) => react(id, token, "dis
 export function sendWatchTime(id: string, seconds: number, token?: string | null): void {
     const whole = Math.min(120, Math.round(seconds));
     if (!id || whole < 1) return;
-    fetch(`${API_URL}/api/videos/${encodeURIComponent(id)}/watch`, {
+    fetchRenovando(`${API_URL}/api/videos/${encodeURIComponent(id)}/watch`, {
         method: "POST",
         headers: { "Content-Type": "application/json", ...authHeaders(token) },
         body: JSON.stringify({ seconds: whole }),
@@ -249,7 +250,7 @@ export function sendWatchTime(id: string, seconds: number, token?: string | null
 
 /** Com `tournamentId`, a live aparece no topo da página do evento (só o organizador pode). */
 export async function createLive(token: string, title: string, description: string, tournamentId?: string | null): Promise<LiveCredentials> {
-    const res = await fetch(`${API_URL}/api/videos/live`, {
+    const res = await fetchRenovando(`${API_URL}/api/videos/live`, {
         method: "POST",
         headers: { "Content-Type": "application/json", ...authHeaders(token) },
         body: JSON.stringify({ title, description, tournamentId: tournamentId || null }),
@@ -268,7 +269,7 @@ export async function createYouTubeLive(
     description: string,
     tournamentId?: string | null
 ): Promise<LiveCredentials> {
-    const res = await fetch(`${API_URL}/api/videos/live/youtube`, {
+    const res = await fetchRenovando(`${API_URL}/api/videos/live/youtube`, {
         method: "POST",
         headers: { "Content-Type": "application/json", ...authHeaders(token) },
         body: JSON.stringify({ youtubeUrl, title, description, tournamentId: tournamentId || null }),
@@ -281,7 +282,7 @@ export async function createYouTubeLive(
 /** Live do organizador no ar agora na página do evento; null quando não há. */
 export async function fetchTournamentLive(tournamentId: string): Promise<VideoItem | null> {
     try {
-        const res = await fetch(`${API_URL}/api/tournaments/${encodeURIComponent(tournamentId)}/live`, {
+        const res = await fetchRenovando(`${API_URL}/api/tournaments/${encodeURIComponent(tournamentId)}/live`, {
             headers: { Accept: "application/json" },
             signal: AbortSignal.timeout(TIMEOUT_MS),
             cache: "no-store",
@@ -298,7 +299,7 @@ export function fetchLiveCredentials(token: string, videoId: string): Promise<Li
 }
 
 export async function endLive(token: string, videoId: string): Promise<void> {
-    const res = await fetch(`${API_URL}/api/videos/${encodeURIComponent(videoId)}/live/end`, {
+    const res = await fetchRenovando(`${API_URL}/api/videos/${encodeURIComponent(videoId)}/live/end`, {
         method: "POST",
         headers: authHeaders(token),
         signal: AbortSignal.timeout(20000),
@@ -311,7 +312,7 @@ export async function endLive(token: string, videoId: string): Promise<void> {
  * ================================================================ */
 
 export async function deleteVideo(token: string, videoId: string): Promise<void> {
-    const res = await fetch(`${API_URL}/api/videos/${encodeURIComponent(videoId)}`, {
+    const res = await fetchRenovando(`${API_URL}/api/videos/${encodeURIComponent(videoId)}`, {
         method: "DELETE",
         headers: authHeaders(token),
         signal: AbortSignal.timeout(TIMEOUT_MS),
@@ -324,7 +325,7 @@ export async function deleteVideo(token: string, videoId: string): Promise<void>
  * ================================================================ */
 
 async function send(path: string, token: string, method: "POST" | "PUT" | "DELETE", body?: unknown): Promise<Response> {
-    const res = await fetch(`${API_URL}${path}`, {
+    const res = await fetchRenovando(`${API_URL}${path}`, {
         method,
         headers: {
             ...authHeaders(token),
