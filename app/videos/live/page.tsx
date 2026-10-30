@@ -29,6 +29,7 @@ import { VideoPlayer } from "@/components/videos/VideoPlayer";
 import { YouTubePlayer } from "@/components/videos/YouTubePlayer";
 import { createLive, createYouTubeLive, endLive, fetchLiveCredentials, fetchMyVideos, fetchVideo, playbackIdFrom } from "@/lib/videos/api";
 import type { LiveCredentials, VideoItem } from "@/lib/videos/types";
+import { ANUNCIOS_ABERTOS } from "@/lib/anuncios";
 import { cn } from "@/lib/utils";
 import { tournamentService } from "@/services/tournamentService";
 
@@ -238,7 +239,7 @@ function LiveStudio() {
                                     onClick={() => setFonte("imperium")}
                                     Icone={Radio}
                                     titulo="Transmitir pelo Imperium"
-                                    texto="Pelo OBS ou um app de live. Chat, views e monetização ficam aqui."
+                                    texto={ANUNCIOS_ABERTOS ? "Pelo OBS ou um app de live. Chat, views e monetização ficam aqui." : "Pelo OBS ou um app de live. Chat e views ficam aqui."}
                                 />
                                 <OpcaoFonte
                                     ativa={fonte === "youtube"}

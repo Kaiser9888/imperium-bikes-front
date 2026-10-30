@@ -31,6 +31,7 @@ import { OrcaMark } from "@/components/layout/logo"
 import { rotuloContador, useContadores } from "@/hooks/useContadores"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet"
+import { ANUNCIOS_ABERTOS } from "@/lib/anuncios"
 import { isRouteActive } from "@/lib/navigation"
 import { useIsAdmin } from "@/lib/use-is-admin"
 import { cn } from "@/lib/utils"
@@ -71,14 +72,14 @@ const menuSections: MenuSection[] = [
         title: "Vender",
         items: [
             { icon: Store, label: "Central do vendedor", href: "/vendedor" },
-            { icon: Megaphone, label: "Anunciar nos vídeos", href: "/anunciar" },
+            ...(ANUNCIOS_ABERTOS ? [{ icon: Megaphone, label: "Anunciar nos vídeos", href: "/anunciar" }] : []),
         ],
     },
     {
         title: "Conteúdo",
         items: [
             { icon: Clapperboard, label: "Vídeos", href: "/videos" },
-            { icon: CircleDollarSign, label: "Monetização", href: "/videos/monetizacao" },
+            ...(ANUNCIOS_ABERTOS ? [{ icon: CircleDollarSign, label: "Monetização", href: "/videos/monetizacao" }] : []),
             { icon: LayoutGrid, label: "Categorias", href: "/modalidades" },
         ],
     },

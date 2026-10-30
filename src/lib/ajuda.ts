@@ -2,8 +2,51 @@
  * Perguntas da Central de Ajuda. Cada resposta descreve o que o app faz hoje;
  * ao mudar uma regra (taxa, prazo, mínimo), atualize aqui e nos Termos.
  */
+import { ANUNCIOS_ABERTOS } from "@/lib/anuncios"
+
 export type Pergunta = { pergunta: string; resposta: string; link?: { href: string; label: string } }
 export type Topico = { id: string; titulo: string; perguntas: Pergunta[] }
+
+// Monetização e anúncios só aparecem quando estiverem abertos ao público (src/lib/anuncios.ts)
+const monetizacao: Pergunta[] = [
+    {
+        pergunta: "Como funciona a monetização?",
+        resposta: "Quando o canal é liberado, você ganha 55% de cada anúncio exibido antes dos seus vídeos. Só os anúncios geram ganho: visualizações sozinhas não são pagas, e só há ganho quando há anunciante com campanha no ar.",
+        link: { href: "/videos/monetizacao", label: "Ver minha monetização" },
+    },
+    {
+        pergunta: "O que conta para liberar a monetização?",
+        resposta: "Vários fatores: audiência e engajamento reais, regularidade das publicações, tempo e situação da conta, histórico de denúncias e a procura de anunciantes. A análise é revista todo dia. Não divulgamos números exatos para não estimular seguidores ou visualizações artificiais, e bater uma meta de audiência sozinha não garante a liberação.",
+    },
+    {
+        pergunta: "Por que meu ganho fica \"a liberar\"?",
+        resposta: "Cada exibição fica 30 dias a liberar antes de ir para o saldo disponível. É o prazo para confirmar as exibições e o pagamento do anunciante. Depois disso, você pode sacar.",
+    },
+    {
+        pergunta: "Qual o saque mínimo?",
+        resposta: "R$ 50,00. O saque vai pelo Stripe para a sua conta de recebimentos (a mesma da Carteira) e de lá para o seu banco.",
+    },
+]
+
+const anuncios: Topico = {
+    id: "anuncios",
+    titulo: "Anunciar nos vídeos",
+    perguntas: [
+        {
+            pergunta: "Como funciona o anúncio?",
+            resposta: "Você envia um vídeo de até 60 segundos, define o link e o orçamento e paga pelo Stripe. A equipe revisa antes de ir ao ar. Você paga por mil exibições até o orçamento acabar.",
+            link: { href: "/anunciar", label: "Anunciar" },
+        },
+        {
+            pergunta: "Quem pode anunciar?",
+            resposta: "Contas com e-mail confirmado, pelo menos 7 dias de cadastro, sem suspensão e sem denúncias procedentes recentes. A primeira campanha vai até R$ 1.000,00; depois da primeira aprovada, o limite sobe. Cada conta pode ter até 2 campanhas em análise ao mesmo tempo.",
+        },
+        {
+            pergunta: "O que faz um anúncio ser recusado?",
+            resposta: "Propaganda enganosa, promessas sem comprovação, produtos proibidos, conteúdo impróprio ou uso de música, imagem ou marca de terceiros sem permissão. Campanha recusada tem o valor devolvido.",
+        },
+    ],
+}
 
 export const topicos: Topico[] = [
     {
@@ -132,50 +175,16 @@ export const topicos: Topico[] = [
     },
     {
         id: "videos",
-        titulo: "Vídeos e monetização",
+        titulo: ANUNCIOS_ABERTOS ? "Vídeos e monetização" : "Vídeos",
         perguntas: [
             {
                 pergunta: "Como publico um vídeo?",
                 resposta: "Na Central de Vídeos, use Publicar vídeo. Ele fica em processamento por alguns minutos e depois aparece no seu canal. Publique só conteúdo seu ou que você tem permissão para usar.",
             },
-            {
-                pergunta: "Como funciona a monetização?",
-                resposta: "Quando o canal é liberado, você ganha 55% de cada anúncio exibido antes dos seus vídeos. Só os anúncios geram ganho: visualizações sozinhas não são pagas, e só há ganho quando há anunciante com campanha no ar.",
-                link: { href: "/videos/monetizacao", label: "Ver minha monetização" },
-            },
-            {
-                pergunta: "O que conta para liberar a monetização?",
-                resposta: "Vários fatores: audiência e engajamento reais, regularidade das publicações, tempo e situação da conta, histórico de denúncias e a procura de anunciantes. A análise é revista todo dia. Não divulgamos números exatos para não estimular seguidores ou visualizações artificiais, e bater uma meta de audiência sozinha não garante a liberação.",
-            },
-            {
-                pergunta: "Por que meu ganho fica \"a liberar\"?",
-                resposta: "Cada exibição fica 30 dias a liberar antes de ir para o saldo disponível. É o prazo para confirmar as exibições e o pagamento do anunciante. Depois disso, você pode sacar.",
-            },
-            {
-                pergunta: "Qual o saque mínimo?",
-                resposta: "R$ 50,00. O saque vai pelo Stripe para a sua conta de recebimentos (a mesma da Carteira) e de lá para o seu banco.",
-            },
+            ...(ANUNCIOS_ABERTOS ? monetizacao : []),
         ],
     },
-    {
-        id: "anuncios",
-        titulo: "Anunciar nos vídeos",
-        perguntas: [
-            {
-                pergunta: "Como funciona o anúncio?",
-                resposta: "Você envia um vídeo de até 60 segundos, define o link e o orçamento e paga pelo Stripe. A equipe revisa antes de ir ao ar. Você paga por mil exibições até o orçamento acabar.",
-                link: { href: "/anunciar", label: "Anunciar" },
-            },
-            {
-                pergunta: "Quem pode anunciar?",
-                resposta: "Contas com e-mail confirmado, pelo menos 7 dias de cadastro, sem suspensão e sem denúncias procedentes recentes. A primeira campanha vai até R$ 1.000,00; depois da primeira aprovada, o limite sobe. Cada conta pode ter até 2 campanhas em análise ao mesmo tempo.",
-            },
-            {
-                pergunta: "O que faz um anúncio ser recusado?",
-                resposta: "Propaganda enganosa, promessas sem comprovação, produtos proibidos, conteúdo impróprio ou uso de música, imagem ou marca de terceiros sem permissão. Campanha recusada tem o valor devolvido.",
-            },
-        ],
-    },
+    ...(ANUNCIOS_ABERTOS ? [anuncios] : []),
     {
         id: "seguranca",
         titulo: "Segurança, denúncias e privacidade",

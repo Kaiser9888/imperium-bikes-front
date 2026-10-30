@@ -45,6 +45,7 @@ import { VideoCard } from "@/components/videos/VideoCard";
 import { VideoGridSkeleton } from "@/components/videos/VideoGridSkeleton";
 import { sponsorImageUrl } from "@/components/perfil/SponsorBanners";
 import { monetizacaoService, type MonetizacaoStatus } from "@/lib/ads";
+import { ANUNCIOS_ABERTOS } from "@/lib/anuncios";
 import api from "@/lib/api";
 import { formatarPreco } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -170,7 +171,7 @@ function Central() {
   useEffect(() => {
     if (!isSignedIn) return;
     // Opcionais: sem eles a Central continua funcionando
-    monetizacaoService.status().then(setMonetizacao).catch(() => setMonetizacao(null));
+    if (ANUNCIOS_ABERTOS) monetizacaoService.status().then(setMonetizacao).catch(() => setMonetizacao(null));
     api
       .get("/api/users/me")
       .then(({ data }) => setBanner(data?.bannerCanalUrl ?? null))
