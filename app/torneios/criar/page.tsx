@@ -11,6 +11,7 @@ import { Logo } from "@/components/layout/logo"
 import { BackButton } from "@/components/ui/back-button"
 import { formatarPreco, partesDaData } from "@/lib/format"
 import { compactarImagem } from "@/lib/imagem"
+import { MODOS, type ModoPontuacao } from "@/lib/placar"
 import { mensagemDaApi, tournamentService } from "@/services/tournamentService"
 
 const PASSOS = ["O evento", "Local e vagas", "Inscrição"] as const
@@ -38,6 +39,8 @@ export default function CriarTorneioPage() {
         regras: "",
         capa: "",
     })
+    // Sem padrão de propósito: quem escolhe tempo ou pontos ganha o placar ao vivo
+    const [modo, setModo] = useState<ModoPontuacao | null>(null)
 
     const [passo, setPasso] = useState(1)
     const [criadoId, setCriadoId] = useState<string | null>(null)
@@ -79,6 +82,7 @@ export default function CriarTorneioPage() {
                 startDate: form.dataInicio, endDate: form.dataFim || form.dataInicio, registrationDeadline: form.prazoInscricao,
                 maxParticipants: Number(form.maxParticipantes), minParticipants: Number(form.minParticipantes),
                 registrationFee: Number(form.valorInscricao) || 0, prizes: form.premiacao.trim(), rules: form.regras.trim(), coverImageUrl: form.capa,
+                scoringMode: modo ?? "posicao",
             }))
             setRascunhoId(id)
             const publicado = await tournamentService.publicar(id)
@@ -95,6 +99,7 @@ export default function CriarTorneioPage() {
         if (p === 1) {
             if (form.nome.trim().length < 5) return "Dê um nome com pelo menos 5 letras."
             if (!form.dataInicio) return "Escolha a data de início."
+            if (!modo) return "Escolha como o resultado é decidido."
         }
         if (p === 2) {
             if (!form.local.trim()) return "Informe onde vai acontecer."
@@ -197,6 +202,30 @@ export default function CriarTorneioPage() {
                                 <input id="fim" type="date" value={form.dataFim} min={form.dataInicio || undefined} onChange={(e) => update("dataFim", e.target.value)} className={campo} />
                             </div>
                         </div>
+
+                        <fieldset>
+                            <legend className={rotulo}>Como o resultado é decidido</legend>
+                            <div className="mt-2 grid gap-3 sm:grid-cols-3">
+                                {MODOS.map((m) => (
+                                    <label
+                                        key={m.id}
+                                        className={`flex cursor-pointer flex-col gap-1 rounded-lg border p-3.5 transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-primary ${
+                                            modo === m.id ? "border-foreground bg-surface shadow-[3px_3px_0_var(--foreground)]" : "border-border bg-surface hover:border-foreground/50"
+                                        }`}
+                                    >
+                                        <input type="radio" name="modo" value={m.id} checked={modo === m.id} onChange={() => setModo(m.id)} className="sr-only" />
+                                        <span className="type-label flex items-center justify-between gap-2 text-foreground">
+                                            {m.titulo}
+                                            {modo === m.id && <Check className="size-4 text-success" aria-hidden="true" />}
+                                        </span>
+                                        <span className="type-caption text-muted-foreground">{m.texto}</span>
+                                    </label>
+                                ))}
+                            </div>
+                            <p className={ajuda}>
+                                Por tempo ou por pontos, você lança as marcas no celular durante a prova e a classificação aparece ao vivo na página do evento.
+                            </p>
+                        </fieldset>
 
                         <div>
                             <label htmlFor="capa" className={rotulo}>Capa</label>

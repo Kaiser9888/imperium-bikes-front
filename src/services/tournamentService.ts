@@ -1,4 +1,5 @@
 import api from "@/lib/api"
+import { modoDaApi, modoParaApi, tempoParaApi, type ModoPontuacao } from "@/lib/placar"
 
 export type TournamentStatus = "aberto" | "andamento" | "encerrado"
 
@@ -21,6 +22,8 @@ export interface Tournament {
     organizadorNome: string
     /** Cancelado aparece como "encerrado" nas listas; aqui dá para diferenciar. */
     cancelado: boolean
+    /** Como a classificação é decidida. */
+    modo: ModoPontuacao
 }
 
 type Raw = Record<string, unknown>
@@ -46,6 +49,7 @@ function normalize(item: Raw): Tournament {
         organizadorId: String(organizer.id ?? ""),
         organizadorNome: String(organizer.name ?? ""),
         cancelado: status === "CANCELLED",
+        modo: modoDaApi(item.scoringMode),
     }
 }
 
@@ -70,6 +74,16 @@ export interface InscritoPublico {
     numero: number | null
     /** Colocação lançada pelo organizador; null enquanto não há resultado. */
     posicao: number | null
+    /** Marca no placar (modo tempo ou pontos); null enquanto não lançada. */
+    tempoMs: number | null
+    pontos: number | null
+}
+
+/** Inscrição do usuário logado num evento. */
+export interface MinhaInscricao {
+    situacao: "PAGA" | "PENDENTE"
+    /** Número de peito, depois que o organizador numera. */
+    numero: number | null
 }
 
 export interface CriarTorneio {
@@ -88,6 +102,7 @@ export interface CriarTorneio {
     registrationFee: number
     prizes: string
     coverImageUrl: string
+    scoringMode: ModoPontuacao
 }
 
 export const tournamentService = {
@@ -120,6 +135,7 @@ export const tournamentService = {
     async criarRascunho(payload: CriarTorneio): Promise<string> {
         const { data } = await api.post("/api/tournaments", {
             ...payload,
+            scoringMode: modoParaApi(payload.scoringMode),
             // O prazo é LocalDateTime no backend; vale até o fim do dia escolhido
             registrationDeadline: `${payload.registrationDeadline || payload.startDate}T23:59:59`,
         })
@@ -131,11 +147,14 @@ export const tournamentService = {
     },
 
     /** Situação da inscrição do usuário logado: null se não está inscrito. */
-    async minhaInscricao(tournamentId: string): Promise<"PAGA" | "PENDENTE" | null> {
+    async minhaInscricao(tournamentId: string): Promise<MinhaInscricao | null> {
         const { data } = await api.get("/api/tournaments/my-participations", { params: { size: 100 } })
         const inscricao = (data.content as Raw[]).find((p) => p.tournamentId === tournamentId)
         if (!inscricao) return null
-        return inscricao.paymentStatus === "PAID" ? "PAGA" : "PENDENTE"
+        return {
+            situacao: inscricao.paymentStatus === "PAID" ? "PAGA" : "PENDENTE",
+            numero: typeof inscricao.bibNumber === "number" ? inscricao.bibNumber : null,
+        }
     },
 
     /** Histórico público de torneios de um usuário (perfil), mais recentes primeiro. */
@@ -160,7 +179,24 @@ export const tournamentService = {
             avatarUrl: typeof p.userAvatarUrl === "string" && p.userAvatarUrl ? p.userAvatarUrl : null,
             numero: typeof p.bibNumber === "number" ? p.bibNumber : null,
             posicao: typeof p.rankPosition === "number" ? p.rankPosition : null,
+            tempoMs: typeof p.finalTimeMs === "number" ? p.finalTimeMs : null,
+            pontos: p.points === null || p.points === undefined ? null : Number(p.points),
         }))
+    },
+
+    /** Placar ao vivo (só o organizador): grava tempo ou pontos; o backend refaz a classificação. */
+    async lancarMarca(participantId: string, marca: { tempoMs: number } | { pontos: number }): Promise<void> {
+        await api.put(`/api/tournaments/participants/${participantId}/marca`, "tempoMs" in marca ? { time: tempoParaApi(marca.tempoMs) } : { points: marca.pontos })
+    },
+
+    async apagarMarca(participantId: string): Promise<void> {
+        await api.delete(`/api/tournaments/participants/${participantId}/marca`)
+    },
+
+    /** Dá número de peito a todos os confirmados que ainda não têm. Devolve quantos numerou. */
+    async numerarInscritos(tournamentId: string): Promise<number> {
+        const { data } = await api.post(`/api/tournaments/${tournamentId}/numeros`)
+        return Number(data?.numerados ?? 0)
     },
 
     /** Só o organizador. Dar colocação já marca presença (check-in). */

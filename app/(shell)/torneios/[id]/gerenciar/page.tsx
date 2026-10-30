@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { useParams } from "next/navigation"
 
 import { PageHeading } from "@/components/layout/page-heading"
@@ -16,12 +16,22 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { ErrorState } from "@/components/ui/error-state"
+import { PlacarOrganizador } from "@/components/torneios/PlacarOrganizador"
 import { Loader } from "@/components/ui/loader"
 import api from "@/lib/api"
 import { formatarPreco } from "@/lib/format"
 import { mensagemDaApi, tournamentService, type Tournament } from "@/services/tournamentService"
 
-type Participant = { id: string; userName: string; paymentStatus: string; rankPosition: number | null }
+type Participant = {
+  id: string
+  userName: string
+  userAvatarUrl: string | null
+  paymentStatus: string
+  bibNumber: number | null
+  rankPosition: number | null
+  finalTimeMs: number | null
+  points: number | null
+}
 type Estado = { status: "loading" } | { status: "error" } | { status: "ok"; torneio: Tournament; participantes: Participant[] }
 
 const PAGAMENTO: Record<string, { texto: string; cor: string }> = {
@@ -100,12 +110,18 @@ export default function GerenciarTorneioPage() {
 
   useEffect(() => {
     let active = true
-    Promise.all([tournamentService.buscarPorId(id), api.get(`/api/tournaments/${id}/participants`, { params: { size: 200 } })])
+    Promise.all([tournamentService.buscarPorId(id), api.get(`/api/tournaments/${id}/participants`, { params: { size: 500 } })])
       .then(([torneio, { data }]) => active && setEstado({ status: "ok", torneio, participantes: data.content }))
       .catch(() => active && setEstado({ status: "error" }))
     return () => {
       active = false
     }
+  }, [id])
+
+  // Depois de cada marca a colocação de todos muda: busca a lista de novo
+  const recarregarParticipantes = useCallback(async () => {
+    const { data } = await api.get(`/api/tournaments/${id}/participants`, { params: { size: 500 } })
+    setEstado((atual) => (atual.status === "ok" ? { ...atual, participantes: data.content } : atual))
   }, [id])
 
   if (estado.status === "loading") return <Loader className="py-24" />
@@ -196,8 +212,28 @@ export default function GerenciarTorneioPage() {
         </p>
       )}
 
+      {torneio.modo !== "posicao" && !torneio.cancelado && (
+        <PlacarOrganizador
+          torneioId={id}
+          modo={torneio.modo}
+          aberto={torneio.status !== "aberto"}
+          competidores={participantes
+            .filter((p) => p.paymentStatus === "PAID")
+            .map((p) => ({
+              id: p.id,
+              userName: p.userName,
+              userAvatarUrl: p.userAvatarUrl,
+              bibNumber: p.bibNumber,
+              rankPosition: p.rankPosition,
+              finalTimeMs: p.finalTimeMs,
+              points: p.points === null ? null : Number(p.points),
+            }))}
+          recarregar={recarregarParticipantes}
+        />
+      )}
+
       <h2 className="type-h2 mt-12">Participantes</h2>
-      {torneio.status !== "aberto" && !torneio.cancelado && pagos > 0 && (
+      {torneio.modo === "posicao" && torneio.status !== "aberto" && !torneio.cancelado && pagos > 0 && (
         <p className="type-body-small mt-1 text-muted-foreground">
           Lance a colocação de cada um: os três primeiros aparecem no pódio da página do evento.
         </p>
@@ -216,7 +252,7 @@ export default function GerenciarTorneioPage() {
                   <span className={`size-1.5 rounded-full ${pg.cor}`} aria-hidden="true" />
                   {pg.texto}
                 </span>
-                {torneio.status !== "aberto" && !torneio.cancelado && p.paymentStatus === "PAID" && (
+                {torneio.modo === "posicao" && torneio.status !== "aberto" && !torneio.cancelado && p.paymentStatus === "PAID" && (
                   <Colocacao participante={p} />
                 )}
               </li>
