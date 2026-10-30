@@ -79,6 +79,13 @@ export interface InscritoPublico {
     pontos: number | null
 }
 
+/** Foto da galeria do evento (url relativa /api/files/...). */
+export interface FotoEvento {
+    id: string
+    url: string
+    legenda: string | null
+}
+
 /** Inscrição do usuário logado num evento. */
 export interface MinhaInscricao {
     situacao: "PAGA" | "PENDENTE"
@@ -191,6 +198,25 @@ export const tournamentService = {
 
     async apagarMarca(participantId: string): Promise<void> {
         await api.delete(`/api/tournaments/participants/${participantId}/marca`)
+    },
+
+    async fotos(tournamentId: string): Promise<FotoEvento[]> {
+        const { data } = await api.get(`/api/tournaments/${tournamentId}/fotos`)
+        return (data as Raw[]).map((f) => ({ id: String(f.id), url: String(f.url), legenda: typeof f.legenda === "string" ? f.legenda : null }))
+    },
+
+    /** Só o organizador: sobe o arquivo (vai para o R2) e põe na galeria. */
+    async adicionarFoto(tournamentId: string, arquivo: File, legenda?: string): Promise<void> {
+        const form = new FormData()
+        form.append("file", arquivo)
+        const { data } = await api.post("/api/files/upload/image", form, { headers: { "Content-Type": undefined } })
+        const url = data?.data?.publicUrl
+        if (typeof url !== "string") throw new Error("O envio da foto não devolveu o endereço")
+        await api.post(`/api/tournaments/${tournamentId}/fotos`, { url, legenda })
+    },
+
+    async removerFoto(tournamentId: string, fotoId: string): Promise<void> {
+        await api.delete(`/api/tournaments/${tournamentId}/fotos/${fotoId}`)
     },
 
     /** Dá número de peito a todos os confirmados que ainda não têm. Devolve quantos numerou. */

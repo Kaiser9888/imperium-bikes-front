@@ -12,6 +12,7 @@ import { DenunciarButton } from "@/components/ui/denunciar-button"
 import { ErrorState } from "@/components/ui/error-state"
 import { Loader } from "@/components/ui/loader"
 import { ShareButton } from "@/components/ui/share-button"
+import { Galeria } from "@/components/torneios/Galeria"
 import { Avatar, Classificacao, Podio } from "@/components/torneios/Placar"
 import { VideoCard } from "@/components/videos/VideoCard"
 import { VideoPlayer } from "@/components/videos/VideoPlayer"
@@ -20,12 +21,15 @@ import api from "@/lib/api"
 import { formatarPreco, partesDaData } from "@/lib/format"
 import { fetchTournamentLive, fetchTournamentVideos, playbackIdFrom } from "@/lib/videos/api"
 import type { VideoItem } from "@/lib/videos/types"
-import { mensagemDaApi, tournamentService, type InscritoPublico, type MinhaInscricao, type Tournament } from "@/services/tournamentService"
+import { mensagemDaApi, tournamentService, type FotoEvento, type InscritoPublico, type MinhaInscricao, type Tournament } from "@/services/tournamentService"
 
 /** De quanto em quanto tempo a página pergunta se o organizador entrou ou saiu do ar. */
 const CHECAR_LIVE_MS = 30_000
 /** Placar ao vivo: com o evento acontecendo, a classificação se atualiza sozinha. */
 const ATUALIZAR_PLACAR_MS = 15_000
+
+const ABAS = ["resultados", "sobre", "inscritos", "fotos", "videos"] as const
+type Aba = (typeof ABAS)[number]
 
 /** Transmissão do organizador, no topo da página enquanto estiver no ar. */
 function AoVivo({ live }: { live: VideoItem }) {
@@ -72,10 +76,8 @@ function VideosDoEvento({ torneioId, logado }: { torneioId: string; logado: bool
         }
     }, [torneioId])
 
-    if (videos.length === 0 && !logado) return null
-
     return (
-        <section aria-labelledby="videos-evento" className="mt-10 border-t border-border pt-8">
+        <section aria-labelledby="videos-evento">
             <div className="flex flex-wrap items-center justify-between gap-3">
                 <h2 id="videos-evento" className="type-h2">Vídeos do evento</h2>
                 {logado && (
@@ -159,6 +161,27 @@ export default function TorneioDetalhesPage() {
         tournamentService.minhaInscricao(id).then(setInscricao).catch(() => {})
     }, [id, isSignedIn])
 
+    const [fotos, setFotos] = useState<FotoEvento[]>([])
+    const carregarFotos = useCallback(async () => {
+        setFotos(await tournamentService.fotos(id).catch(() => []))
+    }, [id])
+    useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- carga inicial da galeria
+        void carregarFotos()
+    }, [carregarFotos])
+
+    // Aba aberta fica no endereço (#fotos), para dar para compartilhar direto
+    const [abaEscolhida, setAbaEscolhida] = useState<Aba | null>(null)
+    useEffect(() => {
+        const hash = window.location.hash.slice(1)
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- só no navegador existe o hash
+        if ((ABAS as readonly string[]).includes(hash)) setAbaEscolhida(hash as Aba)
+    }, [])
+    function escolherAba(aba: Aba) {
+        setAbaEscolhida(aba)
+        window.history.replaceState(null, "", `#${aba}`)
+    }
+
     // Durante a prova o organizador lança as marcas: a classificação acompanha (só com a aba à vista)
     const andamento = torneio?.status === "andamento" && !torneio.cancelado
     useEffect(() => {
@@ -237,6 +260,16 @@ export default function TorneioDetalhesPage() {
     const status = torneio.cancelado ? "Cancelado" : STATUS_LABEL[torneio.status]
     const organizador = !!meuId && meuId === torneio.organizadorId
     const comResultado = inscritos.some((i) => i.posicao !== null)
+
+    // Com resultado, o placar abre a página (é o que todo mundo veio ver) e já inclui todos os inscritos
+    const abas: { id: Aba; rotulo: string; contagem?: number }[] = [
+        ...(comResultado ? [{ id: "resultados" as const, rotulo: andamento ? "Ao vivo" : "Resultados" }] : []),
+        { id: "sobre", rotulo: "Sobre" },
+        ...(!comResultado ? [{ id: "inscritos" as const, rotulo: "Inscritos", contagem: inscritos.length }] : []),
+        { id: "fotos", rotulo: "Fotos", contagem: fotos.length },
+        { id: "videos", rotulo: "Vídeos" },
+    ]
+    const abaAtual: Aba = abas.some((a) => a.id === abaEscolhida) ? abaEscolhida! : abas[0].id
 
     // Seções numeradas só com o que o organizador preencheu
     const secoes = [
@@ -396,44 +429,75 @@ export default function TorneioDetalhesPage() {
                     </aside>
 
                     <article className="min-w-0 lg:col-start-1 lg:row-start-1">
-                        {/* Com resultado, o placar abre a página: é o que todo mundo veio ver */}
-                        {comResultado && (
-                            <div className="mb-12 space-y-8 border-b border-border pb-10">
-                                <Podio inscritos={inscritos} modo={torneio.modo} aoVivo={andamento} imagemHref={`/torneios/${torneio.id}/podio`} />
-                                <Classificacao inscritos={inscritos} modo={torneio.modo} titulo={andamento ? "Classificação ao vivo" : "Classificação"} />
-                                {andamento && (
-                                    <p className="type-caption text-muted-foreground">Atualiza sozinha a cada 15 segundos.</p>
-                                )}
-                            </div>
-                        )}
-                        {secoes.length === 0 && (
-                            <p className="type-body text-muted-foreground">O organizador ainda não escreveu os detalhes deste evento.</p>
-                        )}
-                        {secoes.map((s, i) => (
-                            <section key={s.titulo} className={i > 0 ? "mt-10 border-t border-border pt-8" : ""}>
-                                <h2 className="flex items-baseline gap-3">
-                                    <span className="text-sm font-bold tabular-nums text-accent">{String(i + 1).padStart(2, "0")}</span>
-                                    <span className="type-h2">{s.titulo}</span>
-                                </h2>
-                                <p className="type-body mt-3 whitespace-pre-line text-foreground/85">{s.texto}</p>
-                            </section>
-                        ))}
+                        <div role="tablist" aria-label="Seções do evento" className="-mx-4 flex gap-1 overflow-x-auto border-b border-border px-4 [scrollbar-width:none] sm:mx-0 sm:px-0">
+                            {abas.map((a) => (
+                                <button
+                                    key={a.id}
+                                    type="button"
+                                    role="tab"
+                                    id={`aba-${a.id}`}
+                                    aria-selected={abaAtual === a.id}
+                                    aria-controls={`painel-${a.id}`}
+                                    onClick={() => escolherAba(a.id)}
+                                    className={`type-label -mb-px flex min-h-11 shrink-0 items-center gap-1.5 border-b-2 px-3 transition-colors ${
+                                        abaAtual === a.id ? "border-foreground text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"
+                                    }`}
+                                >
+                                    {a.id === "resultados" && andamento && <span className="size-1.5 animate-pulse rounded-full bg-primary" aria-hidden="true" />}
+                                    {a.rotulo}
+                                    {a.contagem !== undefined && a.contagem > 0 && <span className="tabular-nums text-muted-foreground">{a.contagem}</span>}
+                                </button>
+                            ))}
+                        </div>
 
-                        {torneio.organizadorId && (
-                            <p className="type-body-small mt-12 border-t border-border pt-5 text-muted-foreground">
-                                Organizado por{" "}
-                                <Link href={`/perfil/${torneio.organizadorId}`} className="line-btn line-btn--sm ml-1 align-baseline">
-                                    {torneio.organizadorNome || "ver perfil"}
-                                </Link>
-                            </p>
-                        )}
-                        {!comResultado && inscritos.length > 0 && (
-                            <div className="mt-12 border-t border-border pt-8">
-                                <Classificacao inscritos={inscritos} modo={torneio.modo} titulo="Inscritos" />
-                            </div>
-                        )}
-                        <VideosDoEvento torneioId={torneio.id} logado={!!isSignedIn} />
-                        <DenunciarButton tipo="TOURNAMENT" id={torneio.id} className="mt-6" />
+                        <div role="tabpanel" id={`painel-${abaAtual}`} aria-labelledby={`aba-${abaAtual}`} className="pt-8">
+                            {abaAtual === "resultados" && (
+                                <div className="space-y-8">
+                                    <Podio inscritos={inscritos} modo={torneio.modo} aoVivo={andamento} imagemHref={`/torneios/${torneio.id}/podio`} />
+                                    <Classificacao inscritos={inscritos} modo={torneio.modo} titulo={andamento ? "Classificação ao vivo" : "Classificação"} />
+                                    {andamento && <p className="type-caption text-muted-foreground">Atualiza sozinha a cada 15 segundos.</p>}
+                                </div>
+                            )}
+
+                            {abaAtual === "sobre" && (
+                                <>
+                                    {secoes.length === 0 && (
+                                        <p className="type-body text-muted-foreground">O organizador ainda não escreveu os detalhes deste evento.</p>
+                                    )}
+                                    {secoes.map((s, i) => (
+                                        <section key={s.titulo} className={i > 0 ? "mt-10 border-t border-border pt-8" : ""}>
+                                            <h2 className="flex items-baseline gap-3">
+                                                <span className="text-sm font-bold tabular-nums text-accent">{String(i + 1).padStart(2, "0")}</span>
+                                                <span className="type-h2">{s.titulo}</span>
+                                            </h2>
+                                            <p className="type-body mt-3 whitespace-pre-line text-foreground/85">{s.texto}</p>
+                                        </section>
+                                    ))}
+                                    {torneio.organizadorId && (
+                                        <p className="type-body-small mt-12 border-t border-border pt-5 text-muted-foreground">
+                                            Organizado por{" "}
+                                            <Link href={`/perfil/${torneio.organizadorId}`} className="line-btn line-btn--sm ml-1 align-baseline">
+                                                {torneio.organizadorNome || "ver perfil"}
+                                            </Link>
+                                        </p>
+                                    )}
+                                    <DenunciarButton tipo="TOURNAMENT" id={torneio.id} className="mt-6" />
+                                </>
+                            )}
+
+                            {abaAtual === "inscritos" &&
+                                (inscritos.length > 0 ? (
+                                    <Classificacao inscritos={inscritos} modo={torneio.modo} titulo="Inscritos" />
+                                ) : (
+                                    <p className="type-body-small text-muted-foreground">Ninguém confirmou a inscrição ainda. Seja o primeiro.</p>
+                                ))}
+
+                            {abaAtual === "fotos" && (
+                                <Galeria torneioId={torneio.id} fotos={fotos} organizador={organizador} aoMudar={carregarFotos} />
+                            )}
+
+                            {abaAtual === "videos" && <VideosDoEvento torneioId={torneio.id} logado={!!isSignedIn} />}
+                        </div>
                     </article>
                 </div>
             </main>
