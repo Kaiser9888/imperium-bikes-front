@@ -3,6 +3,7 @@ import Link from "next/link"
 
 import { Documento, Secao } from "@/components/legal/documento"
 import { empresa, identificacaoEmpresa } from "@/lib/empresa"
+import { ETIQUETA_AUTOMATICA } from "@/lib/etiqueta"
 
 export const metadata: Metadata = {
     title: "Termos de Uso | Imperium Bikes",
@@ -90,11 +91,25 @@ export default function TermosPage() {
                         do pedido.
                     </li>
                     <li id="envio" className="scroll-mt-24">
-                        <strong>Envio:</strong> o vendedor compra a etiqueta na transportadora e no serviço escolhidos pelo comprador (pelo
-                        Melhor Envio, para o valor bater com o frete pago), posta em até 3 dias úteis do pagamento e informa o código de
-                        rastreio no pedido. O frete pago pelo comprador é repassado ao vendedor junto com a venda. Sem o código de rastreio,
-                        o prazo de liberação não começa; se o vendedor não postar, o comprador pode pedir o reembolso integral. O endereço
-                        de entrega é usado só para o envio daquele pedido.
+                        {ETIQUETA_AUTOMATICA ? (
+                            <>
+                                <strong>Envio:</strong> depois do pagamento, o Imperium Bikes compra a etiqueta pelo Melhor Envio, na
+                                transportadora e no serviço escolhidos pelo comprador, usando o frete que ele pagou. O vendedor imprime a
+                                etiqueta, usa a caixa com o peso e as medidas do anúncio e posta em até 3 dias úteis do pagamento; o rastreio
+                                entra no pedido sozinho. Se a etiqueta não puder ser gerada, o vendedor pode comprar a dele e informar o rastreio,
+                                e então recebe o frete junto com a venda. Sem postagem, o prazo de liberação não começa; se o vendedor não postar,
+                                o comprador pode pedir o reembolso integral. O endereço de entrega e o endereço de envio do vendedor são usados só
+                                para gerar a etiqueta daquele pedido.
+                            </>
+                        ) : (
+                            <>
+                                <strong>Envio:</strong> o vendedor compra a etiqueta na transportadora e no serviço escolhidos pelo comprador (pelo
+                                Melhor Envio, para o valor bater com o frete pago), posta em até 3 dias úteis do pagamento e informa o código de
+                                rastreio no pedido. O frete pago pelo comprador é repassado ao vendedor junto com a venda. Sem o código de rastreio,
+                                o prazo de liberação não começa; se o vendedor não postar, o comprador pode pedir o reembolso integral. O endereço
+                                de entrega é usado só para o envio daquele pedido.
+                            </>
+                        )}
                     </li>
                     <li>
                         <strong>Retirada em mãos:</strong> o comprador paga pelo app e recebe um código de retirada. Ele só passa o código

@@ -3,6 +3,7 @@
  * ao mudar uma regra (taxa, prazo, mínimo), atualize aqui e nos Termos.
  */
 import { ANUNCIOS_ABERTOS } from "@/lib/anuncios"
+import { ETIQUETA_AUTOMATICA } from "@/lib/etiqueta"
 
 export type Pergunta = { pergunta: string; resposta: string; link?: { href: string; label: string } }
 export type Topico = { id: string; titulo: string; perguntas: Pergunta[] }
@@ -135,12 +136,16 @@ export const topicos: Topico[] = [
             },
             {
                 pergunta: "Quando recebo o dinheiro da venda?",
-                resposta: "Quando o comprador confirma o recebimento, ou quando acaba o prazo de disputa. O frete que o comprador pagou vem junto. Aí o valor é transferido pelo Stripe para a sua conta de recebimentos, e o Stripe deposita na sua conta bancária.",
+                resposta: ETIQUETA_AUTOMATICA
+                    ? "Quando o comprador confirma o recebimento, ou quando acaba o prazo de disputa. O frete não entra no valor: ele já pagou a etiqueta que o site gerou para você. Aí o valor é transferido pelo Stripe para a sua conta de recebimentos, e o Stripe deposita na sua conta bancária."
+                    : "Quando o comprador confirma o recebimento, ou quando acaba o prazo de disputa. O frete que o comprador pagou vem junto. Aí o valor é transferido pelo Stripe para a sua conta de recebimentos, e o Stripe deposita na sua conta bancária.",
                 link: { href: "/carteira", label: "Abrir Carteira" },
             },
             {
                 pergunta: "Vendi com envio. Como despacho?",
-                resposta: "Em Pedidos aparecem o endereço de quem recebe e o serviço de frete escolhido. Compre a etiqueta no Melhor Envio nesse mesmo serviço (assim o valor bate com o frete pago, que você recebe junto com a venda), use a caixa com o peso e as medidas do anúncio, poste em até 3 dias úteis e informe o código de rastreio no pedido. O prazo de liberação só começa depois disso.",
+                resposta: ETIQUETA_AUTOMATICA
+                    ? "O site compra a etiqueta com o frete que o comprador pagou. Em Pedidos, toque em Imprimir etiqueta, cole na caixa com o peso e as medidas do anúncio e poste em até 3 dias úteis no local indicado (sem pagar nada). O rastreio entra sozinho. Antes da primeira venda, cadastre seu endereço de envio em Configurações."
+                    : "Em Pedidos aparecem o endereço de quem recebe e o serviço de frete escolhido. Compre a etiqueta no Melhor Envio nesse mesmo serviço (assim o valor bate com o frete pago, que você recebe junto com a venda), use a caixa com o peso e as medidas do anúncio, poste em até 3 dias úteis e informe o código de rastreio no pedido. O prazo de liberação só começa depois disso.",
                 link: { href: "/pedidos", label: "Abrir Pedidos" },
             },
             {

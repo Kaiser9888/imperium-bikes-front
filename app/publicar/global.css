@@ -1056,6 +1056,25 @@
     height: 16px;
 }
 
+/* Resumo da estimativa: uma linha só, antes da lista por cidade */
+.frete-gratis__faixa {
+    margin: 0;
+    color: var(--imperium-ink);
+    font-size: 15px;
+}
+
+.frete-gratis__faixa b {
+    font-variant-numeric: tabular-nums;
+}
+
+/* Lembrete do endereço de envio, logo abaixo do CEP de origem */
+.frete-aviso {
+    display: block;
+    border-left: 3px solid var(--accent);
+    padding: 6px 0 6px 10px;
+    color: var(--imperium-ink);
+}
+
 .frete-gratis__lista {
     display: flex;
     flex-direction: column;

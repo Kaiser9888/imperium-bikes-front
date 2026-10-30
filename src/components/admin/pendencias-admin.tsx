@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useCallback, useEffect, useState } from "react"
-import { CheckCircle2, Loader2, type LucideIcon, Megaphone, Flag, LifeBuoy, Snowflake, ShieldAlert, Scale, Tag, Timer, Truck } from "lucide-react"
+import { CheckCircle2, Loader2, type LucideIcon, Megaphone, Flag, LifeBuoy, Printer, Snowflake, ShieldAlert, Scale, Tag, Timer, Truck } from "lucide-react"
 
 import api from "@/lib/api"
 import { formatarPreco } from "@/lib/format"
@@ -10,10 +10,11 @@ import { cn } from "@/lib/utils"
 import { usuarioAdminService } from "@/services/adminService"
 import { mensagemDaApi } from "@/services/tournamentService"
 
-type Contagens = { campanhas: number; denuncias: number; chamados: number; contasCongeladas: number; bikesRoubadas: number; disputas: number; anunciosEmAnalise: number; retiradasParadas: number; enviosAtrasados: number }
+type Contagens = { campanhas: number; denuncias: number; chamados: number; contasCongeladas: number; bikesRoubadas: number; disputas: number; anunciosEmAnalise: number; retiradasParadas: number; enviosAtrasados: number; etiquetas: number }
 type ContaCongelada = { userId: string; fullName: string | null; email: string | null; congeladaEm: string }
 type AnuncioEmAnalise = { productId: string; title: string; price: number; vendedor: string | null; contaCriadaEm: string | null; createdAt: string }
-type RetiradaParada = { orderId: string; productTitle: string; valor: number; comprador: string | null; vendedor: string | null; createdAt: string }
+type RetiradaParada = { orderId: string; productTitle: string; valor: number; comprador: string | null; vendedor: string | null; createdAt: string; motivo?: string | null }
+type Etiquetas = { saldoMelhorEnvio: number | null; automaticaLigada: boolean; itens: RetiradaParada[] }
 
 /** Abas do painel que cada fila abre. */
 export type AbaPendencia = "disputas" | "anuncios" | "denuncias" | "suporte" | "bikes-roubadas"
@@ -24,6 +25,7 @@ const FILAS: { chave: keyof Contagens; aba?: AbaPendencia; titulo: string; texto
     { chave: "anunciosEmAnalise", titulo: "Anúncios caros em análise", texto: "Conta nova ou sem vendas", icon: Tag },
     { chave: "retiradasParadas", titulo: "Retiradas paradas", texto: "Pagas há mais de 30 dias sem o código", icon: Timer, urgente: true },
     { chave: "enviosAtrasados", titulo: "Envios atrasados", texto: "Pagos há mais de 3 dias úteis sem rastreio", icon: Truck, urgente: true },
+    { chave: "etiquetas", titulo: "Etiquetas com problema", texto: "O site não conseguiu gerar a etiqueta", icon: Printer, urgente: true },
     { chave: "bikesRoubadas", aba: "bikes-roubadas", titulo: "Alertas de bike roubada", texto: "Conferir o boletim de ocorrência", icon: ShieldAlert },
     { chave: "campanhas", aba: "anuncios", titulo: "Anúncios em vídeo", texto: "Campanhas pagas esperando aprovação", icon: Megaphone },
     { chave: "denuncias", aba: "denuncias", titulo: "Denúncias", texto: "Conteúdo denunciado para analisar", icon: Flag },
@@ -37,23 +39,28 @@ export function PendenciasAdmin({ onAbrir }: { onAbrir: (aba: AbaPendencia) => v
     const [emAnalise, setEmAnalise] = useState<AnuncioEmAnalise[]>([])
     const [retiradas, setRetiradas] = useState<RetiradaParada[]>([])
     const [atrasados, setAtrasados] = useState<RetiradaParada[]>([])
+    const [etiquetas, setEtiquetas] = useState<Etiquetas | null>(null)
+    const [gerando, setGerando] = useState<string | null>(null)
     const [erro, setErro] = useState<string | null>(null)
 
     const carregar = useCallback(async () => {
         setErro(null)
         try {
-            const [c, contas, anuncios, paradas, envios] = await Promise.all([
+            const [c, contas, anuncios, paradas, envios, etiq] = await Promise.all([
                 api.get<Contagens>("/api/admin/pendencias"),
                 api.get<ContaCongelada[]>("/api/admin/pendencias/contas-congeladas"),
                 api.get<AnuncioEmAnalise[]>("/api/admin/pendencias/anuncios-em-analise"),
                 api.get<RetiradaParada[]>("/api/admin/pendencias/retiradas-paradas"),
                 api.get<RetiradaParada[]>("/api/admin/pendencias/envios-atrasados"),
+                // Complemento: sem ele o resto do painel continua
+                api.get<Etiquetas>("/api/admin/pendencias/etiquetas").catch(() => ({ data: null })),
             ])
             setContagens(c.data)
             setCongeladas(contas.data)
             setEmAnalise(anuncios.data)
             setRetiradas(paradas.data)
             setAtrasados(envios.data)
+            setEtiquetas(etiq.data)
         } catch (cause) {
             setErro(mensagemDaApi(cause, "Não foi possível carregar as pendências."))
         }
@@ -71,6 +78,19 @@ export function PendenciasAdmin({ onAbrir }: { onAbrir: (aba: AbaPendencia) => v
             await carregar()
         } catch (cause) {
             setErro(mensagemDaApi(cause, "Não foi possível descongelar a conta."))
+        }
+    }
+
+    async function gerarEtiqueta(orderId: string) {
+        setErro(null)
+        setGerando(orderId)
+        try {
+            await api.post(`/api/admin/pendencias/etiquetas/${orderId}/gerar`)
+            await carregar()
+        } catch (cause) {
+            setErro(mensagemDaApi(cause, "Não foi possível gerar a etiqueta."))
+        } finally {
+            setGerando(null)
         }
     }
 
@@ -128,6 +148,39 @@ export function PendenciasAdmin({ onAbrir }: { onAbrir: (aba: AbaPendencia) => v
                     )
                 })}
             </ul>
+
+            {etiquetas?.automaticaLigada && (
+                <section aria-labelledby="etiquetas-title" className="mt-8">
+                    <h2 id="etiquetas-title" className="type-label uppercase tracking-wider text-muted-foreground">
+                        Etiquetas do Melhor Envio
+                    </h2>
+                    <p className="type-caption mt-1 text-muted-foreground">
+                        Saldo da plataforma:{" "}
+                        <strong className={cn("tabular-nums", etiquetas.saldoMelhorEnvio !== null && etiquetas.saldoMelhorEnvio < 100 ? "text-destructive" : "text-foreground")}>
+                            {etiquetas.saldoMelhorEnvio === null ? "não deu para consultar" : formatarPreco(Number(etiquetas.saldoMelhorEnvio))}
+                        </strong>
+                        . Cada venda com envio gasta o valor do frete; recarregue por Pix no painel do Melhor Envio antes de acabar.
+                    </p>
+                    {etiquetas.itens.length > 0 && (
+                        <ul className="mt-3 divide-y divide-border border-y border-border">
+                            {etiquetas.itens.map((r) => (
+                                <li key={r.orderId} className="flex flex-wrap items-center gap-x-4 gap-y-1 py-3">
+                                    <div className="min-w-0 flex-1">
+                                        <p className="truncate text-sm font-semibold">{r.productTitle} · {formatarPreco(Number(r.valor))}</p>
+                                        <p className="text-xs text-muted-foreground">
+                                            {r.comprador} → {r.vendedor} · pago em {new Date(r.createdAt).toLocaleDateString("pt-BR")}
+                                        </p>
+                                        {r.motivo && <p className="mt-1 text-xs text-destructive">{r.motivo}</p>}
+                                    </div>
+                                    <button type="button" onClick={() => gerarEtiqueta(r.orderId)} disabled={gerando === r.orderId} className="line-btn line-btn--sm">
+                                        {gerando === r.orderId ? "Gerando…" : "Gerar de novo"}
+                                    </button>
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+                </section>
+            )}
 
             {retiradas.length > 0 && (
                 <section aria-labelledby="retiradas-title" className="mt-8">

@@ -127,6 +127,16 @@ export default function PedidosPage() {
         if (isSignedIn) void carregar()
     }, [isSignedIn, carregar])
 
+    // Etiqueta sendo gerada pelo site: confere de novo até ficar pronta
+    const gerandoEtiqueta = pedidos?.some((p) => p.status === "PAGO" && p.envio?.etiqueta?.status === "PENDENTE") ?? false
+    useEffect(() => {
+        if (!gerandoEtiqueta) return
+        const timer = setInterval(() => {
+            if (document.visibilityState === "visible") void carregar()
+        }, 20_000)
+        return () => clearInterval(timer)
+    }, [gerandoEtiqueta, carregar])
+
     async function executar(chamada: () => Promise<unknown>) {
         setEnviando(true)
         setErro(null)
@@ -215,7 +225,10 @@ export default function PedidosPage() {
                                 <EnvioDoComprador envio={pedido.envio} />
                             ) : (
                                 <EnvioDoVendedor
+                                    orderId={pedido.id}
                                     envio={pedido.envio}
+                                    onMudou={carregar}
+                                    onErro={setErro}
                                     onInformar={async (codigo) => {
                                         setErro(null)
                                         try {

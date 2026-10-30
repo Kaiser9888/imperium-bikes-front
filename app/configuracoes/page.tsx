@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { useSyncExternalStore } from "react"
 import { useClerk, useUser } from "@clerk/nextjs"
-import { ChevronRight, Megaphone, Monitor, Moon, Sun, UserRound, type LucideIcon } from "lucide-react"
+import { ChevronRight, Megaphone, Monitor, Moon, Sun, Truck, UserRound, type LucideIcon } from "lucide-react"
 import { useTheme } from "next-themes"
 
 import { AppShell } from "@/components/layout/app-shell"
@@ -13,6 +13,7 @@ import { InstalarApp } from "@/components/layout/instalar-app"
 import { PageHeading } from "@/components/layout/page-heading"
 import { Button } from "@/components/ui/button"
 import { RadioCard } from "@/components/ui/radio-group"
+import { ETIQUETA_AUTOMATICA } from "@/lib/etiqueta"
 
 const TEMAS: { value: string; label: string; icon: LucideIcon }[] = [
     { value: "light", label: "Claro", icon: Sun },
@@ -22,6 +23,7 @@ const TEMAS: { value: string; label: string; icon: LucideIcon }[] = [
 
 const ATALHOS: { href: string; label: string; icon: LucideIcon }[] = [
     { href: "/perfil", label: "Editar perfil", icon: UserRound },
+    ...(ETIQUETA_AUTOMATICA ? [{ href: "/configuracoes/endereco-envio", label: "Endereço de envio", icon: Truck }] : []),
     { href: "/configuracoes/patrocinadores", label: "Patrocinadores", icon: Megaphone },
 ]
 

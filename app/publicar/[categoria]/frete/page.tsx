@@ -13,6 +13,7 @@ import {
 import { BackButton } from "@/components/ui/back-button"
 import api from '@/lib/api'
 import { formatarPreco } from '@/lib/format'
+import { ETIQUETA_AUTOMATICA } from '@/lib/etiqueta'
 
 type Estimativa = { destino: string; menorValor: number | null; prazoDias: number | null; motivo: string | null }
 
@@ -21,16 +22,16 @@ const PESO_CORREIOS_KG = 30
 
 const pagadores = [
   {
-    id: 'vendedor',
-    label: 'Eu arco com o frete',
+    id: 'comprador',
+    label: 'Comprador paga o frete (recomendado)',
     description:
-      'O custo é descontado de mim após a venda.',
+      'Você recebe o preço do produto. O frete exato é calculado na compra, com o CEP de quem comprou, e somado ao total.',
   },
   {
-    id: 'comprador',
-    label: 'Comprador paga o frete',
+    id: 'vendedor',
+    label: 'Frete grátis: eu ajudo com até um valor',
     description:
-      'O frete é somado ao valor da compra.',
+      'Você diz até quanto paga do frete. Se custar menos, o comprador não paga nada; se custar mais, ele paga só a diferença.',
   },
   {
     id: 'retirada_local',
@@ -73,11 +74,24 @@ export default function FretePage() {
   const [largura, setLargura] = useState('')
   const [comprimento, setComprimento] = useState('')
 
-  const [pagador, setPagador] = useState('')
+  const [pagador, setPagador] = useState('comprador')
   const [limite, setLimite] = useState('')
   const [estimativas, setEstimativas] = useState<Estimativa[] | null>(null)
   const [estimando, setEstimando] = useState(false)
   const [erroEstimativa, setErroEstimativa] = useState('')
+
+  // Remetente da etiqueta automática: sem ele, o site não consegue gerar a etiqueta depois da venda
+  const [remetenteCep, setRemetenteCep] = useState<string | null | undefined>(undefined)
+  useEffect(() => {
+    if (!ETIQUETA_AUTOMATICA) return
+    api.get('/api/users/me/remetente')
+      .then(({ data }) => {
+        const completo = data?.documento && data?.cep && data?.logradouro && data?.numero
+        setRemetenteCep(completo ? String(data.cep) : null)
+        if (completo) setCep((atual) => atual || String(data.cep))
+      })
+      .catch(() => setRemetenteCep(undefined))
+  }, [])
 
   const [consultandoCep, setConsultandoCep] = useState(false)
   const [erroCep, setErroCep] = useState('')
@@ -127,7 +141,7 @@ export default function FretePage() {
         : '',
     )
 
-    setPagador(frete.pagador ?? '')
+    setPagador(frete.pagador ?? 'comprador')
     if (frete.limite_frete_centavos) {
       setLimite(String(frete.limite_frete_centavos / 100).replace('.', ','))
     }
@@ -262,6 +276,9 @@ const pronto =
     (pagador !== 'vendedor' || limiteCentavos > 0)
   ))
 
+const valoresEstimados = (estimativas ?? []).map((e) => e.menorValor).filter((v): v is number => v != null)
+const faixa = valoresEstimados.length > 0 ? { min: Math.min(...valoresEstimados), max: Math.max(...valoresEstimados) } : null
+
 const medidasProntas =
   cepNumerico.length === 8 && pesoValido && alturaValida && larguraValida && comprimentoValido
 
@@ -279,7 +296,7 @@ async function estimarFrete() {
     setEstimativas(data)
     // Sugere cobrir o frete mais caro entre os destinos que têm opção
     const valores = data.map((e) => e.menorValor).filter((v): v is number => v != null)
-    if (!limite && valores.length > 0) {
+    if (pagador === 'vendedor' && !limite && valores.length > 0) {
       setLimite(String(Math.ceil(Math.max(...valores))).replace('.', ','))
     }
   } catch (cause) {
@@ -419,6 +436,16 @@ return (
               : 'Informe o CEP de onde o produto será enviado.'}
           </small>
         </label>
+
+        {ETIQUETA_AUTOMATICA && !servico && remetenteCep === null && (
+          <small className="frete-aviso">
+            Cadastre também seu{' '}
+            <Link href="/configuracoes/endereco-envio" target="_blank" className="font-semibold text-primary underline underline-offset-2">
+              endereço de envio
+            </Link>
+            : quando vender, o site gera a etiqueta com ele e você só imprime e posta.
+          </small>
+        )}
 
         {consultandoCep && (
           <small>
@@ -654,13 +681,16 @@ return (
           </div>
         </fieldset>
 
-        {pagador === 'vendedor' && (
+        {(pagador === 'vendedor' || pagador === 'comprador') && (
           <div className="frete-gratis">
             <div className="frete-gratis__topo">
               <Truck aria-hidden="true" />
               <div>
-                <b>Quanto custa enviar</b>
-                <small>Menor valor do seu CEP até algumas regiões, com o peso e as medidas acima.</small>
+                <b>Quanto custa enviar (referência)</b>
+                <small>
+                  Ninguém comprou ainda, então não existe valor exato: aqui vai o mais barato do seu CEP até 4 capitais, com o peso e as medidas
+                  acima. O valor certo sai na hora da compra, com o CEP de quem comprou.
+                </small>
               </div>
             </div>
 
@@ -670,6 +700,19 @@ return (
             </button>
             {!medidasProntas && <small>Preencha o CEP, o peso e as medidas para estimar.</small>}
             {erroEstimativa && <small role="alert">{erroEstimativa}</small>}
+
+            {faixa && (
+              <p className="frete-gratis__faixa">
+                {faixa.min === faixa.max
+                  ? <>Em torno de <b>{formatarPreco(faixa.min)}</b></>
+                  : <>Entre <b>{formatarPreco(faixa.min)}</b> e <b>{formatarPreco(faixa.max)}</b>, dependendo de onde o comprador mora</>}
+              </p>
+            )}
+            {estimativas && estimativas.every((e) => e.menorValor == null) && (
+              <small role="alert">
+                {estimativas.find((e) => e.motivo)?.motivo ?? 'Nenhuma transportadora atende essas medidas.'} Confira o peso e as medidas da caixa, ou escolha retirada no local.
+              </small>
+            )}
 
             {estimativas && (
               <ul className="frete-gratis__lista">
@@ -689,8 +732,9 @@ return (
               </ul>
             )}
 
+            {pagador === 'vendedor' && (
             <label>
-              Pago o frete até (R$)
+              Ajudo com o frete até (R$)
               <input
                 inputMode="decimal"
                 value={limite}
@@ -698,9 +742,10 @@ return (
                 placeholder="Ex.: 40,00"
               />
               <small>
-                Passou disso, o comprador paga a diferença.
+                Sai do que você recebe só quando houver venda. Passou disso, o comprador paga a diferença.
               </small>
             </label>
+            )}
           </div>
         )}
         </>
