@@ -5,7 +5,7 @@ import { empresa } from "@/lib/empresa"
 import { marcaDe, modoDaApi } from "@/lib/placar"
 
 type Evento = { name?: string; city?: string | null; state?: string | null; startDate?: string | null; scoringMode?: string }
-type Inscrito = { userName?: string; userAvatarUrl?: string | null; rankPosition?: number | null; finalTimeMs?: number | null; points?: number | null }
+type Inscrito = { category?: string | null; userName?: string; userAvatarUrl?: string | null; rankPosition?: number | null; finalTimeMs?: number | null; points?: number | null }
 
 const MEDALHA: Record<number, { cor: string; degrau: string; altura: number; foto: number }> = {
     1: { cor: "#E8B931", degrau: "linear-gradient(#E8B931, #B8860B)", altura: 400, foto: 270 },
@@ -44,8 +44,10 @@ function dataCurta(iso?: string | null): string {
 }
 
 /** Pódio do evento como imagem 1080×1350 (post do Instagram), para baixar e compartilhar. */
-export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
     const { id } = await params
+    // Evento com categorias: um pódio por categoria (?categoria=Elite Masculino)
+    const categoria = new URL(request.url).searchParams.get("categoria")?.trim() || null
     const [evento, inscritos] = await Promise.all([
         buscar<Evento>(`/api/tournaments/${encodeURIComponent(id)}`),
         buscar<Inscrito[]>(`/api/tournaments/${encodeURIComponent(id)}/participants/public`),
@@ -55,9 +57,10 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
     }
 
     const modo = modoDaApi(evento.scoringMode)
+    const daCategoria = categoria ? inscritos.filter((i) => (i.category ?? "").toLowerCase() === categoria.toLowerCase()) : inscritos
     const lugares = await Promise.all(
         [2, 1, 3].map(async (pos) => {
-            const empatados = inscritos.filter((i) => i.rankPosition === pos)
+            const empatados = daCategoria.filter((i) => i.rankPosition === pos)
             const primeiro = empatados[0]
             return {
                 pos,
@@ -87,7 +90,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
                     padding: "72px 64px 56px",
                 }}
             >
-                <div style={{ display: "flex", fontSize: 28, fontWeight: 700, letterSpacing: 8, color: "#E8B931" }}>PÓDIO</div>
+                <div style={{ display: "flex", fontSize: 28, fontWeight: 700, letterSpacing: 8, color: "#E8B931" }}>{categoria ? `PÓDIO · ${categoria.toUpperCase().slice(0, 40)}` : "PÓDIO"}</div>
                 <div style={{ display: "flex", marginTop: 16, fontSize: 68, fontWeight: 800, lineHeight: 1.05 }}>{(evento.name ?? "Evento").slice(0, 70)}</div>
                 {linha && <div style={{ display: "flex", marginTop: 16, fontSize: 32, color: "rgba(255,255,255,0.7)" }}>{linha}</div>}
 

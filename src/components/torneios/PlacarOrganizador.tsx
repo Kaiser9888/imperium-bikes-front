@@ -16,6 +16,7 @@ export type Competidor = {
     rankPosition: number | null
     finalTimeMs: number | null
     points: number | null
+    categoria: string
 }
 
 const marcaAtual = (c: Competidor, modo: ModoPontuacao) =>
@@ -113,6 +114,7 @@ export function PlacarOrganizador({
     modo,
     aberto,
     competidores,
+    categorias,
     recarregar,
 }: {
     torneioId: string
@@ -120,15 +122,19 @@ export function PlacarOrganizador({
     /** Evento já começou: dá para lançar marcas. Antes disso, só numerar. */
     aberto: boolean
     competidores: Competidor[]
+    /** Categorias do evento: cada uma tem a sua classificação. */
+    categorias: string[]
     recarregar: () => Promise<void>
 }) {
     const [busca, setBusca] = useState("")
+    const [categoria, setCategoria] = useState<string | null>(null)
     const [numerando, setNumerando] = useState(false)
     const [aviso, setAviso] = useState<string | null>(null)
     const semNumero = competidores.filter((c) => c.bibNumber === null).length
 
     const termo = busca.trim().toLowerCase()
     const filtrados = competidores
+        .filter((c) => !categoria || c.categoria === categoria)
         .filter((c) => !termo || String(c.bibNumber ?? "") === termo || c.userName.toLowerCase().includes(termo))
         .sort((a, b) => (a.rankPosition ?? Infinity) - (b.rankPosition ?? Infinity) || (a.bibNumber ?? Infinity) - (b.bibNumber ?? Infinity))
 
@@ -186,6 +192,25 @@ export function PlacarOrganizador({
                         />
                     </label>
 
+                    {categorias.length > 0 && (
+                        <div role="group" aria-label="Categoria" className="mt-3 flex flex-wrap gap-2">
+                            {[null, ...categorias].map((c) => (
+                                <button
+                                    key={c ?? "todas"}
+                                    type="button"
+                                    aria-pressed={categoria === c}
+                                    onClick={() => setCategoria(c)}
+                                    className={cn(
+                                        "type-caption rounded-full border px-3 py-1 font-semibold",
+                                        categoria === c ? "border-foreground bg-foreground text-background" : "border-border text-muted-foreground",
+                                    )}
+                                >
+                                    {c ?? "Todas"}
+                                </button>
+                            ))}
+                        </div>
+                    )}
+
                     <ol className="mt-3 border-t border-foreground">
                         {filtrados.map((c) => (
                             <li key={c.id} className="flex flex-wrap items-center gap-3 border-b border-border py-3">
@@ -203,7 +228,10 @@ export function PlacarOrganizador({
                                         {c.userName.slice(0, 1).toUpperCase()}
                                     </span>
                                 )}
-                                <span className="type-body-small min-w-0 flex-1 truncate font-medium text-foreground">{c.userName}</span>
+                                <span className="min-w-0 flex-1">
+                                    <span className="type-body-small block truncate font-medium text-foreground">{c.userName}</span>
+                                    {categorias.length > 0 && <span className="type-caption block truncate text-muted-foreground">{c.categoria}</span>}
+                                </span>
                                 {aberto && (
                                     <div className="ml-auto">
                                         {/* key com a marca: quando outra mudança refaz a lista, o campo volta ao valor salvo */}

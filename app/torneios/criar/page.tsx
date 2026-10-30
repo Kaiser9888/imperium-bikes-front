@@ -41,6 +41,19 @@ export default function CriarTorneioPage() {
     })
     // Sem padrão de propósito: quem escolhe tempo ou pontos ganha o placar ao vivo
     const [modo, setModo] = useState<ModoPontuacao | null>(null)
+    // Categorias (ex.: Elite Masculino): vazio = todo mundo em "Geral"
+    const [categorias, setCategorias] = useState<string[]>([])
+    const [novaCategoria, setNovaCategoria] = useState("")
+    // Inscrição solidária: o que o inscrito leva no dia
+    const [solidaria, setSolidaria] = useState(false)
+    const [doacao, setDoacao] = useState("1 kg de alimento não perecível")
+
+    const adicionarCategoria = () => {
+        const nome = novaCategoria.trim().slice(0, 50)
+        if (!nome || categorias.some((c) => c.toLowerCase() === nome.toLowerCase()) || categorias.length >= 12) return
+        setCategorias([...categorias, nome])
+        setNovaCategoria("")
+    }
 
     const [passo, setPasso] = useState(1)
     const [criadoId, setCriadoId] = useState<string | null>(null)
@@ -83,6 +96,8 @@ export default function CriarTorneioPage() {
                 maxParticipants: Number(form.maxParticipantes), minParticipants: Number(form.minParticipantes),
                 registrationFee: Number(form.valorInscricao) || 0, prizes: form.premiacao.trim(), rules: form.regras.trim(), coverImageUrl: form.capa,
                 scoringMode: modo ?? "posicao",
+                solidariaDescricao: solidaria ? doacao.trim() : "",
+                categoriasInscricao: categorias,
             }))
             setRascunhoId(id)
             const publicado = await tournamentService.publicar(id)
@@ -333,6 +348,68 @@ export default function CriarTorneioPage() {
                                 <label htmlFor="premio" className={rotulo}>Premiação <span className="font-normal text-muted-foreground">(opcional)</span></label>
                                 <input id="premio" type="text" value={form.premiacao} onChange={(e) => update("premiacao", e.target.value)} placeholder="R$ 2.000 + troféu" className={campo} />
                             </div>
+                        </div>
+
+                        <div>
+                            <label htmlFor="categoria-nova" className={rotulo}>Categorias <span className="font-normal text-muted-foreground">(opcional)</span></label>
+                            <div className="mt-2 flex gap-2">
+                                <input
+                                    id="categoria-nova"
+                                    type="text"
+                                    value={novaCategoria}
+                                    maxLength={50}
+                                    onChange={(e) => setNovaCategoria(e.target.value)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === "Enter") {
+                                            e.preventDefault()
+                                            adicionarCategoria()
+                                        }
+                                    }}
+                                    placeholder="Ex.: Elite Masculino"
+                                    className={`${campo} mt-0 flex-1`}
+                                />
+                                <button type="button" onClick={adicionarCategoria} disabled={!novaCategoria.trim() || categorias.length >= 12} className="line-btn line-btn--sm shrink-0 self-center">
+                                    <Plus aria-hidden="true" />
+                                    Adicionar
+                                </button>
+                            </div>
+                            {categorias.length > 0 && (
+                                <ul className="mt-3 flex flex-wrap gap-2">
+                                    {categorias.map((c) => (
+                                        <li key={c} className="type-label flex items-center gap-1 rounded-full border border-foreground py-1 pl-3 pr-1">
+                                            {c}
+                                            <button
+                                                type="button"
+                                                onClick={() => setCategorias(categorias.filter((x) => x !== c))}
+                                                aria-label={`Tirar a categoria ${c}`}
+                                                className="grid size-6 place-items-center rounded-full hover:bg-surface-muted"
+                                            >
+                                                <X className="size-3.5" aria-hidden="true" />
+                                            </button>
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
+                            <p className={ajuda}>
+                                Cada pessoa escolhe a dela ao se inscrever, e cada categoria tem a sua classificação e o seu pódio. Sem categorias, todo mundo
+                                disputa junto.
+                            </p>
+                        </div>
+
+                        <div>
+                            <label className="flex cursor-pointer items-start gap-3">
+                                <input type="checkbox" checked={solidaria} onChange={(e) => setSolidaria(e.target.checked)} className="mt-1 size-4 accent-[var(--accent)]" />
+                                <span>
+                                    <span className={rotulo}>Inscrição solidária</span>
+                                    <span className={`${ajuda} block`}>Cada inscrito leva uma doação no dia; você confere na chegada, na tela Gerenciar.</span>
+                                </span>
+                            </label>
+                            {solidaria && (
+                                <div className="mt-3">
+                                    <label htmlFor="doacao" className={rotulo}>O que levar</label>
+                                    <input id="doacao" type="text" value={doacao} maxLength={200} onChange={(e) => setDoacao(e.target.value)} className={campo} />
+                                </div>
+                            )}
                         </div>
 
                         {/* Resumo no mesmo painel escuro da Central do vendedor, com o mesmo botão */}

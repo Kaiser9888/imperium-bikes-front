@@ -4,7 +4,7 @@ import Link from "next/link"
 import { useParams } from "next/navigation"
 import { useCallback, useEffect, useState } from "react"
 import { useUser } from "@clerk/nextjs"
-import { ArrowRight, CheckCircle, ClipboardList, Loader2, MapPin, Radio, Upload } from "lucide-react"
+import { ArrowRight, CheckCircle, ClipboardList, HeartHandshake, Loader2, MapPin, Radio, Upload } from "lucide-react"
 
 import { AppShell } from "@/components/layout/app-shell"
 import { BackButton } from "@/components/ui/back-button"
@@ -13,6 +13,7 @@ import { ErrorState } from "@/components/ui/error-state"
 import { Loader } from "@/components/ui/loader"
 import { ShareButton } from "@/components/ui/share-button"
 import { Galeria } from "@/components/torneios/Galeria"
+import { Percurso } from "@/components/torneios/Percurso"
 import { Avatar, Classificacao, Podio } from "@/components/torneios/Placar"
 import { VideoCard } from "@/components/videos/VideoCard"
 import { VideoPlayer } from "@/components/videos/VideoPlayer"
@@ -21,14 +22,14 @@ import api from "@/lib/api"
 import { formatarPreco, partesDaData } from "@/lib/format"
 import { fetchTournamentLive, fetchTournamentVideos, playbackIdFrom } from "@/lib/videos/api"
 import type { VideoItem } from "@/lib/videos/types"
-import { mensagemDaApi, tournamentService, type FotoEvento, type InscritoPublico, type MinhaInscricao, type Tournament } from "@/services/tournamentService"
+import { mensagemDaApi, tournamentService, type FotoEvento, type InscritoPublico, type MinhaInscricao, type Rota, type Tournament } from "@/services/tournamentService"
 
 /** De quanto em quanto tempo a página pergunta se o organizador entrou ou saiu do ar. */
 const CHECAR_LIVE_MS = 30_000
 /** Placar ao vivo: com o evento acontecendo, a classificação se atualiza sozinha. */
 const ATUALIZAR_PLACAR_MS = 15_000
 
-const ABAS = ["resultados", "sobre", "inscritos", "fotos", "videos"] as const
+const ABAS = ["resultados", "sobre", "percurso", "inscritos", "fotos", "videos"] as const
 type Aba = (typeof ABAS)[number]
 
 /** Transmissão do organizador, no topo da página enquanto estiver no ar. */
@@ -170,6 +171,18 @@ export default function TorneioDetalhesPage() {
         void carregarFotos()
     }, [carregarFotos])
 
+    // Percurso: os pontos só vêm quando o evento tem (o resumo já vem no evento)
+    const [rota, setRota] = useState<Rota | null>(null)
+    const temRota = !!torneio?.rota
+    useEffect(() => {
+        if (!temRota) return
+        tournamentService.rota(id).then(setRota).catch(() => setRota(null))
+    }, [id, temRota])
+
+    // Categoria: a que a pessoa escolhe para se inscrever e a que está sendo vista no resultado
+    const [categoriaInscricao, setCategoriaInscricao] = useState("")
+    const [categoriaVista, setCategoriaVista] = useState<string | null>(null)
+
     // Aba aberta fica no endereço (#fotos), para dar para compartilhar direto
     const [abaEscolhida, setAbaEscolhida] = useState<Aba | null>(null)
     useEffect(() => {
@@ -218,12 +231,17 @@ export default function TorneioDetalhesPage() {
             window.location.assign(`/sign-in?redirect_url=${encodeURIComponent(window.location.pathname)}`)
             return
         }
+        if (!inscricao && torneio.categorias.length > 0 && !categoriaInscricao) {
+            setErro("Escolha sua categoria antes de se inscrever.")
+            return
+        }
         setEnviando(true)
         setErro(null)
         try {
             if (!inscricao) {
-                await tournamentService.inscrever(id)
-                setInscricao({ situacao: torneio.valorInscricao > 0 ? "PENDENTE" : "PAGA", numero: null })
+                const categoria = torneio.categorias.length > 0 ? categoriaInscricao : "Geral"
+                await tournamentService.inscrever(id, categoria)
+                setInscricao({ situacao: torneio.valorInscricao > 0 ? "PENDENTE" : "PAGA", numero: null, categoria })
             }
             if (torneio.valorInscricao > 0) {
                 window.location.assign(await tournamentService.pagarInscricao(id, torneio.nome))
@@ -265,11 +283,38 @@ export default function TorneioDetalhesPage() {
     const abas: { id: Aba; rotulo: string; contagem?: number }[] = [
         ...(comResultado ? [{ id: "resultados" as const, rotulo: andamento ? "Ao vivo" : "Resultados" }] : []),
         { id: "sobre", rotulo: "Sobre" },
+        ...(torneio.rota ? [{ id: "percurso" as const, rotulo: "Percurso" }] : []),
         ...(!comResultado ? [{ id: "inscritos" as const, rotulo: "Inscritos", contagem: inscritos.length }] : []),
         { id: "fotos", rotulo: "Fotos", contagem: fotos.length },
         { id: "videos", rotulo: "Vídeos" },
     ]
     const abaAtual: Aba = abas.some((a) => a.id === abaEscolhida) ? abaEscolhida! : abas[0].id
+
+    // Com categorias, resultado e pódio são de uma categoria por vez (a primeira que já tem resultado)
+    const porCategoria = torneio.categorias.length > 0
+    const categoriaAtual = porCategoria
+        ? categoriaVista && torneio.categorias.includes(categoriaVista)
+            ? categoriaVista
+            : torneio.categorias.find((c) => inscritos.some((i) => i.categoria === c && i.posicao !== null)) ?? torneio.categorias[0]
+        : null
+    const daCategoria = categoriaAtual ? inscritos.filter((i) => i.categoria === categoriaAtual) : inscritos
+    const filtroCategorias = porCategoria && (
+        <div role="group" aria-label="Categoria" className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:mx-0 sm:px-0">
+            {torneio.categorias.map((c) => (
+                <button
+                    key={c}
+                    type="button"
+                    aria-pressed={categoriaAtual === c}
+                    onClick={() => setCategoriaVista(c)}
+                    className={`type-label shrink-0 rounded-full border px-3.5 py-1.5 transition-colors ${
+                        categoriaAtual === c ? "border-foreground bg-foreground text-background" : "border-border text-muted-foreground hover:border-foreground/50 hover:text-foreground"
+                    }`}
+                >
+                    {c} <span className="tabular-nums opacity-70">{inscritos.filter((i) => i.categoria === c).length}</span>
+                </button>
+            ))}
+        </div>
+    )
 
     // Seções numeradas só com o que o organizador preencheu
     const secoes = [
@@ -367,6 +412,20 @@ export default function TorneioDetalhesPage() {
                             </div>
                         )}
 
+                        {torneio.solidaria && (
+                            <div className="mt-4 flex gap-2.5 rounded-lg border border-success/40 bg-success/5 px-3 py-2.5">
+                                <HeartHandshake className="mt-0.5 size-4 shrink-0 text-success" aria-hidden="true" />
+                                <p className="type-body-small text-foreground">
+                                    <strong>Inscrição solidária:</strong> leve {torneio.solidaria} no dia. A doação é conferida na chegada.
+                                    {torneio.doacoesEntregues > 0 && (
+                                        <span className="block text-muted-foreground">
+                                            {torneio.doacoesEntregues === 1 ? "1 doação entregue" : `${torneio.doacoesEntregues} doações entregues`} até agora.
+                                        </span>
+                                    )}
+                                </p>
+                            </div>
+                        )}
+
                         <div className="mt-6 flex flex-col items-start gap-5">
                             {inscricao?.situacao === "PAGA" ? (
                                 <div className="flex flex-col items-start gap-2">
@@ -374,6 +433,11 @@ export default function TorneioDetalhesPage() {
                                         <CheckCircle className="size-5" aria-hidden="true" />
                                         Você está inscrito
                                     </p>
+                                    {inscricao.categoria && inscricao.categoria !== "Geral" && (
+                                        <p className="type-body-small text-muted-foreground">
+                                            Categoria: <strong className="text-foreground">{inscricao.categoria}</strong>
+                                        </p>
+                                    )}
                                     {inscricao.numero !== null && (
                                         <p className="type-body-small text-muted-foreground">
                                             Seu número de peito: <strong className="text-lg font-bold tabular-nums text-foreground">{inscricao.numero}</strong>
@@ -386,10 +450,27 @@ export default function TorneioDetalhesPage() {
                                     )}
                                 </div>
                             ) : torneio.status === "aberto" && !torneio.cancelado ? (
+                                <>
+                                {torneio.categorias.length > 0 && !inscricao && (
+                                    <label className="flex w-full flex-col gap-1.5">
+                                        <span className="type-label text-foreground">Sua categoria</span>
+                                        <select
+                                            value={categoriaInscricao}
+                                            onChange={(e) => setCategoriaInscricao(e.target.value)}
+                                            className="h-11 w-full rounded-lg border border-border bg-surface px-3 text-base md:text-sm"
+                                        >
+                                            <option value="">Escolha…</option>
+                                            {torneio.categorias.map((c) => (
+                                                <option key={c} value={c}>{c}</option>
+                                            ))}
+                                        </select>
+                                    </label>
+                                )}
                                 <button type="button" onClick={inscrever} disabled={enviando} aria-busy={enviando} className="line-btn line-btn--lg line-btn--accent">
                                     {inscricao?.situacao === "PENDENTE" ? "Pagar inscrição" : "Quero participar"}
                                     {enviando ? <Loader2 className="animate-spin" aria-hidden="true" /> : <ArrowRight aria-hidden="true" />}
                                 </button>
+                                </>
                             ) : (
                                 <p className="type-body-small text-muted-foreground">Inscrições fechadas.</p>
                             )}
@@ -453,8 +534,18 @@ export default function TorneioDetalhesPage() {
                         <div role="tabpanel" id={`painel-${abaAtual}`} aria-labelledby={`aba-${abaAtual}`} className="pt-8">
                             {abaAtual === "resultados" && (
                                 <div className="space-y-8">
-                                    <Podio inscritos={inscritos} modo={torneio.modo} aoVivo={andamento} imagemHref={`/torneios/${torneio.id}/podio`} />
-                                    <Classificacao inscritos={inscritos} modo={torneio.modo} titulo={andamento ? "Classificação ao vivo" : "Classificação"} />
+                                    {filtroCategorias}
+                                    <Podio
+                                        inscritos={daCategoria}
+                                        modo={torneio.modo}
+                                        aoVivo={andamento}
+                                        imagemHref={`/torneios/${torneio.id}/podio${categoriaAtual ? `?categoria=${encodeURIComponent(categoriaAtual)}` : ""}`}
+                                    />
+                                    <Classificacao
+                                        inscritos={daCategoria}
+                                        modo={torneio.modo}
+                                        titulo={`${andamento ? "Classificação ao vivo" : "Classificação"}${categoriaAtual ? ` · ${categoriaAtual}` : ""}`}
+                                    />
                                     {andamento && <p className="type-caption text-muted-foreground">Atualiza sozinha a cada 15 segundos.</p>}
                                 </div>
                             )}
@@ -485,9 +576,15 @@ export default function TorneioDetalhesPage() {
                                 </>
                             )}
 
+                            {abaAtual === "percurso" &&
+                                (rota ? <Percurso rota={rota} nome={torneio.nome} /> : <p className="type-body-small text-muted-foreground">Carregando o percurso…</p>)}
+
                             {abaAtual === "inscritos" &&
                                 (inscritos.length > 0 ? (
-                                    <Classificacao inscritos={inscritos} modo={torneio.modo} titulo="Inscritos" />
+                                    <div className="space-y-5">
+                                        {filtroCategorias}
+                                        <Classificacao inscritos={daCategoria} modo={torneio.modo} titulo={categoriaAtual ? `Inscritos · ${categoriaAtual}` : "Inscritos"} />
+                                    </div>
                                 ) : (
                                     <p className="type-body-small text-muted-foreground">Ninguém confirmou a inscrição ainda. Seja o primeiro.</p>
                                 ))}

@@ -24,6 +24,13 @@ export interface Tournament {
     cancelado: boolean
     /** Como a classificação é decidida. */
     modo: ModoPontuacao
+    /** Inscrição solidária: o que levar no dia; null = comum. */
+    solidaria: string | null
+    doacoesEntregues: number
+    /** Categorias de inscrição; vazio = todos em "Geral". */
+    categorias: string[]
+    /** Resumo do percurso; os pontos vêm de `rota()`. */
+    rota: { distanciaM: number; subidaM: number | null } | null
 }
 
 type Raw = Record<string, unknown>
@@ -50,6 +57,10 @@ function normalize(item: Raw): Tournament {
         organizadorNome: String(organizer.name ?? ""),
         cancelado: status === "CANCELLED",
         modo: modoDaApi(item.scoringMode),
+        solidaria: typeof item.solidariaDescricao === "string" && item.solidariaDescricao ? item.solidariaDescricao : null,
+        doacoesEntregues: Number(item.doacoesEntregues ?? 0),
+        categorias: Array.isArray(item.categoriasInscricao) ? item.categoriasInscricao.map(String) : [],
+        rota: item.temRota ? { distanciaM: Number(item.rotaDistanciaM ?? 0), subidaM: typeof item.rotaSubidaM === "number" ? item.rotaSubidaM : null } : null,
     }
 }
 
@@ -77,6 +88,17 @@ export interface InscritoPublico {
     /** Marca no placar (modo tempo ou pontos); null enquanto não lançada. */
     tempoMs: number | null
     pontos: number | null
+    /** Categoria de inscrição ("Geral" quando o evento não separa). */
+    categoria: string
+}
+
+/** [lat, lon, altitude ou null] */
+export type PontoRota = [number, number, number | null]
+
+export interface Rota {
+    pontos: PontoRota[]
+    distanciaM: number
+    subidaM: number | null
 }
 
 /** Foto da galeria do evento (url relativa /api/files/...). */
@@ -89,6 +111,7 @@ export interface FotoEvento {
 /** Inscrição do usuário logado num evento. */
 export interface MinhaInscricao {
     situacao: "PAGA" | "PENDENTE"
+    categoria: string | null
     /** Número de peito, depois que o organizador numera. */
     numero: number | null
 }
@@ -110,6 +133,8 @@ export interface CriarTorneio {
     prizes: string
     coverImageUrl: string
     scoringMode: ModoPontuacao
+    solidariaDescricao: string
+    categoriasInscricao: string[]
 }
 
 export const tournamentService = {
@@ -161,6 +186,7 @@ export const tournamentService = {
         return {
             situacao: inscricao.paymentStatus === "PAID" ? "PAGA" : "PENDENTE",
             numero: typeof inscricao.bibNumber === "number" ? inscricao.bibNumber : null,
+            categoria: typeof inscricao.category === "string" ? inscricao.category : null,
         }
     },
 
@@ -188,6 +214,7 @@ export const tournamentService = {
             posicao: typeof p.rankPosition === "number" ? p.rankPosition : null,
             tempoMs: typeof p.finalTimeMs === "number" ? p.finalTimeMs : null,
             pontos: p.points === null || p.points === undefined ? null : Number(p.points),
+            categoria: String(p.category ?? "Geral"),
         }))
     },
 
@@ -233,8 +260,27 @@ export const tournamentService = {
         })
     },
 
-    async inscrever(tournamentId: string): Promise<void> {
-        await api.post(`/api/tournaments/${tournamentId}/join`, { category: "Geral" })
+    async inscrever(tournamentId: string, categoria = "Geral"): Promise<void> {
+        await api.post(`/api/tournaments/${tournamentId}/join`, { category: categoria })
+    },
+
+    /** Percurso completo (pontos [lat, lon, alt]); null quando o evento não tem. */
+    async rota(tournamentId: string): Promise<Rota | null> {
+        const res = await api.get(`/api/tournaments/${tournamentId}/rota`)
+        return res.status === 204 || !res.data ? null : (res.data as Rota)
+    },
+
+    async salvarRota(tournamentId: string, pontos: PontoRota[]): Promise<Rota> {
+        return (await api.put(`/api/tournaments/${tournamentId}/rota`, { pontos })).data as Rota
+    },
+
+    async removerRota(tournamentId: string): Promise<void> {
+        await api.delete(`/api/tournaments/${tournamentId}/rota`)
+    },
+
+    /** Inscrição solidária: o organizador marca quem entregou a doação. */
+    async marcarDoacao(participantId: string, entregue: boolean): Promise<void> {
+        await api.put(`/api/tournaments/participants/${participantId}/doacao`, { entregue })
     },
 
     /** Sai do evento antes do início. Inscrição paga é devolvida pelo Stripe na forma de pagamento original. */

@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { ErrorState } from "@/components/ui/error-state"
 import { PlacarOrganizador } from "@/components/torneios/PlacarOrganizador"
+import { RotaOrganizador } from "@/components/torneios/RotaOrganizador"
 import { Loader } from "@/components/ui/loader"
 import api from "@/lib/api"
 import { formatarPreco } from "@/lib/format"
@@ -31,6 +32,8 @@ type Participant = {
   rankPosition: number | null
   finalTimeMs: number | null
   points: number | null
+  category: string
+  doacaoEntregue: boolean
 }
 type Estado = { status: "loading" } | { status: "error" } | { status: "ok"; torneio: Tournament; participantes: Participant[] }
 
@@ -117,6 +120,27 @@ export default function GerenciarTorneioPage() {
       active = false
     }
   }, [id])
+
+  // Percurso novo muda o resumo que vem no evento
+  const recarregarTorneio = useCallback(async () => {
+    const torneio = await tournamentService.buscarPorId(id)
+    setEstado((atual) => (atual.status === "ok" ? { ...atual, torneio } : atual))
+  }, [id])
+
+  // Inscrição solidária: marca quem entregou a doação
+  const [doacaoErro, setDoacaoErro] = useState<string | null>(null)
+  async function marcarDoacao(p: Participant, entregue: boolean) {
+    setDoacaoErro(null)
+    setEstado((atual) =>
+      atual.status === "ok" ? { ...atual, participantes: atual.participantes.map((x) => (x.id === p.id ? { ...x, doacaoEntregue: entregue } : x)) } : atual,
+    )
+    try {
+      await tournamentService.marcarDoacao(p.id, entregue)
+    } catch (cause) {
+      setDoacaoErro(mensagemDaApi(cause, "Não foi possível marcar a doação."))
+      await recarregarParticipantes()
+    }
+  }
 
   // Depois de cada marca a colocação de todos muda: busca a lista de novo
   const recarregarParticipantes = useCallback(async () => {
@@ -227,12 +251,27 @@ export default function GerenciarTorneioPage() {
               rankPosition: p.rankPosition,
               finalTimeMs: p.finalTimeMs,
               points: p.points === null ? null : Number(p.points),
+              categoria: p.category,
             }))}
+          categorias={torneio.categorias}
           recarregar={recarregarParticipantes}
         />
       )}
 
+      {!torneio.cancelado && <RotaOrganizador torneioId={id} resumo={torneio.rota} aoMudar={recarregarTorneio} />}
+
       <h2 className="type-h2 mt-12">Participantes</h2>
+      {torneio.solidaria && (
+        <p className="type-body-small mt-1 text-muted-foreground">
+          Inscrição solidária ({torneio.solidaria}): marque quem entregou a doação na chegada.{" "}
+          <strong className="text-foreground">{participantes.filter((p) => p.doacaoEntregue).length} entregues.</strong>
+        </p>
+      )}
+      {doacaoErro && (
+        <p role="alert" className="type-body-small mt-2 text-destructive">
+          {doacaoErro}
+        </p>
+      )}
       {torneio.modo === "posicao" && torneio.status !== "aberto" && !torneio.cancelado && pagos > 0 && (
         <p className="type-body-small mt-1 text-muted-foreground">
           Lance a colocação de cada um: os três primeiros aparecem no pódio da página do evento.
@@ -247,7 +286,16 @@ export default function GerenciarTorneioPage() {
             return (
               <li key={p.id} className="type-body-small flex items-center gap-4 border-b border-border py-3">
                 <span className="w-7 shrink-0 tabular-nums text-muted-foreground">{String(i + 1).padStart(2, "0")}</span>
-                <span className="min-w-0 flex-1 truncate font-medium text-foreground">{p.userName}</span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate font-medium text-foreground">{p.userName}</span>
+                  {torneio.categorias.length > 0 && <span className="type-caption block truncate text-muted-foreground">{p.category}</span>}
+                </span>
+                {torneio.solidaria && p.paymentStatus === "PAID" && (
+                  <label className="type-caption flex shrink-0 cursor-pointer items-center gap-1.5 text-muted-foreground">
+                    <input type="checkbox" checked={p.doacaoEntregue} onChange={(e) => marcarDoacao(p, e.target.checked)} className="size-4 accent-[var(--success)]" />
+                    Doação
+                  </label>
+                )}
                 <span className="flex shrink-0 items-center gap-2 text-muted-foreground">
                   <span className={`size-1.5 rounded-full ${pg.cor}`} aria-hidden="true" />
                   {pg.texto}
