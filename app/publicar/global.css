@@ -1067,12 +1067,86 @@
     font-variant-numeric: tabular-nums;
 }
 
-/* Lembrete do endereço de envio, logo abaixo do CEP de origem */
-.frete-aviso {
-    display: block;
+/* Endereço de envio já salvo: no lugar do CEP de origem */
+.remetente-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    border: 1px solid var(--imperium-line);
     border-left: 3px solid var(--accent);
-    padding: 6px 0 6px 10px;
+    background: var(--imperium-paper);
+    padding: 12px 14px;
+}
+
+.remetente-card div {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 2px;
     color: var(--imperium-ink);
+}
+
+.remetente-card small {
+    color: var(--muted-foreground);
+}
+
+.remetente-card button {
+    flex-shrink: 0;
+    min-height: 44px;
+    padding: 0 6px;
+    font-weight: 700;
+    color: var(--accent);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+/* Primeira vez: o resto do endereço de envio, logo abaixo do CEP */
+.remetente-form {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    border: 1px solid var(--imperium-line);
+    border-left: 3px solid var(--accent);
+    padding: 14px;
+}
+
+.remetente-form__titulo {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin: 0;
+    color: var(--imperium-ink);
+}
+
+.remetente-form__titulo small {
+    color: var(--muted-foreground);
+}
+
+.remetente-form__seguro {
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+}
+
+.remetente-form__seguro svg {
+    width: 14px;
+    height: 14px;
+    margin-top: 2px;
+    flex-shrink: 0;
+    color: var(--success);
+}
+
+.remetente-form__erro {
+    color: var(--destructive);
+}
+
+.remetente-form__cancelar {
+    align-self: flex-start;
+    min-height: 44px;
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 3px;
 }
 
 .frete-gratis__lista {

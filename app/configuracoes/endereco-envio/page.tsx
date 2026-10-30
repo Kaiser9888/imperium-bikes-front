@@ -26,6 +26,9 @@ type Remetente = {
     uf: string
 }
 
+/** O servidor nunca devolve CPF/CNPJ e celular inteiros, só mascarados. */
+type Mascaras = { documento: string | null; telefone: string | null }
+
 const VAZIO: Remetente = { documento: "", telefone: "", cep: "", logradouro: "", numero: "", complemento: "", bairro: "", cidade: "", uf: "" }
 const digitos = (v: string) => v.replace(/\D/g, "")
 
@@ -33,6 +36,7 @@ const digitos = (v: string) => v.replace(/\D/g, "")
 export default function EnderecoEnvioPage() {
     const { isSignedIn, isLoaded } = useUser()
     const [form, setForm] = useState<Remetente | null>(null)
+    const [salvos, setSalvos] = useState<Mascaras>({ documento: null, telefone: null })
     const [falhou, setFalhou] = useState(false)
     const [salvando, setSalvando] = useState(false)
     const [salvo, setSalvo] = useState(false)
@@ -41,8 +45,12 @@ export default function EnderecoEnvioPage() {
     const carregar = useCallback(async () => {
         setFalhou(false)
         try {
-            const { data } = await api.get<Partial<Record<keyof Remetente, string | null>>>("/api/users/me/remetente")
-            setForm(Object.fromEntries(Object.keys(VAZIO).map((k) => [k, data[k as keyof Remetente] ?? ""])) as Remetente)
+            const { data } = await api.get<Partial<Record<keyof Remetente, string | null>> & { documentoMascarado?: string | null; telefoneMascarado?: string | null }>(
+                "/api/users/me/remetente",
+            )
+            // CPF/CNPJ e celular começam vazios: em branco mantém o que já está salvo
+            setForm({ ...VAZIO, ...Object.fromEntries(Object.keys(VAZIO).map((k) => [k, data[k as keyof Remetente] ?? ""])), documento: "", telefone: "" } as Remetente)
+            setSalvos({ documento: data.documentoMascarado ?? null, telefone: data.telefoneMascarado ?? null })
         } catch {
             setFalhou(true)
         }
@@ -84,13 +92,15 @@ export default function EnderecoEnvioPage() {
         setSalvando(true)
         setErro(null)
         try {
-            await api.put("/api/users/me/remetente", {
+            const { data } = await api.put<{ documentoMascarado: string | null; telefoneMascarado: string | null }>("/api/users/me/remetente", {
                 ...form,
                 documento: digitos(form.documento),
                 telefone: digitos(form.telefone),
                 cep: digitos(form.cep),
                 uf: form.uf.trim().toUpperCase(),
             })
+            setSalvos({ documento: data.documentoMascarado, telefone: data.telefoneMascarado })
+            setForm((atual) => (atual ? { ...atual, documento: "", telefone: "" } : atual))
             setSalvo(true)
         } catch (cause) {
             setErro(mensagemDaApi(cause, "Não foi possível salvar. Confira os campos."))
@@ -122,8 +132,20 @@ export default function EnderecoEnvioPage() {
                 {form && (
                     <form onSubmit={salvar} className="mt-8 flex flex-col gap-5">
                         <div className="grid gap-5 sm:grid-cols-2">
-                            {campo("documento", "CPF ou CNPJ", { inputMode: "numeric", autoComplete: "off", maxLength: 18, required: true })}
-                            {campo("telefone", "Celular com DDD", { inputMode: "tel", autoComplete: "tel", maxLength: 15, required: true })}
+                            {campo("documento", "CPF ou CNPJ", {
+                                inputMode: "numeric",
+                                autoComplete: "off",
+                                maxLength: 18,
+                                required: !salvos.documento,
+                                placeholder: salvos.documento ? `Salvo: ${salvos.documento}` : "000.000.000-00",
+                            })}
+                            {campo("telefone", "Celular com DDD", {
+                                inputMode: "tel",
+                                autoComplete: "tel",
+                                maxLength: 15,
+                                required: !salvos.telefone,
+                                placeholder: salvos.telefone ? `Salvo: ${salvos.telefone}` : "(11) 99999-9999",
+                            })}
                         </div>
                         <div className="grid gap-5 sm:grid-cols-[10rem_1fr]">
                             {campo("cep", "CEP", {
@@ -146,7 +168,8 @@ export default function EnderecoEnvioPage() {
                         </div>
 
                         <p className="type-caption text-muted-foreground">
-                            O CPF ou CNPJ e o telefone vão só na etiqueta da transportadora (é obrigatório por lei para o envio). Não aparecem no seu perfil nem para o comprador.
+                            O CPF ou CNPJ e o celular vão só na etiqueta, como a transportadora exige. Ficam guardados cifrados e não aparecem no seu
+                            perfil nem para o comprador.{salvos.documento && " Para manter os salvos, deixe esses campos em branco."}
                         </p>
 
                         {erro && (

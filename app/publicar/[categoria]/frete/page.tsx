@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
-import { ArrowRight, Check, Loader2, Truck, X } from 'lucide-react'
+import { ArrowRight, Check, Loader2, Lock, Truck, X } from 'lucide-react'
 import {
   clearDraft,
   getDraft,
@@ -16,6 +16,20 @@ import { formatarPreco } from '@/lib/format'
 import { ETIQUETA_AUTOMATICA } from '@/lib/etiqueta'
 
 type Estimativa = { destino: string; menorValor: number | null; prazoDias: number | null; motivo: string | null }
+
+/** Endereço de envio como o servidor devolve: CPF/CNPJ e celular só mascarados. */
+type Remetente = {
+  completo: boolean
+  documentoMascarado: string | null
+  telefoneMascarado: string | null
+  cep: string | null
+  logradouro: string | null
+  numero: string | null
+  complemento: string | null
+  bairro: string | null
+  cidade: string | null
+  uf: string | null
+}
 
 // Correios levam até 30 kg; acima disso poucas transportadoras atendem
 const PESO_CORREIOS_KG = 30
@@ -80,17 +94,24 @@ export default function FretePage() {
   const [estimando, setEstimando] = useState(false)
   const [erroEstimativa, setErroEstimativa] = useState('')
 
-  // Remetente da etiqueta automática: sem ele, o site não consegue gerar a etiqueta depois da venda
-  const [remetenteCep, setRemetenteCep] = useState<string | null | undefined>(undefined)
+  // Endereço de envio (remetente da etiqueta): pedido uma vez, aqui mesmo; depois aparece só "Enviando de"
+  const [remetente, setRemetente] = useState<Remetente | null>(null)
+  const [trocandoRemetente, setTrocandoRemetente] = useState(false)
+  const [numero, setNumero] = useState('')
+  const [complemento, setComplemento] = useState('')
+  const [documento, setDocumento] = useState('')
+  const [telefone, setTelefone] = useState('')
+  const [erroRemetente, setErroRemetente] = useState('')
+  const [salvandoRemetente, setSalvandoRemetente] = useState(false)
   useEffect(() => {
     if (!ETIQUETA_AUTOMATICA) return
-    api.get('/api/users/me/remetente')
+    api.get<Remetente>('/api/users/me/remetente')
       .then(({ data }) => {
-        const completo = data?.documento && data?.cep && data?.logradouro && data?.numero
-        setRemetenteCep(completo ? String(data.cep) : null)
-        if (completo) setCep((atual) => atual || String(data.cep))
+        setRemetente(data)
+        setNumero(data.numero ?? '')
+        setComplemento(data.complemento ?? '')
       })
-      .catch(() => setRemetenteCep(undefined))
+      .catch(() => setRemetente(null))
   }, [])
 
   const [consultandoCep, setConsultandoCep] = useState(false)
@@ -259,12 +280,34 @@ const limiteCentavos = Math.round(
 // Serviço não é enviado: esta etapa vira só o local de atendimento
 const servico = categoria === 'servicos'
 
-const localPronto =
-  cepNumerico.length === 8 &&
-  Boolean(cidade) &&
-  Boolean(estado)
+// Com etiqueta automática, quem envia precisa do endereço de envio (o Melhor Envio exige remetente)
+const precisaRemetente = ETIQUETA_AUTOMATICA && !servico && pagador !== 'retirada_local'
+const enviandoDe = precisaRemetente && remetente?.completo && !trocandoRemetente ? remetente : null
+
+// Com o endereço salvo, cidade e UF vêm dele: não depende do ViaCEP responder
+const localPronto = enviandoDe
+  ? Boolean(enviandoDe.cep && enviandoDe.cidade && enviandoDe.uf)
+  : cepNumerico.length === 8 && Boolean(cidade) && Boolean(estado)
+const documentoDigitos = documento.replace(/\D/g, '')
+const telefoneDigitos = telefone.replace(/\D/g, '')
+const remetentePronto =
+  !precisaRemetente ||
+  Boolean(enviandoDe) ||
+  Boolean(
+    numero.trim() && endereco.trim() && bairro.trim() && cidade && estado &&
+    (documentoDigitos.length === 11 || documentoDigitos.length === 14 || (!documentoDigitos && remetente?.documentoMascarado)) &&
+    ((telefoneDigitos.length >= 10 && telefoneDigitos.length <= 11) || (!telefoneDigitos && remetente?.telefoneMascarado)),
+  )
+
+// Com endereço salvo, a origem (e a estimativa) segue o CEP dele
+const cepDoRemetente = enviandoDe?.cep ?? null
+useEffect(() => {
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- o CEP do cartão vem do servidor
+  if (cepDoRemetente) setCep(cepDoRemetente)
+}, [cepDoRemetente])
 
 const pronto =
+  remetentePronto &&
   localPronto &&
   (servico || (
     pesoValido &&
@@ -318,20 +361,52 @@ function cancelar() {
   router.push('/publicar')
 }
 
-function continuar() {
-  if (!pronto) {
+async function continuar() {
+  if (!pronto || salvandoRemetente) {
     return
   }
+
+  // Primeira vez (ou trocando): grava o endereço de envio na conta antes de seguir
+  if (precisaRemetente && !enviandoDe) {
+    setSalvandoRemetente(true)
+    setErroRemetente('')
+    try {
+      const { data } = await api.put<Remetente>('/api/users/me/remetente', {
+        documento: documentoDigitos,
+        telefone: telefoneDigitos,
+        cep: cepNumerico,
+        logradouro: endereco.trim(),
+        numero: numero.trim(),
+        complemento: complemento.trim(),
+        bairro: bairro.trim(),
+        cidade,
+        uf: estado,
+      })
+      setRemetente(data)
+      setTrocandoRemetente(false)
+      setDocumento('')
+      setTelefone('')
+    } catch (cause) {
+      const msg = (cause as { response?: { data?: { message?: string } } })?.response?.data?.message
+      setErroRemetente(msg ?? 'Não foi possível salvar o endereço de envio. Confira os campos.')
+      setSalvandoRemetente(false)
+      return
+    }
+    setSalvandoRemetente(false)
+  }
+
+  // Com o endereço salvo, a origem do anúncio é a dele
+  const cepOrigem = enviandoDe?.cep ?? cepNumerico
 
   const pesoEmGramas = Math.round(
     pesoNumerico * 1000,
   )
 
   const localizacao = {
-    endereco,
-    cidade,
-    estado,
-    cep: cepNumerico,
+    endereco: enviandoDe?.logradouro ?? endereco,
+    cidade: enviandoDe?.cidade ?? cidade,
+    estado: enviandoDe?.uf ?? estado,
+    cep: cepOrigem,
     ...(servico ? { bairro: bairro.trim(), endereco_publico: enderecoPublico.trim() } : {}),
   }
 
@@ -413,6 +488,29 @@ return (
       </div>
 
       <section className="publish-card publish-form">
+        {enviandoDe ? (
+          <div className="remetente-card">
+            <div>
+              <small>Enviando de</small>
+              <b>
+                {enviandoDe.logradouro}, {enviandoDe.numero}
+                {enviandoDe.complemento ? ` - ${enviandoDe.complemento}` : ''}
+              </b>
+              <small>
+                {enviandoDe.bairro} · {enviandoDe.cidade}/{enviandoDe.uf} · CEP {enviandoDe.cep?.replace(/(\d{5})(\d{3})/, '$1-$2')}
+              </small>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setTrocandoRemetente(true)
+                setCep(enviandoDe.cep ?? '')
+              }}
+            >
+              Trocar
+            </button>
+          </div>
+        ) : (
         <label>
           {servico ? 'CEP do local de atendimento' : 'CEP de origem'}
 
@@ -436,30 +534,21 @@ return (
               : 'Informe o CEP de onde o produto será enviado.'}
           </small>
         </label>
-
-        {ETIQUETA_AUTOMATICA && !servico && remetenteCep === null && (
-          <small className="frete-aviso">
-            Cadastre também seu{' '}
-            <Link href="/configuracoes/endereco-envio" target="_blank" className="font-semibold text-primary underline underline-offset-2">
-              endereço de envio
-            </Link>
-            : quando vender, o site gera a etiqueta com ele e você só imprime e posta.
-          </small>
         )}
 
-        {consultandoCep && (
+        {!enviandoDe && consultandoCep && (
           <small>
             Consultando endereço...
           </small>
         )}
 
-        {erroCep && (
+        {!enviandoDe && erroCep && (
           <small>
             {erroCep}
           </small>
         )}
 
-        {(cidade || estado) && !erroCep && (
+        {!enviandoDe && (cidade || estado) && !erroCep && (
           <div className="form-row">
             <label>
               Cidade
@@ -478,6 +567,74 @@ return (
                 readOnly
               />
             </label>
+          </div>
+        )}
+
+        {precisaRemetente && !enviandoDe && cep.replace(/\D/g, '').length === 8 && !erroCep && (
+          <div className="remetente-form">
+            <p className="remetente-form__titulo">
+              <b>Seu endereço de envio</b>
+              <small>Pedido só uma vez. Quando vender, o site gera a etiqueta com ele e você só imprime e posta.</small>
+            </p>
+
+            <label>
+              Rua
+              <input value={endereco} onChange={(event) => setEndereco(event.target.value)} maxLength={200} autoComplete="address-line1" />
+            </label>
+
+            <div className="form-row">
+              <label>
+                Número
+                <input value={numero} onChange={(event) => setNumero(event.target.value)} maxLength={20} inputMode="numeric" />
+              </label>
+              <label>
+                Complemento
+                <span className="optional">Opcional</span>
+                <input value={complemento} onChange={(event) => setComplemento(event.target.value)} maxLength={100} />
+              </label>
+            </div>
+
+            <label>
+              Bairro
+              <input value={bairro} onChange={(event) => setBairro(event.target.value)} maxLength={100} />
+            </label>
+
+            <div className="form-row">
+              <label>
+                CPF ou CNPJ
+                <input
+                  value={documento}
+                  onChange={(event) => setDocumento(event.target.value.replace(/[^\d.\-/]/g, '').slice(0, 18))}
+                  inputMode="numeric"
+                  autoComplete="off"
+                  placeholder={remetente?.documentoMascarado ? `Salvo: ${remetente.documentoMascarado}` : '000.000.000-00'}
+                />
+              </label>
+              <label>
+                Celular com DDD
+                <input
+                  value={telefone}
+                  onChange={(event) => setTelefone(event.target.value.replace(/[^\d() -]/g, '').slice(0, 15))}
+                  inputMode="tel"
+                  autoComplete="tel"
+                  placeholder={remetente?.telefoneMascarado ? `Salvo: ${remetente.telefoneMascarado}` : '(11) 99999-9999'}
+                />
+              </label>
+            </div>
+
+            <small className="remetente-form__seguro">
+              <Lock aria-hidden="true" />
+              CPF e celular vão só na etiqueta, como a transportadora exige. Ficam guardados cifrados e não aparecem no anúncio nem para o comprador.
+              {remetente?.documentoMascarado && ' Deixe em branco para manter os salvos.'}
+            </small>
+
+            {erroRemetente && <small role="alert" className="remetente-form__erro">{erroRemetente}</small>}
+
+            {trocandoRemetente && (
+              <button type="button" className="remetente-form__cancelar" onClick={() => setTrocandoRemetente(false)}>
+                Manter o endereço salvo
+              </button>
+            )}
           </div>
         )}
 
@@ -756,7 +913,7 @@ return (
     <footer className="publish-footer">
       <button
         type="button"
-        disabled={!pronto}
+        disabled={!pronto || salvandoRemetente}
         onClick={continuar}
       >
         Continuar
