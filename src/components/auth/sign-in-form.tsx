@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { mensagemDeErro } from "@/lib/auth"
+import { BotaoGoogle, CAMPO_AUTH, CampoSenha } from "@/components/auth/campos"
 
 /** senha: entrar · codigo: código por e-mail em dispositivo novo · reset: código + nova senha */
 type Etapa = "senha" | "codigo" | "reset"
@@ -46,8 +47,17 @@ export function SignInForm({ redirectTo }: { redirectTo: string }) {
         return "Não foi possível concluir o acesso. Tente novamente."
     }
 
+    // O botão fica sempre ativo: um botão apagado parece quebrado para quem chega
+    function faltando(): string | null {
+        if (etapa === "senha") return !identifier.trim() ? "Informe seu e-mail ou nome de usuário." : !password ? "Informe sua senha." : null
+        if (!codigo.trim()) return "Digite o código que enviamos para o seu e-mail."
+        return etapa === "reset" && password.length < 8 ? "A nova senha precisa ter pelo menos 8 caracteres." : null
+    }
+
     async function enviar(event: React.FormEvent) {
         event.preventDefault()
+        const falta = faltando()
+        if (falta) return setErro(falta)
         setErro(null)
         setEnviando(true)
 
@@ -95,6 +105,18 @@ export function SignInForm({ redirectTo }: { redirectTo: string }) {
 
     return (
         <form onSubmit={enviar} className="flex flex-col gap-5" noValidate>
+            {etapa === "senha" && (
+                <BotaoGoogle
+                    iniciar={() =>
+                        signIn.sso({
+                            strategy: "oauth_google",
+                            redirectUrl: redirectTo,
+                            redirectCallbackUrl: `/sso-callback?redirect_url=${encodeURIComponent(redirectTo)}`,
+                        })
+                    }
+                />
+            )}
+
             {aviso && etapa !== "senha" && (
                 <p role="status" className="type-body-small text-muted-foreground">
                     {aviso}
@@ -106,6 +128,7 @@ export function SignInForm({ redirectTo }: { redirectTo: string }) {
                     <Label htmlFor="identifier">E-mail ou nome de usuário</Label>
                     <Input
                         id="identifier"
+                        className={CAMPO_AUTH}
                         autoComplete="username"
                         required
                         value={identifier}
@@ -120,6 +143,7 @@ export function SignInForm({ redirectTo }: { redirectTo: string }) {
                     <Label htmlFor="codigo">Código de verificação</Label>
                     <Input
                         id="codigo"
+                        className={CAMPO_AUTH}
                         inputMode="numeric"
                         autoComplete="one-time-code"
                         required
@@ -140,9 +164,8 @@ export function SignInForm({ redirectTo }: { redirectTo: string }) {
                             </button>
                         )}
                     </div>
-                    <Input
+                    <CampoSenha
                         id="password"
-                        type="password"
                         autoComplete={etapa === "reset" ? "new-password" : "current-password"}
                         required
                         minLength={etapa === "reset" ? 8 : undefined}
@@ -164,13 +187,6 @@ export function SignInForm({ redirectTo }: { redirectTo: string }) {
                 type="submit"
                 size="lg"
                 loading={enviando || fetchStatus === "fetching"}
-                disabled={
-                    etapa === "senha"
-                        ? !identifier.trim() || !password
-                        : etapa === "codigo"
-                          ? !codigo.trim()
-                          : !codigo.trim() || password.length < 8
-                }
             >
                 {etapa === "senha" ? "Entrar" : etapa === "codigo" ? "Confirmar código" : "Salvar nova senha"}
             </Button>

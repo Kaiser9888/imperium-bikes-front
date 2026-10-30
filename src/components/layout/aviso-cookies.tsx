@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { usePathname } from "next/navigation"
 import { useEffect, useSyncExternalStore } from "react"
 import { Analytics } from "@vercel/analytics/next"
 
@@ -67,7 +68,9 @@ export function AvisoCookies() {
         return () => window.removeEventListener(REABRIR, reabrir)
     }, [])
 
-    const mostrar = escolha === "nenhuma" || aberto === "true"
+    // Nas telas de entrar e cadastrar o aviso cobria o formulário; ele aparece na página seguinte
+    const telaDeAcesso = /^\/(sign-in|sign-up|sso-callback)(\/|$)/.test(usePathname() ?? "")
+    const mostrar = !telaDeAcesso && (escolha === "nenhuma" || aberto === "true")
 
     return (
         <>

@@ -32,15 +32,15 @@ export function AuthLayout({ title, description, image, kicker, headline, highli
             />
             <div aria-hidden="true" className="absolute inset-0 -z-10 hidden bg-gradient-to-b from-black/55 via-transparent to-black/55 lg:block" />
 
-            <div className="mx-auto flex min-h-dvh w-full max-w-6xl flex-col gap-8 px-4 py-6 sm:px-8 lg:flex-row lg:items-center lg:justify-between lg:gap-16 lg:py-12">
+            <div className="mx-auto flex min-h-dvh w-full max-w-6xl flex-col gap-6 px-4 py-6 sm:gap-8 sm:px-8 lg:flex-row lg:items-center lg:justify-between lg:gap-16 lg:py-12">
                 <section
-                    className={`pt-[12vh] text-white lg:order-2 lg:max-w-md ${headlineAt === "top" ? "lg:self-start lg:pt-4" : "lg:self-end lg:pt-0 lg:pb-6"}`}
+                    className={`pt-[3vh] text-white sm:pt-[12vh] lg:order-2 lg:max-w-md ${headlineAt === "top" ? "lg:self-start lg:pt-4" : "lg:self-end lg:pt-0 lg:pb-6"}`}
                 >
                     <p className="flex items-center gap-2 text-[0.6875rem] font-bold uppercase tracking-[0.3em] text-white/80">
                         <span aria-hidden="true" className="h-3.5 w-1 bg-primary" />
                         {kicker}
                     </p>
-                    <p className="mt-3 text-3xl font-extrabold leading-[1.1] tracking-tight text-balance sm:text-4xl lg:text-5xl">
+                    <p className="mt-3 text-2xl font-extrabold leading-[1.1] tracking-tight text-balance sm:text-4xl lg:text-5xl">
                         {headline}
                     </p>
                     {highlights && highlights.length > 0 && (
