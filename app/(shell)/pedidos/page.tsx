@@ -122,6 +122,12 @@ export default function PedidosPage() {
         }
     }, [])
 
+    // Atalho da Central do vendedor abre direto em Vendas (/pedidos?aba=vendas)
+    useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- lê a URL uma vez ao abrir
+        if (new URLSearchParams(window.location.search).get("aba") === "vendas") setAba("vendas")
+    }, [])
+
     useEffect(() => {
         // eslint-disable-next-line react-hooks/set-state-in-effect -- carga inicial
         if (isSignedIn) void carregar()

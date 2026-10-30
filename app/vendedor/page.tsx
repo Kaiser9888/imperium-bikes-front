@@ -8,21 +8,30 @@ import { Logo } from "@/components/layout/logo"
 import { useUser } from "@clerk/nextjs"
 import {
   ArrowRight,
+  BadgeCheck,
+  Bike,
+  ChevronRight,
+  CirclePause,
   Cog,
-  Dumbbell,
+  Droplets,
   Eye,
+  MapPin,
+  Mountain,
   MoreVertical,
   Package,
   Pencil,
   Plus,
+  Radio,
+  Receipt,
   Search,
-  ShoppingBag,
+  Shirt,
+  Store,
   Trash2,
-  Trophy,
+  Wallet,
   Wrench,
   X,
-  Zap,
   Loader2,
+  type LucideIcon,
 } from "lucide-react"
 import { BottomNav } from "@/components/layout/bottom-nav"
 import {
@@ -33,6 +42,7 @@ import {
 } from "@/services/publish/seller-products.service"
 import { clearDraft } from "@/lib/publicar/categorias"
 import { BackButton } from "@/components/ui/back-button"
+import { ETIQUETA_AUTOMATICA } from "@/lib/etiqueta"
 
 /*
   Paleta
@@ -46,12 +56,12 @@ import { BackButton } from "@/components/ui/back-button"
   Dica: renomeie /publicar/bikes para /publicar/equipamentos quando puder.
 */
 const tiposDeAnuncio = [
-  { slug: "bikes", label: "Equipamentos", desc: "O item principal do seu esporte", icon: Trophy },
-  { slug: "pecas", label: "Peças e acessórios", desc: "Componentes, proteções, complementos", icon: Cog },
-  { slug: "servicos", label: "Serviços", desc: "Aulas, manutenção, personal, aluguel", icon: Wrench },
-  { slug: "produtos", label: "Produtos", desc: "Roupas, calçados e itens gerais", icon: ShoppingBag },
-  { slug: "consumiveis", label: "Consumíveis", desc: "Suplementos, géis, hidratação", icon: Zap },
-  { slug: "esportes", label: "Artigos esportivos", desc: "Alta montanha, corrida, água, quadra e mais", icon: Dumbbell },
+  { slug: "bikes", label: "Bikes e equipamentos", desc: "Bike, prancha, raquete: o principal do seu esporte", icon: Bike },
+  { slug: "pecas", label: "Peças e acessórios", desc: "Componentes, capacete, luvas, ciclocomputador", icon: Cog },
+  { slug: "servicos", label: "Serviços e aulas", desc: "Manutenção, treino, aulas e aluguel", icon: Wrench },
+  { slug: "produtos", label: "Roupas e calçados", desc: "Vestuário, tênis, mochilas e itens gerais", icon: Shirt },
+  { slug: "consumiveis", label: "Nutrição e hidratação", desc: "Suplementos, géis e isotônicos", icon: Droplets },
+  { slug: "esportes", label: "Outros esportes", desc: "Montanha, corrida, água, quadra e mais", icon: Mountain },
 ]
 
 /*
@@ -107,7 +117,7 @@ type Filtro = "TODOS" | Status
 const statusDe = (p: ProdutoItem): Status => (p.status as Status) ?? "ATIVO"
 
 export default function CentralVendedorPage() {
-  const { isSignedIn, isLoaded, user } = useUser()
+  const { isSignedIn, isLoaded } = useUser()
 
   const [produtos, setProdutos] = useState<ProdutoItem[]>([])
   const [loading, setLoading] = useState(true)
@@ -218,7 +228,7 @@ export default function CentralVendedorPage() {
         {Topo}
         <div className="flex flex-col items-center px-6 py-24 text-center">
           <div className="mb-5 grid size-16 place-items-center rounded-full bg-primary/10">
-            <Trophy className="size-7 text-primary" />
+            <Store className="size-7 text-primary" />
           </div>
           <p className="font-heading text-xl font-bold">Venda para quem vive esporte</p>
           <p className="mt-1 max-w-xs text-sm text-muted-foreground">
@@ -233,8 +243,6 @@ export default function CentralVendedorPage() {
     )
   }
 
-  const nome = user?.firstName ?? "vendedor"
-  const total = contagem.TODOS || 1
 
   const filtros: { id: Filtro; label: string }[] = [
     { id: "TODOS", label: "Todos" },
@@ -244,10 +252,16 @@ export default function CentralVendedorPage() {
   ]
 
   // Painel sempre escuro (fundo de chuva), então as cores aqui são fixas
-  const argolas: { id: Status; label: string; cor: string }[] = [
-    { id: "ATIVO", label: "No ar", cor: "oklch(0.78 0.16 155)" },
-    { id: "PAUSADO", label: "Pausados", cor: "oklch(0.82 0.14 80)" },
-    { id: "VENDIDO", label: "Vendidos", cor: "oklch(0.76 0.12 235)" },
+  const indicadores: { id: Status; label: string; cor: string; icon: LucideIcon }[] = [
+    { id: "ATIVO", label: "No ar", cor: "oklch(0.8 0.16 155)", icon: Radio },
+    { id: "PAUSADO", label: "Pausados", cor: "oklch(0.84 0.14 80)", icon: CirclePause },
+    { id: "VENDIDO", label: "Vendidos", cor: "oklch(0.8 0.12 235)", icon: BadgeCheck },
+  ]
+
+  const atalhos = [
+    { href: "/pedidos?aba=vendas", label: "Minhas vendas", icon: Receipt },
+    { href: "/carteira", label: "Carteira", icon: Wallet },
+    ...(ETIQUETA_AUTOMATICA ? [{ href: "/configuracoes/endereco-envio", label: "Endereço de envio", icon: MapPin }] : []),
   ]
 
   return (
@@ -263,36 +277,62 @@ export default function CentralVendedorPage() {
             aria-hidden="true"
           />
 
-          <div className="flex items-end justify-between gap-4">
+          <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
-              <p className="text-sm text-white/80">Olá, {nome}</p>
-              <p className="mt-2 font-heading text-6xl font-bold leading-none">{contagem.ATIVO}</p>
-              <p className="mt-1.5 text-sm text-white/90">
-                {contagem.ATIVO === 1 ? "anúncio no ar" : "anúncios no ar"}
+              <p className="font-heading text-2xl font-bold leading-tight md:text-3xl">Sua loja</p>
+              <p className="mt-1 text-sm text-white/75">
+                {contagem.TODOS === 0
+                  ? "Publique o primeiro anúncio e comece a vender."
+                  : `${contagem.ATIVO} ${contagem.ATIVO === 1 ? "anúncio no ar" : "anúncios no ar"} agora`}
               </p>
             </div>
-            <a href="#publicar" className="underline-btn hidden md:block">
-              <span className="flex items-center gap-2 py-1.5">
+            <Button asChild size="lg" className="rounded-full bg-white text-black shadow-lg hover:bg-white/90">
+              <a href="#publicar">
                 <Plus className="size-5" />
-                Publicar novo anúncio
-              </span>
-            </a>
+                Novo anúncio
+              </a>
+            </Button>
           </div>
 
-          <div className="mt-6 flex gap-5 md:gap-8">
-            {argolas.map((a) => (
-              <Argola
-                key={a.id}
-                label={a.label}
-                cor={a.cor}
-                n={contagem[a.id]}
-                total={total}
-                ativo={filtro === a.id}
-                onClick={() => setFiltro(filtro === a.id ? "TODOS" : a.id)}
-              />
-            ))}
+          {/* Indicadores: tocar filtra a lista */}
+          <div className="mt-6 grid grid-cols-3 gap-2 md:gap-3">
+            {indicadores.map(({ id, label, cor, icon: Icon }) => {
+              const ativo = filtro === id
+              return (
+                <button
+                  key={id}
+                  onClick={() => setFiltro(ativo ? "TODOS" : id)}
+                  aria-pressed={ativo}
+                  aria-label={`${label}: ${contagem[id]}`}
+                  className={`rounded-2xl border p-3 text-left backdrop-blur-sm transition-colors md:p-4 ${
+                    ativo ? "border-white/70 bg-white/20" : "border-white/15 bg-white/10 hover:bg-white/15"
+                  }`}
+                >
+                  <Icon className="size-4" style={{ color: cor }} aria-hidden="true" />
+                  <span className="mt-2 block font-heading text-2xl font-bold leading-none tabular-nums md:text-3xl">{contagem[id]}</span>
+                  <span className="mt-1 block text-xs font-medium text-white/80">{label}</span>
+                </button>
+              )
+            })}
           </div>
         </section>
+
+        {/* ---------- ATALHOS ---------- */}
+        <nav aria-label="Atalhos do vendedor" className="-mx-4 mt-4 overflow-x-auto px-4 [scrollbar-width:none] md:mx-0 md:px-0">
+          <ul className="flex gap-2">
+            {atalhos.map(({ href, label, icon: Icon }) => (
+              <li key={href} className="shrink-0">
+                <Link
+                  href={href}
+                  className="flex items-center gap-2 rounded-full border border-border bg-surface py-2 pl-3 pr-4 text-sm font-medium transition-colors hover:border-primary/60"
+                >
+                  <Icon className="size-4 text-primary" aria-hidden="true" />
+                  {label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </nav>
 
         {/* ---------- CONTINUAR (rascunhos pela metade) ---------- */}
         {rascunhos.length > 0 && (
@@ -341,22 +381,26 @@ export default function CentralVendedorPage() {
         <section id="publicar" aria-labelledby="titulo-publicar" className="mt-8 scroll-mt-20">
           <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
             <h2 id="titulo-publicar" className="type-h3">O que você vai vender?</h2>
-            <p className="text-xs text-muted-foreground">Escolha a categoria. O resto vai por etapas.</p>
+            <p className="text-xs text-muted-foreground">Escolha a categoria. Em {ETAPAS.length} passos o anúncio fica no ar.</p>
           </div>
           <ul className="mt-3 grid grid-cols-2 gap-2.5 md:grid-cols-3">
             {tiposDeAnuncio.map(({ slug, label, desc, icon: Icon }) => (
               <li key={slug}>
                 <Link
                   href={`/publicar/${slug}`}
-                  className="group flex h-full flex-col rounded-2xl border border-border bg-surface p-3.5 transition-[border-color,transform] hover:-translate-y-0.5 hover:border-foreground active:translate-y-0 md:flex-row md:items-center md:gap-3"
+                  className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-surface p-3.5 transition-[border-color,transform,box-shadow] hover:-translate-y-0.5 hover:border-primary/60 hover:shadow-md active:translate-y-0 md:flex-row md:items-center md:gap-3 md:p-4"
                 >
-                  <span className="grid size-10 shrink-0 place-items-center rounded-full bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
+                  <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
                     <Icon className="size-5" />
                   </span>
-                  <span className="mt-3 min-w-0 md:mt-0">
+                  <span className="mt-3 min-w-0 flex-1 md:mt-0">
                     <span className="block text-sm font-semibold leading-snug">{label}</span>
                     <span className="mt-0.5 line-clamp-2 block text-xs text-muted-foreground">{desc}</span>
                   </span>
+                  <ChevronRight
+                    aria-hidden="true"
+                    className="absolute right-3 top-3.5 size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5 md:static"
+                  />
                 </Link>
               </li>
             ))}
@@ -430,11 +474,17 @@ export default function CentralVendedorPage() {
             </ul>
           ) : produtos.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-border px-5 py-10 text-center">
-              <Package className="mx-auto size-7 text-muted-foreground/60" />
-              <p className="mt-3 text-sm font-semibold">Nenhum anúncio ainda</p>
+              <span className="mx-auto grid size-14 place-items-center rounded-full bg-primary/10">
+                <Package className="size-6 text-primary" />
+              </span>
+              <p className="mt-3 font-heading text-base font-bold">Nenhum anúncio publicado</p>
               <p className="mx-auto mt-1 max-w-xs text-sm text-muted-foreground">
-                Escolha uma categoria em “O que você vai vender?” e publique o primeiro.
+                Escolha uma categoria acima para criar o primeiro.
               </p>
+              <a href="#publicar" className="line-btn line-btn--sm mt-5 inline-flex">
+                Publicar primeiro anúncio
+                <ArrowRight aria-hidden="true" />
+              </a>
             </div>
           ) : visiveis.length === 0 ? (
             <p className="py-16 text-center text-sm text-muted-foreground">Nada encontrado com esse filtro.</p>
@@ -488,8 +538,12 @@ export default function CentralVendedorPage() {
                           </span>
                         ) : (
                           <>
-                            <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                              {ocupado === p.id && <Loader2 className="size-3 animate-spin" />}
+                            <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                              {ocupado === p.id ? (
+                                <Loader2 className="size-3 animate-spin" />
+                              ) : (
+                                <span className={`size-2 rounded-full ${noAr ? "bg-success" : "bg-muted-foreground/50"}`} aria-hidden="true" />
+                              )}
                               {noAr ? "No ar" : "Pausado"}
                             </span>
                             <button
@@ -598,60 +652,6 @@ export default function CentralVendedorPage() {
 }
 
 /* ---------- componentes auxiliares ---------- */
-
-/* Contador em argola: o arco mostra a fatia do total; clicar filtra a lista */
-function Argola({
-  label,
-  cor,
-  n,
-  total,
-  ativo,
-  onClick,
-}: {
-  label: string
-  cor: string
-  n: number
-  total: number
-  ativo: boolean
-  onClick: () => void
-}) {
-  const raio = 26
-  const volta = 2 * Math.PI * raio
-  return (
-    <button
-      onClick={onClick}
-      aria-pressed={ativo}
-      aria-label={`${label}: ${n}`}
-      className="group flex flex-col items-center gap-1.5 rounded-2xl"
-    >
-      <span className="relative grid size-16 place-items-center">
-        <svg viewBox="0 0 64 64" className="absolute inset-0 -rotate-90" aria-hidden="true">
-          <circle cx="32" cy="32" r={raio} fill="none" stroke="rgb(255 255 255 / 0.18)" strokeWidth="5" />
-          <circle
-            cx="32"
-            cy="32"
-            r={raio}
-            fill="none"
-            stroke={cor}
-            strokeWidth="5"
-            strokeLinecap="round"
-            strokeDasharray={`${(n / total) * volta} ${volta}`}
-            className="transition-[stroke-dasharray] duration-500"
-            opacity={n > 0 ? 1 : 0}
-          />
-        </svg>
-        <span className="text-lg font-bold tabular-nums">{n}</span>
-      </span>
-      <span
-        className={`text-xs font-medium underline-offset-4 group-hover:underline ${
-          ativo ? "text-white underline" : "text-white/80"
-        }`}
-      >
-        {label}
-      </span>
-    </button>
-  )
-}
 
 function Sheet({
                  titulo,
