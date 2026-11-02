@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react"
 import useEmblaCarousel from "embla-carousel-react"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 
+import { urlDaArte } from "@/lib/ads"
 import { cn } from "@/lib/utils"
 import { bannerService, type Banner } from "@/services/adminService"
 
@@ -98,9 +99,9 @@ export function Banners() {
                                 className="relative block aspect-[16/7] overflow-hidden bg-surface-muted"
                                 tabIndex={indice === atual ? 0 : -1}
                             >
-                                {/* eslint-disable-next-line @next/next/no-img-element -- arte do painel: data URL ou link externo */}
+                                {/* eslint-disable-next-line @next/next/no-img-element -- arte do painel: arquivo no R2 ou link externo */}
                                 <img
-                                    src={imageUrl}
+                                    src={urlDaArte(imageUrl)}
                                     alt={alt}
                                     loading={indice === 0 ? "eager" : "lazy"}
                                     className="size-full object-cover"

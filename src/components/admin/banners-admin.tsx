@@ -16,6 +16,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Switch } from "@/components/ui/switch"
+import { urlDaArte } from "@/lib/ads"
 import { compactarImagem } from "@/lib/imagem"
 import { bannerService, type Banner, type BannerInput } from "@/services/adminService"
 import { mensagemDaApi } from "@/services/tournamentService"
@@ -99,7 +100,7 @@ export function BannersAdmin() {
                     {banners.map((b) => (
                         <li key={b.id} className={`flex flex-col gap-3 rounded-2xl border border-border bg-surface p-3 sm:flex-row sm:items-center ${b.active ? "" : "opacity-60"}`}>
                             {/* eslint-disable-next-line @next/next/no-img-element -- data URL ou link externo */}
-                            <img src={b.imageUrl} alt="" className="aspect-[16/7] w-full rounded-lg bg-surface-muted object-cover sm:w-48" />
+                            <img src={urlDaArte(b.imageUrl)} alt="" className="aspect-[16/7] w-full rounded-lg bg-surface-muted object-cover sm:w-48" />
                             <div className="min-w-0 flex-1">
                                 <p className="truncate text-sm font-semibold">{b.alt}</p>
                                 <p className="truncate text-xs text-muted-foreground">→ {b.linkUrl}</p>
@@ -221,7 +222,7 @@ function FormBanner({
                 >
                     {dados.imageUrl ? (
                         // eslint-disable-next-line @next/next/no-img-element -- prévia local
-                        <img src={dados.imageUrl} alt="Prévia do banner" className="absolute inset-0 size-full object-cover" />
+                        <img src={urlDaArte(dados.imageUrl)} alt="Prévia do banner" className="absolute inset-0 size-full object-cover" />
                     ) : (
                         <span className="flex flex-col items-center gap-1 text-sm">
                             {processando ? <Loader2 className="size-6 animate-spin" /> : <ImagePlus className="size-6" />}

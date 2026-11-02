@@ -1,4 +1,5 @@
 import api from "@/lib/api"
+import { urlDaArte } from "@/lib/ads"
 import { modoDaApi, modoParaApi, tempoParaApi, type ModoPontuacao } from "@/lib/placar"
 
 export type TournamentStatus = "aberto" | "andamento" | "encerrado"
@@ -52,7 +53,7 @@ function normalize(item: Raw): Tournament {
         valorInscricao: Number(item.registrationFee ?? 0),
         premiacao: String(item.prizes ?? ""),
         status: status === "IN_PROGRESS" ? "andamento" : status === "OPEN" ? "aberto" : "encerrado",
-        banner: String(item.coverImageUrl || "/placeholder.svg"),
+        banner: item.coverImageUrl ? urlDaArte(String(item.coverImageUrl)) : "/placeholder.svg",
         organizadorId: String(organizer.id ?? ""),
         organizadorNome: String(organizer.name ?? ""),
         cancelado: status === "CANCELLED",
