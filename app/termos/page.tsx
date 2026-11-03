@@ -155,10 +155,14 @@ export default function TermosPage() {
                         aparecem para o vendedor antes de publicar. O restante, mais o frete pago pelo comprador, vai para o vendedor quando
                         o valor é liberado. O preço mínimo de um anúncio é R$ 5,00.
                     </li>
-                    <li><strong>Eventos pagos:</strong> 90% de cada inscrição vai para o organizador quando ele encerra o evento.</li>
+                    <li>
+                        <strong>Eventos pagos:</strong> de cada inscrição são descontados do organizador 10% da plataforma e a taxa de segurança,
+                        de 3,99% + R$ 0,39. O restante vai para o organizador quando ele encerra o evento. A inscrição paga mínima é R$ 5,00.
+                    </li>
                     <li><strong>Anúncios:</strong> 55% do valor de cada exibição vai para o criador do vídeo.</li>
                     <li>
-                        Para receber, é preciso concluir o cadastro da conta de recebimentos no Stripe (pela Carteira). As tarifas do
+                        Para anunciar à venda ou cobrar inscrição, é preciso antes concluir o cadastro da conta de recebimentos no Stripe
+                        (pessoa física com CPF ou empresa). Serviços com valor a combinar podem ser anunciados sem esse cadastro. As tarifas do
                         próprio Stripe para depósito em banco, quando houver, seguem a tabela dele.
                     </li>
                     <li>Os valores das taxas podem mudar; a mudança vale só para operações feitas depois do aviso no app.</li>

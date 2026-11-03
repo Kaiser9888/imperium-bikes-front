@@ -8,6 +8,17 @@ import { useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/apiClient";
 import { useUserSync } from "@/lib/UserSyncContext";
 import type { ContaConectadaResponse } from "@/types/contaConectada";
+import { CHAVE_VOLTAR_ONBOARDING } from "@/components/carteira/ConnectStripeButton";
+
+/** Página de onde a pessoa saiu para o cadastro (ex.: anunciar); só caminho interno. */
+function lerVoltar(): string | null {
+  try {
+    const v = sessionStorage.getItem(CHAVE_VOLTAR_ONBOARDING);
+    return v && v.startsWith("/") && !v.startsWith("//") ? v : null;
+  } catch {
+    return null;
+  }
+}
 
 export default function OnboardingCompletoPage() {
   const { getToken, isLoaded, isSignedIn } = useAuth();
@@ -64,22 +75,27 @@ export default function OnboardingCompletoPage() {
           {segundosEsperando > 15 && (
             <p className="text-xs text-muted-foreground mt-3">
               Isso pode levar até alguns minutos na primeira vez (nosso servidor
-              às vezes precisa "acordar"). Aguarde...
+              às vezes precisa &ldquo;acordar&rdquo;). Aguarde...
               {segundosEsperando > 60 && ` (${Math.floor(segundosEsperando / 60)} min esperando)`}
             </p>
           )}
         </>
       ) : status.onboardingCompleto ? (
         <>
-          <h1 className="font-heading text-2xl text-primary mb-2">Conta conectada!</h1>
+          <h1 className="font-heading text-2xl text-primary mb-2">Recebimentos ativos!</h1>
           <p className="text-sm text-muted-foreground mb-6">
             Você já pode vender e receber pagamentos na plataforma.
           </p>
           <Button
-            onClick={() => router.push("/carteira")}
-           
+            onClick={() => {
+              const voltar = lerVoltar();
+              try {
+                sessionStorage.removeItem(CHAVE_VOLTAR_ONBOARDING);
+              } catch {}
+              router.push(voltar ?? "/carteira");
+            }}
           >
-            Ir para minha carteira
+            {lerVoltar() ? "Continuar de onde parei" : "Ir para minha carteira"}
           </Button>
         </>
       ) : (

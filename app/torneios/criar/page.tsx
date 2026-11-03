@@ -13,6 +13,9 @@ import { formatarPreco, partesDaData } from "@/lib/format"
 import { compactarImagem } from "@/lib/imagem"
 import { MODOS, type ModoPontuacao } from "@/lib/placar"
 import { mensagemDaApi, tournamentService } from "@/services/tournamentService"
+import { liquidoInscricaoCentavos, TAXA_PLATAFORMA_EVENTO_PERCENTUAL } from "@/lib/taxas"
+import { useRecebimentos } from "@/hooks/useRecebimentos"
+import { AtivarRecebimentos } from "@/components/carteira/AtivarRecebimentos"
 
 const PASSOS = ["O evento", "Local e vagas", "Inscrição"] as const
 
@@ -22,6 +25,7 @@ const campo = "mt-2 w-full rounded-lg bg-surface px-3.5 py-3 text-base outline-n
 
 export default function CriarTorneioPage() {
     const { isSignedIn } = useUser()
+    const [recebimentos, conferirRecebimentos] = useRecebimentos()
 
     const [form, setForm] = useState({
         nome: "",
@@ -165,6 +169,7 @@ export default function CriarTorneioPage() {
 
     const data = partesDaData(form.dataInicio)
     const valor = Number(form.valorInscricao) || 0
+    const semRecebimentos = valor > 0 && recebimentos === "pendente"
 
     return (
         <div className="min-h-screen bg-background text-foreground">
@@ -342,7 +347,15 @@ export default function CriarTorneioPage() {
                             <div>
                                 <label htmlFor="valor" className={rotulo}>Valor da inscrição (R$)</label>
                                 <input id="valor" type="number" inputMode="decimal" value={form.valorInscricao} onChange={(e) => update("valorInscricao", e.target.value)} min={0} max={500} step="0.01" placeholder="0,00" className={campo} />
-                                <p className={ajuda}>Vazio ou zero deixa o evento grátis. Em evento pago, 90% de cada inscrição vai para a sua Carteira quando você encerrar o evento.</p>
+                                {valor > 0 ? (
+                                    <p className={ajuda}>
+                                        Você recebe <strong className="text-foreground">{formatarPreco(liquidoInscricaoCentavos(Math.round(valor * 100)) / 100)}</strong> por
+                                        inscrição, na sua Carteira, quando encerrar o evento (descontados {TAXA_PLATAFORMA_EVENTO_PERCENTUAL}% da Imperium e a taxa de
+                                        segurança de 3,99% + R$ 0,39). Mínimo R$ 5,00.
+                                    </p>
+                                ) : (
+                                    <p className={ajuda}>Vazio ou zero deixa o evento grátis.</p>
+                                )}
                             </div>
                             <div>
                                 <label htmlFor="premio" className={rotulo}>Premiação <span className="font-normal text-muted-foreground">(opcional)</span></label>
@@ -412,6 +425,19 @@ export default function CriarTorneioPage() {
                             )}
                         </div>
 
+                        {/* Inscrição paga precisa de conta de recebimentos; o Stripe abre em outra aba para não perder o formulário */}
+                        {semRecebimentos && (
+                            <AtivarRecebimentos
+                                novaAba
+                                titulo="Ative seus recebimentos para cobrar inscrição"
+                                texto="O cadastro abre em outra aba; este formulário continua aqui. Depois de terminar, volte e toque em “Já ativei”."
+                            >
+                                <button type="button" onClick={conferirRecebimentos} className="type-body-small mt-4 text-primary underline underline-offset-2">
+                                    Já ativei, conferir
+                                </button>
+                            </AtivarRecebimentos>
+                        )}
+
                         {/* Resumo no mesmo painel escuro da Central do vendedor, com o mesmo botão */}
                         <div className="rounded-2xl bg-[oklch(0.21_0.03_255)] p-5 text-white sm:p-7 dark:bg-surface-secondary dark:ring-1 dark:ring-border">
                             <div className="flex gap-4">
@@ -442,7 +468,7 @@ export default function CriarTorneioPage() {
                                     <dd className="mt-0.5 truncate font-semibold">{form.premiacao.trim() || "—"}</dd>
                                 </div>
                             </dl>
-                            <button type="button" onClick={handleSubmit} disabled={enviando} aria-busy={enviando} className="underline-btn mt-7">
+                            <button type="button" onClick={handleSubmit} disabled={enviando || semRecebimentos} aria-busy={enviando} className="underline-btn mt-7">
                                 <span className="flex items-center gap-2 py-1.5">
                                     {enviando ? <Loader2 className="size-5 animate-spin" aria-hidden="true" /> : <Plus className="size-5" aria-hidden="true" />}
                                     {enviando ? "Publicando…" : "Publicar torneio"}

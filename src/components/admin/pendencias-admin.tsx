@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useCallback, useEffect, useState } from "react"
-import { CheckCircle2, Loader2, type LucideIcon, Megaphone, Flag, LifeBuoy, Printer, Snowflake, ShieldAlert, Scale, Tag, Timer, Truck } from "lucide-react"
+import { CheckCircle2, Landmark, Loader2, type LucideIcon, Megaphone, Flag, LifeBuoy, Printer, Snowflake, ShieldAlert, Scale, Tag, Timer, Truck } from "lucide-react"
 
 import api from "@/lib/api"
 import { formatarPreco } from "@/lib/format"
@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils"
 import { usuarioAdminService } from "@/services/adminService"
 import { mensagemDaApi } from "@/services/tournamentService"
 
-type Contagens = { campanhas: number; denuncias: number; chamados: number; contasCongeladas: number; bikesRoubadas: number; disputas: number; anunciosEmAnalise: number; retiradasParadas: number; enviosAtrasados: number; etiquetas: number }
+type Contagens = { campanhas: number; denuncias: number; chamados: number; contasCongeladas: number; bikesRoubadas: number; disputas: number; anunciosEmAnalise: number; retiradasParadas: number; enviosAtrasados: number; etiquetas: number; repassesTravados: number }
 type ContaCongelada = { userId: string; fullName: string | null; email: string | null; congeladaEm: string }
 type AnuncioEmAnalise = { productId: string; title: string; price: number; vendedor: string | null; contaCriadaEm: string | null; createdAt: string }
 type RetiradaParada = { orderId: string; productTitle: string; valor: number; comprador: string | null; vendedor: string | null; createdAt: string; motivo?: string | null }
@@ -26,6 +26,7 @@ const FILAS: { chave: keyof Contagens; aba?: AbaPendencia; titulo: string; texto
     { chave: "retiradasParadas", titulo: "Retiradas paradas", texto: "Pagas há mais de 30 dias sem o código", icon: Timer, urgente: true },
     { chave: "enviosAtrasados", titulo: "Envios atrasados", texto: "Pagos há mais de 3 dias úteis sem rastreio", icon: Truck, urgente: true },
     { chave: "etiquetas", titulo: "Etiquetas com problema", texto: "O site não conseguiu gerar a etiqueta", icon: Printer, urgente: true },
+    { chave: "repassesTravados", titulo: "Repasses travados", texto: "Vendas que já deviam ter ido para o vendedor", icon: Landmark, urgente: true },
     { chave: "bikesRoubadas", aba: "bikes-roubadas", titulo: "Alertas de bike roubada", texto: "Conferir o boletim de ocorrência", icon: ShieldAlert },
     { chave: "campanhas", aba: "anuncios", titulo: "Anúncios em vídeo", texto: "Campanhas pagas esperando aprovação", icon: Megaphone },
     { chave: "denuncias", aba: "denuncias", titulo: "Denúncias", texto: "Conteúdo denunciado para analisar", icon: Flag },
@@ -39,6 +40,7 @@ export function PendenciasAdmin({ onAbrir }: { onAbrir: (aba: AbaPendencia) => v
     const [emAnalise, setEmAnalise] = useState<AnuncioEmAnalise[]>([])
     const [retiradas, setRetiradas] = useState<RetiradaParada[]>([])
     const [atrasados, setAtrasados] = useState<RetiradaParada[]>([])
+    const [travados, setTravados] = useState<RetiradaParada[]>([])
     const [etiquetas, setEtiquetas] = useState<Etiquetas | null>(null)
     const [gerando, setGerando] = useState<string | null>(null)
     const [erro, setErro] = useState<string | null>(null)
@@ -46,7 +48,7 @@ export function PendenciasAdmin({ onAbrir }: { onAbrir: (aba: AbaPendencia) => v
     const carregar = useCallback(async () => {
         setErro(null)
         try {
-            const [c, contas, anuncios, paradas, envios, etiq] = await Promise.all([
+            const [c, contas, anuncios, paradas, envios, etiq, repasses] = await Promise.all([
                 api.get<Contagens>("/api/admin/pendencias"),
                 api.get<ContaCongelada[]>("/api/admin/pendencias/contas-congeladas"),
                 api.get<AnuncioEmAnalise[]>("/api/admin/pendencias/anuncios-em-analise"),
@@ -54,6 +56,7 @@ export function PendenciasAdmin({ onAbrir }: { onAbrir: (aba: AbaPendencia) => v
                 api.get<RetiradaParada[]>("/api/admin/pendencias/envios-atrasados"),
                 // Complemento: sem ele o resto do painel continua
                 api.get<Etiquetas>("/api/admin/pendencias/etiquetas").catch(() => ({ data: null })),
+                api.get<RetiradaParada[]>("/api/admin/pendencias/repasses-travados").catch(() => ({ data: [] as RetiradaParada[] })),
             ])
             setContagens(c.data)
             setCongeladas(contas.data)
@@ -61,6 +64,7 @@ export function PendenciasAdmin({ onAbrir }: { onAbrir: (aba: AbaPendencia) => v
             setRetiradas(paradas.data)
             setAtrasados(envios.data)
             setEtiquetas(etiq.data)
+            setTravados(repasses.data)
         } catch (cause) {
             setErro(mensagemDaApi(cause, "Não foi possível carregar as pendências."))
         }
@@ -194,6 +198,28 @@ export function PendenciasAdmin({ onAbrir }: { onAbrir: (aba: AbaPendencia) => v
                                 <p className="truncate text-xs text-muted-foreground">
                                     {r.comprador} → {r.vendedor} · pago em {new Date(r.createdAt).toLocaleDateString("pt-BR")}
                                 </p>
+                            </li>
+                        ))}
+                    </ul>
+                </section>
+            )}
+
+            {travados.length > 0 && (
+                <section aria-labelledby="travados-title" className="mt-8">
+                    <h2 id="travados-title" className="type-label uppercase tracking-wider text-muted-foreground">
+                        Repasses travados
+                    </h2>
+                    <p className="type-caption mt-1 text-muted-foreground">
+                        O site tenta de novo toda noite. Se o vendedor está sem conta ativa, peça para ele ativar os recebimentos na Carteira.
+                    </p>
+                    <ul className="mt-3 divide-y divide-border border-y border-border">
+                        {travados.map((r) => (
+                            <li key={r.orderId} className="py-3">
+                                <p className="truncate text-sm font-semibold">{r.productTitle} · a receber {formatarPreco(Number(r.valor))}</p>
+                                <p className="truncate text-xs text-muted-foreground">
+                                    {r.comprador} → {r.vendedor} · pago em {new Date(r.createdAt).toLocaleDateString("pt-BR")}
+                                </p>
+                                {r.motivo && <p className="mt-1 text-xs text-destructive">{r.motivo}</p>}
                             </li>
                         ))}
                     </ul>

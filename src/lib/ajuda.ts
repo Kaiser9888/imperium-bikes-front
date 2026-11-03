@@ -150,7 +150,7 @@ export const topicos: Topico[] = [
             },
             {
                 pergunta: "Preciso cadastrar uma conta para receber?",
-                resposta: "Sim. Na Carteira, conecte sua conta de recebimentos no Stripe. É lá que você informa seus dados e o banco; nós não vemos sua conta bancária.",
+                resposta: "Sim, antes do primeiro anúncio. O site pede na hora de anunciar (ou na Carteira): você informa no Stripe nome, CPF, data de nascimento, endereço e o banco. Não precisa ter empresa. Nós não vemos sua conta bancária. Só serviço com valor a combinar pode ser anunciado sem isso.",
             },
         ],
     },
@@ -169,7 +169,7 @@ export const topicos: Topico[] = [
             },
             {
                 pergunta: "Como recebo o valor das inscrições?",
-                resposta: "90% de cada inscrição vai para a sua Carteira quando você encerra o evento, e é transferido pelo Stripe para a sua conta de recebimentos.",
+                resposta: "De cada inscrição saem 10% da Imperium e a taxa de segurança (3,99% + R$ 0,39); o resto vai para a sua Carteira quando você encerra o evento e é transferido pelo Stripe para a sua conta de recebimentos. Ao criar o evento, o site mostra quanto você recebe por inscrição. Para cobrar inscrição, ative seus recebimentos antes; a inscrição paga mínima é R$ 5,00.",
             },
             {
                 pergunta: "Desisti de um evento. Recebo o dinheiro de volta?",

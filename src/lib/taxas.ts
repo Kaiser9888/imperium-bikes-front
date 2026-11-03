@@ -11,3 +11,16 @@ export const PRECO_MINIMO_CENTAVOS = 500
 export function taxaPagamentoCentavos(precoCentavos: number): number {
   return Math.round((precoCentavos * TAXA_PAGAMENTO_PERCENTUAL) / 100) + TAXA_PAGAMENTO_FIXA_CENTAVOS
 }
+
+/** Parte da Imperium em cada inscrição de evento pago (PaymentService.PLATFORM_FEE_PERCENTAGE). */
+export const TAXA_PLATAFORMA_EVENTO_PERCENTUAL = 10
+
+/**
+ * Quanto o organizador recebe por inscrição: valor − 10% da Imperium − taxa de segurança.
+ * Mesma conta do backend (StripeService.confirmAndFulfill): cada parte arredondada ao centavo.
+ */
+export function liquidoInscricaoCentavos(valorCentavos: number): number {
+  if (valorCentavos <= 0) return 0
+  const plataforma = Math.round((valorCentavos * TAXA_PLATAFORMA_EVENTO_PERCENTUAL) / 100)
+  return valorCentavos - plataforma - taxaPagamentoCentavos(valorCentavos)
+}

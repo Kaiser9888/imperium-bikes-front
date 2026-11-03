@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 import './global.css'
+import { GateRecebimentos } from '@/components/carteira/GateRecebimentos'
 
 export const metadata: Metadata = {
   title: 'Imperium ',
@@ -17,5 +18,5 @@ export const viewport: Viewport = {
 
 // Sem <html>/<body> próprios: o layout raiz já tem os dois, com o tema e os provedores.
 export default function PublicarLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return children
+  return <GateRecebimentos>{children}</GateRecebimentos>
 }
