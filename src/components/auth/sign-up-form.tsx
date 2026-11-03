@@ -65,7 +65,10 @@ export function SignUpForm({ redirectTo }: { redirectTo: string }) {
             setEtapa("codigo")
             return null
         }
-        return "O cadastro pede uma informação que esta tela ainda não oferece."
+        // Mostra o campo que o Clerk ainda pede, para a causa real aparecer na tela
+        const faltam = [...signUp.missingFields, ...signUp.unverifiedFields].join(", ")
+        console.error("[cadastro] Clerk ainda pede:", { status: signUp.status, missing: signUp.missingFields, unverified: signUp.unverifiedFields })
+        return `O cadastro pede uma informação que esta tela ainda não oferece${faltam ? ` (${faltam})` : ""}.`
     }
 
     async function enviar(event: React.FormEvent) {
@@ -83,6 +86,8 @@ export function SignUpForm({ redirectTo }: { redirectTo: string }) {
                 password,
                 firstName,
                 lastName: resto.join(" ") || undefined,
+                // a caixa de aceite já é obrigatória acima; o Clerk exige o aceite quando o consentimento legal está ligado
+                legalAccepted: true,
             })
         } else if (etapa === "usuario") {
             resultado = await signUp.update({ username: username.trim() })
