@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useCallback, useEffect, useState } from "react"
-import { CheckCircle2, Landmark, Loader2, type LucideIcon, Megaphone, Flag, LifeBuoy, Printer, Snowflake, ShieldAlert, Scale, Tag, Timer, Truck } from "lucide-react"
+import { CheckCircle2, CircleAlert, HandCoins, Landmark, Loader2, type LucideIcon, Megaphone, Flag, LifeBuoy, Printer, Snowflake, ShieldAlert, Scale, Tag, Timer, Truck } from "lucide-react"
 
 import api from "@/lib/api"
 import { formatarPreco } from "@/lib/format"
@@ -10,10 +10,12 @@ import { cn } from "@/lib/utils"
 import { usuarioAdminService } from "@/services/adminService"
 import { mensagemDaApi } from "@/services/tournamentService"
 
-type Contagens = { campanhas: number; denuncias: number; chamados: number; contasCongeladas: number; bikesRoubadas: number; disputas: number; anunciosEmAnalise: number; retiradasParadas: number; enviosAtrasados: number; etiquetas: number; repassesTravados: number }
+type Contagens = { campanhas: number; denuncias: number; chamados: number; contasCongeladas: number; bikesRoubadas: number; disputas: number; anunciosEmAnalise: number; retiradasParadas: number; enviosAtrasados: number; etiquetas: number; repassesTravados: number; pagosSemRegistro: number; dinheiroARecuperar: number }
 type ContaCongelada = { userId: string; fullName: string | null; email: string | null; congeladaEm: string }
 type AnuncioEmAnalise = { productId: string; title: string; price: number; vendedor: string | null; contaCriadaEm: string | null; createdAt: string }
 type RetiradaParada = { orderId: string; productTitle: string; valor: number; comprador: string | null; vendedor: string | null; createdAt: string; motivo?: string | null }
+/** Pagos sem registro podem não ter pagamento nem título no site. */
+type ItemSemId = Omit<RetiradaParada, "orderId" | "productTitle"> & { orderId: string | null; productTitle: string | null }
 type Etiquetas = { saldoMelhorEnvio: number | null; automaticaLigada: boolean; itens: RetiradaParada[] }
 
 /** Abas do painel que cada fila abre. */
@@ -27,6 +29,8 @@ const FILAS: { chave: keyof Contagens; aba?: AbaPendencia; titulo: string; texto
     { chave: "enviosAtrasados", titulo: "Envios atrasados", texto: "Pagos há mais de 3 dias úteis sem rastreio", icon: Truck, urgente: true },
     { chave: "etiquetas", titulo: "Etiquetas com problema", texto: "O site não conseguiu gerar a etiqueta", icon: Printer, urgente: true },
     { chave: "repassesTravados", titulo: "Repasses travados", texto: "Vendas que já deviam ter ido para o vendedor", icon: Landmark, urgente: true },
+    { chave: "pagosSemRegistro", titulo: "Pagos sem registro", texto: "O Stripe cobrou e o site não registrou", icon: CircleAlert, urgente: true },
+    { chave: "dinheiroARecuperar", titulo: "Dinheiro a recuperar", texto: "Devolvido depois do repasse: reverter no Stripe", icon: HandCoins, urgente: true },
     { chave: "bikesRoubadas", aba: "bikes-roubadas", titulo: "Alertas de bike roubada", texto: "Conferir o boletim de ocorrência", icon: ShieldAlert },
     { chave: "campanhas", aba: "anuncios", titulo: "Anúncios em vídeo", texto: "Campanhas pagas esperando aprovação", icon: Megaphone },
     { chave: "denuncias", aba: "denuncias", titulo: "Denúncias", texto: "Conteúdo denunciado para analisar", icon: Flag },
@@ -41,6 +45,8 @@ export function PendenciasAdmin({ onAbrir }: { onAbrir: (aba: AbaPendencia) => v
     const [retiradas, setRetiradas] = useState<RetiradaParada[]>([])
     const [atrasados, setAtrasados] = useState<RetiradaParada[]>([])
     const [travados, setTravados] = useState<RetiradaParada[]>([])
+    const [semRegistro, setSemRegistro] = useState<ItemSemId[]>([])
+    const [recuperar, setRecuperar] = useState<ItemSemId[]>([])
     const [etiquetas, setEtiquetas] = useState<Etiquetas | null>(null)
     const [gerando, setGerando] = useState<string | null>(null)
     const [erro, setErro] = useState<string | null>(null)
@@ -48,7 +54,7 @@ export function PendenciasAdmin({ onAbrir }: { onAbrir: (aba: AbaPendencia) => v
     const carregar = useCallback(async () => {
         setErro(null)
         try {
-            const [c, contas, anuncios, paradas, envios, etiq, repasses] = await Promise.all([
+            const [c, contas, anuncios, paradas, envios, etiq, repasses, pagos, perdas] = await Promise.all([
                 api.get<Contagens>("/api/admin/pendencias"),
                 api.get<ContaCongelada[]>("/api/admin/pendencias/contas-congeladas"),
                 api.get<AnuncioEmAnalise[]>("/api/admin/pendencias/anuncios-em-analise"),
@@ -57,6 +63,8 @@ export function PendenciasAdmin({ onAbrir }: { onAbrir: (aba: AbaPendencia) => v
                 // Complemento: sem ele o resto do painel continua
                 api.get<Etiquetas>("/api/admin/pendencias/etiquetas").catch(() => ({ data: null })),
                 api.get<RetiradaParada[]>("/api/admin/pendencias/repasses-travados").catch(() => ({ data: [] as RetiradaParada[] })),
+                api.get<ItemSemId[]>("/api/admin/pendencias/pagos-sem-registro").catch(() => ({ data: [] as ItemSemId[] })),
+                api.get<ItemSemId[]>("/api/admin/pendencias/dinheiro-a-recuperar").catch(() => ({ data: [] as ItemSemId[] })),
             ])
             setContagens(c.data)
             setCongeladas(contas.data)
@@ -65,6 +73,8 @@ export function PendenciasAdmin({ onAbrir }: { onAbrir: (aba: AbaPendencia) => v
             setAtrasados(envios.data)
             setEtiquetas(etiq.data)
             setTravados(repasses.data)
+            setSemRegistro(pagos.data)
+            setRecuperar(perdas.data)
         } catch (cause) {
             setErro(mensagemDaApi(cause, "Não foi possível carregar as pendências."))
         }
@@ -202,6 +212,31 @@ export function PendenciasAdmin({ onAbrir }: { onAbrir: (aba: AbaPendencia) => v
                         ))}
                     </ul>
                 </section>
+            )}
+
+            {[
+                { lista: semRegistro, id: "sem-registro", titulo: "Pagos sem registro", ajuda: "O comprador pagou e não tem pedido ou inscrição no site. Confira o pagamento no Stripe e reembolse ou registre à mão." },
+                { lista: recuperar, id: "recuperar", titulo: "Dinheiro a recuperar", ajuda: "Foi devolvido ao comprador depois de já ter ido para o vendedor ou organizador. Reverta a transferência no Stripe (Connect → conta → Transferências). Some da lista 90 dias depois do repasse." },
+            ].map((g) =>
+                g.lista.length > 0 && (
+                    <section key={g.id} aria-labelledby={`${g.id}-title`} className="mt-8">
+                        <h2 id={`${g.id}-title`} className="type-label uppercase tracking-wider text-muted-foreground">
+                            {g.titulo}
+                        </h2>
+                        <p className="type-caption mt-1 text-muted-foreground">{g.ajuda}</p>
+                        <ul className="mt-3 divide-y divide-border border-y border-border">
+                            {g.lista.map((r, i) => (
+                                <li key={`${r.orderId ?? "sem-id"}-${i}`} className="py-3">
+                                    <p className="truncate text-sm font-semibold">{r.productTitle} · {formatarPreco(Number(r.valor))}</p>
+                                    <p className="truncate text-xs text-muted-foreground">
+                                        {[r.comprador, r.vendedor].filter(Boolean).join(" → ")} · {new Date(r.createdAt).toLocaleDateString("pt-BR")}
+                                    </p>
+                                    {r.motivo && <p className="mt-1 text-xs text-destructive">{r.motivo}</p>}
+                                </li>
+                            ))}
+                        </ul>
+                    </section>
+                ),
             )}
 
             {travados.length > 0 && (

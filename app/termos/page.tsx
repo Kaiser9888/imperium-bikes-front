@@ -157,7 +157,7 @@ export default function TermosPage() {
                     </li>
                     <li>
                         <strong>Eventos pagos:</strong> de cada inscrição são descontados do organizador 10% da plataforma e a taxa de segurança,
-                        de 3,99% + R$ 0,39. O restante vai para o organizador quando ele encerra o evento. A inscrição paga mínima é R$ 5,00.
+                        de 3,99% + R$ 0,39. O restante vai para o organizador 7 dias depois do fim do evento, prazo em que o inscrito pode reclamar se o evento não aconteceu. A inscrição paga mínima é R$ 5,00.
                     </li>
                     <li><strong>Anúncios:</strong> 55% do valor de cada exibição vai para o criador do vídeo.</li>
                     <li>

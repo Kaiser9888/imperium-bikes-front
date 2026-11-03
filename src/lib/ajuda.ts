@@ -169,7 +169,7 @@ export const topicos: Topico[] = [
             },
             {
                 pergunta: "Como recebo o valor das inscrições?",
-                resposta: "De cada inscrição saem 10% da Imperium e a taxa de segurança (3,99% + R$ 0,39); o resto vai para a sua Carteira quando você encerra o evento e é transferido pelo Stripe para a sua conta de recebimentos. Ao criar o evento, o site mostra quanto você recebe por inscrição. Para cobrar inscrição, ative seus recebimentos antes; a inscrição paga mínima é R$ 5,00.",
+                resposta: "De cada inscrição saem 10% da Imperium e a taxa de segurança (3,99% + R$ 0,39); o resto vai para a sua Carteira 7 dias depois do fim do evento (prazo para algum inscrito reclamar) e é transferido pelo Stripe para a sua conta de recebimentos. Ao criar o evento, o site mostra quanto você recebe por inscrição. Para cobrar inscrição, ative seus recebimentos antes; a inscrição paga mínima é R$ 5,00.",
             },
             {
                 pergunta: "Desisti de um evento. Recebo o dinheiro de volta?",
