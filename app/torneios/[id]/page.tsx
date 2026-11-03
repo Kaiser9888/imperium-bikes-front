@@ -116,7 +116,8 @@ export default function TorneioDetalhesPage() {
     const { id } = useParams<{ id: string }>()
 
     const [torneio, setTorneio] = useState<Tournament | null>(null)
-    const [falhou, setFalhou] = useState(false)
+    // "inexistente": o servidor respondeu que o evento não existe; "rede": não deu para perguntar
+    const [falhou, setFalhou] = useState<false | "rede" | "inexistente">(false)
     const [inscricao, setInscricao] = useState<MinhaInscricao | null>(null)
     const [inscritos, setInscritos] = useState<InscritoPublico[]>([])
     const [enviando, setEnviando] = useState(false)
@@ -145,8 +146,9 @@ export default function TorneioDetalhesPage() {
         setFalhou(false)
         try {
             setTorneio(await tournamentService.buscarPorId(id))
-        } catch {
-            setFalhou(true)
+        } catch (cause) {
+            const status = (cause as { response?: { status?: number } })?.response?.status
+            setFalhou(status === 400 || status === 404 ? "inexistente" : "rede")
         }
         // Lista é complemento: se falhar, a página continua
         tournamentService.inscritos(id).then(setInscritos).catch(() => setInscritos([]))
@@ -256,7 +258,11 @@ export default function TorneioDetalhesPage() {
     if (falhou) {
         return (
             <AppShell>
-                <ErrorState title="Não foi possível carregar este evento" onRetry={carregar} />
+                {falhou === "inexistente" ? (
+                    <ErrorState title="Evento não encontrado" description="Ele pode ter sido removido ou o link está errado." />
+                ) : (
+                    <ErrorState title="Não foi possível carregar este evento" onRetry={carregar} />
+                )}
             </AppShell>
         )
     }

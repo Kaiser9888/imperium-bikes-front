@@ -24,7 +24,7 @@ const ajuda = "type-caption mt-1.5 text-muted-foreground"
 const campo = "mt-2 w-full rounded-lg bg-surface px-3.5 py-3 text-base outline-none md:text-sm"
 
 export default function CriarTorneioPage() {
-    const { isSignedIn } = useUser()
+    const { isLoaded, isSignedIn } = useUser()
     const [recebimentos, conferirRecebimentos] = useRecebimentos()
 
     const [form, setForm] = useState({
@@ -161,6 +161,24 @@ export default function CriarTorneioPage() {
                             Todos os eventos
                         </Link>
                     </div>
+                </main>
+                <BottomNav />
+            </div>
+        )
+    }
+
+    // Pede o login antes: antes a pessoa preenchia tudo e perdia o formulário ao ir para o login no fim
+    if (isLoaded && !isSignedIn) {
+        return (
+            <div className="min-h-screen bg-background text-foreground">
+                {cabecalho}
+                <main className="mx-auto max-w-3xl px-4 pb-32 pt-16">
+                    <h1 className="type-h1">Entre para criar um evento</h1>
+                    <p className="type-body mt-3 max-w-md text-muted-foreground">Todo evento tem um organizador. Entre na sua conta e volte direto para cá.</p>
+                    <Link href={`/sign-in?redirect_url=${encodeURIComponent("/torneios/criar")}`} className="line-btn line-btn--accent mt-8">
+                        Entrar
+                        <ArrowRight aria-hidden="true" />
+                    </Link>
                 </main>
                 <BottomNav />
             </div>
