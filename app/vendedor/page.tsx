@@ -850,16 +850,21 @@ function EditarModal({
               className={campo}
             />
           </div>
-          <div>
-            <label className={rotulo}>Pago o frete até (R$)</label>
-            <input
-              value={limiteFrete}
-              onChange={(e) => setLimiteFrete(e.target.value.replace(/[^\d.,]/g, ""))}
-              inputMode="decimal"
-              placeholder="Vazio: comprador paga"
-              className={campo}
-            />
-          </div>
+          {/* Só retirada: não há frete para ajudar a pagar */}
+          {produto.somenteRetirada ? (
+            <p className="self-end pb-3 text-xs text-muted-foreground">Só retirada em mãos, sem envio.</p>
+          ) : (
+            <div>
+              <label className={rotulo}>Pago o frete até (R$)</label>
+              <input
+                value={limiteFrete}
+                onChange={(e) => setLimiteFrete(e.target.value.replace(/[^\d.,]/g, ""))}
+                inputMode="decimal"
+                placeholder="Vazio: comprador paga"
+                className={campo}
+              />
+            </div>
+          )}
         </div>
         <div>
           <label className={rotulo}>Descrição</label>

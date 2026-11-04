@@ -9,6 +9,7 @@ import { CheckCircle2, Clock, XCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Loader } from "@/components/ui/loader"
 import { apiFetch } from "@/lib/apiClient"
+import { limparComprados } from "@/lib/cart"
 
 type Status = "LOADING" | "PAGO" | "FAILED" | "PENDING"
 type Consulta = { status: string; type?: string; referenceId?: string }
@@ -43,8 +44,21 @@ function SuccessContent() {
         if (result.type === "AD_CAMPAIGN") {
           setVoltar({ href: "/anunciar", label: "Ver minhas campanhas" })
         }
+        // Compra: o pedido (e o código de retirada, se for em mãos) fica em Pedidos
+        if (result.type === "PRODUCT_PURCHASE" || !params.get("session_id")) {
+          setVoltar({ href: "/pedidos", label: "Ver meu pedido" })
+        }
+        if (result.type === "CART_PURCHASE") {
+          setVoltar({ href: "/pedidos", label: "Ver meus pedidos" })
+        }
+        if (result.type?.startsWith("PRODUCT_HIGHLIGHT")) {
+          setVoltar({ href: "/vendedor", label: "Ver meus anúncios" })
+        }
         const atual = result.status.toUpperCase()
-        if (atual === "PAGO" || atual === "PAID") return setStatus("PAGO")
+        if (atual === "PAGO" || atual === "PAID") {
+          limparComprados()
+          return setStatus("PAGO")
+        }
         if (["FAILED", "FALHOU", "CANCELADO", "CANCELED", "CANCELLED", "EXPIRED"].includes(atual)) return setStatus("FAILED")
         attempts += 1
         if (attempts >= 10) return setStatus("PENDING")
@@ -62,7 +76,7 @@ function SuccessContent() {
       active = false
       clearTimeout(timer)
     }
-  }, [getToken, isLoaded, path])
+  }, [getToken, isLoaded, params, path])
 
   if (status === "LOADING") return <Loader fullPage label="Confirmando pagamento" />
 

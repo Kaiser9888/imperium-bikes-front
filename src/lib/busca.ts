@@ -30,6 +30,7 @@ export type ResultadoProduto = {
     image?: string | null
     city?: string | null
     state?: string | null
+    condition?: string | null
     precoAPartirDe?: boolean
 }
 
@@ -70,6 +71,8 @@ function normalizar(item: Record<string, unknown>): ResultadoProduto | null {
         image: capa ?? null,
         city: typeof item.city === "string" ? item.city : null,
         state: typeof item.state === "string" ? item.state : null,
+        condition: typeof item.condition === "string" ? item.condition : null,
+        precoAPartirDe: item.precoAPartirDe === true,
     }
 }
 

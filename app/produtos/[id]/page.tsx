@@ -8,7 +8,6 @@ import { useAuth } from "@clerk/nextjs"
 import {
   ArrowLeft,
   BadgeCheck,
-  Check,
   ChevronLeft,
   ChevronRight,
   Handshake,
@@ -17,10 +16,13 @@ import {
   MapPin,
   MessageCircle,
   ShieldCheck,
+  Check,
+  Menu,
   ShoppingCart,
   Truck,
 } from "lucide-react"
 
+import { useAppShell } from "@/components/layout/app-shell"
 import { Logo } from "@/components/layout/logo"
 import { GaleriaTelaCheia } from "@/components/marketplace/galeria-tela-cheia"
 import { ProductImage } from "@/components/marketplace/ProductImage"
@@ -41,13 +43,20 @@ import { PRODUCT_CONDITIONS, type ProductResponse, type ShippingQuote } from "@/
 
 const brl = (valor: number) => valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
 
-/** Cabeçalho próprio da página de produto: voltar e uma única marca. */
+/** Cabeçalho próprio da página de produto (a barra de compra ocupa o rodapé): voltar, marca e menu. */
 function Topo() {
+  const { openMenu } = useAppShell()
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur-md">
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
         <BackButton href="/" />
-        <Logo />
+        <div className="flex items-center gap-1">
+          <Logo compact className="sm:hidden" />
+          <Logo className="hidden sm:flex" />
+          <Button variant="ghost" size="icon" className="rounded-full" onClick={openMenu} aria-label="Abrir menu">
+            <Menu className="size-6" aria-hidden="true" />
+          </Button>
+        </div>
       </div>
     </header>
   )
@@ -91,8 +100,8 @@ function ProdutoPage() {
   const [erroFrete, setErroFrete] = useState<string | null>(null)
 
   const [abrindoChat, setAbrindoChat] = useState(false)
-  const [erroChat, setErroChat] = useState<string | null>(null)
   const [adicionadoAoCarrinho, setAdicionadoAoCarrinho] = useState(false)
+  const [erroChat, setErroChat] = useState<string | null>(null)
 
   useEffect(() => {
     if (!id) return
@@ -210,6 +219,8 @@ function ProdutoPage() {
   // Serviço "a partir de": vitrine, sem compra pelo site (valor e pagamento combinados direto)
   const combinadoDireto = servico && Boolean(p.precoAPartirDe)
   const localDoServico = [p.bairro, localizacao].filter(Boolean).join(" · ")
+  // "Retirada no local": o vendedor não envia
+  const somenteRetirada = !servico && Boolean(p.somenteRetirada)
 
   // Ficha técnica só com o que o vendedor preencheu
   const specs = ([
@@ -477,7 +488,7 @@ function ProdutoPage() {
                   }}
                 >
                   {adicionadoAoCarrinho ? <Check className="size-5" /> : <ShoppingCart className="size-5" />}
-                  {adicionadoAoCarrinho ? "Adicionado ao carrinho" : "Adicionar ao carrinho"}
+                  {adicionadoAoCarrinho ? "No carrinho" : "Adicionar ao carrinho"}
                 </Button>
               </div>
 
@@ -494,7 +505,15 @@ function ProdutoPage() {
 
             {/* FRETE (serviço não é enviado: data e local são combinados pelo chat) */}
 
-            {servico ? (
+            {somenteRetirada ? (
+              <p className="type-body-small flex items-start gap-2.5 rounded-2xl border border-border bg-surface px-5 py-4 text-muted-foreground">
+                <Handshake className="mt-0.5 size-5 shrink-0 text-primary" aria-hidden="true" />
+                <span>
+                  <strong className="text-foreground">Só retirada em mãos{localizacao ? ` em ${localizacao}` : ""}.</strong> O vendedor não envia.
+                  Você paga pelo site e recebe um código para passar na hora da retirada.
+                </span>
+              </p>
+            ) : servico ? (
               <p className="type-body-small flex items-start gap-2.5 rounded-2xl border border-border bg-surface px-5 py-4 text-muted-foreground">
                 <Handshake className="mt-0.5 size-5 shrink-0 text-primary" aria-hidden="true" />
                 <span>

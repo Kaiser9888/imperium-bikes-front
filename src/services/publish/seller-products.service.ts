@@ -14,6 +14,8 @@ export interface ProdutoItem {
   originPostalCode?: string | null
   /** "Eu pago o frete até R$ X"; null quando o comprador paga tudo. */
   freeShippingLimit?: number | null
+  /** Retirada no local: sem envio pelo site. */
+  somenteRetirada?: boolean
   /** Serviço "a partir de": combinado direto com o prestador. */
   precoAPartirDe?: boolean
   city?: string
@@ -92,6 +94,8 @@ export const sellerProductService = {
       originPostalCode: atual.originPostalCode,
       // Sem ele o backend entenderia "comprador paga" e apagaria o frete grátis
       freeShippingLimit: atual.freeShippingLimit,
+      // Sem ele o backend entenderia "tem envio" e voltaria a cobrar frete
+      somenteRetirada: atual.somenteRetirada,
       weightKg: atual.weightKg,
       heightCm: atual.heightCm,
       widthCm: atual.widthCm,

@@ -2,8 +2,9 @@
 
 import { useCallback, useEffect, useState } from "react"
 import Link from "next/link"
-import { useUser } from "@clerk/nextjs"
-import { Package, Star } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { useAuth, useUser } from "@clerk/nextjs"
+import { MessageCircle, Package, Star } from "lucide-react"
 
 import { PageHeading } from "@/components/layout/page-heading"
 import { EnvioDoComprador, EnvioDoVendedor, type Envio } from "@/components/marketplace/envio-pedido"
@@ -19,6 +20,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { ProductImage } from "@/components/marketplace/ProductImage"
 import { EmptyState } from "@/components/ui/empty-state"
 import { ErrorState } from "@/components/ui/error-state"
 import { Input } from "@/components/ui/input"
@@ -28,6 +30,7 @@ import { StatusBadge, type StatusBadgeProps } from "@/components/ui/status-badge
 import { Textarea } from "@/components/ui/textarea"
 import api from "@/lib/api"
 import { formatarPreco } from "@/lib/format"
+import { iniciarConversa } from "@/lib/stream"
 import { cn } from "@/lib/utils"
 import { mensagemDaApi } from "@/services/tournamentService"
 
@@ -51,6 +54,11 @@ type Pedido = {
     codigoRetirada: string | null
     /** Com frete pelo site: etiqueta, destinatário e rastreio. */
     envio: Envio | null
+    /** Para abrir o chat com a outra parte. */
+    outraParteId?: string
+    productImage?: string | null
+    /** Pago e parado (sem postagem ou sem o código): o valor volta ao comprador nesta data. */
+    prazoDevolucao?: string | null
 }
 
 const STATUS: Record<Status, { label: string; tone: StatusBadgeProps["tone"] }> = {
@@ -89,6 +97,9 @@ const dia = (iso: string) => new Date(iso).toLocaleDateString("pt-BR", { day: "2
 
 export default function PedidosPage() {
     const { isLoaded, isSignedIn } = useUser()
+    const { getToken } = useAuth()
+    const router = useRouter()
+    const [abrindoChat, setAbrindoChat] = useState<string | null>(null)
     const [pedidos, setPedidos] = useState<Pedido[] | null>(null)
     const [falhou, setFalhou] = useState(false)
     const [aba, setAba] = useState<"compras" | "vendas">("compras")
@@ -165,6 +176,18 @@ export default function PedidosPage() {
 
     const lista = pedidos?.filter((p) => p.comprador === (aba === "compras"))
 
+    async function conversar(pedido: Pedido) {
+        if (!pedido.outraParteId) return
+        setAbrindoChat(pedido.id)
+        setErro(null)
+        try {
+            router.push(`/chat/${await iniciarConversa(pedido.outraParteId, pedido.productId, getToken)}`)
+        } catch (cause) {
+            setErro(cause instanceof Error ? cause.message : "Não foi possível abrir a conversa.")
+            setAbrindoChat(null)
+        }
+    }
+
     return (
         <main className="mx-auto w-full max-w-3xl px-4 pb-16 pt-4 sm:px-6">
             <PageHeading title="Pedidos" back={{ href: "/", label: "Início" }} />
@@ -199,16 +222,23 @@ export default function PedidosPage() {
                 {lista?.length === 0 && <EmptyState icon={Package} title={aba === "compras" ? "Você ainda não comprou nada" : "Você ainda não vendeu nada"} />}
                 {lista?.map((pedido) => (
                     <article key={pedido.id} className="rounded-xl border border-border bg-surface p-4">
-                        <div className="flex items-start justify-between gap-3">
-                            <Link href={`/produtos/${pedido.productId}`} className="type-label text-foreground hover:underline">
-                                {pedido.productTitle}
+                        <div className="flex items-start gap-3">
+                            <Link href={`/produtos/${pedido.productId}`} className="size-14 shrink-0 overflow-hidden rounded-lg bg-surface-muted" tabIndex={-1} aria-hidden="true">
+                                <ProductImage src={pedido.productImage ?? undefined} alt="" className="size-full object-cover" />
                             </Link>
-                            <StatusBadge tone={STATUS[pedido.status].tone}>{STATUS[pedido.status].label}</StatusBadge>
+                            <div className="min-w-0 flex-1">
+                                <div className="flex items-start justify-between gap-3">
+                                    <Link href={`/produtos/${pedido.productId}`} className="type-label text-foreground hover:underline">
+                                        {pedido.productTitle}
+                                    </Link>
+                                    <StatusBadge tone={STATUS[pedido.status].tone}>{STATUS[pedido.status].label}</StatusBadge>
+                                </div>
+                                <p className="type-caption mt-1 text-muted-foreground">
+                                    {pedido.comprador ? "Vendido por" : "Comprado por"} {pedido.outraParte} · {dia(pedido.createdAt)} · {formatarPreco(pedido.valor)}
+                                    {!pedido.comprador && " líquidos"}
+                                </p>
+                            </div>
                         </div>
-                        <p className="type-caption mt-1 text-muted-foreground">
-                            {pedido.comprador ? "Vendido por" : "Comprado por"} {pedido.outraParte} · {dia(pedido.createdAt)} · {formatarPreco(pedido.valor)}
-                            {!pedido.comprador && " líquidos"}
-                        </p>
 
                         {pedido.status === "PAGO" && pedido.retiradaEmMaos && pedido.comprador && pedido.codigoRetirada && (
                             <div className="mt-3 rounded-lg border border-primary/30 bg-primary/5 px-3 py-3">
@@ -255,11 +285,22 @@ export default function PedidosPage() {
                                     : `O valor é liberado quando o comprador confirmar o recebimento ou em ${dia(pedido.prazoDisputa)}.`}
                             </p>
                         )}
+                        {pedido.status === "PAGO" && pedido.prazoDevolucao && (pedido.retiradaEmMaos || !pedido.envio?.enviadoEm) && (
+                            <p className="type-body-small mt-3 text-muted-foreground">
+                                {pedido.retiradaEmMaos
+                                    ? pedido.comprador
+                                        ? `Se a retirada não acontecer até ${dia(pedido.prazoDevolucao)}, o valor volta para você automaticamente.`
+                                        : `Digite o código na entrega, até ${dia(pedido.prazoDevolucao)}. Depois disso o valor volta ao comprador.`
+                                    : pedido.comprador
+                                        ? `Se não for postado até ${dia(pedido.prazoDevolucao)}, o valor volta para você automaticamente.`
+                                        : `Sem postagem até ${dia(pedido.prazoDevolucao)}, o pedido é cancelado e o valor volta ao comprador.`}
+                            </p>
+                        )}
                         {pedido.status === "EM_DISPUTA" && (
                             <p className="type-body-small mt-3 rounded-lg bg-surface-muted px-3 py-2.5 text-foreground">
                                 <span className="font-semibold">Problema relatado:</span> {pedido.disputaMotivo}
                                 <span className="mt-1 block text-muted-foreground">
-                                    O pagamento fica retido até vocês resolverem. Combinem pelo chat.
+                                    O pagamento fica retido até vocês resolverem. Combinem pela conversa abaixo.
                                 </span>
                             </p>
                         )}
@@ -321,6 +362,12 @@ export default function PedidosPage() {
                                         Avaliar vendedor
                                     </Button>
                                 )
+                            )}
+                            {(pedido.status === "PAGO" || pedido.status === "EM_DISPUTA") && pedido.outraParteId && (
+                                <Button size="sm" variant="outline" loading={abrindoChat === pedido.id} onClick={() => conversar(pedido)}>
+                                    <MessageCircle aria-hidden="true" />
+                                    {pedido.comprador ? "Falar com o vendedor" : "Falar com o comprador"}
+                                </Button>
                             )}
                             {!pedido.comprador && pedido.status === "EM_DISPUTA" && (
                                 <Button size="sm" variant="outline" onClick={() => setConfirmando({ pedido, acao: "reembolsar" })}>

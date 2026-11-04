@@ -1,4 +1,5 @@
-export type PaymentType = "PRODUCT_PURCHASE"
+/** Um produto, ou vários pagos de uma vez pelo carrinho. */
+export type PaymentType = "PRODUCT_PURCHASE" | "CART_PURCHASE"
 
 export type PaymentStatus =
   | "PENDING"
@@ -10,8 +11,11 @@ export type PaymentStatus =
 export interface CreatePaymentRequest {
   type: PaymentType
   referenceId: string
-  referenceType: "PRODUCT"
+  /** Carrinho: id da compra, gerado no navegador (repetir o clique reaproveita o pagamento). */
+  referenceType: "PRODUCT" | "CART"
   description?: string
+  /** Carrinho: cada item e a opção de frete dele (sem ela, retirada em mãos). */
+  itens?: { productId: string; freteServiceId?: string }[]
   /** CEP do comprador; sem ele a entrega é combinada com o vendedor. */
   cepDestino?: string
   /** Opção de frete escolhida na cotação. */
@@ -40,6 +44,9 @@ export interface PaymentResponse {
   amount: number
   platformFee: number
   checkoutUrl?: string
+  /** Tipo vindo do backend (compra, inscrição, destaque, anúncio) e o que foi pago. */
+  type?: string
+  referenceId?: string
   stripeSessionId?: string
   createdAt: string
 }

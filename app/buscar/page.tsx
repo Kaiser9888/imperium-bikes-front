@@ -374,8 +374,10 @@ function BuscarPageContent() {
                             price={p.price}
                             oldPrice={p.originalPrice}
                             aPartirDe={p.precoAPartirDe}
-                            category={[p.brand, p.state].filter(Boolean).join(" · ") || undefined}
+                            category={p.brand || undefined}
                             image={p.image}
+                            condicao={p.condition}
+                            local={[p.city, p.state].filter(Boolean).join(", ")}
                           />
                         </li>
                       ))}

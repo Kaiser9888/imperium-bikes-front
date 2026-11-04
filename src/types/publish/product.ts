@@ -110,6 +110,8 @@ export interface ProductResponse {
     originPostalCode: string | null
     /** "Eu pago o frete até R$ X"; null quando o comprador paga tudo. */
     freeShippingLimit?: number | null
+    /** Retirada no local: sem envio pelo site, só retirada em mãos com código. */
+    somenteRetirada?: boolean
     weightKg: number | null
     heightCm: number | null
     widthCm: number | null

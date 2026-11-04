@@ -444,6 +444,9 @@ async function handlePublicar() {
           bairro: draftFinal.frete?.localizacao?.bairro || undefined,
           enderecoAtendimento: draftFinal.frete?.localizacao?.endereco_publico || undefined,
 
+          // Retirada no local: sem envio pelo site (o checkout só oferece retirada com código)
+          somenteRetirada: draftFinal.frete?.pagador === 'retirada_local',
+
           // "Eu arco com o frete": quanto o vendedor cobre (o comprador paga o que passar)
           freeShippingLimit:
             draftFinal.frete?.pagador === 'vendedor' && draftFinal.frete.limite_frete_centavos

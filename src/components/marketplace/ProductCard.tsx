@@ -6,6 +6,7 @@ import { Heart } from "lucide-react"
 import { ProductImage } from "@/components/marketplace/ProductImage"
 import { Price } from "@/components/ui/price"
 import { cn } from "@/lib/utils"
+import { PRODUCT_CONDITIONS } from "@/types/publish/product"
 
 export type ProductCardProps = {
     id: string
@@ -17,11 +18,16 @@ export type ProductCardProps = {
     aPartirDe?: boolean
     category?: string
     image?: string | null
+    /** NEW, USED...: vira "Novo", "Usado". */
+    condicao?: string | null
+    /** Cidade e UF: em bike usada, quem compra quer saber se dá para buscar. */
+    local?: string | null
     favorite?: boolean
     onToggleFavorite?: () => void
 }
 
-export function ProductCard({ id, title, price, oldPrice, aPartirDe, category, image, favorite = false, onToggleFavorite }: ProductCardProps) {
+export function ProductCard({ id, title, price, oldPrice, aPartirDe, category, image, condicao, local, favorite = false, onToggleFavorite }: ProductCardProps) {
+    const detalhes = [PRODUCT_CONDITIONS.find((c) => c.value === condicao)?.label, local].filter(Boolean).join(" · ")
     return (
         <article className="group relative flex flex-col gap-3">
             <Link href={`/produtos/${id}`} className="flex flex-col gap-3 rounded-xl">
@@ -38,6 +44,7 @@ export function ProductCard({ id, title, price, oldPrice, aPartirDe, category, i
                         {title}
                     </h3>
                     <Price valor={price} valorAntigo={oldPrice} aPartirDe={aPartirDe} className="mt-0.5" />
+                    {detalhes && <p className="type-caption truncate text-muted-foreground">{detalhes}</p>}
                 </div>
             </Link>
 

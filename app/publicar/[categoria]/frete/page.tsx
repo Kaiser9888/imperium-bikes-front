@@ -310,11 +310,8 @@ const pronto =
   remetentePronto &&
   localPronto &&
   (servico || (
-    pesoValido &&
-    alturaValida &&
-    larguraValida &&
-    comprimentoValido &&
     Boolean(pagador) &&
+    (pagador === 'retirada_local' || (pesoValido && alturaValida && larguraValida && comprimentoValido)) &&
     // "Eu arco com o frete" precisa dizer até quanto
     (pagador !== 'vendedor' || limiteCentavos > 0)
   ))
@@ -413,10 +410,13 @@ async function continuar() {
   saveDraft(categoria, {
     frete: servico ? { localizacao } : {
       localizacao,
-      peso_g: pesoEmGramas,
-      altura_cm: alturaNumerica,
-      largura_cm: larguraNumerica,
-      comprimento_cm: comprimentoNumerico,
+      // Retirada no local não vai pelo correio: medidas digitadas antes de trocar a opção não seguem
+      ...(pagador === 'retirada_local' ? {} : {
+        peso_g: pesoEmGramas,
+        altura_cm: alturaNumerica,
+        largura_cm: larguraNumerica,
+        comprimento_cm: comprimentoNumerico,
+      }),
       limite_frete_centavos: pagador === 'vendedor' ? limiteCentavos : undefined,
       pagador:
         pagador === 'retirada_local'
@@ -674,6 +674,46 @@ return (
 
         {!servico && (
         <>
+        <fieldset>
+          <legend>
+            Como o comprador recebe?
+          </legend>
+
+          <div className="publish-options">
+            {pagadores.map((item) => (
+              <button
+                type="button"
+                key={item.id}
+                className={
+                  pagador === item.id
+                    ? 'is-selected'
+                    : ''
+                }
+                onClick={() =>
+                  setPagador(item.id)
+                }
+              >
+                  <span>
+                    <b>
+                      {item.label}
+                    </b>
+
+                    <small>
+                      {item.description}
+                    </small>
+                  </span>
+
+                {pagador === item.id && (
+                  <Check />
+                )}
+              </button>
+            ))}
+          </div>
+        </fieldset>
+
+        {/* Retirada no local não é enviada: sem peso nem medidas */}
+        {pagador !== 'retirada_local' && (
+        <>
         <div className="frete-dimensoes-grid">
           <label>
             Peso (kg)
@@ -795,48 +835,14 @@ return (
         </div>
 
         <small>
-          Vai enviar uma bike?{' '}
+          Bike montada costuma passar do limite dos Correios (30 kg e 100 cm por lado); a estimativa abaixo mostra quem atende.{' '}
           <Link href="/ajuda/envio-de-bike" target="_blank" className="font-semibold text-primary underline underline-offset-2">
             Veja como embalar e medir a caixa
           </Link>
         </small>
+        </>
+        )}
 
-        <fieldset>
-          <legend>
-            Quem paga o frete?
-          </legend>
-
-          <div className="publish-options">
-            {pagadores.map((item) => (
-              <button
-                type="button"
-                key={item.id}
-                className={
-                  pagador === item.id
-                    ? 'is-selected'
-                    : ''
-                }
-                onClick={() =>
-                  setPagador(item.id)
-                }
-              >
-                  <span>
-                    <b>
-                      {item.label}
-                    </b>
-
-                    <small>
-                      {item.description}
-                    </small>
-                  </span>
-
-                {pagador === item.id && (
-                  <Check />
-                )}
-              </button>
-            ))}
-          </div>
-        </fieldset>
 
         {(pagador === 'vendedor' || pagador === 'comprador') && (
           <div className="frete-gratis">

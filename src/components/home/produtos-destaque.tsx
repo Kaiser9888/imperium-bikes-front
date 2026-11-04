@@ -24,6 +24,9 @@ interface Produto {
     precoAntigo?: number
     precoAPartirDe?: boolean
     oldPrice?: number
+    condition?: string
+    city?: string
+    state?: string
     img?: string
     imageUrl?: string
     images?: { id?: string; url: string; isMain?: boolean; displayOrder?: number }[]
@@ -145,6 +148,8 @@ export function ProdutosDestaque() {
                                     aPartirDe={produto.precoAPartirDe}
                                     category={produto.modalidade || produto.category}
                                     image={img}
+                                    condicao={produto.condition}
+                                    local={[produto.city, produto.state].filter(Boolean).join(", ")}
                                     favorite={favoritos.includes(id)}
                                     onToggleFavorite={() => toggleFavorite(produtoParaFavorito)}
                                 />
