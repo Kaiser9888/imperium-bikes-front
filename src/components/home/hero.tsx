@@ -1,3 +1,4 @@
+import Image from "next/image"
 import Link from "next/link"
 import { KeyRound, SearchCheck, ShieldCheck } from "lucide-react"
 
@@ -9,43 +10,58 @@ const GARANTIAS = [
     { icon: SearchCheck, texto: "Consulta de bike roubada", href: "/seguranca/bike-roubada" },
 ]
 
-/** Topo da Home: o que é o site em uma frase, as duas ações principais e as garantias. */
+/**
+ * Topo da Home no mesmo painel escuro de Eventos e da Central do vendedor (fixo nos dois temas):
+ * o que é o site, as duas ações e as garantias numa faixa só, com uma foto de pedal ao fundo.
+ */
 export function Hero() {
     return (
-        <section aria-labelledby="hero-title">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-                <div>
-                    <h1 id="hero-title" className="type-h1 text-foreground">
-                        Compre e venda bike sem medo de golpe
-                    </h1>
-                    <p className="type-body-small mt-1.5 text-muted-foreground">
-                        O pagamento fica retido até você receber. Quem vende só recebe depois da entrega.
-                    </p>
-                </div>
-                <div className="flex shrink-0 gap-2">
-                    <Button asChild className="flex-1 sm:flex-none">
+        <section
+            aria-labelledby="hero-title"
+            className="relative isolate overflow-hidden rounded-2xl bg-[oklch(0.21_0.03_255)] text-white dark:bg-surface-secondary dark:ring-1 dark:ring-border"
+        >
+            <Image
+                src="/header/cadastrodownhill.jpg"
+                alt=""
+                fill
+                priority
+                sizes="(min-width: 1280px) 1216px, 100vw"
+                className="-z-20 object-cover object-[70%_center] opacity-35 sm:opacity-60"
+            />
+            {/* Degradê da esquerda: o texto fica sempre legível sobre a foto */}
+            <div
+                aria-hidden="true"
+                className="absolute inset-0 -z-10 bg-gradient-to-r from-[oklch(0.21_0.03_255)] via-[oklch(0.21_0.03_255)]/90 to-[oklch(0.21_0.03_255)]/30 dark:from-surface-secondary dark:via-surface-secondary/90 dark:to-surface-secondary/30"
+            />
+
+            <div className="px-5 pb-5 pt-7 sm:px-8 sm:pb-6 sm:pt-10">
+                <p className="type-caption font-semibold uppercase tracking-[0.2em] text-white/60">Marketplace de bikes</p>
+                <h1 id="hero-title" className="type-h1 mt-2 max-w-xl text-balance text-white sm:text-4xl">
+                    Compre e venda bike sem medo de golpe
+                </h1>
+                <p className="type-body-small mt-2 max-w-md text-white/75 sm:text-base">
+                    O pagamento fica retido até você receber. Quem vende só recebe depois da entrega.
+                </p>
+                <div className="mt-6 flex gap-2 sm:gap-3">
+                    <Button asChild variant="accent" size="lg" className="flex-1 border-transparent sm:flex-none">
                         <Link href="/produtos">Ver bikes</Link>
                     </Button>
-                    <Button asChild variant="outline" className="flex-1 sm:flex-none">
+                    <Button asChild variant="ghost" size="lg" className="flex-1 border border-white/30 text-white hover:bg-white/10 sm:flex-none">
                         <Link href="/vendedor#publicar">Anunciar</Link>
                     </Button>
                 </div>
+
+                <ul className="mt-7 grid gap-x-6 gap-y-2.5 border-t border-white/15 pt-5 sm:grid-cols-3">
+                    {GARANTIAS.map(({ icon: Icone, texto, href }) => (
+                        <li key={texto}>
+                            <Link href={href} className="group flex items-center gap-2.5 text-sm font-medium text-white/85 hover:text-white">
+                                <Icone className="size-[18px] shrink-0 text-success" aria-hidden="true" />
+                                <span className="underline-offset-4 group-hover:underline">{texto}</span>
+                            </Link>
+                        </li>
+                    ))}
+                </ul>
             </div>
-            <ul className="mt-4 grid grid-cols-3 gap-2 sm:gap-3">
-                {GARANTIAS.map(({ icon: Icone, texto, href }) => (
-                    <li key={texto}>
-                        <Link
-                            href={href}
-                            className="flex h-full flex-col items-center gap-1.5 rounded-2xl border border-border bg-surface px-2 py-3 text-center transition-colors hover:border-success/40 sm:flex-row sm:gap-3 sm:px-4 sm:text-left"
-                        >
-                            <span className="grid size-8 shrink-0 place-items-center rounded-full bg-success/12 text-success sm:size-9">
-                                <Icone className="size-4 sm:size-5" aria-hidden="true" />
-                            </span>
-                            <span className="text-[0.6875rem] font-semibold leading-tight text-foreground sm:text-sm">{texto}</span>
-                        </Link>
-                    </li>
-                ))}
-            </ul>
         </section>
     )
 }
