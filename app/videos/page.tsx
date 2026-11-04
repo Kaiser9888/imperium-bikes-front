@@ -14,7 +14,7 @@ import { VideoGridSkeleton } from "@/components/videos/VideoGridSkeleton";
 import { GlitchButton } from "@/components/videos/GlitchButton";
 import { SaveButton } from "@/components/videos/SaveButton";
 import { ErrorState, EmptyState } from "@/components/videos/FeedStates";
-import { ArrowRight, Loader2, Play, Plus, Radio } from "lucide-react";
+import { ArrowRight, Loader2, Play, Radio } from "lucide-react";
 
 const DEFAULT_CATEGORY = "recomendados";
 
@@ -180,14 +180,13 @@ function LiveStrip({ lives }: { lives: VideoItem[] }) {
             <Radio className="size-3.5" aria-hidden="true" />
             Fazer live
           </Link>
-          <GlitchButton text="Publicar" href="/videos/upload" size="sm" icon={<Plus aria-hidden="true" />} />
         </div>
       </div>
 
       {lives.length === 0 ? (
         <div className="flex items-center gap-3 rounded-xl border border-dashed border-border px-4 py-5 text-sm text-muted-foreground">
           <Radio className="size-5 shrink-0 text-primary" aria-hidden="true" />
-          Nenhuma transmissão agora. As lives de pedal, torneios e oficinas aparecem aqui.
+          Nenhuma transmissão agora. As lives de pedal, eventos e oficinas aparecem aqui.
         </div>
       ) : (
         <ul className="-mx-4 flex snap-x gap-4 overflow-x-auto px-4 pb-2 scrollbar-none sm:mx-0 sm:px-0">

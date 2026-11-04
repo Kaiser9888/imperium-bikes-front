@@ -37,34 +37,27 @@ import { useIsAdmin } from "@/lib/use-is-admin"
 import { cn } from "@/lib/utils"
 
 type MenuDrawerProps = { open: boolean; onOpenChange: (open: boolean) => void }
-type MenuItem = { icon: LucideIcon; label: string; href: string }
+/** `conta`: só faz sentido logado; some do menu de quem ainda não entrou. */
+type MenuItem = { icon: LucideIcon; label: string; href: string; conta?: boolean }
 type MenuSection = { title: string; items: MenuItem[] }
 
-// Somente rotas que existem no app.
+// Somente rotas que existem no app. Perfil fica no topo (cartão do usuário), não repete aqui.
 const menuSections: MenuSection[] = [
     {
         title: "Minha conta",
         items: [
-            { icon: User, label: "Perfil", href: "/perfil" },
+            { icon: MessageCircle, label: "Mensagens", href: "/chat", conta: true },
+            { icon: Bell, label: "Notificações", href: "/notificacoes", conta: true },
+            { icon: Package, label: "Meus pedidos", href: "/pedidos", conta: true },
+        ],
+    },
+    {
+        title: "Comprar",
+        items: [
+            { icon: ShoppingBag, label: "Produtos", href: "/produtos" },
+            { icon: LayoutGrid, label: "Categorias", href: "/modalidades" },
             { icon: Heart, label: "Favoritos", href: "/favoritos" },
-            { icon: MessageCircle, label: "Chat", href: "/chat" },
-            { icon: Bell, label: "Notificações", href: "/notificacoes" },
-            { icon: Wallet, label: "Carteira", href: "/carteira" },
-        ],
-    },
-    {
-        title: "Eventos",
-        items: [
-            { icon: Trophy, label: "Eventos", href: "/torneios" },
-            { icon: PlusCircle, label: "Criar evento", href: "/torneios/criar" },
-        ],
-    },
-    {
-        title: "Marketplace",
-        items: [
-            { icon: ShoppingBag, label: "Comprar", href: "/produtos" },
             { icon: ShoppingCart, label: "Carrinho", href: "/carrinho" },
-            { icon: Package, label: "Pedidos", href: "/pedidos" },
         ],
     },
     {
@@ -72,19 +65,21 @@ const menuSections: MenuSection[] = [
         title: "Vender",
         items: [
             { icon: Store, label: "Central do vendedor", href: "/vendedor" },
-            ...(ANUNCIOS_ABERTOS ? [{ icon: Megaphone, label: "Anunciar nos vídeos", href: "/anunciar" }] : []),
+            { icon: Wallet, label: "Carteira", href: "/carteira", conta: true },
+            ...(ANUNCIOS_ABERTOS ? [{ icon: Megaphone, label: "Anunciar nos vídeos", href: "/anunciar", conta: true }] : []),
         ],
     },
     {
-        title: "Conteúdo",
+        title: "Eventos e vídeos",
         items: [
+            { icon: Trophy, label: "Eventos", href: "/torneios" },
+            { icon: PlusCircle, label: "Criar evento", href: "/torneios/criar" },
             { icon: Clapperboard, label: "Vídeos", href: "/videos" },
-            ...(ANUNCIOS_ABERTOS ? [{ icon: CircleDollarSign, label: "Monetização", href: "/videos/monetizacao" }] : []),
-            { icon: LayoutGrid, label: "Categorias", href: "/modalidades" },
+            ...(ANUNCIOS_ABERTOS ? [{ icon: CircleDollarSign, label: "Monetização", href: "/videos/monetizacao", conta: true }] : []),
         ],
     },
     {
-        title: "Sistema",
+        title: "Ajuda",
         items: [
             { icon: LifeBuoy, label: "Central de Ajuda", href: "/ajuda" },
             { icon: Lightbulb, label: "Sugerir uma ideia", href: "/ajuda/contato?assunto=IDEIA" },
@@ -107,7 +102,9 @@ export function MenuDrawer({ open, onOpenChange }: MenuDrawerProps) {
     const contadores = useContadores()
     const naoLidas: Record<string, number> = { "/chat": contadores.mensagens, "/notificacoes": contadores.notificacoes }
 
-    const secoes = isAdmin ? [...menuSections, secaoAdmin] : menuSections
+    const secoes = (isAdmin ? [...menuSections, secaoAdmin] : menuSections)
+        .map((section) => ({ ...section, items: section.items.filter((item) => isSignedIn || !item.conta) }))
+        .filter((section) => section.items.length > 0)
     const todosOsLinks = secoes.flatMap((section) => section.items.map((item) => item.href))
 
     // Entre /torneios e /torneios/criar, só o link mais específico fica marcado

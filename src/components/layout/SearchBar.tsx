@@ -1,14 +1,16 @@
 "use client"
 
 import { Search } from "lucide-react"
-import { useRouter } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { useState } from "react"
 
+import { isRouteActive } from "@/lib/navigation"
 import { cn } from "@/lib/utils"
 
-/** Busca global: envia para /buscar?q=termo. */
+/** Busca do cabeçalho: produtos em /buscar; dentro da área de vídeos, vídeos em /videos/buscar. */
 export function SearchBar({ className }: { className?: string }) {
     const router = useRouter()
+    const emVideos = isRouteActive(usePathname(), "/videos")
     const [termo, setTermo] = useState("")
 
     return (
@@ -21,7 +23,7 @@ export function SearchBar({ className }: { className?: string }) {
             onSubmit={(event) => {
                 event.preventDefault()
                 const valor = termo.trim()
-                if (valor) router.push(`/buscar?q=${encodeURIComponent(valor)}`)
+                if (valor) router.push(`${emVideos ? "/videos/buscar" : "/buscar"}?q=${encodeURIComponent(valor)}`)
             }}
         >
             <Search className="size-[18px] shrink-0 text-muted-foreground" aria-hidden="true" />
@@ -29,8 +31,8 @@ export function SearchBar({ className }: { className?: string }) {
                 type="search"
                 value={termo}
                 onChange={(event) => setTermo(event.target.value)}
-                placeholder="Buscar eventos, produtos e vídeos"
-                aria-label="Buscar"
+                placeholder={emVideos ? "Buscar vídeos" : "Buscar bikes, peças e acessórios"}
+                aria-label={emVideos ? "Buscar vídeos" : "Buscar produtos"}
                 data-plain
                 className="w-full bg-transparent text-base text-foreground outline-none placeholder:text-muted-foreground md:text-sm"
             />

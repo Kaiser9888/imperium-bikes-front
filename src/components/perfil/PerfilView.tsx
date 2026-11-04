@@ -242,7 +242,7 @@ export function PerfilView({
             <Tabs key={abas.join()} defaultValue={abas[0]} className="mt-10">
                 <TabsList className="h-auto w-full justify-start gap-6 overflow-x-auto rounded-none border-b border-border bg-transparent p-0">
                     {abas.includes("anuncios") && <Aba value="anuncios" rotulo="Anúncios" total={produtos.length} />}
-                    {abas.includes("torneios") && <Aba value="torneios" rotulo="Torneios" total={participacoes.length} />}
+                    {abas.includes("torneios") && <Aba value="torneios" rotulo="Eventos" total={participacoes.length} />}
                     {abas.includes("videos") && <Aba value="videos" rotulo="Vídeos" total={videos.length} />}
                 </TabsList>
 
@@ -256,8 +256,8 @@ export function PerfilView({
                     ) : participacoes.length === 0 ? (
                         <Vazio
                             icon={Trophy}
-                            texto={dono ? "Você ainda não participou de torneios" : "Nenhum torneio por aqui ainda"}
-                            acao={dono ? { href: "/torneios", rotulo: "Ver torneios abertos" } : undefined}
+                            texto={dono ? "Você ainda não participou de eventos" : "Nenhum evento por aqui ainda"}
+                            acao={dono ? { href: "/torneios", rotulo: "Ver eventos abertos" } : undefined}
                         />
                     ) : (
                         <div className="flex flex-col gap-8">

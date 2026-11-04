@@ -1,13 +1,15 @@
-﻿/* eslint-disable react-hooks/set-state-in-effect, @typescript-eslint/no-explicit-any */
+/* eslint-disable react-hooks/set-state-in-effect, @typescript-eslint/no-explicit-any */
 // app/chat/page.tsx
 "use client"
 import { Button } from "@/components/ui/button"
 
-import { BottomNav } from "@/components/layout/bottom-nav"
+import { AppShell } from "@/components/layout/app-shell"
+import { PageHeading } from "@/components/layout/page-heading"
+import { EmptyState } from "@/components/ui/empty-state"
+import { Loader } from "@/components/ui/loader"
 import { useUser } from "@clerk/nextjs"
-import { Loader2, MessageCircle, Search } from "lucide-react"
+import { MessageCircle, Search } from "lucide-react"
 import Link from "next/link"
-import { Logo } from "@/components/layout/logo"
 import { useEffect, useState } from "react"
 import type { Channel } from "stream-chat"
 import { useStreamClient } from "@/lib/stream"
@@ -73,62 +75,51 @@ export default function ChatPage() {
       (outroUsuario(c)?.name ?? "").toLowerCase().includes(busca.toLowerCase()),
     )
 
-    const Header = (
-      <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur-md">
-          <div>
-              <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 py-3">
-                  <Logo />
-                  <Logo compact />
-              </div>
-          </div>
-      </header>
-    )
-
-    if (!isLoaded) {
-        return <div className="min-h-screen bg-background grid place-items-center"><Loader2 className="size-6 animate-spin text-muted-foreground" /></div>
-    }
+    if (!isLoaded) return <AppShell><Loader className="py-24" /></AppShell>
 
     if (!isSignedIn) {
         return (
-          <div className="min-h-screen bg-background">
-              {Header}
-              <div className="flex flex-col items-center px-4 py-20 text-center">
-                  <p className="text-muted-foreground mb-6">Entre para ver suas mensagens</p>
-                  <Button asChild size="lg"><Link href="/sign-in">Entrar</Link></Button>
-              </div>
-              <BottomNav />
-          </div>
+          <AppShell>
+              <main className="mx-auto max-w-2xl px-4 py-10">
+                  <EmptyState
+                    icon={MessageCircle}
+                    title="Entre para ver suas mensagens"
+                    description="Aqui ficam suas conversas com compradores e vendedores."
+                    action={<Button asChild size="lg"><Link href="/sign-in?redirect_url=%2Fchat">Entrar</Link></Button>}
+                  />
+              </main>
+          </AppShell>
         )
     }
 
     return (
-      <div className="min-h-screen bg-background">
-          {Header}
+      <AppShell>
+          <main className="mx-auto w-full max-w-2xl px-4 pb-16 pt-4 sm:px-6">
+              <PageHeading title="Mensagens" back={{ href: "/", label: "Início" }} />
 
-          <main className="mx-auto max-w-2xl px-4 py-6">
-              <h1 className="font-blackletter text-3xl text-primary mb-4">Mensagens</h1>
-
-              <div className="relative mb-4">
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-                  <input
-                    type="text"
-                    value={busca}
-                    onChange={(e) => setBusca(e.target.value)}
-                    placeholder="Buscar conversa..."
-                    className="w-full rounded-xl border border-border bg-card pl-11 pr-4 py-3 text-sm outline-none focus:border-primary/30"
-                  />
-              </div>
+              {/* Busca só quando há conversas para filtrar */}
+              {canais.length > 0 && (
+                <div className="relative my-4">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" aria-hidden="true" />
+                    <input
+                      type="search"
+                      aria-label="Buscar conversa"
+                      value={busca}
+                      onChange={(e) => setBusca(e.target.value)}
+                      placeholder="Buscar conversa"
+                      className="w-full rounded-xl border border-border bg-card pl-11 pr-4 py-3 text-base outline-none focus:border-primary/30 md:text-sm"
+                    />
+                </div>
+              )}
 
               {erro ? (
-                <p className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">{erro}</p>
+                <p role="alert" className="mt-4 rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">{erro}</p>
               ) : loading ? (
-                <div className="grid place-items-center py-12"><Loader2 className="size-6 animate-spin text-muted-foreground" /></div>
+                <Loader className="py-12" />
               ) : filtradas.length === 0 ? (
-                <div className="text-center py-12">
-                    <MessageCircle className="size-12 text-muted-foreground mx-auto mb-3" />
-                    <p className="text-muted-foreground">Nenhuma conversa</p>
-                    <p className="text-xs text-muted-foreground mt-1">Suas conversas com vendedores aparecerão aqui</p>
-                </div>
+                canais.length > 0
+                  ? <EmptyState icon={Search} title="Nenhuma conversa com esse nome" />
+                  : <EmptyState icon={MessageCircle} title="Nenhuma conversa ainda" description="Quando você falar com um vendedor ou comprador, a conversa aparece aqui." />
               ) : (
                 <div className="space-y-1">
                     {filtradas.map((c) => {
@@ -162,9 +153,6 @@ export default function ChatPage() {
                 </div>
               )}
           </main>
-
-          <div className="pb-24" />
-          <BottomNav />
-      </div>
+      </AppShell>
     )
 }

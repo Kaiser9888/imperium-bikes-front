@@ -19,7 +19,7 @@ export function Documento({
     children: React.ReactNode
 }) {
     return (
-        <AppShell>
+        <AppShell footer={<Footer />}>
             <main className="mx-auto w-full max-w-3xl px-4 pb-16 pt-4 sm:px-6">
                 <PageHeading title={titulo} description={resumo} back={{ href: "/ajuda", label: "Ajuda" }} />
                 <p className="type-caption mt-2 text-muted-foreground">Última atualização: {REVISAO_DOCUMENTOS}</p>
@@ -44,7 +44,6 @@ export function Documento({
                     <Link href="/ajuda/contato" className="font-semibold text-primary underline underline-offset-2">fale com o suporte</Link>.
                 </p>
             </main>
-            <Footer />
         </AppShell>
     )
 }

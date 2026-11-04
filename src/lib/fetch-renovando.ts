@@ -9,12 +9,24 @@ function sessaoClerk(): Sessao | undefined {
 /** Tempo da nova tentativa: o sinal original (AbortSignal.timeout) pode já estar perto de vencer. */
 const TIMEOUT_NOVA_TENTATIVA_MS = 10_000
 
+/** Falha de rede ou tempo esgotado vira uma frase em português (o navegador diz "Failed to fetch"). */
+async function fetchAmigavel(url: string, init: RequestInit): Promise<Response> {
+    try {
+        return await fetch(url, init)
+    } catch (erro) {
+        const nome = erro instanceof Error ? erro.name : ""
+        if (nome === "TimeoutError") throw new Error("O servidor demorou para responder. Tente de novo em instantes.", { cause: erro })
+        if (nome === "AbortError") throw erro // cancelado de propósito (ex.: saiu da tela)
+        throw new Error("Sem conexão com o servidor. Confira a internet e tente de novo.", { cause: erro })
+    }
+}
+
 /**
  * fetch igual ao normal, mas numa chamada com token que volta 401 (token de 60 s vencido, por exemplo
  * esperando o backend acordar depois de um deploy) renova o token do Clerk e tenta uma vez de novo.
  */
 export async function fetchRenovando(url: string, init: RequestInit = {}): Promise<Response> {
-    const res = await fetch(url, init)
+    const res = await fetchAmigavel(url, init)
     const headers = new Headers(init.headers)
     if (res.status !== 401 || !headers.has("Authorization")) return res
 
@@ -23,5 +35,5 @@ export async function fetchRenovando(url: string, init: RequestInit = {}): Promi
     if (!token) return res
 
     headers.set("Authorization", `Bearer ${token}`)
-    return fetch(url, { ...init, headers, signal: init.signal ? AbortSignal.timeout(TIMEOUT_NOVA_TENTATIVA_MS) : undefined })
+    return fetchAmigavel(url, { ...init, headers, signal: init.signal ? AbortSignal.timeout(TIMEOUT_NOVA_TENTATIVA_MS) : undefined })
 }

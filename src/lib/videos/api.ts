@@ -31,7 +31,7 @@ async function errorFrom(res: Response): Promise<Error> {
     } catch {
         // corpo vazio ou não-JSON
     }
-    return new Error(`HTTP ${res.status}`);
+    return new Error(`Algo deu errado (erro ${res.status}). Tente de novo.`);
 }
 
 async function getJson<T>(path: string, token?: string | null): Promise<T> {

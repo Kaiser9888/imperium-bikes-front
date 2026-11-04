@@ -31,7 +31,7 @@ export default function AjudaPage() {
     )
 
     return (
-        <AppShell>
+        <AppShell footer={<Footer />}>
             <main className="mx-auto w-full max-w-3xl px-4 pb-16 pt-4 sm:px-6">
                 <PageHeading title="Central de Ajuda" description="Respostas rápidas sobre compras, vendas, eventos, vídeos e pagamentos." back={{ href: "/", label: "Início" }} />
 
@@ -113,7 +113,6 @@ export default function AjudaPage() {
                     ))}
                 </nav>
             </main>
-            <Footer />
         </AppShell>
     )
 }

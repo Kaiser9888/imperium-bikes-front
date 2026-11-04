@@ -37,7 +37,7 @@ export function AppShellProvider({ children }: { children: React.ReactNode }) {
 }
 
 /** Estrutura padrão de página: Header, conteúdo e BottomNav. */
-export function AppShell({ children }: { children: React.ReactNode }) {
+export function AppShell({ children, footer }: { children: React.ReactNode; footer?: React.ReactNode }) {
     return (
         <div className="min-h-screen bg-background">
             {/* Teclado: primeiro Tab mostra este atalho, que pula o cabeçalho */}
@@ -67,6 +67,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     Reportar erro
                 </Link>
             </p>
+            {/* Rodapé depois do aviso de beta, para o aviso não ficar solto abaixo dele */}
+            {footer}
             {/* Reserva a altura da BottomNav fixa para ela não cobrir o fim da página */}
             <div className="h-[calc(4rem+env(safe-area-inset-bottom))] lg:hidden" aria-hidden="true" />
             <BottomNav />

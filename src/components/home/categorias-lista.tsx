@@ -4,7 +4,7 @@ import { categoriasDestaque, categoriasPorGrupo, type Categoria } from "@/lib/es
 import { cn } from "@/lib/utils"
 
 /**
- * Mesmo botão sublinhado do "Publicar torneio", em tamanho menor.
+ * Mesmo botão sublinhado do "Publicar evento", em tamanho menor.
  * Com `rolar`, uma linha que rola de lado (Home); sem ele, quebra linha.
  */
 function Itens({ itens, rolar }: { itens: Categoria[]; rolar?: boolean }) {

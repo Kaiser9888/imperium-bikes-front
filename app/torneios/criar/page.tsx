@@ -134,7 +134,7 @@ export default function CriarTorneioPage() {
         <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur-md">
             <div className="mx-auto flex w-full max-w-3xl items-center justify-between gap-3 px-4 py-2.5">
                 <BackButton href="/torneios" className="-ml-2.5" />
-                <p className="type-caption font-semibold uppercase tracking-[0.18em] text-muted-foreground">Novo torneio</p>
+                <p className="type-caption font-semibold uppercase tracking-[0.18em] text-muted-foreground">Novo evento</p>
                 <Logo compact />
             </div>
         </header>
@@ -489,7 +489,7 @@ export default function CriarTorneioPage() {
                             <button type="button" onClick={handleSubmit} disabled={enviando || semRecebimentos} aria-busy={enviando} className="underline-btn mt-7">
                                 <span className="flex items-center gap-2 py-1.5">
                                     {enviando ? <Loader2 className="size-5 animate-spin" aria-hidden="true" /> : <Plus className="size-5" aria-hidden="true" />}
-                                    {enviando ? "Publicando…" : "Publicar torneio"}
+                                    {enviando ? "Publicando…" : "Publicar evento"}
                                 </span>
                             </button>
                         </div>

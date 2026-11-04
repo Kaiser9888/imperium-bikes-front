@@ -7,7 +7,7 @@ import { ProdutosDestaque } from "@/components/home/produtos-destaque"
 
 export default function Page() {
     return (
-        <AppShell>
+        <AppShell footer={<Footer />}>
             <main className="mx-auto flex w-full max-w-7xl flex-col gap-10 px-4 pb-16 pt-5 sm:px-6 lg:gap-14 lg:px-8 lg:pt-8">
                 {/* Banners no topo e, colada neles, a faixa das garantias */}
                 <div className="flex flex-col gap-3 sm:gap-4">
@@ -17,8 +17,6 @@ export default function Page() {
                 <CategoriasSection />
                 <ProdutosDestaque />
             </main>
-
-            <Footer />
         </AppShell>
     )
 }

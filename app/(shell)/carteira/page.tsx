@@ -11,6 +11,11 @@ import SaldoCard from "@/components/carteira/SaldoCard";
 import ExtratoList from "@/components/carteira/ExtratoList";
 import StripeStatusBanner from "@/components/carteira/StripeStatusBanner";
 import { Loader } from "@/components/ui/loader";
+import Link from "next/link";
+import { Wallet } from "lucide-react";
+import { PageHeading } from "@/components/layout/page-heading";
+import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
 
 export default function CarteiraPage() {
   const { getToken, isLoaded, isSignedIn } = useAuth();
@@ -18,7 +23,7 @@ export default function CarteiraPage() {
   // chamada autenticada. Isso garante que exista no máximo UMA tentativa
   // de criar o usuário no banco por login (a do /users/sync), em vez de
   // quatro requisições concorrentes brigando para criar o mesmo registro.
-  const { isSynced } = useUserSync();
+  const { isSynced, syncError } = useUserSync();
 
   const [carteira, setCarteira] = useState<CarteiraResponse | null>(null);
   const [statusConta, setStatusConta] = useState<ContaConectadaResponse | null>(null);
@@ -57,23 +62,33 @@ export default function CarteiraPage() {
   }, [isLoaded, isSignedIn, isSynced, pagina, carregarCarteira, carregarStatusConta, carregarExtrato]);
 
   if (!isLoaded) return <Loader className="py-24" />;
-  if (!isSignedIn) return <StatusMessage>Você precisa estar logado.</StatusMessage>;
-  if (!isSynced) return <StatusMessage>Preparando sua conta...</StatusMessage>;
+  if (!isSignedIn) {
+    return (
+      <EmptyState
+        icon={Wallet}
+        title="Entre para ver sua carteira"
+        description="Saldo das vendas e inscrições, e o extrato."
+        action={<Button asChild size="lg"><Link href="/sign-in?redirect_url=%2Fcarteira">Entrar</Link></Button>}
+      />
+    );
+  }
+  // Sem o sync a carteira nunca carrega: avisa em vez de ficar em "Preparando" para sempre
+  if (syncError) return <StatusMessage error>Não foi possível preparar sua conta. Recarregue a página.</StatusMessage>;
+  if (!isSynced) return <Loader className="py-24" />;
   if (loading) return <Loader className="py-24" />;
   if (erro) return <StatusMessage error>{erro}</StatusMessage>;
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-10">
-      <h1 className="font-heading text-3xl text-foreground mb-1">Minha Carteira</h1>
-      <div className="rule-gold my-6" />
+    <main className="max-w-2xl mx-auto px-4 pb-10 pt-4">
+      <PageHeading title="Carteira" description="Saldo das vendas e inscrições, e o extrato." back={{ href: "/vendedor", label: "Central do vendedor" }} />
 
       {statusConta && (
-        <div className="mb-8">
+        <div className="mt-6">
           <StripeStatusBanner status={statusConta} />
         </div>
       )}
 
-      {carteira && <SaldoCard carteira={carteira} />}
+      {carteira && <div className="mt-6"><SaldoCard carteira={carteira} /></div>}
 
       <div className="mt-10">
         <h2 className="font-heading text-lg text-foreground mb-3">Extrato</h2>
@@ -101,7 +116,7 @@ export default function CarteiraPage() {
           </div>
         )}
       </div>
-    </div>
+    </main>
   );
 }
 

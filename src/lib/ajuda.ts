@@ -160,8 +160,8 @@ export const topicos: Topico[] = [
         perguntas: [
             {
                 pergunta: "Como crio um evento?",
-                resposta: "Em Eventos, toque em Criar torneio e preencha os três passos. A capa é uma foto do seu aparelho. O evento é publicado na hora.",
-                link: { href: "/torneios/criar", label: "Criar torneio" },
+                resposta: "Em Eventos, toque em Criar evento e preencha os três passos. A capa é uma foto do seu aparelho. O evento é publicado na hora.",
+                link: { href: "/torneios/criar", label: "Criar evento" },
             },
             {
                 pergunta: "Posso criar um evento para hoje?",

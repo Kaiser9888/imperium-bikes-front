@@ -185,7 +185,7 @@ export default function PerfilPage() {
                     <EmptyState
                         icon={UserRound}
                         title="Entre para ver seu perfil"
-                        description="Seu perfil reúne seus dados, anúncios, torneios e vídeos."
+                        description="Seu perfil reúne seus dados, anúncios, eventos e vídeos."
                         action={
                             <Button asChild size="lg">
                                 <Link href="/sign-in?redirect_url=%2Fperfil">Entrar</Link>

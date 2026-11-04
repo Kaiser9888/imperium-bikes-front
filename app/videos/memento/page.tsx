@@ -150,8 +150,8 @@ function MementoFeedView() {
                 setLastPage(data.last ?? true);
                 setPage(0);
                 rememberReactions(items);
-            } catch (error) {
-                if (!cancelled) setFeedError(error instanceof Error ? error.message : "Não foi possível carregar os Mementos.");
+            } catch {
+                if (!cancelled) setFeedError("Não foi possível carregar os Mementos. Tente de novo em instantes.");
             } finally {
                 if (!cancelled) setLoading(false);
             }

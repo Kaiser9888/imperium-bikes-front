@@ -46,44 +46,21 @@ function normalizar(p: ProdutoItem): ProdutoItem {
 }
 
 // A API pode devolver um array ou uma página do Spring ({ content: [] })
-function listar(data: any): ProdutoItem[] {
-  const itens = Array.isArray(data) ? data : Array.isArray(data?.content) ? data.content : []
+function listar(data: unknown): ProdutoItem[] {
+  const page = data as { content?: unknown } | null
+  const itens: ProdutoItem[] = Array.isArray(data) ? data : Array.isArray(page?.content) ? page.content : []
   return itens.map(normalizar)
 }
 
-/**
- * ⚠️ AJUSTE AQUI os endpoints conforme o seu backend.
- * Todos os lugares do front usam este arquivo, então basta mudar as URLs abaixo.
- */
 export const sellerProductService = {
-  // ID do usuário logado no seu backend (o mesmo que o perfil usa)
-  async getMeuId(): Promise<string> {
-    const r = await api.post("/api/users/sync")
-    return String(r.data.id)
-  },
-
   // Produtos do usuário logado (exige token)
   async listMine(): Promise<ProdutoItem[]> {
-    try {
-      const r = await api.get("/api/products/me")
-      return listar(r.data)
-    } catch (e: any) {
-      // Backend ainda sem /api/products/me (ele trata "me" como um {id} e responde 400/404).
-      // Solução temporária: busca a lista pública e filtra pelo dono.
-      const status = e?.response?.status
-      if (status !== 400 && status !== 404) throw e
-      const meuId = await this.getMeuId()
-      const r = await api.get("/api/products")
-      return listar(r.data).filter((p: any) =>
-        [p.sellerId, p.userId, p.ownerId, p.seller?.id, p.seller?.userId, p.user?.id]
-          .filter((v) => v != null)
-          .map(String)
-          .includes(meuId),
-      )
-    }
+    const r = await api.get("/api/products/me")
+    return listar(r.data)
   },
 
   // Anúncios ativos de qualquer vendedor (perfil público)
+  // ponytail: só a 1ª página (60); paginar quando algum vendedor passar disso
   async listBySeller(userId: string): Promise<ProdutoItem[]> {
     const r = await api.get("/api/products", { params: { sellerId: userId, size: 60 } })
     return listar(r.data)

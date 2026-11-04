@@ -6,9 +6,9 @@ import Link from "next/link"
 import { useEffect, useMemo, useState } from "react"
 import { Plus, Search } from "lucide-react"
 
-import { BottomNav } from "@/components/layout/bottom-nav"
-import { Logo } from "@/components/layout/logo"
+import { AppShell } from "@/components/layout/app-shell"
 import { formatarPreco, partesDaData } from "@/lib/format"
+import { cn } from "@/lib/utils"
 import { tournamentService, type Tournament, type TournamentStatus } from "@/services/tournamentService"
 
 type Filtro = "todos" | TournamentStatus
@@ -51,18 +51,8 @@ export default function TorneiosPage() {
     }, [torneios, filtro, busca])
 
     return (
-        <div className="min-h-screen bg-background text-foreground">
-            <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur-md">
-                <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
-                    <Logo />
-                    <Link href="/torneios/criar" className="line-btn line-btn--sm hidden sm:inline-flex">
-                        <Plus aria-hidden="true" />
-                        Criar torneio
-                    </Link>
-                </div>
-            </header>
-
-            <main className="mx-auto max-w-6xl px-4 pb-32 pt-5 sm:px-6 sm:pt-8">
+        <AppShell>
+            <main className="mx-auto max-w-6xl px-4 pb-10 pt-5 sm:px-6 sm:pt-8">
                 {/* Faixa escura fixa nos dois temas, como o painel da Central do vendedor */}
                 <section className="relative isolate overflow-hidden rounded-2xl bg-[oklch(0.21_0.03_255)] px-5 py-7 text-white sm:px-8 sm:py-10 dark:bg-surface-secondary dark:ring-1 dark:ring-border">
                     <span aria-hidden="true" className="pointer-events-none absolute -bottom-8 -right-3 -z-10 select-none text-[7rem] font-black leading-none tracking-tighter text-white/[0.04] sm:-bottom-14 sm:text-[12rem]">
@@ -84,14 +74,14 @@ export default function TorneiosPage() {
                         <Link href="/torneios/criar" className="underline-btn inline-block">
                             <span className="flex items-center gap-2 py-1.5">
                                 <Plus className="size-5" aria-hidden="true" />
-                                Publicar torneio
+                                Criar evento
                             </span>
                         </Link>
                     </div>
                 </section>
 
-                {/* Filtros + busca */}
-                <div className="mt-8 flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+                {/* Filtros + busca: só com eventos para filtrar */}
+                <div className={cn("mt-8 flex flex-col gap-5 md:flex-row md:items-center md:justify-between", !carregando && torneios.length === 0 && "hidden")}>
                     <div className="-mx-4 overflow-x-auto px-4 [scrollbar-width:none] md:mx-0 md:px-0">
                         <div className="flex gap-6">
                             {FILTROS.map((f) => (
@@ -146,26 +136,17 @@ export default function TorneiosPage() {
                                 ? "Crie o primeiro: coloque nome, data e local, e as inscrições abrem na hora."
                                 : "Tente outro nome, outra cidade ou volte para todos os eventos."}
                         </p>
-                        <div className="mt-6">
-                            {torneios.length === 0 ? (
-                                <Link href="/torneios/criar" className="underline-btn underline-btn--ink inline-block">
-                                    <span className="flex items-center gap-2 py-1.5">
-                                        <Plus className="size-5" aria-hidden="true" />
-                                        Publicar torneio
-                                    </span>
-                                </Link>
-                            ) : (
+                        {torneios.length > 0 && (
+                            <div className="mt-6">
                                 <button type="button" onClick={() => { setFiltro("todos"); setBusca("") }} className="line-btn line-btn--sm">
                                     Limpar filtros
                                 </button>
-                            )}
-                        </div>
+                            </div>
+                        )}
                     </div>
                 )}
             </main>
-
-            <BottomNav />
-        </div>
+        </AppShell>
     )
 }
 

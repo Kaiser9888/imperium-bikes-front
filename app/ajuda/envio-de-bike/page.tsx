@@ -74,7 +74,7 @@ const PASSOS: Passo[] = [
 
 export default function EnvioDeBikePage() {
     return (
-        <AppShell>
+        <AppShell footer={<Footer />}>
             <main className="mx-auto w-full max-w-3xl px-4 pb-16 pt-4 sm:px-6">
                 <PageHeading
                     title="Como enviar uma bike"
@@ -163,7 +163,6 @@ export default function EnvioDeBikePage() {
                     .
                 </p>
             </main>
-            <Footer />
         </AppShell>
     )
 }

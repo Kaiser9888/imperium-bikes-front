@@ -26,11 +26,13 @@ function NavLink({ href, label, icon: Icon }: { href: string; label: string; ico
     )
 }
 
-export function BottomNav() {
+/** `escuro`: força o tema escuro (feed do Memento, que é preto nos dois temas). */
+export function BottomNav({ escuro = false }: { escuro?: boolean }) {
+    const eventosAtivo = isRouteActive(usePathname(), "/torneios")
     return (
         <nav
             aria-label="Navegação inferior"
-            className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-surface pb-[env(safe-area-inset-bottom)] lg:hidden"
+            className={cn("fixed inset-x-0 bottom-0 z-40 border-t border-border bg-surface pb-[env(safe-area-inset-bottom)] lg:hidden", escuro && "dark")}
         >
             <ul className="mx-auto grid h-16 max-w-md grid-cols-5">
                 <li>
@@ -40,9 +42,9 @@ export function BottomNav() {
                     <NavLink href="/buscar" label="Busca" icon={Search} />
                 </li>
                 <li>
-                    <Link href="/torneios" aria-label="Eventos" className={itemClasses}>
-                        {/* Troféu dourado sobre tinta escura, com o aro vermelho da marca */}
-                        <span className="flex size-11 items-center justify-center rounded-full bg-[oklch(0.17_0.02_20)] shadow-sm ring-2 ring-accent">
+                    <Link href="/torneios" aria-label="Eventos" aria-current={eventosAtivo ? "page" : undefined} className={itemClasses}>
+                        {/* Troféu dourado sobre tinta escura, com o aro vermelho da marca; aro mais grosso na seção ativa */}
+                        <span className={cn("flex size-11 items-center justify-center rounded-full bg-[oklch(0.17_0.02_20)] shadow-sm ring-accent", eventosAtivo ? "ring-[3px]" : "ring-2")}>
                             <TrophyIcon className="size-7" />
                         </span>
                     </Link>
