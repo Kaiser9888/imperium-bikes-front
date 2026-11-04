@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { SlidersHorizontal, Sparkles } from "lucide-react";
 
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { ESPORTES_ABERTOS } from "@/lib/esportes";
 import { aoMudarGosto, interesses, PESO, registrarInteresse } from "@/lib/videos/gosto";
 
 interface CategoryFilterProps {
@@ -13,7 +14,7 @@ interface CategoryFilterProps {
 
 type Tag = { id: string; label: string };
 
-/** Sempre visíveis: ordenações, o essencial da bike e os outros esportes. */
+/** Sempre visíveis: ordenações e o essencial da bike (outros esportes só com ESPORTES_ABERTOS). */
 const FIXAS: Tag[] = [
   { id: "recomendados", label: "Recomendados" },
   { id: "recentes", label: "Recentes" },
@@ -24,11 +25,16 @@ const ESSENCIAIS: Tag[] = [
   { id: "downhill", label: "Downhill" },
   { id: "speed", label: "Speed" },
   { id: "bmx", label: "BMX" },
-  { id: "corrida", label: "Corrida" },
-  { id: "natacao", label: "Natação" },
-  { id: "futebol", label: "Futebol" },
-  { id: "musculacao", label: "Musculação" },
-  { id: "lutas", label: "Lutas" },
+  { id: "urban", label: "Urbana" },
+  ...(ESPORTES_ABERTOS
+    ? [
+        { id: "corrida", label: "Corrida" },
+        { id: "natacao", label: "Natação" },
+        { id: "futebol", label: "Futebol" },
+        { id: "musculacao", label: "Musculação" },
+        { id: "lutas", label: "Lutas" },
+      ]
+    : []),
 ];
 
 /** Catálogo para o "Para você": nomes bonitos para as hashtags conhecidas. */
@@ -162,7 +168,7 @@ export function CategoryFilter({ value, onChange }: CategoryFilterProps) {
               <SheetTitle>Categorias</SheetTitle>
             </SheetHeader>
             <Grupo titulo={sugestoes.personalizado ? "Para você" : "Descubra"} tags={sugestoes.tags} value={value} onEscolher={escolher} />
-            <Grupo titulo="Bike e outros esportes" tags={ESSENCIAIS} value={value} onEscolher={escolher} />
+            <Grupo titulo={ESPORTES_ABERTOS ? "Bike e outros esportes" : "Modalidades"} tags={ESSENCIAIS} value={value} onEscolher={escolher} />
             <Grupo titulo="Mais categorias" tags={resto} value={value} onEscolher={escolher} />
           </SheetContent>
         </Sheet>

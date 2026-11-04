@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next"
-import { esportes, modalidades } from "@/lib/esportes"
+import { esportesVisiveis, modalidades } from "@/lib/esportes"
 import { buscarPublico, SITE_URL } from "@/lib/seo"
 
 // Refeito no máximo a cada hora: anúncio novo entra no Google sem deploy
@@ -43,7 +43,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         { url: `${SITE_URL}/privacidade`, priority: 0.2 },
         { url: `${SITE_URL}/reembolso`, priority: 0.2 },
         ...modalidades.map(({ slug }) => ({ url: `${SITE_URL}/modalidades/${slug}`, priority: 0.6 })),
-        ...esportes.map(({ slug }) => ({ url: `${SITE_URL}/esportes/${slug}`, priority: 0.5 })),
+        ...esportesVisiveis.map(({ slug }) => ({ url: `${SITE_URL}/esportes/${slug}`, priority: 0.5 })),
     ]
 
     const [produtos, abertos, andamento, encerrados, videos] = await Promise.all([

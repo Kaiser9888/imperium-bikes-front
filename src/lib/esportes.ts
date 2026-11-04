@@ -37,6 +37,13 @@ export type GrupoDeEsporte = (typeof GRUPOS_DE_ESPORTE)[number]
 
 export type Esporte = { slug: string; nome: string; grupo: GrupoDeEsporte }
 
+/**
+ * Foco em bike: os outros esportes ficam em segundo plano (fora de Home, Categorias, busca,
+ * fórum, sitemap e publicação) até a hora de abrir. Liga com NEXT_PUBLIC_ESPORTES=1 na Vercel.
+ * Anúncio antigo com esporte continua com nome e página (/esportes/[slug]) pelo link direto.
+ */
+export const ESPORTES_ABERTOS = process.env.NEXT_PUBLIC_ESPORTES === "1"
+
 // ponytail: lista fixa escolhida no frontend; trocar por endpoint de esportes quando o
 // backend tiver um. A página de cada esporte mostra só produtos reais com esse termo.
 // Ciclismo fica de fora: as modalidades acima já cobrem as bikes.
@@ -61,10 +68,13 @@ export const esportes: Esporte[] = [
     { slug: "tenis", nome: "Tênis e raquetes", grupo: "Quadra e campo" },
 ]
 
+/** O que aparece para o público: vazio enquanto ESPORTES_ABERTOS estiver desligado. */
+export const esportesVisiveis = ESPORTES_ABERTOS ? esportes : []
+
 export const esportesPorGrupo = GRUPOS_DE_ESPORTE.map((grupo) => ({
     grupo,
-    esportes: esportes.filter((esporte) => esporte.grupo === grupo),
-}))
+    esportes: esportesVisiveis.filter((esporte) => esporte.grupo === grupo),
+})).filter(({ esportes }) => esportes.length > 0)
 
 export type Categoria = { label: string; href: string }
 
@@ -76,12 +86,12 @@ export const categoriasPorGrupo: { titulo: string; itens: Categoria[] }[] = [
     ...esportesPorGrupo.map(({ grupo, esportes }) => ({ titulo: grupo, itens: esportes.map(linkDoEsporte) })),
 ]
 
-const DESTAQUES_DA_HOME = ["mountain", "speed", "downhill", "bmx", "corrida", "alta-montanha", "trilha", "natacao", "futebol"]
+const DESTAQUES_DA_HOME = ["mountain", "speed", "downhill", "bmx", "urbana", "corrida", "alta-montanha", "trilha", "natacao", "futebol"]
 
 /** Atalhos da Home: o essencial da bike e dos outros esportes, na ordem acima. */
 export const categoriasDestaque: Categoria[] = DESTAQUES_DA_HOME.flatMap((slug) => {
     const modalidade = modalidades.find((item) => item.slug === slug)
     if (modalidade) return [{ label: modalidade.label, href: modalidade.href }]
-    const esporte = esportes.find((item) => item.slug === slug)
+    const esporte = esportesVisiveis.find((item) => item.slug === slug)
     return esporte ? [linkDoEsporte(esporte)] : []
 })

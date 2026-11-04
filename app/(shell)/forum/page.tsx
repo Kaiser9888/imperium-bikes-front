@@ -46,14 +46,14 @@ import { Textarea } from "@/components/ui/textarea"
 import api from "@/lib/api"
 import { useIsAdmin } from "@/lib/use-is-admin"
 import { cn } from "@/lib/utils"
-import { esportes } from "@/lib/esportes"
+import { esportesVisiveis } from "@/lib/esportes"
 import { esporteDoPost, forumService, type ForumCategory, type ForumPost, type Voto } from "@/services/forumService"
 import { mensagemDaApi } from "@/services/tournamentService"
 
 const TODAS = ""
 
 /** Ciclismo primeiro (a casa), depois os outros esportes da plataforma. */
-const ESPORTES_FORUM = [{ slug: "ciclismo", nome: "Ciclismo" }, ...esportes.map(({ slug, nome }) => ({ slug, nome }))]
+const ESPORTES_FORUM = [{ slug: "ciclismo", nome: "Ciclismo" }, ...esportesVisiveis.map(({ slug, nome }) => ({ slug, nome }))]
 const NOME_ESPORTE = new Map(ESPORTES_FORUM.map((e) => [e.slug, e.nome]))
 const ENTRAR = "/sign-in?redirect_url=%2Fforum"
 
@@ -546,8 +546,7 @@ function ForumConteudo() {
                                 Treino, oficina e resenha
                             </h1>
                             <p className="type-body mt-2 text-white/75">
-                                Tire dúvidas de equipamento e manutenção, conte do treino de hoje e acompanhe o seu esporte. Bike, corrida, surf, escalada e o que mais você pratica. Ninguém treina
-                                sozinho.
+                                Tire dúvidas de equipamento e manutenção, conte do treino de hoje e mostre o pedal de hoje. Ninguém pedala sozinho.
                             </p>
                         </div>
                         <div className="flex flex-wrap gap-2">

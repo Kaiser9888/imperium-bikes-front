@@ -15,7 +15,7 @@ import { Loader } from "@/components/ui/loader"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { Skeleton } from "@/components/ui/skeleton"
-import { esportes, modalidades } from "@/lib/esportes"
+import { esportesVisiveis, modalidades } from "@/lib/esportes"
 import {
   FILTROS,
   ORDENS,
@@ -41,14 +41,14 @@ const ROTULOS: Record<Filtro, string> = {
 /** Sem Meilisearch o backend não manda contagens; estes filtros continuam funcionando com a lista fixa. */
 const OPCOES_FIXAS: Partial<Record<Filtro, string[]>> = {
   modality: modalidades.map((m) => m.slug),
-  sport: esportes.map((e) => e.slug),
+  sport: esportesVisiveis.map((e) => e.slug),
   condition: ["NEW", "USED"],
 }
 
 /** Modalidades e esportes numa lista só, como na Home, mas filtrando aqui mesmo. */
 const CATEGORIAS: { campo: Filtro; valor: string; label: string }[] = [
   ...modalidades.map((m) => ({ campo: "modality" as const, valor: m.slug, label: m.label })),
-  ...esportes.map((e) => ({ campo: "sport" as const, valor: e.slug, label: e.nome })),
+  ...esportesVisiveis.map((e) => ({ campo: "sport" as const, valor: e.slug, label: e.nome })),
 ]
 
 type Estado =
