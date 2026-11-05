@@ -102,7 +102,7 @@ export default function PrivacidadePage() {
                         denúncias)</strong> — legítimo interesse e proteção do crédito (art. 7º, IX e X).
                     </li>
                     <li>
-                        <strong>Avisos dentro do app (notificações de pedidos, mensagens, inscritos, respostas do suporte)</strong> —
+                        <strong>Avisos dentro do app (notificações de pedidos, mensagens, seguidores, respostas do suporte)</strong> —
                         execução do contrato.
                     </li>
                     <li>

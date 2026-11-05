@@ -16,14 +16,14 @@ import { cn } from "@/lib/utils";
 const ABAS = [
   { href: "/videos", label: "Para você" },
   { href: "/videos/memento", label: "Memento" },
-  { href: "/videos/inscricoes", label: "Inscrições" },
+  { href: "/videos/seguindo", label: "Seguindo" },
   { href: "/videos/meus-videos", label: "Meus vídeos" },
 ];
 
 export default function VideosLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { isSignedIn } = useAuth();
-  // Vídeos novos dos canais inscritos: selo só aqui, nunca no sino principal
+  // Vídeos novos dos canais seguidos: selo só aqui, nunca no sino principal
   const [naoVistos, setNaoVistos] = useState(0);
   useEffect(() => {
     if (!isSignedIn) return;
@@ -51,7 +51,7 @@ export default function VideosLayout({ children }: { children: React.ReactNode }
           {ABAS.map(({ href, label }) => {
             // "Para você" só na própria /videos; as outras valem para as rotas filhas
             const ativa = href === "/videos" ? pathname === href : pathname.startsWith(href);
-            const selo = href === "/videos/inscricoes" && naoVistos > 0 && !ativa;
+            const selo = href === "/videos/seguindo" && naoVistos > 0 && !ativa;
             return (
               <Link
                 key={href}

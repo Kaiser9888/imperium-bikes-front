@@ -259,7 +259,7 @@ export default function TermosPage() {
                         para confirmar as exibições e o pagamento do anunciante. Exibições invalidadas nesse período não são pagas.
                     </li>
                     <li>
-                        <strong>O criador ganha somente com anúncios exibidos antes dos seus vídeos.</strong> Visualizações, inscritos e
+                        <strong>O criador ganha somente com anúncios exibidos antes dos seus vídeos.</strong> Visualizações, seguidores e
                         curtidas não geram pagamento por si só. Não há valor mínimo garantido de ganhos.
                     </li>
                     <li>O saque mínimo é de R$ 50,00 e vai pelo Stripe para a sua conta de recebimentos.</li>

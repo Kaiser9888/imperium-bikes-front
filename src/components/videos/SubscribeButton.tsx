@@ -15,7 +15,7 @@ type Props = {
   userId?: string;
   /** "dark": sobre vídeo (Memento); "compact": só o ícone de +. */
   variant?: "default" | "dark" | "compact";
-  /** Mostra "N inscritos" ao lado. */
+  /** Mostra "N seguidores" ao lado. */
   showCount?: boolean;
   className?: string;
 };
@@ -26,7 +26,7 @@ export function formatInscritos(n: number): string {
   return String(n);
 }
 
-/** Inscrever-se no canal (seguir o criador). Some no próprio canal. */
+/** Seguir o criador. Some no próprio canal. */
 export function SubscribeButton({ userId, variant = "default", showCount = false, className }: Props) {
   const { isSignedIn } = useAuth();
   const router = useRouter();
@@ -62,7 +62,7 @@ export function SubscribeButton({ userId, variant = "default", showCount = false
     try {
       if (antes) await api.delete(`/api/users/${userId}/follow`);
       else await api.post(`/api/users/${userId}/follow`);
-      if (!antes) toast("Inscrição feita. Você vai ver mais deste canal.");
+      if (!antes) toast("Agora você segue este canal.");
     } catch {
       setInscrito(antes);
       setTotal((t) => (t == null ? t : t + (antes ? 1 : -1)));
@@ -79,7 +79,7 @@ export function SubscribeButton({ userId, variant = "default", showCount = false
         onClick={alternar}
         disabled={ocupado}
         aria-pressed={inscrito}
-        aria-label={inscrito ? "Cancelar inscrição" : "Inscrever-se"}
+        aria-label={inscrito ? "Deixar de seguir" : "Seguir"}
         className={cn(
           "grid size-5 cursor-pointer place-items-center rounded-full text-white shadow ring-2 ring-black/40 transition",
           inscrito ? "bg-white text-black" : "bg-primary",
@@ -95,7 +95,7 @@ export function SubscribeButton({ userId, variant = "default", showCount = false
     <div className={cn("flex items-center gap-3", className)}>
       {showCount && total != null && (
         <span className={cn("type-caption tabular-nums", variant === "dark" ? "text-white/70" : "text-muted-foreground")}>
-          {formatInscritos(total)} {total === 1 ? "inscrito" : "inscritos"}
+          {formatInscritos(total)} {total === 1 ? "seguidor" : "seguidores"}
         </span>
       )}
       <button
@@ -104,17 +104,19 @@ export function SubscribeButton({ userId, variant = "default", showCount = false
         disabled={ocupado}
         aria-pressed={inscrito}
         className={cn(
-          // Cantos retos e o vermelho da marca: identidade própria, não a pílula branca de outras plataformas
+          // Simples e sem cor: contorno, cantos retos (não a pílula branca de outras plataformas)
           "type-label inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-lg px-3.5 transition-colors disabled:opacity-60",
           inscrito
             ? variant === "dark"
-              ? "bg-white/15 text-white ring-1 ring-white/20 hover:bg-white/25"
+              ? "bg-white/15 text-white hover:bg-white/25"
               : "bg-surface-muted text-foreground hover:bg-border"
-            : "bg-primary text-primary-foreground hover:bg-primary/90",
+            : variant === "dark"
+              ? "text-white ring-1 ring-white/70 hover:bg-white/10"
+              : "text-foreground ring-1 ring-foreground/60 hover:bg-foreground/5",
         )}
       >
-        {inscrito ? <BellRing className="size-4" aria-hidden="true" /> : <Plus className="size-4" aria-hidden="true" />}
-        {inscrito ? "Inscrito" : "Inscrever-se"}
+        {inscrito ? <BellRing className="size-4" aria-hidden="true" /> : null}
+        {inscrito ? "Seguindo" : "Seguir"}
       </button>
     </div>
   );

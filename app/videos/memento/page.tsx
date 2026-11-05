@@ -552,10 +552,10 @@ function MementoFeedView() {
                 <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 h-72 bg-gradient-to-t from-black/95 via-black/50 to-transparent" />
 
                 <div className="absolute inset-x-0 bottom-0 z-30 flex items-end gap-3 px-3 pb-5 sm:px-4">
-                    <div className="min-w-0 flex-1 border-l-2 border-primary pl-3">
+                    <div className="min-w-0 flex-1">
                         <div className="mb-2 flex items-center gap-2">
                             <Link href={`/perfil/${currentVideo.userId}`} className="flex min-w-0 items-center gap-2">
-                                <VideoAvatar name={currentVideo.userName} url={currentVideo.userAvatarUrl} className="size-9 rounded-xl border border-white/30" />
+                                <VideoAvatar name={currentVideo.userName} url={currentVideo.userAvatarUrl} className="size-9 border-2 border-white/40" />
                                 <span className="truncate text-sm font-bold text-white">{currentVideo.userName}</span>
                             </Link>
                             <SubscribeButton userId={currentVideo.userId} variant="dark" className="ml-1 shrink-0 [&_button]:h-8 [&_button]:px-3" />
@@ -572,8 +572,9 @@ function MementoFeedView() {
                         </p>
                     </div>
 
-                    {/* Painel de ações: uma peça só, em vidro escuro com o vermelho da marca */}
-                    <div className="flex shrink-0 flex-col gap-1 rounded-2xl bg-black/45 p-1.5 ring-1 ring-white/10 backdrop-blur-md">
+                    {/* Ações soltas sobre o vídeo, com sombra para ler em qualquer fundo */}
+                    <div className="flex shrink-0 flex-col items-center gap-4">
+
                         <AcaoPainel
                             label={isLiked ? "Descurtir" : "Curtir"}
                             count={formatViews(likeCount)}
@@ -583,7 +584,7 @@ function MementoFeedView() {
                             <Heart
                                 // key: remonta e repete o "pulo" a cada curtida
                                 key={isLiked ? "curtido" : "normal"}
-                                className={`size-6 ${isLiked ? "memento-pulo fill-primary text-primary" : "text-white"}`}
+                                className={`size-7 ${isLiked ? "memento-pulo fill-primary text-primary" : "text-white"}`}
                                 aria-hidden="true"
                             />
                         </AcaoPainel>
@@ -595,17 +596,17 @@ function MementoFeedView() {
                                 setShowComments(true);
                             }}
                         >
-                            <MessageCircle className="size-6 text-white" aria-hidden="true" />
+                            <MessageCircle className="size-7 text-white" aria-hidden="true" />
                         </AcaoPainel>
                         <AcaoPainel
                             label={isSaved(currentVideo.id) ? "Salvo" : "Salvar"}
                             pressed={isSaved(currentVideo.id)}
                             onClick={() => void alternarSalvo(currentVideo.id)}
                         >
-                            <Bookmark className={`size-6 ${isSaved(currentVideo.id) ? "fill-primary text-primary" : "text-white"}`} aria-hidden="true" />
+                            <Bookmark className={`size-7 text-white ${isSaved(currentVideo.id) ? "fill-white" : ""}`} aria-hidden="true" />
                         </AcaoPainel>
                         <AcaoPainel label="Compartilhar" onClick={() => void handleShare()}>
-                            <Share2 className="size-6 text-white" aria-hidden="true" />
+                            <Share2 className="size-7 text-white" aria-hidden="true" />
                         </AcaoPainel>
                     </div>
                 </div>
@@ -718,10 +719,10 @@ function AcaoPainel({
             onClick={onClick}
             aria-label={label}
             aria-pressed={pressed}
-            className={`flex w-12 cursor-pointer flex-col items-center gap-0.5 rounded-xl py-2 transition active:scale-90 ${pressed ? "bg-primary/15" : "hover:bg-white/10"}`}
+            className="flex cursor-pointer flex-col items-center gap-0.5 text-white [filter:drop-shadow(0_1px_3px_rgb(0_0_0/0.6))] transition-transform active:scale-90"
         >
             {children}
-            {count !== undefined && <span className="font-mono text-[0.6875rem] font-semibold tabular-nums text-white">{count}</span>}
+            {count !== undefined && <span className="text-xs font-bold tabular-nums">{count}</span>}
         </button>
     );
 }
@@ -739,12 +740,12 @@ function Hashtags({ video }: { video: VideoItem }) {
     ])).slice(0, 6);
     if (tags.length === 0) return null;
     return (
-        <ul className="mt-2 flex flex-wrap gap-1.5">
+        <ul className="mt-1 flex flex-wrap gap-x-2.5">
             {tags.map((tag) => (
                 <li key={tag}>
                     <Link
                         href={`/videos/hashtag/${encodeURIComponent(tag)}`}
-                        className="inline-flex h-7 items-center rounded-lg bg-white/12 px-2.5 text-xs font-semibold text-white ring-1 ring-white/15 transition hover:bg-primary/30"
+                        className="py-1 text-xs font-semibold text-white/85 hover:text-white hover:underline"
                     >
                         #{tag}
                     </Link>

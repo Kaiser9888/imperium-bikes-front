@@ -20,10 +20,10 @@ type VideoNovo = {
 };
 
 /**
- * Vídeos novos dos canais em que a pessoa se inscreveu. Fica só aqui, na área de vídeos:
+ * Vídeos novos dos canais que a pessoa segue. Fica só aqui, na área de vídeos:
  * o sino principal é para vendas, pagamentos e avisos da plataforma.
  */
-export default function InscricoesPage() {
+export default function SeguindoPage() {
     const { isLoaded, isSignedIn } = useAuth();
     const [itens, setItens] = useState<VideoNovo[] | null>(null);
     const [falhou, setFalhou] = useState(false);
@@ -44,9 +44,9 @@ export default function InscricoesPage() {
         return (
             <EmptyState
                 icon={PlaySquare}
-                title="Entre para ver suas inscrições"
-                description="Os vídeos novos dos canais em que você se inscreveu aparecem aqui."
-                action={<Link href="/sign-in?redirect_url=/videos/inscricoes" className="type-label text-primary underline">Entrar</Link>}
+                title="Entre para ver quem você segue"
+                description="Os vídeos novos dos canais que você segue aparecem aqui."
+                action={<Link href="/sign-in?redirect_url=/videos/seguindo" className="type-label text-primary underline">Entrar</Link>}
                 className="py-16"
             />
         );
@@ -58,7 +58,7 @@ export default function InscricoesPage() {
             <EmptyState
                 icon={PlaySquare}
                 title="Nada novo por aqui"
-                description="Inscreva-se nos canais de que você gosta. Quando eles postarem, o vídeo aparece aqui, sem encher o seu sino."
+                description="Siga os canais de que você gosta. Quando eles postarem, o vídeo aparece aqui, sem encher o seu sino."
                 className="py-16"
             />
         );
