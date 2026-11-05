@@ -25,7 +25,7 @@ const FILAS: { chave: keyof Contagens; aba?: AbaPendencia; titulo: string; texto
     { chave: "disputas", aba: "disputas", titulo: "Disputas de pedido", texto: "Dinheiro retido esperando decisão", icon: Scale, urgente: true },
     { chave: "contasCongeladas", titulo: "Contas congeladas", texto: "Confirme quem é o dono antes de liberar", icon: Snowflake, urgente: true },
     { chave: "anunciosEmAnalise", titulo: "Anúncios caros em análise", texto: "Conta nova ou sem vendas", icon: Tag },
-    { chave: "retiradasParadas", titulo: "Retiradas paradas", texto: "Pagas há mais de 30 dias sem o código", icon: Timer, urgente: true },
+    { chave: "retiradasParadas", titulo: "Retiradas paradas", texto: "Envio combinado sem código há 15 dias, ou retirada parada", icon: Timer, urgente: true },
     { chave: "enviosAtrasados", titulo: "Envios atrasados", texto: "Pagos há mais de 3 dias úteis sem rastreio", icon: Truck, urgente: true },
     { chave: "etiquetas", titulo: "Etiquetas com problema", texto: "O site não conseguiu gerar a etiqueta", icon: Printer, urgente: true },
     { chave: "repassesTravados", titulo: "Repasses travados", texto: "Vendas que já deviam ter ido para o vendedor", icon: Landmark, urgente: true },
@@ -105,6 +105,18 @@ export function PendenciasAdmin({ onAbrir }: { onAbrir: (aba: AbaPendencia) => v
             setErro(mensagemDaApi(cause, "Não foi possível gerar a etiqueta."))
         } finally {
             setGerando(null)
+        }
+    }
+
+    /** Envio combinado travado: o admin decide pelas provas (mesma rota da disputa). */
+    async function decidirEnvio(orderId: string, reembolsar: boolean) {
+        if (!window.confirm(reembolsar ? "Devolver o dinheiro ao comprador?" : "Liberar o valor ao vendedor?")) return
+        setErro(null)
+        try {
+            await api.post(`/api/orders/${orderId}/disputa/resolver`, null, { params: { reembolsar } })
+            await carregar()
+        } catch (cause) {
+            setErro(mensagemDaApi(cause, "Não foi possível decidir o pedido."))
         }
     }
 
@@ -208,6 +220,19 @@ export function PendenciasAdmin({ onAbrir }: { onAbrir: (aba: AbaPendencia) => v
                                 <p className="truncate text-xs text-muted-foreground">
                                     {r.comprador} → {r.vendedor} · pago em {new Date(r.createdAt).toLocaleDateString("pt-BR")}
                                 </p>
+                                {r.motivo && (
+                                    <>
+                                        <p className="mt-1 text-xs text-foreground">{r.motivo}</p>
+                                        <div className="mt-2 flex gap-2">
+                                            <button type="button" onClick={() => decidirEnvio(r.orderId, false)} className="line-btn line-btn--sm">
+                                                Liberar ao vendedor
+                                            </button>
+                                            <button type="button" onClick={() => decidirEnvio(r.orderId, true)} className="line-btn line-btn--sm">
+                                                Devolver ao comprador
+                                            </button>
+                                        </div>
+                                    </>
+                                )}
                             </li>
                         ))}
                     </ul>

@@ -16,6 +16,8 @@ export interface ProdutoItem {
   freeShippingLimit?: number | null
   /** Retirada no local: sem envio pelo site. */
   somenteRetirada?: boolean
+  /** Na retirada, aceita também pagamento direto (sem proteção). */
+  aceitaPagamentoDireto?: boolean
   /** Serviço "a partir de": combinado direto com o prestador. */
   precoAPartirDe?: boolean
   city?: string
@@ -96,6 +98,8 @@ export const sellerProductService = {
       freeShippingLimit: atual.freeShippingLimit,
       // Sem ele o backend entenderia "tem envio" e voltaria a cobrar frete
       somenteRetirada: atual.somenteRetirada,
+      // Sem ele o backend desligaria o pagamento direto na retirada
+      aceitaPagamentoDireto: atual.aceitaPagamentoDireto,
       weightKg: atual.weightKg,
       heightCm: atual.heightCm,
       widthCm: atual.widthCm,

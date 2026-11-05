@@ -59,6 +59,11 @@ type Pedido = {
     productImage?: string | null
     /** Pago e parado (sem postagem ou sem o código): o valor volta ao comprador nesta data. */
     prazoDevolucao?: string | null
+    /** Envio combinado entre os dois, fora do site: libera só com o código. */
+    envioCombinado?: boolean
+    /** Como o vendedor disse que enviou (só no envio combinado). */
+    envioDescricao?: string | null
+    enviadoEm?: string | null
 }
 
 const STATUS: Record<Status, { label: string; tone: StatusBadgeProps["tone"] }> = {
@@ -242,18 +247,53 @@ export default function PedidosPage() {
 
                         {pedido.status === "PAGO" && pedido.retiradaEmMaos && pedido.comprador && pedido.codigoRetirada && (
                             <div className="mt-3 rounded-lg border border-primary/30 bg-primary/5 px-3 py-3">
-                                <p className="type-caption uppercase tracking-wider text-muted-foreground">Código de retirada</p>
-                                <p className="type-h2 mt-0.5 font-mono tracking-[0.3em] text-foreground">{pedido.codigoRetirada}</p>
-                                <p className="type-body-small mt-2 text-muted-foreground">
-                                    Só passe este código ao vendedor <strong className="text-foreground">depois de conferir o produto</strong>. Com ele, o
-                                    pagamento é liberado. Combine a entrega em local público e movimentado, e não leve dinheiro: o pagamento já foi feito
-                                    pelo Imperium.
+                                <p className="type-caption uppercase tracking-wider text-muted-foreground">
+                                    {pedido.envioCombinado ? "Código de recebimento" : "Código de retirada"}
                                 </p>
+                                <p className="type-h2 mt-0.5 font-mono tracking-[0.3em] text-foreground">{pedido.codigoRetirada}</p>
+                                {pedido.envioCombinado ? (
+                                    <p className="type-body-small mt-2 text-muted-foreground">
+                                        Só passe este código ao vendedor <strong className="text-foreground">quando a bike chegar e você conferir</strong>.
+                                        Com ele, o pagamento é liberado. O frete é combinado e pago direto a ele.
+                                    </p>
+                                ) : (
+                                    <p className="type-body-small mt-2 text-muted-foreground">
+                                        Só passe este código ao vendedor <strong className="text-foreground">depois de conferir o produto</strong>. Com ele, o
+                                        pagamento é liberado. Combine a entrega em local público e movimentado, e não leve dinheiro: o pagamento já foi feito
+                                        pelo Imperium.
+                                    </p>
+                                )}
+                                {pedido.envioCombinado && pedido.envioDescricao && (
+                                    <p className="type-body-small mt-2 text-foreground">
+                                        <span className="font-semibold">Como o vendedor enviou:</span> {pedido.envioDescricao}
+                                    </p>
+                                )}
                             </div>
                         )}
-                        {pedido.status === "PAGO" && pedido.retiradaEmMaos && !pedido.comprador && (
+                        {pedido.status === "PAGO" && pedido.retiradaEmMaos && !pedido.comprador && !pedido.envioCombinado && (
                             <p className="type-body-small mt-3 text-muted-foreground">
                                 Na entrega, peça o código ao comprador. Não aceite pagamento por fora.
+                            </p>
+                        )}
+                        {pedido.status === "PAGO" && pedido.envioCombinado && !pedido.comprador && (
+                            <EnvioCombinadoDoVendedor
+                                descricaoAtual={pedido.envioDescricao ?? null}
+                                onInformar={async (descricao) => {
+                                    setErro(null)
+                                    try {
+                                        await api.post(`/api/orders/${pedido.id}/envio`, { descricao })
+                                        await carregar()
+                                    } catch (cause) {
+                                        setErro(mensagemDaApi(cause, "Não foi possível salvar. Tente novamente."))
+                                    }
+                                }}
+                            />
+                        )}
+                        {pedido.status === "PAGO" && pedido.envioCombinado && pedido.enviadoEm && (
+                            <p className="type-body-small mt-3 text-muted-foreground">
+                                {pedido.comprador
+                                    ? "Chegou? Confira e passe o código. Se não chegar ou vier diferente, use \"Tive um problema\"."
+                                    : "O valor é liberado quando você digitar o código que o comprador te passa ao receber. Se travar, a equipe analisa pelas provas de envio. Mande fotos do comprovante pela conversa."}
                             </p>
                         )}
                         {pedido.status === "PAGO" && pedido.envio && (
@@ -287,7 +327,11 @@ export default function PedidosPage() {
                         )}
                         {pedido.status === "PAGO" && pedido.prazoDevolucao && (pedido.retiradaEmMaos || !pedido.envio?.enviadoEm) && (
                             <p className="type-body-small mt-3 text-muted-foreground">
-                                {pedido.retiradaEmMaos
+                                {pedido.envioCombinado
+                                    ? pedido.comprador
+                                        ? `Se o vendedor não enviar até ${dia(pedido.prazoDevolucao)}, o valor volta para você automaticamente.`
+                                        : `Envie e conte aqui como enviou até ${dia(pedido.prazoDevolucao)}. Depois disso o valor volta ao comprador.`
+                                    : pedido.retiradaEmMaos
                                     ? pedido.comprador
                                         ? `Se a retirada não acontecer até ${dia(pedido.prazoDevolucao)}, o valor volta para você automaticamente.`
                                         : `Digite o código na entrega, até ${dia(pedido.prazoDevolucao)}. Depois disso o valor volta ao comprador.`
@@ -315,7 +359,7 @@ export default function PedidosPage() {
                                         setRetirando(pedido)
                                     }}
                                 >
-                                    Digitar código de retirada
+                                    {pedido.envioCombinado ? "Digitar código do comprador" : "Digitar código de retirada"}
                                 </Button>
                             )}
                             {pedido.comprador && pedido.status === "PAGO" && (
@@ -538,5 +582,36 @@ export default function PedidosPage() {
                 </DialogContent>
             </Dialog>
         </main>
+    )
+}
+
+/** Envio combinado: o vendedor conta como enviou (o site não acompanha esse transporte). */
+function EnvioCombinadoDoVendedor({ descricaoAtual, onInformar }: { descricaoAtual: string | null; onInformar: (descricao: string) => Promise<void> }) {
+    const [descricao, setDescricao] = useState(descricaoAtual ?? "")
+    const [salvando, setSalvando] = useState(false)
+    const valido = descricao.trim().length >= 10
+    return (
+        <form
+            className="mt-3 flex flex-col gap-2 rounded-lg border border-border px-3 py-3"
+            onSubmit={async (e) => {
+                e.preventDefault()
+                if (!valido) return
+                setSalvando(true)
+                await onInformar(descricao.trim())
+                setSalvando(false)
+            }}
+        >
+            <Label htmlFor="envio-combinado">{descricaoAtual ? "Como você enviou" : "Já enviou? Conte como"}</Label>
+            <Input
+                id="envio-combinado"
+                value={descricao}
+                onChange={(e) => setDescricao(e.target.value)}
+                maxLength={300}
+                placeholder="Ex.: Viação Cometa, passagem 12345, para Curitiba"
+            />
+            <Button type="submit" size="sm" loading={salvando} disabled={!valido} className="self-start">
+                {descricaoAtual ? "Atualizar" : "Informar envio"}
+            </Button>
+        </form>
     )
 }

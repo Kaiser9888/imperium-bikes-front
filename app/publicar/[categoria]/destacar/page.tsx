@@ -13,7 +13,6 @@ import {
   saveDraft,
 } from '@/lib/publicar/storage'
 import { apiFetch, API_URL } from '@/lib/apiClient'
-import { taxaPagamentoCentavos } from '@/lib/taxas'
 import { useUserSync } from '@/lib/UserSyncContext'
 
 import { BackButton } from "@/components/ui/back-button"
@@ -26,6 +25,7 @@ interface BoostTier {
   backendId: 'GRATUITO' | 'BASICO' | 'AVANCADO' | 'TOPO'
 }
 
+// Destaque pago desligado: todo anúncio tem o mesmo alcance e vender não tem taxa
 const TIERS: BoostTier[] = [
   {
     id: 'free',
@@ -33,27 +33,6 @@ const TIERS: BoostTier[] = [
     description: 'Alcance padrão no feed e na busca',
     percentual: 0,
     backendId: 'GRATUITO',
-  },
-  {
-    id: 'basico',
-    label: 'Básico',
-    description: 'Um pouco mais de alcance no feed e na busca',
-    percentual: 2,
-    backendId: 'BASICO',
-  },
-  {
-    id: 'avancado',
-    label: 'Avançado',
-    description: 'Boa parte de alcance no feed e na busca',
-    percentual: 5,
-    backendId: 'AVANCADO',
-  },
-  {
-    id: 'topo',
-    label: 'Topo',
-    description: 'Prioridade máxima no feed e na busca',
-    percentual: 7,
-    backendId: 'TOPO',
   },
 ]
 
@@ -102,6 +81,10 @@ export default function DestacarPage() {
   const [tierSelecionado, setTierSelecionado] =
     useState<string>('free')
 
+  // Na retirada, também aceita receber direto (sem proteção); serviço já tem o seu próprio modo
+  const [aceitaPagamentoDireto, setAceitaPagamentoDireto] =
+    useState(false)
+
   const [publicando, setPublicando] =
     useState(false)
 
@@ -149,21 +132,6 @@ function voltar() {
 function cancelar() {
   clearDraft(categoria)
   router.push('/publicar')
-}
-
-function taxaCentavos(
-  percentual: number,
-) {
-  if (
-    precoCentavos === null ||
-    precoCentavos <= 0
-  ) {
-    return 0
-  }
-
-  return Math.round(
-    (precoCentavos * percentual) / 100,
-  )
 }
 
 function formatarMoeda(
@@ -456,6 +424,8 @@ async function handlePublicar() {
           highlightTier:
           tier.backendId,
 
+          aceitaPagamentoDireto: categoria !== 'servicos' && aceitaPagamentoDireto,
+
           images,
         }),
       },
@@ -486,11 +456,6 @@ if (precoCentavos === null) {
   return null
 }
 
-const taxaPagamento = taxaPagamentoCentavos(precoCentavos)
-const comissao = taxaCentavos(
-  TIERS.find((tier) => tier.id === tierSelecionado)?.percentual ?? 0,
-)
-
 return (
   <main className="publish-page">
     <header className="publish-header">
@@ -516,14 +481,11 @@ return (
       </p>
 
       <h1>
-        Destacar anúncio
+        Revisar e publicar
       </h1>
 
       <p className="publish-lead">
-        Escolha o nível de destaque
-        para aumentar a visibilidade
-        do seu anúncio no feed e na
-        busca.
+        Todo anúncio aparece com o mesmo alcance no feed e na busca.
       </p>
 
       <div className="publish-progress">
@@ -535,78 +497,6 @@ return (
       </div>
 
       <section className="publish-card publish-form">
-        <fieldset>
-          <legend>
-            Nível de destaque
-          </legend>
-
-          <div className="publish-options">
-            {TIERS.map((tier) => {
-              const valorTaxa =
-                taxaCentavos(
-                  tier.percentual,
-                )
-
-              const selecionado =
-                tierSelecionado ===
-                tier.id
-
-              return (
-                <button
-                  key={tier.id}
-                  type="button"
-                  onClick={() =>
-                    setTierSelecionado(
-                      tier.id,
-                    )
-                  }
-                  className={
-                    selecionado
-                      ? 'is-selected'
-                      : ''
-                  }
-                >
-                    <span>
-                      <b>
-                        {tier.label}
-                      </b>
-
-                      <small>
-                        {tier.description}
-                      </small>
-
-                      {tier.percentual >
-                        0 && (
-                          <small>
-                            {tier.percentual}% sobre a venda
-                          </small>
-                        )}
-                    </span>
-
-                  <span>
-                      {tier.percentual ===
-                      0 ? (
-                        <small>
-                          Sem custo
-                        </small>
-                      ) : (
-                        <b>
-                          {formatarMoeda(
-                            valorTaxa,
-                          )}
-                        </b>
-                      )}
-
-                    {selecionado && (
-                      <Check />
-                    )}
-                    </span>
-                </button>
-              )
-            })}
-          </div>
-        </fieldset>
-
         <div className="price-summary">
             <span>
               Valor do anúncio
@@ -621,41 +511,34 @@ return (
 
         <div className="price-summary">
           <span>
-            Taxa de segurança
-          </span>
-
-          <b>
-            − {formatarMoeda(taxaPagamento)}
-          </b>
-        </div>
-
-        {comissao > 0 && (
-          <div className="price-summary">
-            <span>
-              Comissão do destaque
-            </span>
-
-            <b>
-              − {formatarMoeda(comissao)}
-            </b>
-          </div>
-        )}
-
-        <div className="price-summary">
-          <span>
             Você recebe por venda
           </span>
 
           <b>
-            {formatarMoeda(
-              Math.max(precoCentavos - taxaPagamento - comissao, 0),
-            )}
+            {formatarMoeda(precoCentavos)}
           </b>
         </div>
 
         <small>
-          Descontado só quando vender.
+          Vender no Imperium não tem taxa. O comprador paga a Proteção Imperium.
         </small>
+
+        {categoria !== 'servicos' && (
+          <label className="flex items-start gap-3 pt-2">
+            <input
+              type="checkbox"
+              checked={aceitaPagamentoDireto}
+              onChange={(evento) => setAceitaPagamentoDireto(evento.target.checked)}
+              className="mt-1 size-4 shrink-0"
+            />
+            <span>
+              <b>Na retirada em mãos, também aceito receber direto</b>
+              <small className="block">
+                Sem a proteção do Imperium: vocês combinam e o pagamento é entre vocês. Encontre em lugar público e confira o Pix no app do banco antes de entregar.
+              </small>
+            </span>
+          </label>
+        )}
       </section>
     </div>
 

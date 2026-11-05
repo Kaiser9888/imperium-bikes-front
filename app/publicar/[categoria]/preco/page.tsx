@@ -3,12 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { formatarPreco } from '@/lib/format'
-import {
-  PRECO_MINIMO_CENTAVOS,
-  TAXA_PAGAMENTO_FIXA_CENTAVOS,
-  TAXA_PAGAMENTO_PERCENTUAL,
-  taxaPagamentoCentavos,
-} from '@/lib/taxas'
+import { PRECO_MINIMO_CENTAVOS } from '@/lib/taxas'
 import {
   ArrowRight,
   X,
@@ -126,8 +121,8 @@ export default function PrecoPage() {
 
   const valor = parseMoney(preco)
   const abaixoDoMinimo = valor > 0 && valor < PRECO_MINIMO_CENTAVOS
-  const taxa = valor > 0 ? taxaPagamentoCentavos(valor) : 0
-  const recebe = Math.max(valor - taxa, 0)
+  // Vender não tem taxa: a Proteção Imperium é paga pelo comprador
+  const recebe = valor
   // O frete coberto não pode passar do preço, senão a venda dá prejuízo
   const freteMaiorQuePreco = limiteFrete > 0 && valor > 0 && limiteFrete > recebe
   const combinadoDireto = servico && aPartirDe === true
@@ -306,35 +301,9 @@ export default function PrecoPage() {
                 </b>
               </div>
 
-              <details>
-                <summary>
-                  <small>Ver cálculo</small>
-                </summary>
-
-                <div className="price-summary">
-                  <span>
-                    Valor do anúncio
-                  </span>
-
-                  <b>
-                    {money(valor)}
-                  </b>
-                </div>
-
-                <div className="price-summary">
-                  <span>
-                    Taxa de segurança ({String(TAXA_PAGAMENTO_PERCENTUAL).replace('.', ',')}% + {money(TAXA_PAGAMENTO_FIXA_CENTAVOS)})
-                  </span>
-
-                  <b>
-                    − {money(taxa)}
-                  </b>
-                </div>
-
-                <small>
-                  Cobre o pagamento protegido: o comprador paga pelo site e o valor fica retido até a entrega. Só é descontada quando vender.
-                </small>
-              </details>
+              <small>
+                Vender no Imperium não tem taxa. O comprador paga a Proteção Imperium, que segura o dinheiro até a entrega.
+              </small>
             </>
           )}
 
@@ -342,7 +311,7 @@ export default function PrecoPage() {
             <small role={freteMaiorQuePreco ? 'alert' : undefined}>
               {freteMaiorQuePreco
                 ? `Você cobre até ${money(limiteFrete)} de frete, mais do que recebe pela venda. Aumente o preço ou volte e diminua o limite do frete.`
-                : `Você cobre até ${money(limiteFrete)} de frete: no pior caso recebe ${money(recebe - limiteFrete)} (antes da comissão do destaque).`}
+                : `Você cobre até ${money(limiteFrete)} de frete: no pior caso recebe ${money(recebe - limiteFrete)}.`}
             </small>
           )}
         </section>

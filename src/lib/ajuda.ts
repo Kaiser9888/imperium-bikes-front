@@ -102,7 +102,7 @@ export const topicos: Topico[] = [
             },
             {
                 pergunta: "Posso pagar por fora do app?",
-                resposta: "Não. O pagamento é sempre pelo Imperium, até na retirada em mãos. Pix, depósito, dinheiro ou link fora do app não têm retenção, código de retirada, disputa nem reembolso: quem paga por fora assume o risco. Se o vendedor pedir pagamento por fora, denuncie. A exceção são os serviços \"a partir de\", combinados direto com o prestador.",
+                resposta: "Pague pelo Imperium: é o que segura o dinheiro até você receber. Pix, depósito, dinheiro ou link fora do app não têm retenção, código de retirada, disputa nem reembolso: quem paga por fora assume o risco. Se o vendedor pedir pagamento por fora, denuncie. As exceções são os serviços \"a partir de\" e a retirada em mãos quando o anúncio diz que o vendedor aceita pagamento direto: aí é combinado entre vocês, sem garantia do Imperium.",
             },
             {
                 pergunta: "O que é um serviço \"a partir de\"?",
@@ -113,6 +113,11 @@ export const topicos: Topico[] = [
                 pergunta: "Como funciona a retirada em mãos?",
                 resposta: "Você paga pelo app e recebe um código de 6 números em Pedidos. No encontro, confira o produto e só então passe o código ao vendedor: é ele que libera o pagamento. Sem o código, o dinheiro não sai, e se algo der errado você abre uma disputa. Combine em local público e movimentado e não leve dinheiro.",
                 link: { href: "/pedidos", label: "Abrir Pedidos" },
+            },
+            {
+                pergunta: "Posso combinar o envio com o vendedor?",
+                resposta: "Sim. No pagamento, escolha \"Combinar envio com o vendedor\": você paga o produto pelo app e o frete direto a ele (ônibus, transportadora ou outro jeito). Você recebe um código e só passa ao vendedor quando a bike chegar: é ele que libera o pagamento. Se travar, a equipe analisa o caso pelas provas de envio.",
+                link: { href: "/protecao", label: "Como funciona a proteção" },
             },
         ],
     },
@@ -132,7 +137,7 @@ export const topicos: Topico[] = [
             },
             {
                 pergunta: "Quanto o Imperium Bikes cobra?",
-                resposta: "Anunciar é grátis. Só quando vende, saem do valor a taxa de segurança (3,99% + R$ 0,39, que cobre o pagamento protegido) e, se você escolheu destaque, a comissão dele (2%, 5% ou 7%). As duas são sobre o preço do produto, sem o frete, e aparecem antes de publicar. O preço mínimo de um anúncio é R$ 5,00.",
+                resposta: "Nada. Anunciar e vender são grátis: você recebe 100% do preço, mais o frete pago pelo comprador. Quem paga a Proteção Imperium é o comprador. O preço mínimo de um anúncio é R$ 20,00.",
             },
             {
                 pergunta: "Quando recebo o dinheiro da venda?",
@@ -169,7 +174,7 @@ export const topicos: Topico[] = [
             },
             {
                 pergunta: "Como recebo o valor das inscrições?",
-                resposta: "De cada inscrição saem 10% da Imperium e a taxa de segurança (3,99% + R$ 0,39); o resto vai para a sua Carteira 7 dias depois do fim do evento (prazo para algum inscrito reclamar) e é transferido pelo Stripe para a sua conta de recebimentos. Ao criar o evento, o site mostra quanto você recebe por inscrição. Para cobrar inscrição, ative seus recebimentos antes; a inscrição paga mínima é R$ 5,00.",
+                resposta: "De cada inscrição, 10% ficam com a Imperium, já incluindo a tarifa do cartão; os outros 90% vão para a sua Carteira 7 dias depois do fim do evento (prazo para algum inscrito reclamar) e é transferido pelo Stripe para a sua conta de recebimentos. Ao criar o evento, o site mostra quanto você recebe por inscrição. Para cobrar inscrição, ative seus recebimentos antes; a inscrição paga mínima é R$ 10,00.",
             },
             {
                 pergunta: "Desisti de um evento. Recebo o dinheiro de volta?",

@@ -67,6 +67,7 @@ export default function ReembolsoPage() {
                         Abra <Link href="/pedidos">Pedidos</Link>, escolha a compra e use a opção de disputa, explicando o problema.
                     </li>
                     <li>O vendedor pode aceitar o reembolso direto. Se ele não responder ou não concordar, a equipe analisa.</li>
+                    <li>O reembolso devolve tudo o que você pagou por aquele item: produto, frete pelo app e Proteção Imperium.</li>
                     <li>
                         Fora do app (pagamento combinado por fora) não há como protegermos a compra nem devolvermos o valor. Pague sempre
                         pelo app.

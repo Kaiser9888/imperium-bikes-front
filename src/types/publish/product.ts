@@ -112,6 +112,8 @@ export interface ProductResponse {
     freeShippingLimit?: number | null
     /** Retirada no local: sem envio pelo site, só retirada em mãos com código. */
     somenteRetirada?: boolean
+    /** Na retirada, o vendedor aceita também receber direto (sem proteção do site). */
+    aceitaPagamentoDireto?: boolean
     weightKg: number | null
     heightCm: number | null
     widthCm: number | null

@@ -368,8 +368,8 @@ export default function CriarTorneioPage() {
                                 {valor > 0 ? (
                                     <p className={ajuda}>
                                         Você recebe <strong className="text-foreground">{formatarPreco(liquidoInscricaoCentavos(Math.round(valor * 100)) / 100)}</strong> por
-                                        inscrição, na sua Carteira, 7 dias depois do fim do evento (descontados {TAXA_PLATAFORMA_EVENTO_PERCENTUAL}% da Imperium e a taxa de
-                                        segurança de 3,99% + R$ 0,39). Mínimo R$ 5,00.
+                                        inscrição, na sua Carteira, 7 dias depois do fim do evento. A Imperium fica com {TAXA_PLATAFORMA_EVENTO_PERCENTUAL}%, já
+                                        incluindo o cartão. Mínimo R$ 10,00.
                                     </p>
                                 ) : (
                                     <p className={ajuda}>Vazio ou zero deixa o evento grátis.</p>

@@ -42,6 +42,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         { url: `${SITE_URL}/termos`, priority: 0.2 },
         { url: `${SITE_URL}/privacidade`, priority: 0.2 },
         { url: `${SITE_URL}/reembolso`, priority: 0.2 },
+        { url: `${SITE_URL}/protecao`, priority: 0.4 },
         ...modalidades.map(({ slug }) => ({ url: `${SITE_URL}/modalidades/${slug}`, priority: 0.6 })),
         ...esportesVisiveis.map(({ slug }) => ({ url: `${SITE_URL}/esportes/${slug}`, priority: 0.5 })),
     ]

@@ -117,6 +117,18 @@ export default function TermosPage() {
                         automática por prazo. Recomendamos combinar a entrega em local público e movimentado.
                     </li>
                     <li>
+                        <strong>Envio combinado:</strong> comprador e vendedor podem combinar o envio por fora (ônibus, transportadora ou
+                        outro meio), com o frete pago direto entre os dois. O produto é pago pelo app e o comprador recebe um código, que
+                        passa ao vendedor só quando o produto chegar. O vendedor informa no pedido como enviou. Como o app não acompanha esse
+                        transporte, o valor só é liberado com o código; sem ele, 15 dias depois do envio, a equipe analisa o caso pelas
+                        provas de envio e pelo que o comprador disser. Se o comprador não responder em 3 dias, o valor é liberado ao vendedor.
+                    </li>
+                    <li>
+                        <strong>Pagamento direto na retirada:</strong> o vendedor pode marcar no anúncio que, na retirada em mãos, também
+                        aceita receber direto do comprador. Nesse caso o pagamento é combinado entre os dois, fora do app, sem retenção do
+                        valor, código, disputa, reembolso nem qualquer garantia do Imperium Bikes.
+                    </li>
+                    <li>
                         Trocas, devoluções e arrependimento seguem a <Link href="/reembolso">Política de Reembolso</Link> e o Código de
                         Defesa do Consumidor.
                     </li>
@@ -137,7 +149,8 @@ export default function TermosPage() {
                             Todo pagamento de compra, inscrição ou anúncio deve ser feito dentro do Imperium Bikes, inclusive na retirada em
                             mãos.
                         </strong>{" "}
-                        A única exceção são os serviços anunciados como &quot;a partir de&quot; (item 4), que são combinados direto.{" "}
+                        As únicas exceções são os serviços anunciados como &quot;a partir de&quot; e a retirada em mãos com pagamento
+                        direto, quando o vendedor aceita (item 4).{" "}
                         É proibido pedir ou aceitar Pix, depósito, transferência, dinheiro em espécie, boleto ou link de pagamento fora do
                         app. Quem combina, faz ou recebe um pagamento por fora age por conta e risco próprios: essa operação não tem
                         nenhuma das proteções destes Termos (retenção do valor, código de retirada, disputa e reembolso), e o Imperium
@@ -149,15 +162,15 @@ export default function TermosPage() {
                         bancária, nos prazos do Stripe.
                     </li>
                     <li>
-                        <strong>Vendas:</strong> em cada venda são descontados do vendedor (1) a taxa de segurança, de 3,99% + R$ 0,39,
-                        que cobre o pagamento protegido, e (2) a comissão do destaque escolhido ao anunciar: 0% no Gratuito, 2% no
-                        Básico, 5% no Avançado e 7% no Topo. As duas são calculadas sobre o preço do produto (o frete não entra) e
-                        aparecem para o vendedor antes de publicar. O restante, mais o frete pago pelo comprador, vai para o vendedor quando
-                        o valor é liberado. O preço mínimo de um anúncio é R$ 5,00.
+                        <strong>Vendas:</strong> vender não tem taxa: o vendedor recebe 100% do preço anunciado, mais o frete pago pelo
+                        comprador, quando o valor é liberado. O comprador paga a <Link href="/protecao">Proteção Imperium</Link>, mostrada
+                        na página do produto e no pagamento: a tarifa do cartão (3,99% + R$ 0,39 sobre tudo o que ele paga) mais 3% do
+                        preço para o Imperium, no máximo R$ 60 por item. No reembolso, a Proteção é devolvida junto. O preço mínimo de um
+                        anúncio é R$ 20,00.
                     </li>
                     <li>
-                        <strong>Eventos pagos:</strong> de cada inscrição são descontados do organizador 10% da plataforma e a taxa de segurança,
-                        de 3,99% + R$ 0,39. O restante vai para o organizador 7 dias depois do fim do evento, prazo em que o inscrito pode reclamar se o evento não aconteceu. A inscrição paga mínima é R$ 5,00.
+                        <strong>Eventos pagos:</strong> de cada inscrição, 10% ficam com a plataforma, já incluindo a tarifa do cartão. Os
+                        outros 90% vão para o organizador 7 dias depois do fim do evento, prazo em que o inscrito pode reclamar se o evento não aconteceu. A inscrição paga mínima é R$ 10,00.
                     </li>
                     <li><strong>Anúncios:</strong> 55% do valor de cada exibição vai para o criador do vídeo.</li>
                     <li>

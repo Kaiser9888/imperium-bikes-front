@@ -37,6 +37,7 @@ import { addToCart } from "@/lib/cart"
 import { esportes, modalidades } from "@/lib/esportes"
 import { isFavoriteProduct, toggleFavorite } from "@/lib/favorites"
 import { iniciarConversa } from "@/lib/stream"
+import { protecaoCentavos } from "@/lib/taxas"
 import { cn } from "@/lib/utils"
 import { productService } from "@/services/publish/product.service"
 import { PRODUCT_CONDITIONS, type ProductResponse, type ShippingQuote } from "@/types/publish/product"
@@ -415,6 +416,19 @@ function ProdutoPage() {
 
               {combinadoDireto && <p className="type-label mt-5 text-muted-foreground">A partir de</p>}
               <p className={cn("type-display tabular-nums text-foreground", combinadoDireto ? "mt-0.5" : "mt-5")}>{precoFormatado}</p>
+              {/* Preço total desde o início: nada de taxa surpresa no checkout */}
+              {!combinadoDireto && typeof p.price === "number" && (
+                <p className="type-body-small mt-1 text-muted-foreground">
+                  <span className="tabular-nums font-medium text-foreground">
+                    {brl(p.price + protecaoCentavos(Math.round(p.price * 100)) / 100)}
+                  </span>{" "}
+                  com{" "}
+                  <Link href="/protecao" className="underline underline-offset-2 hover:text-foreground">
+                    Proteção Imperium
+                  </Link>
+                  {!somenteRetirada && !servico && " (sem o frete)"}
+                </p>
+              )}
               {/* Ancoragem honesta: só com o preço anterior informado no anúncio e maior que o atual */}
               {typeof p.price === "number" && typeof p.originalPrice === "number" && p.originalPrice > p.price && (
                 <p className="type-body-small mt-1 flex items-center gap-2 text-muted-foreground">
@@ -495,10 +509,19 @@ function ProdutoPage() {
               <p className="type-caption mt-5 flex items-start gap-2 text-muted-foreground">
                 <ShieldCheck className="size-4 shrink-0 text-success" aria-hidden="true" />
                 <span>
-                  O vendedor só recebe depois que você confirma a entrega.{" "}
-                  <Link href="/reembolso" className="underline underline-offset-2 hover:text-foreground">Como funciona</Link>
+                  Se a bike não chegar ou não for como anunciada, você recebe seu dinheiro de volta.{" "}
+                  <Link href="/protecao" className="underline underline-offset-2 hover:text-foreground">Como funciona</Link>
                 </span>
               </p>
+              {p.aceitaPagamentoDireto && (
+                <p className="type-caption mt-3 flex items-start gap-2 text-muted-foreground">
+                  <Handshake className="size-4 shrink-0 text-primary" aria-hidden="true" />
+                  <span>
+                    Na retirada em mãos, este vendedor também aceita pagamento direto, combinado pelo chat.
+                    Sem a proteção do Imperium: encontre em lugar público e confira o Pix no app do banco antes de levar.
+                  </span>
+                </p>
+              )}
               </>
               )}
             </div>
@@ -523,7 +546,7 @@ function ProdutoPage() {
                 </span>
               </p>
             ) : (
-            <details className="group rounded-2xl border border-border bg-surface px-5 py-1 open:pb-5">
+            <details open className="group rounded-2xl border border-border bg-surface px-5 py-1 open:pb-5">
               <summary className="flex min-h-12 cursor-pointer list-none items-center gap-2.5 [&::-webkit-details-marker]:hidden">
                 <Truck className="size-5 text-primary" aria-hidden="true" />
                 <span className="type-label flex-1 text-foreground">Calcular frete</span>
@@ -584,6 +607,10 @@ function ProdutoPage() {
                   ))}
                 </ul>
               )}
+
+              <p className="type-caption mt-3 text-muted-foreground">
+                Também dá para combinar o envio com o vendedor ou retirar em mãos. Você escolhe na hora de pagar.
+              </p>
             </details>
             )}
 

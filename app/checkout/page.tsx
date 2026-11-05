@@ -4,7 +4,7 @@ import { Suspense, useEffect, useMemo, useState } from "react"
 import { useAuth } from "@clerk/nextjs"
 import { useSearchParams, useRouter } from "next/navigation"
 import Link from "next/link"
-import { Handshake, Loader2, ShieldCheck, Truck } from "lucide-react"
+import { Handshake, Loader2, MessageCircle, ShieldCheck, Truck } from "lucide-react"
 
 import { ProductImage } from "@/components/marketplace/ProductImage"
 import { Button } from "@/components/ui/button"
@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { CHECKOUT_ITENS_KEY } from "@/lib/cart"
 import { formatarPreco } from "@/lib/format"
+import { FRETE_COMBINADO, protecaoCentavos } from "@/lib/taxas"
 import { cn } from "@/lib/utils"
 import { paymentService } from "@/services/publish/payment.service"
 import { productService } from "@/services/publish/product.service"
@@ -21,8 +22,8 @@ import type { EnderecoEntrega } from "@/types/payment"
 // Valor mínimo aceito pelo Stripe em BRL. Mantenha igual ao MIN_AMOUNT do PaymentService.
 const MIN_AMOUNT = 0.5
 
-/** "retirada": em mãos com o vendedor, sem frete pelo site. */
-type Entrega = { tipo: "envio"; opcao: ShippingQuote } | { tipo: "retirada" }
+/** "retirada": em mãos com o vendedor. "combinado": envio combinado com o vendedor, frete pago entre os dois. */
+type Entrega = { tipo: "envio"; opcao: ShippingQuote } | { tipo: "retirada" } | { tipo: "combinado" }
 type Frete = { opcoes: ShippingQuote[]; erro: string | null }
 
 const ENDERECO_VAZIO: EnderecoEntrega = { nome: "", telefone: "", cpf: "", logradouro: "", numero: "", complemento: "", bairro: "", cidade: "", uf: "" }
@@ -158,7 +159,14 @@ function CheckoutContent() {
     const e = entregas[p.id]
     return soma + (e?.tipo === "envio" ? Number(e.opcao.valor) : 0)
   }, 0)
-  const total = subtotal + frete
+  // Cada item tem a sua Proteção (cartão + 3% do Imperium, teto de R$ 60), igual ao backend
+  const protecao = comprando.reduce((soma, p) => {
+    const e = entregas[p.id]
+    const freteItem = e?.tipo === "envio" ? Math.round(Number(e.opcao.valor) * 100) : 0
+    return soma + protecaoCentavos(Math.round(p.price * 100), freteItem) / 100
+  }, 0)
+  const total = subtotal + frete + protecao
+  const temCombinado = comprando.some((p) => entregas[p.id]?.tipo === "combinado")
   const faltaEscolher = comprando.some((p) => !entregas[p.id])
   const temEnvio = comprando.some((p) => entregas[p.id]?.tipo === "envio")
   const faltaEndereco = temEnvio && !enderecoCompleto(endereco)
@@ -182,12 +190,13 @@ function CheckoutContent() {
       if (r.status === "fulfilled") {
         const opcoes = [...r.value].sort((a, b) => Number(a.valor) - Number(b.valor))
         novosFretes[p.id] = { opcoes, erro: null }
-        // Começa no mais barato; quem já tinha escolhido retirada continua assim
-        if (opcoes[0] && novasEntregas[p.id]?.tipo !== "retirada") novasEntregas[p.id] = { tipo: "envio", opcao: opcoes[0] }
-        if (!opcoes[0]) novasEntregas[p.id] = { tipo: "retirada" }
+        // Começa no mais barato; quem já tinha escolhido retirada ou envio combinado continua assim
+        const fora = novasEntregas[p.id]?.tipo === "retirada" || novasEntregas[p.id]?.tipo === "combinado"
+        if (opcoes[0] && !fora) novasEntregas[p.id] = { tipo: "envio", opcao: opcoes[0] }
+        if (!opcoes[0] && !fora) novasEntregas[p.id] = { tipo: "retirada" }
       } else {
         novosFretes[p.id] = { opcoes: [], erro: mensagemDe(r.reason, "Não foi possível calcular o frete deste item.") }
-        novasEntregas[p.id] = { tipo: "retirada" }
+        if (novasEntregas[p.id]?.tipo !== "combinado") novasEntregas[p.id] = { tipo: "retirada" }
       }
     })
     setFretes(novosFretes)
@@ -228,7 +237,7 @@ function CheckoutContent() {
       const comEnvio = temEnvio ? { cepDestino: soDigitos(cep), endereco: destino } : {}
       const freteDe = (p: ProductResponse) => {
         const e = entregas[p.id]
-        return e?.tipo === "envio" ? e.opcao.id : undefined
+        return e?.tipo === "envio" ? e.opcao.id : e?.tipo === "combinado" ? FRETE_COMBINADO : undefined
       }
       const unico = comprando.length === 1 ? comprando[0] : null
       const unicoFrete = unico ? freteDe(unico) : undefined
@@ -356,6 +365,24 @@ function CheckoutContent() {
                     <button
                       type="button"
                       role="radio"
+                      aria-checked={e?.tipo === "combinado"}
+                      onClick={() => setEntregas((atual) => ({ ...atual, [p.id]: { tipo: "combinado" } }))}
+                      className={cn(
+                        "flex cursor-pointer items-center gap-3 rounded-xl border px-3.5 py-2.5 text-left transition-colors",
+                        e?.tipo === "combinado" ? "border-primary bg-primary/5" : "border-border hover:border-primary/40",
+                      )}
+                    >
+                      <MessageCircle className="size-5 shrink-0 text-muted-foreground" aria-hidden="true" />
+                      <span className="min-w-0 flex-1">
+                        <span className="type-label block">Combinar envio com o vendedor</span>
+                        <span className="type-caption text-muted-foreground">
+                          Ônibus, transportadora ou outro jeito. O frete é pago direto a ele. Combine antes pelo chat.
+                        </span>
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      role="radio"
                       aria-checked={e?.tipo === "retirada"}
                       onClick={() => setEntregas((atual) => ({ ...atual, [p.id]: { tipo: "retirada" } }))}
                       className={cn(
@@ -411,7 +438,7 @@ function CheckoutContent() {
             </form>
             {erroCep && <p role="alert" className="type-caption mt-2 font-semibold text-destructive">{erroCep}</p>}
             {Object.keys(fretes).length === 0 && (
-              <p className="type-caption mt-2 text-muted-foreground">Ou escolha retirar em mãos no item.</p>
+              <p className="type-caption mt-2 text-muted-foreground">Ou escolha combinar o envio ou retirar em mãos no item.</p>
             )}
 
             {temEnvio && (
@@ -472,7 +499,13 @@ function CheckoutContent() {
             </div>
             <div className="flex justify-between">
               <dt className="text-muted-foreground">Frete</dt>
-              <dd className="tabular-nums">{temEnvio ? (frete === 0 ? "Grátis" : formatarPreco(frete)) : faltaEscolher ? "—" : "Retirada"}</dd>
+              <dd className="tabular-nums">{temEnvio ? (frete === 0 ? "Grátis" : formatarPreco(frete)) : faltaEscolher ? "—" : temCombinado ? "A combinar" : "Retirada"}</dd>
+            </div>
+            <div className="flex justify-between">
+              <dt className="text-muted-foreground">
+                <Link href="/protecao" className="underline underline-offset-2 hover:text-foreground">Proteção Imperium</Link>
+              </dt>
+              <dd className="tabular-nums">{formatarPreco(protecao)}</dd>
             </div>
             <div className="flex justify-between border-t border-border pt-2 text-base font-semibold"><dt>Total</dt><dd className="tabular-nums">{formatarPreco(total)}</dd></div>
           </dl>
@@ -492,7 +525,7 @@ function CheckoutContent() {
           {sending
             ? "Redirecionando..."
             : comprando.length === 0 ? "Nada para pagar"
-              : faltaEscolher ? "Calcule o frete ou escolha retirar"
+              : faltaEscolher ? "Calcule o frete ou escolha como receber"
                 : faltaEndereco ? "Preencha o endereço"
                   : `Pagar ${formatarPreco(total)}`}
         </Button>
@@ -500,6 +533,11 @@ function CheckoutContent() {
           <ShieldCheck className="size-4 shrink-0 text-success" aria-hidden="true" />
           {varios ? "Um pagamento só. Cada vendedor recebe depois que você confirma a entrega do item dele." : "Pagamento retido até você confirmar o recebimento."}
         </p>
+        {temCombinado && (
+          <p className="type-caption mt-2 text-center text-muted-foreground">
+            Envio combinado: o vendedor só recebe quando você passar o código. Só passe o código depois que a bike chegar.
+          </p>
+        )}
 
         <Link href={voltar.href} className="mt-4 block text-center text-sm text-muted-foreground underline">
           {voltar.label}
