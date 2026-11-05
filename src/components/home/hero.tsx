@@ -33,7 +33,7 @@ export function Hero() {
             <p className="mt-3 text-center text-sm text-muted-foreground">
                 Quer vender?{" "}
                 <Link href="/vendedor#publicar" className="font-medium text-foreground underline underline-offset-4">
-                    Anunciar é grátis e você recebe 100% do preço
+                    Anunciar é grátis
                 </Link>
             </p>
         </section>
