@@ -104,17 +104,16 @@ export function SubscribeButton({ userId, variant = "default", showCount = false
         disabled={ocupado}
         aria-pressed={inscrito}
         className={cn(
-          "type-label inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-full px-4 transition-colors disabled:opacity-60",
+          // Cantos retos e o vermelho da marca: identidade própria, não a pílula branca de outras plataformas
+          "type-label inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-lg px-3.5 transition-colors disabled:opacity-60",
           inscrito
             ? variant === "dark"
-              ? "bg-white/15 text-white hover:bg-white/25"
+              ? "bg-white/15 text-white ring-1 ring-white/20 hover:bg-white/25"
               : "bg-surface-muted text-foreground hover:bg-border"
-            : variant === "dark"
-              ? "bg-white text-black hover:bg-white/90"
-              : "bg-foreground text-background hover:bg-foreground/85",
+            : "bg-primary text-primary-foreground hover:bg-primary/90",
         )}
       >
-        {inscrito ? <BellRing className="size-4" aria-hidden="true" /> : null}
+        {inscrito ? <BellRing className="size-4" aria-hidden="true" /> : <Plus className="size-4" aria-hidden="true" />}
         {inscrito ? "Inscrito" : "Inscrever-se"}
       </button>
     </div>

@@ -19,6 +19,7 @@ import {
     Plus,
     Search,
     Share2,
+    Bookmark,
     Volume2,
     VolumeX,
     X,
@@ -32,7 +33,6 @@ import type MuxPlayerElement from "@mux/mux-player";
 import { VideoComments } from "@/components/videos/VideoComments";
 import { SubscribeButton } from "@/components/videos/SubscribeButton";
 import { GlitchButton } from "@/components/videos/GlitchButton";
-import { SaveButton } from "@/components/videos/SaveButton";
 import { VideoAvatar } from "@/components/videos/VideoAvatar";
 import {
     fetchVideo,
@@ -42,6 +42,8 @@ import {
 } from "@/lib/videos/api";
 import { formatViews } from "@/lib/videos/format";
 import { useWatchHeartbeat } from "@/hooks/useWatchHeartbeat";
+import { useSavedVideos } from "@/hooks/useSavedVideos";
+import { extractHashtags } from "@/lib/videos/hashtags";
 
 import type { VideoItem } from "@/lib/videos/types";
 
@@ -84,7 +86,10 @@ function MementoFeedView() {
 
     const [showComments, setShowComments] = useState(false);
 
-    const [isMuted, setIsMuted] = useState(true);
+    // Começa com som; se o navegador bloquear, toca mudo e pede um toque para ligar
+    const [isMuted, setIsMuted] = useState(false);
+    const [somBloqueado, setSomBloqueado] = useState(false);
+    const { isSaved, toggle: alternarSalvo } = useSavedVideos();
     // Total real da gaveta (o do feed fica velho quando alguém comenta)
     const [totalComentarios, setTotalComentarios] = useState<number | null>(null);
     // Guardado com o id: trocar de vídeo volta para "cover" sem setState no efeito
@@ -220,7 +225,22 @@ function MementoFeedView() {
                 await player.play();
                 if (!cancelled) setIsPlaying(true);
             } catch {
-                if (!cancelled) setIsPlaying(false);
+                // Navegador não deixa tocar com som sem um toque antes (ex.: link aberto direto)
+                if (cancelled || player.muted) {
+                    if (!cancelled) setIsPlaying(false);
+                    return;
+                }
+                try {
+                    player.muted = true;
+                    await player.play();
+                    if (!cancelled) {
+                        setIsMuted(true);
+                        setSomBloqueado(true);
+                        setIsPlaying(true);
+                    }
+                } catch {
+                    if (!cancelled) setIsPlaying(false);
+                }
             }
         };
 
@@ -274,6 +294,7 @@ function MementoFeedView() {
         const newMuted = !player.muted;
         player.muted = newMuted;
         setIsMuted(newMuted);
+        setSomBloqueado(false);
 
         if (!newMuted && player.paused) {
             player.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
@@ -448,7 +469,6 @@ function MementoFeedView() {
                         playbackId={currentPlaybackId}
                         metadata={{ video_title: currentVideo.title }}
                         poster={currentVideo.thumbnailUrl || undefined}
-                        autoPlay="muted"
                         muted={isMuted}
                         loop
                         playsInline
@@ -477,13 +497,20 @@ function MementoFeedView() {
                 {currentPlaybackId && (
                     <button
                         type="button"
-                        onClick={togglePlay}
-                        aria-label={isPlaying ? "Pausar" : "Reproduzir"}
+                        // Com o som bloqueado, o primeiro toque liga o som em vez de pausar
+                        onClick={somBloqueado ? toggleSound : togglePlay}
+                        aria-label={somBloqueado ? "Ativar som" : isPlaying ? "Pausar" : "Reproduzir"}
                         className="absolute inset-0 z-10 flex items-center justify-center"
                     >
                         {!isPlaying && (
-                            <span className="flex size-16 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-md">
+                            <span className="flex size-16 items-center justify-center rounded-2xl bg-black/55 text-white ring-1 ring-white/15 backdrop-blur-md">
                                 <Play className="ml-1 size-8" fill="white" aria-hidden="true" />
+                            </span>
+                        )}
+                        {somBloqueado && isPlaying && (
+                            <span className="absolute top-1/2 flex items-center gap-2 rounded-xl bg-black/65 px-4 py-2.5 text-sm font-semibold text-white ring-1 ring-white/15 backdrop-blur-md">
+                                <VolumeX className="size-4" aria-hidden="true" />
+                                Toque para ativar o som
                             </span>
                         )}
                     </button>
@@ -495,6 +522,10 @@ function MementoFeedView() {
                     <Link href="/videos" aria-label="Voltar para vídeos">
                         <MementoWordmark />
                     </Link>
+                    {/* Contador de quadro, como num rolo de filme */}
+                    <span className="font-mono text-[0.6875rem] tabular-nums tracking-widest text-white/55" aria-hidden="true">
+                        {String(currentIndex + 1).padStart(2, "0")}
+                    </span>
                     <div className="ml-auto flex items-center gap-2">
                         <Link
                             href="/videos/buscar"
@@ -521,26 +552,29 @@ function MementoFeedView() {
                 <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 h-72 bg-gradient-to-t from-black/95 via-black/50 to-transparent" />
 
                 <div className="absolute inset-x-0 bottom-0 z-30 flex items-end gap-3 px-3 pb-5 sm:px-4">
-                    <div className="min-w-0 flex-1">
+                    <div className="min-w-0 flex-1 border-l-2 border-primary pl-3">
                         <div className="mb-2 flex items-center gap-2">
-                            <VideoAvatar name={currentVideo.userName} url={currentVideo.userAvatarUrl} className="size-9 border-2 border-white/40" />
-                            <span className="truncate text-sm font-bold text-white">@{currentVideo.userName}</span>
+                            <Link href={`/perfil/${currentVideo.userId}`} className="flex min-w-0 items-center gap-2">
+                                <VideoAvatar name={currentVideo.userName} url={currentVideo.userAvatarUrl} className="size-9 rounded-xl border border-white/30" />
+                                <span className="truncate text-sm font-bold text-white">{currentVideo.userName}</span>
+                            </Link>
                             <SubscribeButton userId={currentVideo.userId} variant="dark" className="ml-1 shrink-0 [&_button]:h-8 [&_button]:px-3" />
                         </div>
                         <h1 className="line-clamp-2 text-sm font-semibold leading-snug text-white sm:text-base">
-                            {currentVideo.title}
+                            {semHashtags(currentVideo.title) || currentVideo.title}
                         </h1>
-                        {currentVideo.description && currentVideo.description !== currentVideo.title && (
-                            <p className="mt-1 line-clamp-2 text-xs text-white/75">{currentVideo.description}</p>
+                        {semHashtags(currentVideo.description) && semHashtags(currentVideo.description) !== semHashtags(currentVideo.title) && (
+                            <p className="mt-1 line-clamp-2 text-xs text-white/75">{semHashtags(currentVideo.description)}</p>
                         )}
-                        <p className="mt-2 text-[0.6875rem] font-medium uppercase tracking-widest text-white/50">
+                        <Hashtags video={currentVideo} />
+                        <p className="mt-2 font-mono text-[0.6875rem] uppercase tracking-widest text-white/50">
                             {formatViews(currentVideo.viewCount)} visualizações
                         </p>
                     </div>
 
-                    {/* Barra de ações */}
-                    <div className="flex shrink-0 flex-col items-center gap-4">
-                        <IconeAcao
+                    {/* Painel de ações: uma peça só, em vidro escuro com o vermelho da marca */}
+                    <div className="flex shrink-0 flex-col gap-1 rounded-2xl bg-black/45 p-1.5 ring-1 ring-white/10 backdrop-blur-md">
+                        <AcaoPainel
                             label={isLiked ? "Descurtir" : "Curtir"}
                             count={formatViews(likeCount)}
                             onClick={() => void handleLike(currentVideo)}
@@ -549,12 +583,11 @@ function MementoFeedView() {
                             <Heart
                                 // key: remonta e repete o "pulo" a cada curtida
                                 key={isLiked ? "curtido" : "normal"}
-                                className={`size-9 ${isLiked ? "memento-pulo fill-primary text-primary" : "fill-white/15 text-white"}`}
-                                strokeWidth={isLiked ? 0 : 2}
+                                className={`size-6 ${isLiked ? "memento-pulo fill-primary text-primary" : "text-white"}`}
                                 aria-hidden="true"
                             />
-                        </IconeAcao>
-                        <IconeAcao
+                        </AcaoPainel>
+                        <AcaoPainel
                             label="Comentários"
                             count={formatViews(currentVideo.commentsCount ?? 0)}
                             onClick={() => {
@@ -562,17 +595,23 @@ function MementoFeedView() {
                                 setShowComments(true);
                             }}
                         >
-                            <MessageCircle className="size-9 fill-white text-white" strokeWidth={0} aria-hidden="true" />
-                        </IconeAcao>
-                        <SaveButton videoId={currentVideo.id} iconOnly />
-                        <RailButton label="Compartilhar" onClick={() => void handleShare()}>
-                            <Share2 className="size-5" aria-hidden="true" />
-                        </RailButton>
+                            <MessageCircle className="size-6 text-white" aria-hidden="true" />
+                        </AcaoPainel>
+                        <AcaoPainel
+                            label={isSaved(currentVideo.id) ? "Salvo" : "Salvar"}
+                            pressed={isSaved(currentVideo.id)}
+                            onClick={() => void alternarSalvo(currentVideo.id)}
+                        >
+                            <Bookmark className={`size-6 ${isSaved(currentVideo.id) ? "fill-primary text-primary" : "text-white"}`} aria-hidden="true" />
+                        </AcaoPainel>
+                        <AcaoPainel label="Compartilhar" onClick={() => void handleShare()}>
+                            <Share2 className="size-6 text-white" aria-hidden="true" />
+                        </AcaoPainel>
                     </div>
                 </div>
 
-                {/* Progresso */}
-                <div className="absolute inset-x-0 bottom-0 z-30 h-0.5 bg-white/15" aria-hidden="true">
+                {/* Progresso no topo, em vermelho */}
+                <div className="absolute inset-x-0 top-0 z-40 h-[3px] bg-white/10" aria-hidden="true">
                     <div className="h-full bg-primary transition-[width] duration-200 ease-linear" style={{ width: `${progress.id === currentVideo.id ? progress.value * 100 : 0}%` }} />
                 </div>
             </section>
@@ -659,8 +698,8 @@ function MementoWordmark() {
     );
 }
 
-/** Curtir e comentar: ícone grande sem moldura e contagem embaixo, com sombra para ler sobre qualquer vídeo. */
-function IconeAcao({
+/** Botão quadrado do painel de ações, com a contagem embaixo. */
+function AcaoPainel({
     label,
     count,
     pressed,
@@ -679,43 +718,38 @@ function IconeAcao({
             onClick={onClick}
             aria-label={label}
             aria-pressed={pressed}
-            className="flex cursor-pointer flex-col items-center gap-0.5 text-white [filter:drop-shadow(0_1px_3px_rgb(0_0_0/0.6))] transition-transform active:scale-90"
+            className={`flex w-12 cursor-pointer flex-col items-center gap-0.5 rounded-xl py-2 transition active:scale-90 ${pressed ? "bg-primary/15" : "hover:bg-white/10"}`}
         >
             {children}
-            {count !== undefined && <span className="text-xs font-bold tabular-nums">{count}</span>}
+            {count !== undefined && <span className="font-mono text-[0.6875rem] font-semibold tabular-nums text-white">{count}</span>}
         </button>
     );
 }
 
-function RailButton({
-    label,
-    count,
-    pressed,
-    onClick,
-    children,
-}: {
-    label: string;
-    count?: string;
-    pressed?: boolean;
-    onClick: () => void;
-    children: React.ReactNode;
-}) {
+/** Tira as hashtags do texto: elas aparecem logo abaixo, como botões. */
+function semHashtags(texto?: string | null): string {
+    return (texto ?? "").replace(/#[\p{L}0-9_]+/gu, "").replace(/\s+/g, " ").trim();
+}
+
+/** Hashtags clicáveis: levam para a página da hashtag. */
+function Hashtags({ video }: { video: VideoItem }) {
+    const tags = Array.from(new Set([
+        ...(video.hashtags ?? []).map((t) => t.replace(/^#/, "").toLowerCase()),
+        ...extractHashtags(`${video.title ?? ""} ${video.description ?? ""}`),
+    ])).slice(0, 6);
+    if (tags.length === 0) return null;
     return (
-        <button
-            type="button"
-            onClick={onClick}
-            aria-label={label}
-            aria-pressed={pressed}
-            className="flex flex-col items-center gap-1 text-[0.6875rem] font-semibold text-white"
-        >
-            <span
-                className={`flex size-11 items-center justify-center rounded-full border backdrop-blur-md transition active:scale-90 ${
-                    pressed ? "border-primary/70 bg-primary/25" : "border-white/20 bg-black/40 hover:bg-black/60"
-                }`}
-            >
-                {children}
-            </span>
-            {count !== undefined && <span className="tabular-nums">{count}</span>}
-        </button>
+        <ul className="mt-2 flex flex-wrap gap-1.5">
+            {tags.map((tag) => (
+                <li key={tag}>
+                    <Link
+                        href={`/videos/hashtag/${encodeURIComponent(tag)}`}
+                        className="inline-flex h-7 items-center rounded-lg bg-white/12 px-2.5 text-xs font-semibold text-white ring-1 ring-white/15 transition hover:bg-primary/30"
+                    >
+                        #{tag}
+                    </Link>
+                </li>
+            ))}
+        </ul>
     );
 }
