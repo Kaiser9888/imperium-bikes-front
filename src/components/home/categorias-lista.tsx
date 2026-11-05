@@ -1,20 +1,11 @@
 import Link from "next/link"
 
-import { categoriasDestaque, categoriasPorGrupo, type Categoria } from "@/lib/esportes"
-import { cn } from "@/lib/utils"
+import { categoriasPorGrupo, type Categoria } from "@/lib/esportes"
 
-/**
- * Mesmo botão sublinhado do "Publicar evento", em tamanho menor.
- * Com `rolar`, uma linha que rola de lado (Home); sem ele, quebra linha.
- */
-function Itens({ itens, rolar }: { itens: Categoria[]; rolar?: boolean }) {
+/** Mesmo botão sublinhado do "Publicar evento", em tamanho menor. */
+function Itens({ itens }: { itens: Categoria[] }) {
     return (
-        <ul
-            className={cn(
-                "flex gap-x-6 gap-y-1",
-                rolar ? "-mx-4 overflow-x-auto whitespace-nowrap px-4 [scrollbar-width:none] sm:mx-0 sm:px-0" : "flex-wrap",
-            )}
-        >
+        <ul className="flex flex-wrap gap-x-6 gap-y-1">
             {itens.map(({ label, href }) => (
                 <li key={href} className="shrink-0">
                     <Link href={href} className="underline-btn underline-btn--ink underline-btn--sm inline-block">
@@ -24,11 +15,6 @@ function Itens({ itens, rolar }: { itens: Categoria[]; rolar?: boolean }) {
             ))}
         </ul>
     )
-}
-
-/** Home: só os atalhos principais, numa linha que rola de lado no celular. */
-export function CategoriasDestaque() {
-    return <Itens itens={categoriasDestaque} rolar />
 }
 
 /** Página Categorias: tudo, separado por grupo. */

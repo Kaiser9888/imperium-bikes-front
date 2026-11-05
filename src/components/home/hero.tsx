@@ -2,35 +2,32 @@ import Link from "next/link"
 import { KeyRound, SearchCheck, ShieldCheck } from "lucide-react"
 
 const GARANTIAS = [
-    { icon: ShieldCheck, texto: "Pagamento retido até a entrega", href: "/reembolso" },
-    { icon: KeyRound, texto: "Código na retirada em mãos", href: "/ajuda#compras" },
-    { icon: SearchCheck, texto: "Consulta de bike roubada", href: "/seguranca/bike-roubada" },
+    { icon: ShieldCheck, texto: "Dinheiro de volta", href: "/protecao" },
+    { icon: KeyRound, texto: "Código na retirada", href: "/ajuda#compras" },
+    { icon: SearchCheck, texto: "Bike roubada?", href: "/seguranca/bike-roubada" },
 ]
 
 /**
- * Faixa fina de garantias logo abaixo dos banners: o comprador vê banners e anúncios
- * na primeira tela, e as garantias continuam à vista sem empurrar nada para baixo.
+ * Faixa fina de garantias logo abaixo dos banners: uma linha só, para os anúncios
+ * aparecerem na primeira tela.
  */
 export function Hero() {
     return (
-        <section aria-labelledby="hero-title">
+        <section aria-labelledby="hero-title" className="flex flex-col items-center gap-2">
             <h1 id="hero-title" className="sr-only">
                 Imperium Bikes: compre e venda bike sem medo de golpe
             </h1>
-            <ul className="grid grid-cols-3 gap-2 sm:gap-3">
+            <ul className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
                 {GARANTIAS.map(({ icon: Icone, texto, href }) => (
                     <li key={texto}>
-                        <Link
-                            href={href}
-                            className="flex h-full flex-col items-center gap-1.5 rounded-xl border border-border px-2 py-3 text-center text-xs font-medium text-foreground/80 hover:text-foreground sm:flex-row sm:justify-center sm:gap-2 sm:text-sm"
-                        >
-                            <Icone className="size-[18px] shrink-0 text-success" aria-hidden="true" />
-                            <span className="text-balance">{texto}</span>
+                        <Link href={href} className="flex items-center gap-1 text-xs font-medium text-foreground/80 hover:text-foreground sm:text-sm">
+                            <Icone className="size-3.5 shrink-0 text-success" aria-hidden="true" />
+                            {texto}
                         </Link>
                     </li>
                 ))}
             </ul>
-            <p className="mt-3 text-center text-sm text-muted-foreground">
+            <p className="text-xs text-muted-foreground sm:text-sm">
                 Quer vender?{" "}
                 <Link href="/vendedor#publicar" className="font-medium text-foreground underline underline-offset-4">
                     Anunciar é grátis

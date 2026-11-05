@@ -8,7 +8,7 @@ type HomeSectionProps = {
     /** Só informe quando a página de destino existir de verdade. */
     href?: string
     hrefLabel?: string
-    /** "cta": link em caixa alta com seta e traço vermelho (.cta-link). */
+    /** "cta": link de texto simples, discreto. */
     linkStyle?: "pill" | "cta"
     children: React.ReactNode
 }
@@ -26,7 +26,8 @@ export function HomeSection({ id, title, description, href, hrefLabel = "Ver tod
                     {description && <p className="type-body-small mt-1 text-muted-foreground">{description}</p>}
                 </div>
                 {href && linkStyle === "cta" && (
-                    <Link href={href} className="cta-link shrink-0">
+                    // Simples: não pode chamar mais atenção que os anúncios
+                    <Link href={href} className="type-label shrink-0 text-muted-foreground hover:text-foreground">
                         {hrefLabel}
                     </Link>
                 )}
