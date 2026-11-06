@@ -9,6 +9,7 @@ import { ArrowRight, Check, ImagePlus, Loader2, Plus, X } from "lucide-react"
 import { BottomNav } from "@/components/layout/bottom-nav"
 import { Logo } from "@/components/layout/logo"
 import { BackButton } from "@/components/ui/back-button"
+import { Button } from "@/components/ui/button"
 import { formatarPreco, partesDaData } from "@/lib/format"
 import { compactarImagem } from "@/lib/imagem"
 import { MODOS, type ModoPontuacao } from "@/lib/placar"
@@ -21,7 +22,11 @@ const PASSOS = ["O evento", "Local e vagas", "Inscrição"] as const
 
 const rotulo = "type-label text-foreground"
 const ajuda = "type-caption mt-1.5 text-muted-foreground"
-const campo = "mt-2 w-full rounded-lg bg-surface px-3.5 py-3 text-base outline-none md:text-sm"
+// Campos leves (sem a sombra grossa do resto do site): borda fina, foco na cor da marca
+const campo =
+    "mt-2 h-12 w-full rounded-xl border border-border bg-surface px-4 text-base text-foreground outline-none transition-[border-color,box-shadow] placeholder:text-muted-foreground/60 hover:border-foreground/40 focus:border-accent focus:ring-4 focus:ring-accent/15 md:text-sm"
+const area = "h-auto resize-none py-3"
+const campoSemMargem = campo.replace("mt-2 ", "")
 
 export default function CriarTorneioPage() {
     const { isLoaded, isSignedIn } = useUser()
@@ -249,17 +254,17 @@ export default function CriarTorneioPage() {
 
                         <div>
                             <label htmlFor="nome" className={rotulo}>Nome</label>
-                            <input id="nome" type="text" value={form.nome} onChange={(e) => update("nome", e.target.value)} placeholder="Downhill Cup 2026" className={campo} />
+                            <input id="nome" type="text" value={form.nome} onChange={(e) => update("nome", e.target.value)} placeholder="Downhill Cup 2026" data-plain className={campo} />
                         </div>
 
                         <div className="grid gap-5 sm:grid-cols-2">
                             <div>
                                 <label htmlFor="inicio" className={rotulo}>Começa em</label>
-                                <input id="inicio" type="date" value={form.dataInicio} min={hoje} onChange={(e) => update("dataInicio", e.target.value)} className={campo} />
+                                <input id="inicio" type="date" value={form.dataInicio} min={hoje} onChange={(e) => update("dataInicio", e.target.value)} data-plain className={campo} />
                             </div>
                             <div>
                                 <label htmlFor="fim" className={rotulo}>Termina em <span className="font-normal text-muted-foreground">(opcional)</span></label>
-                                <input id="fim" type="date" value={form.dataFim} min={form.dataInicio || undefined} onChange={(e) => update("dataFim", e.target.value)} className={campo} />
+                                <input id="fim" type="date" value={form.dataFim} min={form.dataInicio || undefined} onChange={(e) => update("dataFim", e.target.value)} data-plain className={campo} />
                             </div>
                         </div>
 
@@ -269,14 +274,21 @@ export default function CriarTorneioPage() {
                                 {MODOS.map((m) => (
                                     <label
                                         key={m.id}
-                                        className={`flex cursor-pointer flex-col gap-1 rounded-lg border p-3.5 transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-primary ${
-                                            modo === m.id ? "border-foreground bg-surface shadow-[3px_3px_0_var(--foreground)]" : "border-border bg-surface hover:border-foreground/50"
+                                        className={`flex cursor-pointer flex-col gap-1 rounded-xl border p-4 transition-colors has-[:focus-visible]:ring-4 has-[:focus-visible]:ring-accent/20 ${
+                                            modo === m.id ? "border-accent bg-accent/10" : "border-border bg-surface hover:border-foreground/40"
                                         }`}
                                     >
                                         <input type="radio" name="modo" value={m.id} checked={modo === m.id} onChange={() => setModo(m.id)} className="sr-only" />
                                         <span className="type-label flex items-center justify-between gap-2 text-foreground">
                                             {m.titulo}
-                                            {modo === m.id && <Check className="size-4 text-success" aria-hidden="true" />}
+                                            <span
+                                                aria-hidden="true"
+                                                className={`grid size-5 shrink-0 place-items-center rounded-full border transition-colors ${
+                                                    modo === m.id ? "border-accent bg-accent text-accent-foreground" : "border-border"
+                                                }`}
+                                            >
+                                                {modo === m.id && <Check className="size-3" strokeWidth={3} />}
+                                            </span>
                                         </span>
                                         <span className="type-caption text-muted-foreground">{m.texto}</span>
                                     </label>
@@ -290,7 +302,7 @@ export default function CriarTorneioPage() {
                         <div>
                             <label htmlFor="capa" className={rotulo}>Capa</label>
                             {form.capa ? (
-                                <div className="relative mt-2 overflow-hidden rounded-lg border border-foreground">
+                                <div className="relative mt-2 overflow-hidden rounded-xl border border-border">
                                     {/* eslint-disable-next-line @next/next/no-img-element -- imagem local, ainda não enviada */}
                                     <img src={form.capa} alt="Prévia da capa do evento" className="aspect-[1200/630] w-full object-cover" />
                                     <button
@@ -306,9 +318,11 @@ export default function CriarTorneioPage() {
                                 <>
                                     <label
                                         htmlFor="capa"
-                                        className="mt-2 flex aspect-[1200/630] w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-foreground/40 bg-surface text-muted-foreground transition-colors focus-within:border-primary hover:border-foreground"
+                                        className="mt-2 flex aspect-[1200/630] w-full cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-border bg-surface text-muted-foreground transition-colors focus-within:border-accent hover:border-accent/60 hover:bg-accent/5 hover:text-foreground"
                                     >
-                                        {preparandoCapa ? <Loader2 className="size-6 animate-spin" aria-hidden="true" /> : <ImagePlus className="size-6" aria-hidden="true" />}
+                                        <span className="grid size-12 place-items-center rounded-full bg-surface-muted text-foreground">
+                                            {preparandoCapa ? <Loader2 className="size-5 animate-spin" aria-hidden="true" /> : <ImagePlus className="size-5" aria-hidden="true" />}
+                                        </span>
                                         <span className="type-label">{preparandoCapa ? "Preparando imagem…" : "Escolher foto do dispositivo"}</span>
                                         <input
                                             id="capa"
@@ -330,12 +344,12 @@ export default function CriarTorneioPage() {
 
                         <div>
                             <label htmlFor="descricao" className={rotulo}>Descrição</label>
-                            <textarea id="descricao" value={form.descricao} onChange={(e) => update("descricao", e.target.value)} rows={4} placeholder="Percurso, categorias, horário de largada…" className={`${campo} resize-none`} />
+                            <textarea id="descricao" value={form.descricao} onChange={(e) => update("descricao", e.target.value)} rows={4} placeholder="Percurso, categorias, horário de largada…" data-plain className={`${campo} ${area}`} />
                         </div>
 
                         <div>
                             <label htmlFor="regras" className={rotulo}>Regras</label>
-                            <textarea id="regras" value={form.regras} onChange={(e) => update("regras", e.target.value)} rows={3} placeholder="Equipamento obrigatório, idade mínima, critérios de desempate…" className={`${campo} resize-none`} />
+                            <textarea id="regras" value={form.regras} onChange={(e) => update("regras", e.target.value)} rows={3} placeholder="Equipamento obrigatório, idade mínima, critérios de desempate…" data-plain className={`${campo} ${area}`} />
                         </div>
                     </section>
                 )}
@@ -349,28 +363,28 @@ export default function CriarTorneioPage() {
 
                         <div>
                             <label htmlFor="local" className={rotulo}>Local</label>
-                            <input id="local" type="text" value={form.local} onChange={(e) => update("local", e.target.value)} placeholder="Parque Municipal" className={campo} />
+                            <input id="local" type="text" value={form.local} onChange={(e) => update("local", e.target.value)} placeholder="Parque Municipal" data-plain className={campo} />
                         </div>
 
                         <div className="grid grid-cols-[1fr_6rem] gap-5">
                             <div>
                                 <label htmlFor="cidade" className={rotulo}>Cidade</label>
-                                <input id="cidade" type="text" value={form.cidade} onChange={(e) => update("cidade", e.target.value)} placeholder="Campos do Jordão" className={campo} />
+                                <input id="cidade" type="text" value={form.cidade} onChange={(e) => update("cidade", e.target.value)} placeholder="Campos do Jordão" data-plain className={campo} />
                             </div>
                             <div>
                                 <label htmlFor="uf" className={rotulo}>UF</label>
-                                <input id="uf" type="text" value={form.estado} onChange={(e) => update("estado", e.target.value)} maxLength={2} placeholder="SP" className={`${campo} uppercase`} />
+                                <input id="uf" type="text" value={form.estado} onChange={(e) => update("estado", e.target.value)} maxLength={2} placeholder="SP" data-plain className={`${campo} uppercase`} />
                             </div>
                         </div>
 
                         <div className="grid gap-5 sm:grid-cols-2">
                             <div>
                                 <label htmlFor="vagas" className={rotulo}>Vagas</label>
-                                <input id="vagas" type="number" inputMode="numeric" value={form.maxParticipantes} onChange={(e) => update("maxParticipantes", e.target.value)} min={2} placeholder="50" className={campo} />
+                                <input id="vagas" type="number" inputMode="numeric" value={form.maxParticipantes} onChange={(e) => update("maxParticipantes", e.target.value)} min={2} placeholder="50" data-plain className={campo} />
                             </div>
                             <div>
                                 <label htmlFor="prazo" className={rotulo}>Inscrições até <span className="font-normal text-muted-foreground">(opcional)</span></label>
-                                <input id="prazo" type="date" value={form.prazoInscricao} max={form.dataInicio || undefined} onChange={(e) => update("prazoInscricao", e.target.value)} className={campo} />
+                                <input id="prazo" type="date" value={form.prazoInscricao} max={form.dataInicio || undefined} onChange={(e) => update("prazoInscricao", e.target.value)} data-plain className={campo} />
                             </div>
                         </div>
                     </section>
@@ -386,9 +400,12 @@ export default function CriarTorneioPage() {
                         <div className="grid gap-5 sm:grid-cols-2">
                             <div>
                                 <label htmlFor="valor" className={rotulo}>Valor da inscrição (R$)</label>
-                                <input id="valor" type="number" inputMode="decimal" value={form.valorInscricao} onChange={(e) => update("valorInscricao", e.target.value)} min={0} max={500} step="0.01" placeholder="0,00" className={campo} />
+                                <div className="relative mt-2">
+                                    <span className="type-label pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" aria-hidden="true">R$</span>
+                                    <input id="valor" type="number" inputMode="decimal" value={form.valorInscricao} onChange={(e) => update("valorInscricao", e.target.value)} min={0} max={500} step="0.01" placeholder="0,00" data-plain className={`${campoSemMargem} pl-11 tabular-nums`} />
+                                </div>
                                 {valor > 0 ? (
-                                    <p className={ajuda}>
+                                    <p className="type-caption mt-2 rounded-xl bg-surface-muted px-3.5 py-3 text-muted-foreground">
                                         Você recebe <strong className="text-foreground">{formatarPreco(liquidoInscricaoCentavos(Math.round(valor * 100)) / 100)}</strong> por
                                         inscrição, na sua Carteira, 7 dias depois do fim do evento. A Imperium fica com {TAXA_PLATAFORMA_EVENTO_PERCENTUAL}%, já
                                         incluindo o cartão. Mínimo R$ 10,00.
@@ -399,7 +416,7 @@ export default function CriarTorneioPage() {
                             </div>
                             <div>
                                 <label htmlFor="premio" className={rotulo}>Premiação <span className="font-normal text-muted-foreground">(opcional)</span></label>
-                                <input id="premio" type="text" value={form.premiacao} onChange={(e) => update("premiacao", e.target.value)} placeholder="R$ 2.000 + troféu" className={campo} />
+                                <input id="premio" type="text" value={form.premiacao} onChange={(e) => update("premiacao", e.target.value)} placeholder="R$ 2.000 + troféu" data-plain className={campo} />
                             </div>
                         </div>
 
@@ -419,23 +436,28 @@ export default function CriarTorneioPage() {
                                         }
                                     }}
                                     placeholder="Ex.: Elite Masculino"
-                                    className={`${campo} mt-0 flex-1`}
+                                    data-plain className={`${campoSemMargem} flex-1`}
                                 />
-                                <button type="button" onClick={adicionarCategoria} disabled={!novaCategoria.trim() || categorias.length >= 12} className="line-btn line-btn--sm shrink-0 self-center">
-                                    <Plus aria-hidden="true" />
+                                <button
+                                    type="button"
+                                    onClick={adicionarCategoria}
+                                    disabled={!novaCategoria.trim() || categorias.length >= 12}
+                                    className="type-label inline-flex h-12 shrink-0 items-center gap-1.5 rounded-xl border border-border bg-surface px-4 text-foreground transition-colors hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-border disabled:hover:text-foreground"
+                                >
+                                    <Plus className="size-4" aria-hidden="true" />
                                     Adicionar
                                 </button>
                             </div>
                             {categorias.length > 0 && (
                                 <ul className="mt-3 flex flex-wrap gap-2">
                                     {categorias.map((c) => (
-                                        <li key={c} className="type-label flex items-center gap-1 rounded-full border border-foreground py-1 pl-3 pr-1">
+                                        <li key={c} className="type-label flex items-center gap-1 rounded-full bg-surface-muted py-1 pl-3.5 pr-1 text-foreground">
                                             {c}
                                             <button
                                                 type="button"
                                                 onClick={() => setCategorias(categorias.filter((x) => x !== c))}
                                                 aria-label={`Tirar a categoria ${c}`}
-                                                className="grid size-6 place-items-center rounded-full hover:bg-surface-muted"
+                                                className="grid size-6 place-items-center rounded-full text-muted-foreground hover:bg-background hover:text-destructive"
                                             >
                                                 <X className="size-3.5" aria-hidden="true" />
                                             </button>
@@ -449,18 +471,27 @@ export default function CriarTorneioPage() {
                             </p>
                         </div>
 
-                        <div>
-                            <label className="flex cursor-pointer items-start gap-3">
-                                <input type="checkbox" checked={solidaria} onChange={(e) => setSolidaria(e.target.checked)} className="mt-1 size-4 accent-[var(--accent)]" />
+                        {/* Cartão que liga e desliga, com o campo do que levar dentro dele */}
+                        <div className={`rounded-xl border p-4 transition-colors ${solidaria ? "border-accent bg-accent/5" : "border-border bg-surface"}`}>
+                            <label className="flex cursor-pointer items-start gap-3 has-[:focus-visible]:[&>span:first-of-type]:ring-4 has-[:focus-visible]:[&>span:first-of-type]:ring-accent/20">
+                                <input type="checkbox" checked={solidaria} onChange={(e) => setSolidaria(e.target.checked)} className="sr-only" />
+                                <span
+                                    aria-hidden="true"
+                                    className={`mt-0.5 grid size-5 shrink-0 place-items-center rounded-md border transition-colors ${
+                                        solidaria ? "border-accent bg-accent text-accent-foreground" : "border-foreground/40"
+                                    }`}
+                                >
+                                    {solidaria && <Check className="size-3.5" strokeWidth={3} />}
+                                </span>
                                 <span>
                                     <span className={rotulo}>Inscrição solidária</span>
                                     <span className={`${ajuda} block`}>Cada inscrito leva uma doação no dia; você confere na chegada, na tela Gerenciar.</span>
                                 </span>
                             </label>
                             {solidaria && (
-                                <div className="mt-3">
+                                <div className="mt-4 pl-8">
                                     <label htmlFor="doacao" className={rotulo}>O que levar</label>
-                                    <input id="doacao" type="text" value={doacao} maxLength={200} onChange={(e) => setDoacao(e.target.value)} className={campo} />
+                                    <input id="doacao" type="text" value={doacao} maxLength={200} onChange={(e) => setDoacao(e.target.value)} data-plain className={campo} />
                                 </div>
                             )}
                         </div>
@@ -509,37 +540,44 @@ export default function CriarTorneioPage() {
                                 </div>
                             </dl>
                             {falta && <p className="type-body-small mt-6 text-white/80">{falta}</p>}
-                            <button type="button" onClick={handleSubmit} disabled={enviando || semRecebimentos || !!falta} aria-busy={enviando} className="underline-btn mt-7 disabled:opacity-50">
-                                <span className="flex items-center gap-2 py-1.5">
-                                    {enviando ? <Loader2 className="size-5 animate-spin" aria-hidden="true" /> : <Plus className="size-5" aria-hidden="true" />}
-                                    {enviando ? "Publicando…" : "Publicar evento"}
-                                </span>
-                            </button>
+                            <Button
+                                type="button"
+                                variant="accent"
+                                size="lg"
+                                onClick={handleSubmit}
+                                disabled={enviando || semRecebimentos || !!falta}
+                                aria-busy={enviando}
+                                className="mt-7 w-full"
+                            >
+                                {enviando ? <Loader2 className="animate-spin" aria-hidden="true" /> : <Plus aria-hidden="true" />}
+                                {enviando ? "Publicando…" : "Publicar evento"}
+                            </Button>
                         </div>
                         {erroEnvio && <p role="alert" className="type-body-small border-l-2 border-destructive pl-3 text-destructive">{erroEnvio}</p>}
                     </section>
                 )}
 
-                {/* Navegação entre passos */}
-                <div className="mt-12 flex items-center justify-between gap-4 border-t border-border pt-5">
-                    {passo > 1 ? (
-                        <button type="button" onClick={() => setPasso(passo - 1)} className="line-btn line-btn--muted">
-                            Passo anterior
-                        </button>
-                    ) : <span />}
-                    {passo < PASSOS.length && (
-                        <div className="flex flex-col items-end gap-2">
-                            <button type="button" onClick={() => setPasso(passo + 1)} disabled={!!falta} className="line-btn">
-                                Continuar
-                                <ArrowRight aria-hidden="true" />
-                            </button>
-                            {falta && <p className="type-caption text-muted-foreground">{falta}</p>}
-                        </div>
-                    )}
-                </div>
             </main>
 
-            <BottomNav />
+            {/* Navegação entre passos fixa no rodapé: sempre à vista, no lugar do menu do site */}
+            <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md">
+                <div className="mx-auto w-full max-w-3xl px-4 py-3">
+                    {passo < PASSOS.length && falta && <p className="type-caption mb-2 text-center text-muted-foreground sm:text-right">{falta}</p>}
+                    <div className="flex items-center gap-3">
+                        {passo > 1 && (
+                            <Button type="button" variant="outline" size="lg" onClick={() => setPasso(passo - 1)} className="shrink-0 rounded-xl">
+                                Passo anterior
+                            </Button>
+                        )}
+                        {passo < PASSOS.length && (
+                            <Button type="button" size="lg" onClick={() => setPasso(passo + 1)} disabled={!!falta} className="ml-auto flex-1 rounded-xl sm:flex-none">
+                                Continuar
+                                <ArrowRight aria-hidden="true" />
+                            </Button>
+                        )}
+                    </div>
+                </div>
+            </div>
         </div>
     )
 }

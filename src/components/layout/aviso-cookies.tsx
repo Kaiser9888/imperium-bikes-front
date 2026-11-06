@@ -69,7 +69,7 @@ export function AvisoCookies() {
     }, [])
 
     // Nas telas de entrar, cadastrar e publicar o aviso cobria o formulário e o botão Continuar; ele aparece na página seguinte
-    const telaDeAcesso = /^\/(sign-in|sign-up|sso-callback|publicar)(\/|$)/.test(usePathname() ?? "")
+    const telaDeAcesso = /^\/(sign-in|sign-up|sso-callback|publicar|torneios\/criar)(\/|$)/.test(usePathname() ?? "")
     const mostrar = !telaDeAcesso && (escolha === "nenhuma" || aberto === "true")
 
     return (
