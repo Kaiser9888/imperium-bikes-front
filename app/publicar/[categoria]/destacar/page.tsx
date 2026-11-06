@@ -1,16 +1,18 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { Check, Loader2, X } from 'lucide-react'
 import { useParams, useRouter } from 'next/navigation'
 import { useAuth } from '@clerk/nextjs'
 
-import { getCategoriaConfig } from '@/lib/publicar/categorias'
-import { identificar } from '@/lib/publicar/taxonomia'
+import { nomeDaCategoria } from '@/lib/publicar/categorias'
+import { identificar, OPCOES_MODALIDADE } from '@/lib/publicar/taxonomia'
 import {
   clearDraft,
   getDraft,
   saveDraft,
+  type PublishDraft,
 } from '@/lib/publicar/storage'
 import { apiFetch, API_URL } from '@/lib/apiClient'
 import { useUserSync } from '@/lib/UserSyncContext'
@@ -57,6 +59,49 @@ async function dataUrlParaArquivo(
   )
 }
 
+/** O que a revisão mostra, montado do rascunho das etapas anteriores. */
+type Resumo = {
+  foto: string | null
+  totalFotos: number
+  titulo: string
+  descricao: string
+  detalhes: string
+  entrega: string
+  aPartirDe: boolean
+}
+
+function montarResumo(categoria: string, draft: PublishDraft): Resumo {
+  const fotos = draft.photos ?? []
+  const local = [draft.frete?.localizacao?.cidade, draft.frete?.localizacao?.estado].filter(Boolean).join('/')
+  const servico = categoria === 'servicos'
+
+  const modalidade = OPCOES_MODALIDADE.find((item) => item.value === draft.modality)?.label
+  const condicao = servico || categoria === 'consumiveis'
+    ? null
+    : draft.condicao === 'novo' ? 'Novo' : draft.condicao === 'usado' ? 'Usado' : null
+  const detalhes = [condicao, modalidade, draft.marca, draft.modelo].filter(Boolean).join(' · ')
+
+  const pagador = draft.frete?.pagador
+  const limite = draft.frete?.limite_frete_centavos
+  const entrega = servico
+    ? [draft.frete?.localizacao?.bairro, local].filter(Boolean).join(', ') || 'Combinado pelo chat'
+    : pagador === 'retirada_local'
+      ? `Só retirada em mãos${local ? ` em ${local}` : ''}`
+      : pagador === 'vendedor' && limite
+        ? `Envio com frete grátis até ${(limite / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}${local ? `, saindo de ${local}` : ''}`
+        : `Envio pago pelo comprador${local ? `, saindo de ${local}` : ''}`
+
+  return {
+    foto: fotos[0] ?? null,
+    totalFotos: fotos.length,
+    titulo: String(draft.titulo ?? ''),
+    descricao: String(draft.descricao ?? ''),
+    detalhes,
+    entrega,
+    aPartirDe: Boolean(draft.preco?.a_partir_de),
+  }
+}
+
 export default function DestacarPage() {
   const params = useParams<{
     categoria: string
@@ -64,7 +109,6 @@ export default function DestacarPage() {
 
   const categoria = params.categoria
 
-  const config = getCategoriaConfig(categoria)
   const router = useRouter()
 
   const {
@@ -84,6 +128,9 @@ export default function DestacarPage() {
   // Na retirada, também aceita receber direto (sem proteção); serviço já tem o seu próprio modo
   const [aceitaPagamentoDireto, setAceitaPagamentoDireto] =
     useState(false)
+
+  const [resumo, setResumo] =
+    useState<Resumo | null>(null)
 
   const [publicando, setPublicando] =
     useState(false)
@@ -115,6 +162,7 @@ return
 setPrecoCentavos(
   draft.preco.valor_centavos,
 )
+setResumo(montarResumo(categoria, draft))
 
 if (draft.destacar?.tier_id) {
   setTierSelecionado(
@@ -462,7 +510,7 @@ return (
       <BackButton onClick={voltar} />
 
       <strong>
-        {config?.label ?? 'Anúncio'}
+        {nomeDaCategoria(categoria)}
       </strong>
 
       <button
@@ -485,7 +533,7 @@ return (
       </h1>
 
       <p className="publish-lead">
-        Todo anúncio aparece com o mesmo alcance no feed e na busca.
+        Confira como o anúncio vai aparecer. Todo anúncio tem o mesmo alcance no feed e na busca.
       </p>
 
       <div className="publish-progress">
@@ -496,31 +544,66 @@ return (
           />
       </div>
 
+      {/* Prévia: o que o comprador vai ver, com atalho para corrigir cada parte */}
+      {resumo && (
+        <section className="publish-card revisao">
+          {resumo.foto && (
+            <div className="revisao-foto">
+              {/* eslint-disable-next-line @next/next/no-img-element -- foto ainda local (data URL), antes do envio */}
+              <img src={resumo.foto} alt="" />
+              {resumo.totalFotos > 1 && <span>{resumo.totalFotos} fotos</span>}
+            </div>
+          )}
+
+          <div className="revisao-corpo">
+            <p className="revisao-titulo">{resumo.titulo}</p>
+            <p className="revisao-preco">
+              {resumo.aPartirDe && <small>a partir de </small>}
+              {formatarMoeda(precoCentavos)}
+            </p>
+            {resumo.detalhes && <p className="revisao-detalhes">{resumo.detalhes}</p>}
+            {resumo.descricao && <p className="revisao-descricao">{resumo.descricao}</p>}
+          </div>
+
+          <dl className="revisao-lista">
+            <div>
+              <dt>{categoria === 'servicos' ? 'Atendimento' : 'Entrega'}</dt>
+              <dd>{resumo.entrega}</dd>
+              <Link href={`/publicar/${categoria}/frete`}>Editar</Link>
+            </div>
+            <div>
+              <dt>Fotos</dt>
+              <dd>{resumo.totalFotos === 1 ? '1 foto' : `${resumo.totalFotos} fotos`}</dd>
+              <Link href={`/publicar/${categoria}/fotos`}>Editar</Link>
+            </div>
+            <div>
+              <dt>Título e descrição</dt>
+              <dd>{resumo.detalhes || 'Informações do anúncio'}</dd>
+              <Link href={`/publicar/${categoria}/informacoes`}>Editar</Link>
+            </div>
+          </dl>
+        </section>
+      )}
+
       <section className="publish-card publish-form">
         <div className="price-summary">
-            <span>
-              Valor do anúncio
-            </span>
-
-          <b>
-            {formatarMoeda(
-              precoCentavos,
-            )}
-          </b>
-        </div>
-
-        <div className="price-summary">
           <span>
-            Você recebe por venda
+            {resumo?.aPartirDe ? 'Valor a partir de' : 'Você recebe por venda'}
           </span>
 
           <b>
             {formatarMoeda(precoCentavos)}
           </b>
+
+          <Link href={`/publicar/${categoria}/preco`} className="revisao-editar">Editar</Link>
         </div>
 
         <small>
-          Vender no Imperium não tem taxa. O comprador paga a Proteção Imperium.
+          {resumo?.aPartirDe
+            ? 'Sem taxa: o valor final e o pagamento são combinados direto com o cliente pelo chat.'
+            : categoria === 'servicos'
+              ? 'Anunciar no Imperium não tem taxa. O cliente paga a Proteção Imperium.'
+              : 'Vender no Imperium não tem taxa. O comprador paga a Proteção Imperium.'}
         </small>
 
         {categoria !== 'servicos' && (
@@ -532,9 +615,9 @@ return (
               className="mt-1 size-4 shrink-0"
             />
             <span>
-              <b>Na retirada em mãos, também aceito receber direto</b>
+              <b>Se o comprador vier retirar em mãos, também aceito receber direto</b>
               <small className="block">
-                Sem a proteção do Imperium: vocês combinam e o pagamento é entre vocês. Encontre em lugar público e confira o Pix no app do banco antes de entregar.
+                Opcional. Sem a proteção do Imperium: vocês combinam e o pagamento é entre vocês. Encontre em lugar público e confira o Pix no app do banco antes de entregar.
               </small>
             </span>
           </label>

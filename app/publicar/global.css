@@ -1171,3 +1171,123 @@
 .frete-gratis__lista b {
     font-variant-numeric: tabular-nums;
 }
+
+/* Primeira linha do cartão não precisa do traço de cima */
+.publish-form > .price-summary:first-child {
+    border-top: 0;
+    padding-top: 0;
+}
+
+.price-summary .text-action,
+.price-summary .revisao-editar {
+    margin: 0 0 0 12px;
+}
+
+/* Revisar e publicar: prévia do anúncio, como o comprador vai ver */
+.revisao {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.revisao-foto {
+    position: relative;
+    aspect-ratio: 4 / 3;
+    overflow: hidden;
+    border: 1px solid var(--imperium-line);
+    background: var(--imperium-paper);
+}
+
+.revisao-foto img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.revisao-foto span {
+    position: absolute;
+    right: 8px;
+    bottom: 8px;
+    padding: 3px 8px;
+    background: rgb(0 0 0 / 0.65);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.revisao-corpo {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.revisao-titulo {
+    margin: 0;
+    font-size: 17px;
+    font-weight: 700;
+    line-height: 1.3;
+}
+
+.revisao-preco {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 800;
+}
+
+.revisao-preco small {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--imperium-muted);
+}
+
+.revisao-detalhes,
+.revisao-descricao {
+    margin: 0;
+    color: var(--imperium-muted);
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.revisao-descricao {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    white-space: pre-line;
+}
+
+.revisao-lista {
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+}
+
+.revisao-lista > div {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 2px 12px;
+    align-items: center;
+    border-top: 1px solid var(--imperium-line);
+    padding: 12px 0;
+}
+
+.revisao-lista dt {
+    font-size: 12px;
+    color: var(--imperium-muted);
+}
+
+.revisao-lista dd {
+    grid-column: 1;
+    margin: 0;
+    font-size: 14px;
+}
+
+.revisao-lista a,
+.revisao-editar {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    color: var(--imperium-red);
+    font-size: 13px;
+    font-weight: 700;
+}

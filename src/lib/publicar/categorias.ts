@@ -29,7 +29,7 @@ export interface CategoriaConfig {
 export const CATEGORIAS: Record<string, CategoriaConfig> = {
   bikes: {
     label: "Bicicleta",
-    labelPlural: "Bicicletas",
+    labelPlural: "Bikes",
     campos: [
       {
         id: "tipo",
@@ -213,6 +213,11 @@ export function getCategoriaConfig(
   categoria: string
 ): CategoriaConfig | undefined {
   return CATEGORIAS[categoria]
+}
+
+/** Nome no topo de todas as etapas: o mesmo da primeira tela (ex.: "Bikes", "Serviços"). */
+export function nomeDaCategoria(categoria: string): string {
+  return CATEGORIAS[categoria]?.labelPlural ?? "Anúncio"
 }
 
 export function isCategoriaValida(categoria: string): boolean {

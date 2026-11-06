@@ -731,6 +731,24 @@ export default function PublicarPecasPage() {
                       {step.title}
                     </p>
 
+                    {/* Categoria: agrupada (Transmissão, Freios...) em cartões menores, para a lista não ficar enorme no celular */}
+                    {step.key === "subcategoryId" ? (
+                      PECA_CATEGORIES.map((parent) => (
+                        <div key={parent.id} className="choice-group" role="group" aria-label={parent.label}>
+                          <p className="choice-group-title">{parent.label}</p>
+                          <div className="choice-grid choice-grid-compact">
+                            {PECA_SUBCATEGORIES.filter((sub) => sub.parentId === parent.id).map((sub) => (
+                              <ChoiceCard
+                                key={sub.id}
+                                selected={answers.subcategoryId === sub.id}
+                                label={sub.label}
+                                onClick={() => handleSelect(step, sub.id)}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      ))
+                    ) : (
                     <div className="choice-grid choice-grid-types">
                       {step.options.map(
                         (option) => (
@@ -760,6 +778,7 @@ export default function PublicarPecasPage() {
                         )
                       )}
                     </div>
+                    )}
 
                     {stepNumber <
                     steps.length ? (

@@ -68,8 +68,8 @@ export function AvisoCookies() {
         return () => window.removeEventListener(REABRIR, reabrir)
     }, [])
 
-    // Nas telas de entrar e cadastrar o aviso cobria o formulário; ele aparece na página seguinte
-    const telaDeAcesso = /^\/(sign-in|sign-up|sso-callback)(\/|$)/.test(usePathname() ?? "")
+    // Nas telas de entrar, cadastrar e publicar o aviso cobria o formulário e o botão Continuar; ele aparece na página seguinte
+    const telaDeAcesso = /^\/(sign-in|sign-up|sso-callback|publicar)(\/|$)/.test(usePathname() ?? "")
     const mostrar = !telaDeAcesso && (escolha === "nenhuma" || aberto === "true")
 
     return (

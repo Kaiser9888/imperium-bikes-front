@@ -5,8 +5,8 @@ import { useParams, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { ArrowRight, Check, X } from 'lucide-react'
 import {
-  getCategoriaConfig,
   nextStep,
+  nomeDaCategoria,
   previousStep,
   readDraft,
   writeDraft,
@@ -45,7 +45,6 @@ const PLACEHOLDER_TITULO: Record<string, string> = {
 export default function InformacoesPage() {
   const { categoria } = useParams<{ categoria: string }>()
   const router = useRouter()
-  const config = getCategoriaConfig(categoria)
 
   // Serviço: sem marca, modelo, condição nem quantidade. Consumível: sempre novo.
   const servico = categoria === 'servicos'
@@ -65,9 +64,14 @@ export default function InformacoesPage() {
   const porEsporte = categoria === CATEGORIA_ESPORTES
   const opcoesDestino = porEsporte ? OPCOES_ESPORTE : OPCOES_MODALIDADE
   const [destino, setDestino] = useState('')
+  // Bikes: a etapa 1 já diz a modalidade; aqui ela só aparece, com opção de trocar
+  const [sugerida, setSugerida] = useState('')
+  const [trocandoDestino, setTrocandoDestino] = useState(false)
 
   useEffect(() => {
     const d = readDraft(categoria)
+
+    setSugerida(categoria === 'bikes' ? modalidadeSugerida(d) : '')
 
     setMarca(String(d.marca || ''))
     setModelo(String(d.modelo || ''))
@@ -119,7 +123,7 @@ export default function InformacoesPage() {
     router.push(nextStep(categoria, 'informacoes'))
   }
 
-  const label = config?.label ?? 'Anúncio'
+  const label = nomeDaCategoria(categoria)
 
   return (
     <main className="publish-page">
@@ -186,6 +190,21 @@ export default function InformacoesPage() {
             <small>{descricao.length}/1000</small>
           </label>
 
+          {sugerida && destino === sugerida && !trocandoDestino ? (
+            <div className="price-summary">
+              <span>
+                Modalidade: <b>{opcoesDestino.find(item => item.value === destino)?.label}</b>
+              </span>
+
+              <button
+                type="button"
+                className="text-action"
+                onClick={() => setTrocandoDestino(true)}
+              >
+                Trocar
+              </button>
+            </div>
+          ) : (
           <fieldset>
             <legend>
               {porEsporte ? 'Esporte' : 'Modalidade'}
@@ -215,6 +234,7 @@ export default function InformacoesPage() {
               ))}
             </div>
           </fieldset>
+          )}
 
           {!servico && (
           <>

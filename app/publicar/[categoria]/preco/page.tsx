@@ -13,6 +13,7 @@ import {
   getDraft,
   saveDraft,
 } from '@/lib/publicar/storage'
+import { nomeDaCategoria } from '@/lib/publicar/categorias'
 
 import { BackButton } from "@/components/ui/back-button"
 
@@ -66,7 +67,6 @@ export default function PrecoPage() {
   const router = useRouter()
 
   const [preco, setPreco] = useState('')
-  const [custos, setCustos] = useState('')
   // Serviço: null até escolher; true = depende de avaliação ("a partir de", combinado direto)
   const [aPartirDe, setAPartirDe] = useState<boolean | null>(null)
   const servico = categoria === 'servicos'
@@ -101,20 +101,6 @@ export default function PrecoPage() {
             .toFixed(2)
             .replace('.', ','),
         )
-      }
-
-      if (draft.preco.custos?.length) {
-        const custosTexto =
-          draft.preco.custos
-            .map(
-              (item) =>
-                `${item.label}: ${money(
-                  item.valor_centavos,
-                )}`,
-            )
-            .join('\n')
-
-        setCustos(custosTexto)
       }
     }
   }, [categoria])
@@ -156,18 +142,7 @@ export default function PrecoPage() {
     )
   }
 
-  const nomeCategoria =
-    categoria === 'bikes'
-      ? 'Bicicleta'
-      : categoria === 'pecas'
-        ? 'Peças'
-        : categoria === 'consumiveis'
-          ? 'Consumíveis'
-          : categoria === 'servicos'
-            ? 'Serviços'
-            : categoria === 'produtos'
-              ? 'Produtos'
-              : categoria === 'esportes' ? 'Artigos esportivos' : categoria ?? 'Anúncio'
+  const nomeCategoria = nomeDaCategoria(categoria)
 
   return (
     <main className="publish-page">
@@ -198,7 +173,7 @@ export default function PrecoPage() {
         </h1>
 
         <p className="publish-lead">
-          Defina um valor claro para o comprador.
+          {servico ? 'Defina quanto custa o serviço.' : 'Defina um valor claro para o comprador.'}
         </p>
 
         <div className="publish-progress">
@@ -233,6 +208,10 @@ export default function PrecoPage() {
                   </button>
                 ))}
               </div>
+
+              {aPartirDe === null && (
+                <small>Escolha uma das opções para continuar.</small>
+              )}
             </fieldset>
           )}
 
@@ -255,25 +234,6 @@ export default function PrecoPage() {
                 placeholder="0,00"
               />
             </div>
-          </label>
-
-          <label>
-            Observação de custos
-
-            <span className="optional">
-              Opcional
-            </span>
-
-            <textarea
-              value={custos}
-              onChange={(event) =>
-                setCustos(
-                  event.target.value,
-                )
-              }
-              rows={4}
-              placeholder="Use este espaço apenas para sua referência. Não será exibido ao comprador."
-            />
           </label>
 
           {abaixoDoMinimo && (
@@ -302,7 +262,9 @@ export default function PrecoPage() {
               </div>
 
               <small>
-                Vender no Imperium não tem taxa. O comprador paga a Proteção Imperium, que segura o dinheiro até a entrega.
+                {servico
+                  ? 'Anunciar no Imperium não tem taxa. O cliente paga a Proteção Imperium, que segura o dinheiro até o serviço ser feito.'
+                  : 'Vender no Imperium não tem taxa. O comprador paga a Proteção Imperium, que segura o dinheiro até a entrega.'}
               </small>
             </>
           )}

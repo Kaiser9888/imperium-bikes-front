@@ -13,6 +13,7 @@ import {
   getDraft,
   saveDraft,
 } from '@/lib/publicar/storage'
+import { nomeDaCategoria } from '@/lib/publicar/categorias'
 
 import { BackButton } from "@/components/ui/back-button"
 
@@ -136,18 +137,7 @@ export default function FotosPage() {
     )
   }
 
-  const nomeCategoria =
-    categoria === 'bikes'
-      ? 'Bicicleta'
-      : categoria === 'pecas'
-        ? 'Peças'
-        : categoria === 'consumiveis'
-          ? 'Consumíveis'
-          : categoria === 'servicos'
-            ? 'Serviços'
-            : categoria === 'produtos'
-              ? 'Produtos'
-              : categoria === 'esportes' ? 'Artigos esportivos' : categoria ?? 'Anúncio'
+  const nomeCategoria = nomeDaCategoria(categoria)
 
   return (
     <main className="publish-page">
