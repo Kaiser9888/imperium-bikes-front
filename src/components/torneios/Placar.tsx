@@ -145,7 +145,8 @@ export function Classificacao({ inscritos, modo, titulo }: { inscritos: Inscrito
                                 {marca ? (
                                     <span className="type-label shrink-0 tabular-nums text-foreground">{marca}</span>
                                 ) : (
-                                    algumResultado && <span className="type-caption shrink-0 text-muted-foreground">sem marca</span>
+                                    // Colocação manual não tem marca: o lugar já é o resultado
+                                    algumResultado && modo !== "posicao" && <span className="type-caption shrink-0 text-muted-foreground">sem marca</span>
                                 )}
                             </Link>
                         </li>

@@ -22,9 +22,11 @@ export function formatarTempo(ms: number): string {
     const h = Math.floor(ms / 3_600_000)
     const m = Math.floor((ms % 3_600_000) / 60_000)
     const s = Math.floor((ms % 60_000) / 1000)
-    const fracao = String(ms % 1000).padStart(3, "0").replace(/0+$/, "")
+    // Sempre centésimos (milésimos só quando lançados): no ranking todos os tempos ficam alinhados
+    const mil = String(ms % 1000).padStart(3, "0")
+    const fracao = mil.endsWith("0") ? mil.slice(0, 2) : mil
     const base = h > 0 ? `${h}:${dois(m)}:${dois(s)}` : `${dois(m)}:${dois(s)}`
-    return fracao ? `${base}.${fracao}` : base
+    return `${base}.${fracao}`
 }
 
 /**

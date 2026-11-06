@@ -62,8 +62,8 @@ function CampoMarca({ competidor, modo, aoMudar }: { competidor: Competidor; mod
     }
 
     return (
-        <form onSubmit={salvar} className="flex flex-col items-end gap-1">
-            <div className="flex items-center gap-1.5">
+        <form onSubmit={salvar} className="flex w-full flex-col items-end gap-1 sm:w-auto">
+            <div className="flex w-full items-center gap-1.5">
                 <label htmlFor={`marca-${competidor.id}`} className="sr-only">
                     {modo === "tempo" ? "Tempo" : "Pontos"} de {competidor.userName}
                 </label>
@@ -76,7 +76,7 @@ function CampoMarca({ competidor, modo, aoMudar }: { competidor: Competidor; mod
                     onChange={(e) => setValor(e.target.value)}
                     placeholder={modo === "tempo" ? "0:00.0" : "0,0"}
                     aria-invalid={mudou && valor.trim() !== "" && lido === null}
-                    className="h-11 w-28 rounded-lg bg-surface px-2 text-center text-base tabular-nums aria-[invalid=true]:ring-2 aria-[invalid=true]:ring-destructive"
+                    className="h-11 min-w-0 flex-1 rounded-lg bg-surface px-2 text-center text-base tabular-nums aria-[invalid=true]:ring-2 aria-[invalid=true]:ring-destructive sm:w-28 sm:flex-none"
                 />
                 <button type="submit" disabled={!mudou || lido === null || ocupado} className="line-btn line-btn--sm min-h-11">
                     {ocupado ? "…" : salva && !mudou ? "Salvo" : "Salvar"}
@@ -213,7 +213,7 @@ export function PlacarOrganizador({
 
                     <ol className="mt-3 border-t border-foreground">
                         {filtrados.map((c) => (
-                            <li key={c.id} className="flex flex-wrap items-center gap-3 border-b border-border py-3">
+                            <li key={c.id} className="flex flex-wrap items-center gap-x-3 gap-y-2.5 border-b border-border py-3">
                                 <span className={cn("type-label w-8 shrink-0 text-right font-bold tabular-nums", c.rankPosition ? "text-foreground" : "text-muted-foreground")}>
                                     {c.rankPosition ? `${c.rankPosition}º` : "–"}
                                 </span>
@@ -233,7 +233,8 @@ export function PlacarOrganizador({
                                     {categorias.length > 0 && <span className="type-caption block truncate text-muted-foreground">{c.categoria}</span>}
                                 </span>
                                 {aberto && (
-                                    <div className="ml-auto">
+                                    // No celular o campo vai sempre para a linha de baixo: o nome não fica cortado
+                                    <div className="basis-full pl-11 sm:ml-auto sm:basis-auto sm:pl-0">
                                         {/* key com a marca: quando outra mudança refaz a lista, o campo volta ao valor salvo */}
                                         <CampoMarca key={`${c.id}-${c.finalTimeMs}-${c.points}`} competidor={c} modo={modo} aoMudar={recarregar} />
                                     </div>

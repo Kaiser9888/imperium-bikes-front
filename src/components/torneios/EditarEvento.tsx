@@ -10,7 +10,8 @@ import { mensagemDaApi } from "@/services/tournamentService"
 
 type Raw = Record<string, unknown>
 const texto = (v: unknown) => (typeof v === "string" ? v : "")
-const campo = "mt-1.5 w-full rounded-lg bg-surface px-3 py-2.5 text-base outline-none md:text-sm"
+// Campo travado (evento começou ou já tem inscritos) aparece apagado, para ninguém tentar editar
+const campo = "mt-1.5 w-full rounded-lg bg-surface px-3 py-2.5 text-base outline-none md:text-sm disabled:cursor-not-allowed disabled:opacity-45"
 const rotulo = "type-label text-foreground"
 
 /**
@@ -160,7 +161,7 @@ export function EditarEvento({ torneioId, aoSalvar }: { torneioId: string; aoSal
                     </div>
                     {comecou && <p className="type-caption -mt-3 text-muted-foreground">Com o evento acontecendo, datas e vagas não mudam.</p>}
 
-                    <div className="grid gap-4 sm:grid-cols-[1fr_1fr_5rem]">
+                    <div className="grid grid-cols-[1fr_5rem] gap-4 sm:grid-cols-[1fr_1fr_5rem] [&>label:first-child]:col-span-2 sm:[&>label:first-child]:col-span-1">
                         <label className="block">
                             <span className={rotulo}>Local</span>
                             <input value={form.local} onChange={(e) => mudar("local", e.target.value)} required className={campo} />
@@ -186,7 +187,7 @@ export function EditarEvento({ torneioId, aoSalvar }: { torneioId: string; aoSal
                         </label>
                     </div>
 
-                    <fieldset disabled={comecou}>
+                    <fieldset disabled={comecou} className="disabled:opacity-45">
                         <legend className={rotulo}>Como o resultado é decidido</legend>
                         <div className="mt-1.5 flex flex-wrap gap-2">
                             {MODOS.map((m) => (

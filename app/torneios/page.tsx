@@ -4,9 +4,10 @@
 import Image from "next/image"
 import Link from "next/link"
 import { useEffect, useMemo, useState } from "react"
-import { Plus, Search } from "lucide-react"
+import { ArrowRight, Plus, Search } from "lucide-react"
 
 import { AppShell } from "@/components/layout/app-shell"
+import { CapaEvento } from "@/components/torneios/CapaEvento"
 import { formatarPreco, partesDaData } from "@/lib/format"
 import { cn } from "@/lib/utils"
 import { tournamentService, type Tournament, type TournamentStatus } from "@/services/tournamentService"
@@ -162,12 +163,7 @@ function CartaoEvento({ torneio: t }: { torneio: Tournament }) {
         <li>
             <Link href={`/torneios/${t.id}`} className="group block rounded-lg">
                 <div className="relative aspect-[4/3] overflow-hidden rounded-lg border border-foreground bg-surface-muted">
-                    {/* eslint-disable-next-line @next/next/no-img-element -- capa enviada pelo organizador, domínio variável */}
-                    <img
-                        src={t.banner}
-                        alt=""
-                        className={`size-full object-cover transition-transform duration-700 group-hover:scale-[1.04] ${encerrado ? "grayscale" : ""}`}
-                    />
+                    <CapaEvento src={t.banner} nome={t.nome} apagada={encerrado} className="size-full transition-transform duration-700 group-hover:scale-[1.04]" />
                     {data && (
                         <div className="absolute left-3 top-3 min-w-14 border border-foreground bg-surface px-2 py-1.5 text-center text-foreground">
                             <p className="text-2xl font-bold leading-none tabular-nums">{data.dia}</p>
@@ -195,10 +191,17 @@ function CartaoEvento({ torneio: t }: { torneio: Tournament }) {
                 {t.premiacao && <p className="type-body-small mt-1 line-clamp-1 text-muted-foreground">Prêmio: {t.premiacao}</p>}
 
                 <div className="mt-4 flex items-end justify-between gap-4 border-t border-border pt-3">
-                    <div>
-                        <p className="type-caption text-muted-foreground">Inscrição</p>
-                        <p className="font-bold tabular-nums">{t.valorInscricao > 0 ? formatarPreco(t.valorInscricao) : "Grátis"}</p>
-                    </div>
+                    {encerrado ? (
+                        <p className="type-label inline-flex items-center gap-1.5 text-foreground">
+                            {t.cancelado ? "Evento cancelado" : "Ver resultado"}
+                            {!t.cancelado && <ArrowRight className="size-4" aria-hidden="true" />}
+                        </p>
+                    ) : (
+                        <div>
+                            <p className="type-caption text-muted-foreground">Inscrição</p>
+                            <p className="font-bold tabular-nums">{t.valorInscricao > 0 ? formatarPreco(t.valorInscricao) : "Grátis"}</p>
+                        </div>
+                    )}
                     {limite && !encerrado && (
                         <div className="w-28 text-right">
                             <p className={`type-caption tabular-nums ${restantes <= t.maxParticipantes * 0.2 ? "font-semibold text-accent" : "text-muted-foreground"}`}>

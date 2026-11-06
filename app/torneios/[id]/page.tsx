@@ -8,6 +8,8 @@ import { ArrowRight, CheckCircle, ClipboardList, HeartHandshake, Loader2, MapPin
 
 import { AppShell } from "@/components/layout/app-shell"
 import { BackButton } from "@/components/ui/back-button"
+import { Button } from "@/components/ui/button"
+import { CapaEvento } from "@/components/torneios/CapaEvento"
 import { DenunciarButton } from "@/components/ui/denunciar-button"
 import { ErrorState } from "@/components/ui/error-state"
 import { Loader } from "@/components/ui/loader"
@@ -365,11 +367,11 @@ export default function TorneioDetalhesPage() {
                     </div>
                 </header>
 
-                {/* eslint-disable-next-line @next/next/no-img-element -- capa enviada pelo organizador, domínio variável */}
-                <img
+                <CapaEvento
                     src={torneio.banner}
-                    alt={torneio.banner.endsWith("placeholder.svg") ? "" : `Capa do evento ${torneio.nome}`}
-                    className={`mt-8 aspect-[16/9] w-full rounded-lg border border-foreground bg-surface-muted object-cover sm:aspect-[21/9] ${torneio.status === "encerrado" ? "grayscale" : ""}`}
+                    nome={torneio.nome}
+                    apagada={torneio.status === "encerrado"}
+                    className="mt-8 aspect-[16/9] w-full rounded-lg border border-foreground bg-surface-muted sm:aspect-[21/9]"
                 />
 
                 <div className="mt-10 grid gap-10 lg:grid-cols-[1fr_20rem] lg:gap-14">
@@ -382,19 +384,22 @@ export default function TorneioDetalhesPage() {
                                 <dt className="text-muted-foreground">Quando</dt>
                                 <dd className="text-right font-medium first-letter:uppercase">{quando}</dd>
                             </div>
-                            <div className="py-2.5">
-                                <div className="flex justify-between gap-4">
-                                    <dt className="text-muted-foreground">Vagas</dt>
-                                    <dd className="font-medium tabular-nums">
-                                        {limite ? `${restantes} de ${torneio.maxParticipantes}` : "Sem limite"}
-                                    </dd>
-                                </div>
-                                {limite && (
-                                    <div className="mt-2 h-1 bg-surface-muted" aria-hidden="true">
-                                        <div className="h-full bg-foreground" style={{ width: `${ocupacao * 100}%` }} />
+                            {/* Depois do evento, vagas não interessam a ninguém */}
+                            {torneio.status !== "encerrado" && !torneio.cancelado && (
+                                <div className="py-2.5">
+                                    <div className="flex justify-between gap-4">
+                                        <dt className="text-muted-foreground">Vagas</dt>
+                                        <dd className="font-medium tabular-nums">
+                                            {!limite ? "Sem limite" : restantes === 0 ? "Esgotado" : `${restantes} livres de ${torneio.maxParticipantes}`}
+                                        </dd>
                                     </div>
-                                )}
-                            </div>
+                                    {limite && (
+                                        <div className="mt-2 h-1 bg-surface-muted" aria-hidden="true">
+                                            <div className="h-full bg-foreground" style={{ width: `${ocupacao * 100}%` }} />
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                         </dl>
 
                         {/* Escassez real: só quando as vagas estão mesmo acabando */}
@@ -472,31 +477,19 @@ export default function TorneioDetalhesPage() {
                                         </select>
                                     </label>
                                 )}
-                                <button type="button" onClick={inscrever} disabled={enviando} aria-busy={enviando} className="line-btn line-btn--lg line-btn--accent">
+                                <Button type="button" variant="accent" size="lg" onClick={inscrever} disabled={enviando} aria-busy={enviando} className="w-full">
                                     {inscricao?.situacao === "PENDENTE" ? "Pagar inscrição" : "Quero participar"}
                                     {enviando ? <Loader2 className="animate-spin" aria-hidden="true" /> : <ArrowRight aria-hidden="true" />}
-                                </button>
+                                </Button>
                                 </>
                             ) : (
-                                <p className="type-body-small text-muted-foreground">Inscrições fechadas.</p>
+                                <p className="type-body-small text-muted-foreground">
+                                    {torneio.cancelado ? "Evento cancelado." : torneio.status === "encerrado" ? "Evento encerrado." : "Inscrições fechadas."}
+                                </p>
                             )}
                             <ShareButton title={torneio.nome} variant="line" />
-                            {organizador && (
-                                <Link href={`/torneios/${torneio.id}/gerenciar`} className="line-btn line-btn--sm">
-                                    <ClipboardList aria-hidden="true" />
-                                    {torneio.modo !== "posicao" && torneio.status === "andamento" ? "Abrir o placar" : "Gerenciar evento"}
-                                </Link>
-                            )}
-                            {organizador && !torneio.cancelado && torneio.status !== "encerrado" && (
-                                <Link
-                                    href={live ? `/videos/live?id=${live.id}&torneio=${torneio.id}` : `/videos/live?torneio=${torneio.id}`}
-                                    className="line-btn line-btn--sm"
-                                >
-                                    <Radio aria-hidden="true" />
-                                    {live ? "Painel da transmissão" : "Transmitir ao vivo"}
-                                </Link>
-                            )}
                         </div>
+
                         {torneio.valorInscricao > 0 && inscricao?.situacao === "PENDENTE" && (
                             <p className="type-caption mt-4 text-muted-foreground">
                                 Sua vaga fica reservada por 30 minutos enquanto você paga. Depois disso, ela volta a ficar livre.
@@ -512,6 +505,29 @@ export default function TorneioDetalhesPage() {
                             <p role="alert" className="type-body-small mt-4 border-l-2 border-destructive pl-3 text-destructive">
                                 {erro}
                             </p>
+                        )}
+                        {/* Ferramentas do organizador separadas do que o público vê */}
+                        {organizador && (
+                            <div className="mt-6 border-t border-border pt-5">
+                                <p className="type-caption font-semibold uppercase tracking-[0.14em] text-muted-foreground">Você organiza este evento</p>
+                                <div className="mt-3 flex flex-col items-start gap-4">
+                                    <Button asChild variant="default" className="w-full">
+                                        <Link href={`/torneios/${torneio.id}/gerenciar`}>
+                                            <ClipboardList aria-hidden="true" />
+                                            {torneio.modo !== "posicao" && torneio.status === "andamento" ? "Abrir o placar" : "Gerenciar evento"}
+                                        </Link>
+                                    </Button>
+                                    {!torneio.cancelado && torneio.status !== "encerrado" && (
+                                        <Link
+                                            href={live ? `/videos/live?id=${live.id}&torneio=${torneio.id}` : `/videos/live?torneio=${torneio.id}`}
+                                            className="line-btn line-btn--sm"
+                                        >
+                                            <Radio aria-hidden="true" />
+                                            {live ? "Painel da transmissão" : "Transmitir ao vivo"}
+                                        </Link>
+                                    )}
+                                </div>
+                            </div>
                         )}
                     </aside>
 

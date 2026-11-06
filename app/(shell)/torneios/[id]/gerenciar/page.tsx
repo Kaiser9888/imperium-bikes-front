@@ -1,7 +1,9 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
+import Link from "next/link"
 import { useParams } from "next/navigation"
+import { Eye, Images } from "lucide-react"
 
 import { PageHeading } from "@/components/layout/page-heading"
 import {
@@ -36,7 +38,7 @@ type Participant = {
   category: string
   doacaoEntregue: boolean
 }
-type Estado = { status: "loading" } | { status: "error" } | { status: "ok"; torneio: Tournament; participantes: Participant[] }
+type Estado = { status: "loading" } | { status: "error"; semAcesso: boolean } | { status: "ok"; torneio: Tournament; participantes: Participant[] }
 
 const PAGAMENTO: Record<string, { texto: string; cor: string }> = {
   PAID: { texto: "Confirmado", cor: "bg-success" },
@@ -116,7 +118,11 @@ export default function GerenciarTorneioPage() {
     let active = true
     Promise.all([tournamentService.buscarPorId(id), api.get(`/api/tournaments/${id}/participants`, { params: { size: 500 } })])
       .then(([torneio, { data }]) => active && setEstado({ status: "ok", torneio, participantes: data.content }))
-      .catch(() => active && setEstado({ status: "error" }))
+      .catch((cause) => {
+        if (!active) return
+        const codigo = (cause as { response?: { status?: number } })?.response?.status
+        setEstado({ status: "error", semAcesso: codigo === 401 || codigo === 403 })
+      })
     return () => {
       active = false
     }
@@ -150,16 +156,24 @@ export default function GerenciarTorneioPage() {
   }, [id])
 
   if (estado.status === "loading") return <Loader className="py-24" />
-  if (estado.status === "error") return <ErrorState title="Não foi possível carregar este evento" />
+  if (estado.status === "error")
+    return estado.semAcesso ? (
+      <ErrorState title="Só o organizador gerencia este evento" description="Entre com a conta que criou o evento." />
+    ) : (
+      <ErrorState title="Não foi possível carregar este evento" />
+    )
 
   const { torneio, participantes } = estado
   const pagos = participantes.filter((p) => p.paymentStatus === "PAID").length
+  // Reembolsado devolveu a vaga: não conta como inscrito
+  const ativos = participantes.filter((p) => p.paymentStatus !== "REFUNDED").length
+  const encerradoOuCancelado = torneio.cancelado || torneio.status === "encerrado"
   const numeros = [
-    { label: "Inscritos", valor: String(participantes.length) },
+    { label: "Inscritos", valor: String(ativos) },
     { label: "Confirmados", valor: String(pagos) },
     {
       label: "Vagas livres",
-      valor: torneio.maxParticipantes > 0 ? String(Math.max(0, torneio.maxParticipantes - participantes.length)) : "∞",
+      valor: torneio.maxParticipantes > 0 ? String(Math.max(0, torneio.maxParticipantes - ativos)) : "Sem limite",
     },
   ]
 
@@ -171,17 +185,28 @@ export default function GerenciarTorneioPage() {
         back={{ href: `/torneios/${id}`, label: "Evento" }}
       />
 
-      <dl className="mt-8 grid grid-cols-3 border-y border-foreground">
+      <div className="mt-4 flex flex-wrap gap-x-6 gap-y-2">
+        <Link href={`/torneios/${id}`} className="line-btn line-btn--sm line-btn--muted">
+          <Eye aria-hidden="true" />
+          Ver a página do evento
+        </Link>
+        <Link href={`/torneios/${id}#fotos`} className="line-btn line-btn--sm line-btn--muted">
+          <Images aria-hidden="true" />
+          Fotos
+        </Link>
+      </div>
+
+      <dl className="mt-6 grid grid-cols-3 border-y border-foreground">
         {numeros.map((n, i) => (
-          <div key={n.label} className={`py-4 ${i > 0 ? "border-l border-border pl-4" : ""}`}>
-            <dt className="type-caption uppercase tracking-[0.12em] text-muted-foreground">{n.label}</dt>
-            <dd className="mt-1 text-3xl font-bold tabular-nums">{n.valor}</dd>
+          <div key={n.label} className={`min-w-0 py-4 ${i > 0 ? "border-l border-border pl-3 sm:pl-4" : ""}`}>
+            <dt className="type-caption truncate uppercase tracking-[0.08em] text-muted-foreground sm:tracking-[0.12em]">{n.label}</dt>
+            <dd className={`mt-1 font-bold tabular-nums ${n.valor.length > 4 ? "text-xl leading-9" : "text-3xl"}`}>{n.valor}</dd>
           </div>
         ))}
       </dl>
 
       <div className="mt-6 flex flex-wrap items-center gap-x-8 gap-y-3">
-        {!torneio.cancelado && torneio.status !== "encerrado" && <EditarEvento torneioId={id} aoSalvar={recarregarTorneio} />}
+        {!encerradoOuCancelado && <EditarEvento torneioId={id} aoSalvar={recarregarTorneio} />}
         {torneio.status === "andamento" && (
           <AlertDialog>
             <AlertDialogTrigger asChild>
@@ -200,28 +225,6 @@ export default function GerenciarTorneioPage() {
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancelar</AlertDialogCancel>
                 <AlertDialogAction onClick={encerrar}>Encerrar</AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        )}
-        {!torneio.cancelado && torneio.status !== "encerrado" && (
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <button type="button" className="line-btn line-btn--sm line-btn--danger">
-                Cancelar evento
-              </button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Cancelar {torneio.nome}?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  O evento sai do ar e não pode ser reaberto.
-                  {pagos > 0 && ` As ${pagos} inscrições pagas são reembolsadas automaticamente e você não recebe o valor.`}
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Voltar</AlertDialogCancel>
-                <AlertDialogAction onClick={cancelar}>Cancelar evento</AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
@@ -260,7 +263,10 @@ export default function GerenciarTorneioPage() {
         />
       )}
 
-      {!torneio.cancelado && <RotaOrganizador torneioId={id} resumo={torneio.rota} aoMudar={recarregarTorneio} />}
+      {/* Depois do evento só faz sentido mexer no percurso se ele já existe */}
+      {!torneio.cancelado && (torneio.status !== "encerrado" || torneio.rota) && (
+        <RotaOrganizador torneioId={id} resumo={torneio.rota} aoMudar={recarregarTorneio} />
+      )}
 
       <h2 className="type-h2 mt-12">Participantes</h2>
       {torneio.solidaria && (
@@ -309,6 +315,37 @@ export default function GerenciarTorneioPage() {
             )
           })}
         </ol>
+      )}
+
+      {/* Ação sem volta fica no fim, longe dos botões do dia a dia */}
+      {!encerradoOuCancelado && (
+        <section aria-labelledby="cancelar-titulo" className="mt-16 rounded-lg border border-destructive/40 p-4 sm:p-5">
+          <h2 id="cancelar-titulo" className="type-h3">Cancelar o evento</h2>
+          <p className="type-body-small mt-1 text-muted-foreground">
+            O evento sai do ar e não pode ser reaberto.{" "}
+            {pagos > 0 ? "As inscrições pagas são devolvidas automaticamente." : "Ninguém pagou inscrição ainda."}
+          </p>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <button type="button" className="line-btn line-btn--sm line-btn--danger mt-4">
+                Cancelar evento
+              </button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Cancelar {torneio.nome}?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  O evento sai do ar e não pode ser reaberto.
+                  {pagos > 0 && ` As ${pagos} inscrições pagas são reembolsadas automaticamente e você não recebe o valor.`}
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Voltar</AlertDialogCancel>
+                <AlertDialogAction onClick={cancelar}>Cancelar evento</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </section>
       )}
     </main>
   )

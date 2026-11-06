@@ -60,6 +60,11 @@ export default function CriarTorneioPage() {
     }
 
     const [passo, setPasso] = useState(1)
+    // Hoje no fuso do aparelho (AAAA-MM-DD), para não aceitar evento no passado
+    const [hoje] = useState(() => {
+        const d = new Date()
+        return new Date(d.getTime() - d.getTimezoneOffset() * 60_000).toISOString().slice(0, 10)
+    })
     const [criadoId, setCriadoId] = useState<string | null>(null)
     const [enviando, setEnviando] = useState(false)
     const [erroEnvio, setErroEnvio] = useState<string | null>(null)
@@ -118,11 +123,20 @@ export default function CriarTorneioPage() {
         if (p === 1) {
             if (form.nome.trim().length < 5) return "Dê um nome com pelo menos 5 letras."
             if (!form.dataInicio) return "Escolha a data de início."
+            if (form.dataInicio < hoje) return "A data de início já passou."
+            if (form.dataFim && form.dataFim < form.dataInicio) return "O fim não pode ser antes do início."
             if (!modo) return "Escolha como o resultado é decidido."
         }
         if (p === 2) {
             if (!form.local.trim()) return "Informe onde vai acontecer."
             if (!form.maxParticipantes) return "Defina quantas vagas o evento tem."
+            if (!Number.isInteger(Number(form.maxParticipantes)) || Number(form.maxParticipantes) < 2) return "Coloque pelo menos 2 vagas."
+            if (form.prazoInscricao && form.prazoInscricao > form.dataInicio) return "As inscrições precisam fechar até o dia do início."
+        }
+        if (p === 3) {
+            const v = Number(form.valorInscricao) || 0
+            if (v > 0 && v < 10) return "A inscrição paga é de no mínimo R$ 10,00. Deixe vazio para ser grátis."
+            if (v > 500) return "A inscrição pode ser de até R$ 500,00."
         }
         return null
     }
@@ -194,23 +208,31 @@ export default function CriarTorneioPage() {
             {cabecalho}
 
             <main className="mx-auto max-w-3xl px-4 pb-32 pt-6 sm:pt-10">
-                {/* Passos: dá para voltar a qualquer um já liberado */}
-                <nav aria-label="Passos" className="-mx-4 overflow-x-auto px-4 [scrollbar-width:none]">
-                    <ol className="flex gap-6">
+                {/* Passos: três partes iguais que cabem no celular; dá para voltar a qualquer um já liberado */}
+                <nav aria-label="Passos">
+                    <ol className="grid grid-cols-3 gap-2">
                         {PASSOS.map((nome, i) => {
                             const p = i + 1
+                            const feito = p < passo && !pendencia(p)
                             return (
-                                <li key={nome}>
+                                <li key={nome} className="min-w-0">
                                     <button
                                         type="button"
                                         onClick={() => setPasso(p)}
                                         disabled={!alcancavel(p)}
-                                        aria-current={passo === p ? "page" : undefined}
-                                        className={`line-btn line-btn--sm ${passo === p ? "" : "line-btn--muted"}`}
+                                        aria-current={passo === p ? "step" : undefined}
+                                        className="group block w-full text-left disabled:cursor-not-allowed"
                                     >
-                                        <span className="tabular-nums opacity-60">{String(p).padStart(2, "0")}</span>
-                                        {nome}
-                                        {p < passo && !pendencia(p) && <Check className="text-success" aria-label="concluído" />}
+                                        <span className={`block h-1 rounded-full ${p <= passo ? "bg-accent" : "bg-surface-muted"}`} aria-hidden="true" />
+                                        <span
+                                            className={`type-caption mt-2 flex items-center gap-1 font-semibold ${
+                                                passo === p ? "text-foreground" : "text-muted-foreground group-enabled:group-hover:text-foreground"
+                                            }`}
+                                        >
+                                            <span className="tabular-nums">{p}.</span>
+                                            <span className="truncate">{nome}</span>
+                                            {feito && <Check className="size-3.5 shrink-0 text-success" aria-label="concluído" />}
+                                        </span>
                                     </button>
                                 </li>
                             )
@@ -233,7 +255,7 @@ export default function CriarTorneioPage() {
                         <div className="grid gap-5 sm:grid-cols-2">
                             <div>
                                 <label htmlFor="inicio" className={rotulo}>Começa em</label>
-                                <input id="inicio" type="date" value={form.dataInicio} onChange={(e) => update("dataInicio", e.target.value)} className={campo} />
+                                <input id="inicio" type="date" value={form.dataInicio} min={hoje} onChange={(e) => update("dataInicio", e.target.value)} className={campo} />
                             </div>
                             <div>
                                 <label htmlFor="fim" className={rotulo}>Termina em <span className="font-normal text-muted-foreground">(opcional)</span></label>
@@ -486,7 +508,8 @@ export default function CriarTorneioPage() {
                                     <dd className="mt-0.5 truncate font-semibold">{form.premiacao.trim() || "—"}</dd>
                                 </div>
                             </dl>
-                            <button type="button" onClick={handleSubmit} disabled={enviando || semRecebimentos} aria-busy={enviando} className="underline-btn mt-7">
+                            {falta && <p className="type-body-small mt-6 text-white/80">{falta}</p>}
+                            <button type="button" onClick={handleSubmit} disabled={enviando || semRecebimentos || !!falta} aria-busy={enviando} className="underline-btn mt-7 disabled:opacity-50">
                                 <span className="flex items-center gap-2 py-1.5">
                                     {enviando ? <Loader2 className="size-5 animate-spin" aria-hidden="true" /> : <Plus className="size-5" aria-hidden="true" />}
                                     {enviando ? "Publicando…" : "Publicar evento"}
