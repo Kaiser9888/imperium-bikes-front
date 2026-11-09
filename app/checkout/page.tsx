@@ -193,10 +193,11 @@ function CheckoutContent() {
         // Começa no mais barato; quem já tinha escolhido retirada ou envio combinado continua assim
         const fora = novasEntregas[p.id]?.tipo === "retirada" || novasEntregas[p.id]?.tipo === "combinado"
         if (opcoes[0] && !fora) novasEntregas[p.id] = { tipo: "envio", opcao: opcoes[0] }
-        if (!opcoes[0] && !fora) novasEntregas[p.id] = { tipo: "retirada" }
+        // Sem transportadora, ninguém escolhe por ele: retirada marcada sozinha faria alguém de longe pagar sem perceber
+        if (!opcoes[0] && !fora) delete novasEntregas[p.id]
       } else {
         novosFretes[p.id] = { opcoes: [], erro: mensagemDe(r.reason, "Não foi possível calcular o frete deste item.") }
-        if (novasEntregas[p.id]?.tipo !== "combinado") novasEntregas[p.id] = { tipo: "retirada" }
+        if (novasEntregas[p.id]?.tipo === "envio") delete novasEntregas[p.id]
       }
     })
     setFretes(novosFretes)
@@ -334,6 +335,12 @@ function CheckoutContent() {
                 ) : (
                   <div role="radiogroup" aria-label={`Entrega de ${p.title}`} className="mt-3 flex flex-col gap-2">
                     {f?.erro && <p className="type-caption font-semibold text-destructive">{f.erro}</p>}
+                    {f && f.opcoes.length === 0 && (
+                      <p className="type-caption text-muted-foreground">
+                        Sem envio pelo site para o seu CEP. Escolha abaixo: combinar o envio com o vendedor ou retirar em mãos
+                        {local ? ` em ${local}` : ""}.
+                      </p>
+                    )}
                     {f?.opcoes.map((opcao) => {
                       const escolhida = e?.tipo === "envio" && e.opcao.id === opcao.id
                       const gratis = Number(opcao.valor) === 0

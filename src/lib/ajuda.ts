@@ -132,7 +132,7 @@ export const topicos: Topico[] = [
             },
             {
                 pergunta: "Como embalo e envio uma bike?",
-                resposta: "Desmonte roda, pedais e guidão, proteja câmbio e freios, monte numa caixa de bike (bicicletarias costumam dar) e informe no anúncio o peso e as medidas da caixa fechada. A cartilha tem o passo a passo completo.",
+                resposta: "Tire as duas rodas, os pedais, o guidão e o canote, proteja câmbio e freios e monte numa caixa de até 129 × 85 × 82 cm e 50 kg (bicicletarias costumam dar a caixa). Informe no anúncio o peso e as medidas da caixa fechada. Se não quer ou não consegue enviar, anuncie com \"Não vou enviar: retirada no local ou em local combinado\". A cartilha tem o passo a passo com desenhos.",
                 link: { href: "/ajuda/envio-de-bike", label: "Ver a cartilha de envio" },
             },
             {

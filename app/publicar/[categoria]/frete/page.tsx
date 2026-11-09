@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
-import { ArrowRight, Check, Loader2, Lock, Truck, X } from 'lucide-react'
+import { AlertTriangle, ArrowRight, Check, Loader2, Lock, Package, Truck, X } from 'lucide-react'
 import {
   clearDraft,
   getDraft,
@@ -15,6 +15,7 @@ import { BackButton } from "@/components/ui/back-button"
 import api from '@/lib/api'
 import { formatarPreco } from '@/lib/format'
 import { ETIQUETA_AUTOMATICA } from '@/lib/etiqueta'
+import { BUSLOG, MEDIDA_BUSLOG, cabeNaBuslog, cabeNosCorreios } from '@/lib/frete-limites'
 
 type Estimativa = { destino: string; menorValor: number | null; prazoDias: number | null; motivo: string | null }
 
@@ -32,9 +33,6 @@ type Remetente = {
   uf: string | null
 }
 
-// Correios levam até 30 kg; acima disso poucas transportadoras atendem
-const PESO_CORREIOS_KG = 30
-
 const pagadores = [
   {
     id: 'comprador',
@@ -50,9 +48,9 @@ const pagadores = [
   },
   {
     id: 'retirada_local',
-    label: 'Retirada no local',
+    label: 'Não vou enviar: retirada no local ou em local combinado',
     description:
-      'O comprador paga pelo app e combina a retirada com você. O pagamento é liberado quando você digitar o código que ele te passa na entrega. Não aceite pagamento por fora.',
+      'Escolha esta se você não quer ou não consegue enviar. O comprador paga pelo app e vocês combinam onde se encontrar: sua casa, uma bicicletaria ou um lugar público e movimentado. O pagamento é liberado quando você digitar o código que ele te passa na entrega. Não aceite pagamento por fora.',
   },
 ] as const
 
@@ -319,6 +317,13 @@ const pronto =
 
 const valoresEstimados = (estimativas ?? []).map((e) => e.menorValor).filter((v): v is number => v != null)
 const faixa = valoresEstimados.length > 0 ? { min: Math.min(...valoresEstimados), max: Math.max(...valoresEstimados) } : null
+
+// Cabe em quem? (Correios ou Buslog; o resto a cotação real mostra)
+const medidasValidas = pesoValido && alturaValida && larguraValida && comprimentoValido
+const caixa = { pesoKg: pesoNumerico, alturaCm: alturaNumerica, larguraCm: larguraNumerica, comprimentoCm: comprimentoNumerico }
+const cabeCorreios = medidasValidas && cabeNosCorreios(caixa)
+const cabeBuslog = medidasValidas && cabeNaBuslog(caixa)
+const bike = categoria === 'bikes'
 
 const medidasProntas =
   cepNumerico.length === 8 && pesoValido && alturaValida && larguraValida && comprimentoValido
@@ -704,6 +709,20 @@ return (
         {/* Retirada no local não é enviada: sem peso nem medidas */}
         {pagador !== 'retirada_local' && (
         <>
+        {bike && (
+          <div className="frete-aviso">
+            <Package aria-hidden="true" />
+            <div>
+              <span>
+                <b>Bike inteira vai desmontada numa caixa.</b> Tire as duas rodas e os pedais, solte o guidão e tire o canote com o selim:
+                o quadro com as rodas ao lado cabe em até <b>{MEDIDA_BUSLOG}</b> e {BUSLOG.pesoKg} kg, o tamanho que a transportadora
+                rodoviária (Buslog) leva. Informe abaixo as medidas da caixa fechada, não da bike.
+              </span>
+              <Link href="/ajuda/envio-de-bike" target="_blank">Ver a cartilha com o passo a passo e desenhos</Link>
+            </div>
+          </div>
+        )}
+
         <div className="frete-dimensoes-grid">
           <label>
             Peso (kg)
@@ -732,11 +751,6 @@ return (
               </small>
             )}
 
-            {pesoNumerico > PESO_CORREIOS_KG && pesoNumerico <= LIMITE_PESO_KG && (
-              <small>
-                Acima de 30 kg: poucas transportadoras levam.
-              </small>
-            )}
           </label>
 
           <label>
@@ -824,12 +838,42 @@ return (
           </label>
         </div>
 
-        <small>
-          Bike montada costuma passar do limite dos Correios (30 kg e 100 cm por lado); a estimativa abaixo mostra quem atende.{' '}
-          <Link href="/ajuda/envio-de-bike" target="_blank" className="font-semibold text-primary underline underline-offset-2">
-            Veja como embalar e medir a caixa
-          </Link>
-        </small>
+        {medidasValidas && !cabeCorreios && cabeBuslog && (
+          <div className="frete-aviso">
+            <Truck aria-hidden="true" />
+            <div>
+              <span>
+                Passa do limite dos Correios (30 kg e 100 cm por lado), mas cabe no rodoviário (Buslog): você leva a caixa a uma agência,
+                que costuma ficar na rodoviária. Se não tiver agência na sua cidade, o comprador vai poder combinar o envio com você ou retirar.
+              </span>
+            </div>
+          </div>
+        )}
+
+        {medidasValidas && !cabeCorreios && !cabeBuslog && (
+          <div className="frete-aviso frete-aviso--alerta" role="alert">
+            <AlertTriangle aria-hidden="true" />
+            <div>
+              <span>
+                <b>Com essas medidas, nenhuma transportadora do site leva.</b> O limite é {MEDIDA_BUSLOG} e {BUSLOG.pesoKg} kg.
+                {bike ? ' Desmonte mais (as duas rodas, pedais, guidão solto, canote fora) e meça a caixa de novo. Quadro grande de downhill pode não caber mesmo assim.' : ' Use uma caixa menor, se der.'}
+                {' '}Se não quer ou não consegue enviar, marque a retirada: o comprador busca com você ou vocês combinam um local.
+              </span>
+              <button type="button" onClick={() => setPagador('retirada_local')}>
+                Não vou enviar: retirada no local
+              </button>
+            </div>
+          </div>
+        )}
+
+        {!bike && (
+          <small>
+            Use as medidas da caixa fechada.{' '}
+            <Link href="/ajuda/envio-de-bike" target="_blank" className="font-semibold text-primary underline underline-offset-2">
+              Veja como embalar e medir
+            </Link>
+          </small>
+        )}
         </>
         )}
 
