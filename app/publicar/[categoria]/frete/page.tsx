@@ -325,6 +325,19 @@ const cabeCorreios = medidasValidas && cabeNosCorreios(caixa)
 const cabeBuslog = medidasValidas && cabeNaBuslog(caixa)
 const bike = categoria === 'bikes'
 
+// Peso ou medida fora da realidade (no teste: 100 kg numa caixa de 10 cm deu frete de R$ 689).
+// Só avisa: quem decide é o vendedor, mas o frete sai com o que ele digitar.
+const litros = (alturaNumerica * larguraNumerica * comprimentoNumerico) / 1000
+const avisoMedidas = !medidasValidas
+  ? null
+  : pesoNumerico > 30
+    ? `${pesoNumerico.toLocaleString('pt-BR')} kg é muito peso: uma bike de downhill na caixa pesa por volta de 20 a 25 kg. O frete é calculado com esse peso e pode ficar muito caro.`
+    : litros > 0 && pesoNumerico / litros > 2
+      ? 'A caixa está pesada demais para o tamanho dela. Confira se as medidas estão em centímetros e o peso em quilos.'
+      : bike && Math.max(alturaNumerica, larguraNumerica, comprimentoNumerico) < 60
+        ? 'Caixa pequena demais para uma bike: desmontada, ela vai numa caixa com mais de 1 metro de comprimento. Confira as medidas.'
+        : null
+
 const medidasProntas =
   cepNumerico.length === 8 && pesoValido && alturaValida && larguraValida && comprimentoValido
 
@@ -837,6 +850,17 @@ return (
             )}
           </label>
         </div>
+
+        {avisoMedidas && (
+          <div className="frete-aviso" role="alert">
+            <AlertTriangle aria-hidden="true" />
+            <div>
+              <span>
+                <b>Confira antes de seguir.</b> {avisoMedidas}
+              </span>
+            </div>
+          </div>
+        )}
 
         {medidasValidas && !cabeCorreios && cabeBuslog && (
           <div className="frete-aviso">
