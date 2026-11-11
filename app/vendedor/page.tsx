@@ -265,11 +265,11 @@ export default function CentralVendedorPage() {
     { id: "VENDIDO", label: "Vendidos" },
   ]
 
-  // Painel sempre escuro (fundo de chuva), então as cores aqui são fixas
+  // Cores do tema: funcionam no claro e no escuro
   const indicadores: { id: Status; label: string; cor: string; icon: LucideIcon }[] = [
-    { id: "ATIVO", label: "No ar", cor: "oklch(0.8 0.16 155)", icon: Radio },
-    { id: "PAUSADO", label: "Pausados", cor: "oklch(0.84 0.14 80)", icon: CirclePause },
-    { id: "VENDIDO", label: "Vendidos", cor: "oklch(0.8 0.12 235)", icon: BadgeCheck },
+    { id: "ATIVO", label: "No ar", cor: "text-success", icon: Radio },
+    { id: "PAUSADO", label: "Pausados", cor: "text-muted-foreground", icon: CirclePause },
+    { id: "VENDIDO", label: "Vendidos", cor: "text-primary", icon: BadgeCheck },
   ]
 
   type Passo = { titulo: string; feito: boolean; detalhe: string; href?: string; acao?: string }
@@ -301,23 +301,19 @@ export default function CentralVendedorPage() {
 
       <main className="mx-auto max-w-5xl px-4 pb-44 pt-4 md:px-6 md:pt-6">
         {/* ---------- RESUMO ---------- */}
-        <section className="relative isolate overflow-hidden rounded-3xl p-5 text-white md:p-7">
-          {/* Fundo liso com degradê leve (antes: faixas de chuva, que destoavam do visual sóbrio) */}
-          <div
-            className="pointer-events-none absolute inset-0 -z-[1] bg-gradient-to-br from-[oklch(0.24_0.05_25)] to-[oklch(0.15_0.02_20)]"
-            aria-hidden="true"
-          />
-
+        {/* Mesmo cartão do resto da página (cores do tema): antes era um bloco vinho fixo, que destoava
+            no tema escuro e ficava escuro até no tema claro */}
+        <section className="rounded-3xl border border-border bg-surface p-5 md:p-7">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
               <p className="font-heading text-2xl font-bold leading-tight md:text-3xl">Sua loja</p>
-              <p className="mt-1 text-sm text-white/75">
+              <p className="mt-1 text-sm text-muted-foreground">
                 {contagem.TODOS === 0
                   ? "Publique o primeiro anúncio e comece a vender."
                   : `${contagem.ATIVO} ${contagem.ATIVO === 1 ? "anúncio no ar" : "anúncios no ar"} agora`}
               </p>
             </div>
-            <Button asChild size="lg" className="rounded-full bg-white text-black shadow-lg hover:bg-white/90">
+            <Button asChild size="lg" className="rounded-full">
               <a href="#publicar">
                 <Plus className="size-5" />
                 Novo anúncio
@@ -329,21 +325,21 @@ export default function CentralVendedorPage() {
           {!loading && produtos.length === 0 ? (
             <ol className="mt-6 space-y-2">
               {passos.map((p, i) => (
-                <li key={p.titulo} className="flex items-center gap-3 rounded-2xl border border-white/15 bg-white/10 p-3 md:p-4">
+                <li key={p.titulo} className="flex items-center gap-3 rounded-2xl border border-border bg-background p-3 md:p-4">
                   <span
                     className={`grid size-8 shrink-0 place-items-center rounded-full text-sm font-bold ${
-                      p.feito ? "bg-[oklch(0.72_0.15_155)] text-black" : "border border-white/40 text-white"
+                      p.feito ? "bg-success text-success-foreground" : "border border-border text-foreground"
                     }`}
                     aria-hidden="true"
                   >
                     {p.feito ? <Check className="size-4" /> : i + 1}
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className={`block text-sm font-semibold ${p.feito ? "text-white/60 line-through" : ""}`}>{p.titulo}</span>
-                    {p.detalhe && <span className="block text-xs text-white/70">{p.detalhe}</span>}
+                    <span className={`block text-sm font-semibold ${p.feito ? "text-muted-foreground line-through" : ""}`}>{p.titulo}</span>
+                    {p.detalhe && <span className="block text-xs text-muted-foreground">{p.detalhe}</span>}
                   </span>
                   {!p.feito && p.href && (
-                    <Link href={p.href} className="shrink-0 rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-black hover:bg-white/90">
+                    <Link href={p.href} className="line-btn line-btn--sm shrink-0">
                       {p.acao}
                     </Link>
                   )}
@@ -362,13 +358,13 @@ export default function CentralVendedorPage() {
                   onClick={() => setFiltro(ativo ? "TODOS" : id)}
                   aria-pressed={ativo}
                   aria-label={`${label}: ${contagem[id]}`}
-                  className={`rounded-2xl border p-3 text-left backdrop-blur-sm transition-colors md:p-4 ${
-                    ativo ? "border-white/70 bg-white/20" : "border-white/15 bg-white/10 hover:bg-white/15"
+                  className={`rounded-2xl border p-3 text-left transition-colors md:p-4 ${
+                    ativo ? "border-primary bg-primary/10" : "border-border bg-background hover:border-primary/60"
                   }`}
                 >
-                  <Icon className="size-4" style={{ color: cor }} aria-hidden="true" />
+                  <Icon className={`size-4 ${cor}`} aria-hidden="true" />
                   <span className="mt-2 block font-heading text-2xl font-bold leading-none tabular-nums md:text-3xl">{contagem[id]}</span>
-                  <span className="mt-1 block text-xs font-medium text-white/80">{label}</span>
+                  <span className="mt-1 block text-xs font-medium text-muted-foreground">{label}</span>
                 </button>
               )
             })}
