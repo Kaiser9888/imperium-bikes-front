@@ -10,6 +10,7 @@ import {
   ArrowRight,
   BadgeCheck,
   Bike,
+  Check,
   ChevronRight,
   CirclePause,
   Cog,
@@ -44,6 +45,8 @@ import { clearDraft } from "@/lib/publicar/categorias"
 import { BackButton } from "@/components/ui/back-button"
 import { ETIQUETA_AUTOMATICA } from "@/lib/etiqueta"
 import { ESPORTES_ABERTOS } from "@/lib/esportes"
+import api from "@/lib/api"
+import { useRecebimentos } from "@/hooks/useRecebimentos"
 
 /*
   Paleta
@@ -169,6 +172,16 @@ export default function CentralVendedorPage() {
     [produtos]
   )
 
+  // Passos da conta nova: recebimentos (Stripe) e endereço de envio (etiqueta do site)
+  const [recebimentos] = useRecebimentos()
+  const [enderecoPronto, setEnderecoPronto] = useState<boolean | null>(null)
+  useEffect(() => {
+    if (!isSignedIn || !ETIQUETA_AUTOMATICA) return
+    api.get<{ completo: boolean }>("/api/users/me/remetente")
+      .then(({ data }) => setEnderecoPronto(data.completo))
+      .catch(() => setEnderecoPronto(null))
+  }, [isSignedIn])
+
   const visiveis = useMemo(() => {
     const termo = busca.trim().toLowerCase()
     return produtos.filter(
@@ -259,6 +272,23 @@ export default function CentralVendedorPage() {
     { id: "VENDIDO", label: "Vendidos", cor: "oklch(0.8 0.12 235)", icon: BadgeCheck },
   ]
 
+  type Passo = { titulo: string; feito: boolean; detalhe: string; href?: string; acao?: string }
+  const passos: Passo[] = [
+    {
+      titulo: "Ativar recebimentos",
+      feito: recebimentos === "pronto",
+      detalhe: recebimentos === "analise"
+        ? "Cadastro enviado. A Stripe está conferindo seus dados."
+        : "Para o dinheiro das vendas cair na sua conta.",
+      href: recebimentos === "analise" ? undefined : "/carteira",
+      acao: "Ativar",
+    },
+    ...(ETIQUETA_AUTOMATICA
+      ? [{ titulo: "Endereço de envio", feito: enderecoPronto === true, detalhe: "De onde saem os seus pacotes.", href: "/configuracoes/endereco-envio", acao: "Cadastrar" }]
+      : []),
+    { titulo: "Publicar o primeiro anúncio", feito: false, detalhe: "Escolha a categoria logo abaixo." },
+  ]
+
   const atalhos = [
     { href: "/pedidos?aba=vendas", label: "Minhas vendas", icon: Receipt },
     { href: "/carteira", label: "Carteira", icon: Wallet },
@@ -272,9 +302,9 @@ export default function CentralVendedorPage() {
       <main className="mx-auto max-w-5xl px-4 pb-44 pt-4 md:px-6 md:pt-6">
         {/* ---------- RESUMO ---------- */}
         <section className="relative isolate overflow-hidden rounded-3xl p-5 text-white md:p-7">
-          <div className="seller-rain" aria-hidden="true" />
+          {/* Fundo liso com degradê leve (antes: faixas de chuva, que destoavam do visual sóbrio) */}
           <div
-            className="pointer-events-none absolute inset-0 -z-[1] bg-gradient-to-r from-black/70 via-black/35 to-transparent"
+            className="pointer-events-none absolute inset-0 -z-[1] bg-gradient-to-br from-[oklch(0.24_0.05_25)] to-[oklch(0.15_0.02_20)]"
             aria-hidden="true"
           />
 
@@ -295,7 +325,34 @@ export default function CentralVendedorPage() {
             </Button>
           </div>
 
-          {/* Indicadores: tocar filtra a lista */}
+          {/* Conta nova: o que falta para vender, em vez de três zeros */}
+          {!loading && produtos.length === 0 ? (
+            <ol className="mt-6 space-y-2">
+              {passos.map((p, i) => (
+                <li key={p.titulo} className="flex items-center gap-3 rounded-2xl border border-white/15 bg-white/10 p-3 md:p-4">
+                  <span
+                    className={`grid size-8 shrink-0 place-items-center rounded-full text-sm font-bold ${
+                      p.feito ? "bg-[oklch(0.72_0.15_155)] text-black" : "border border-white/40 text-white"
+                    }`}
+                    aria-hidden="true"
+                  >
+                    {p.feito ? <Check className="size-4" /> : i + 1}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className={`block text-sm font-semibold ${p.feito ? "text-white/60 line-through" : ""}`}>{p.titulo}</span>
+                    {p.detalhe && <span className="block text-xs text-white/70">{p.detalhe}</span>}
+                  </span>
+                  {!p.feito && p.href && (
+                    <Link href={p.href} className="shrink-0 rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-black hover:bg-white/90">
+                      {p.acao}
+                    </Link>
+                  )}
+                  <span className="sr-only">{p.feito ? "feito" : "pendente"}</span>
+                </li>
+              ))}
+            </ol>
+          ) : (
+          /* Indicadores: tocar filtra a lista */
           <div className="mt-6 grid grid-cols-3 gap-2 md:gap-3">
             {indicadores.map(({ id, label, cor, icon: Icon }) => {
               const ativo = filtro === id
@@ -316,13 +373,15 @@ export default function CentralVendedorPage() {
               )
             })}
           </div>
+          )}
         </section>
 
         {/* ---------- ATALHOS ---------- */}
-        <nav aria-label="Atalhos do vendedor" className="-mx-4 mt-4 overflow-x-auto px-4 [scrollbar-width:none] md:mx-0 md:px-0">
-          <ul className="flex gap-2">
+        {/* Quebra de linha em vez de rolar de lado: no celular o último cortava no meio e parecia defeito */}
+        <nav aria-label="Atalhos do vendedor" className="mt-4">
+          <ul className="flex flex-wrap gap-2">
             {atalhos.map(({ href, label, icon: Icon }) => (
-              <li key={href} className="shrink-0">
+              <li key={href}>
                 <Link
                   href={href}
                   className="flex items-center gap-2 rounded-full border border-border bg-surface py-2 pl-3 pr-4 text-sm font-medium transition-colors hover:border-primary/60"
@@ -480,12 +539,8 @@ export default function CentralVendedorPage() {
               </span>
               <p className="mt-3 font-heading text-base font-bold">Nenhum anúncio publicado</p>
               <p className="mx-auto mt-1 max-w-xs text-sm text-muted-foreground">
-                Escolha uma categoria acima para criar o primeiro.
+                Escolha uma categoria acima para criar o primeiro. Ele aparece aqui.
               </p>
-              <a href="#publicar" className="line-btn line-btn--sm mt-5 inline-flex">
-                Publicar primeiro anúncio
-                <ArrowRight aria-hidden="true" />
-              </a>
             </div>
           ) : visiveis.length === 0 ? (
             <p className="py-16 text-center text-sm text-muted-foreground">Nada encontrado com esse filtro.</p>
