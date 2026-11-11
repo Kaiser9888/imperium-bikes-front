@@ -11,6 +11,7 @@ import { identificar, OPCOES_MODALIDADE } from '@/lib/publicar/taxonomia'
 import {
   clearDraft,
   getDraft,
+  marcarPublicado,
   saveDraft,
   type PublishDraft,
 } from '@/lib/publicar/storage'
@@ -480,8 +481,10 @@ async function handlePublicar() {
     )
 
     clearDraft(categoria)
+    marcarPublicado(categoria)
 
-    router.push('/vendedor')
+    // replace: a revisão sai do histórico; as etapas anteriores mandam à Central (VoltaDepoisDePublicar)
+    router.replace('/vendedor')
   } catch (erro) {
     console.error(
       'Erro ao publicar anúncio:',

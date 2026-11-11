@@ -138,6 +138,38 @@ export function saveDraft(
   return updated
 }
 
+/*
+  Depois de publicar, as etapas continuam no histórico do navegador: o botão voltar levava de
+  novo ao formulário. A marca abaixo faz essas etapas mandarem para a Central do vendedor.
+  Começar outro anúncio (escolher a categoria em /publicar ou "?novo=1") apaga a marca.
+*/
+const CHAVE_PUBLICADO = "imperium_publicado"
+const VALIDADE_PUBLICADO_MS = 30 * 60 * 1000
+
+export function marcarPublicado(categoria: string) {
+  try {
+    sessionStorage.setItem(CHAVE_PUBLICADO, JSON.stringify({ categoria, em: Date.now() }))
+  } catch {
+    // sem armazenamento: o voltar só cai no formulário vazio, como antes
+  }
+}
+
+export function limparPublicado() {
+  try {
+    sessionStorage.removeItem(CHAVE_PUBLICADO)
+  } catch {}
+}
+
+/** Acabou de publicar nesta categoria (e está voltando pelo histórico)? */
+export function acabouDePublicar(categoria: string): boolean {
+  try {
+    const marca = JSON.parse(sessionStorage.getItem(CHAVE_PUBLICADO) ?? "null") as { categoria?: string; em?: number } | null
+    return !!marca && marca.categoria === categoria && Date.now() - (marca.em ?? 0) < VALIDADE_PUBLICADO_MS
+  } catch {
+    return false
+  }
+}
+
 export function clearDraft(categoria: string) {
   if (typeof window === "undefined") {
     return

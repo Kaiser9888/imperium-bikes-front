@@ -388,7 +388,7 @@ export default function CentralVendedorPage() {
             {tiposDeAnuncio.map(({ slug, label, desc, icon: Icon }) => (
               <li key={slug}>
                 <Link
-                  href={`/publicar/${slug}`}
+                  href={`/publicar/${slug}?novo=1`}
                   className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-surface p-3.5 transition-[border-color,transform,box-shadow] hover:-translate-y-0.5 hover:border-primary/60 hover:shadow-md active:translate-y-0 md:flex-row md:items-center md:gap-3 md:p-4"
                 >
                   <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">

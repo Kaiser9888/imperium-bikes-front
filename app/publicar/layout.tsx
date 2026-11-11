@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import './global.css'
 import { GateRecebimentos } from '@/components/carteira/GateRecebimentos'
+import { VoltaDepoisDePublicar } from '@/components/publicar/VoltaDepoisDePublicar'
 
 export const metadata: Metadata = {
   title: 'Imperium ',
@@ -18,5 +19,9 @@ export const viewport: Viewport = {
 
 // Sem <html>/<body> próprios: o layout raiz já tem os dois, com o tema e os provedores.
 export default function PublicarLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <GateRecebimentos>{children}</GateRecebimentos>
+  return (
+    <VoltaDepoisDePublicar>
+      <GateRecebimentos>{children}</GateRecebimentos>
+    </VoltaDepoisDePublicar>
+  )
 }
