@@ -322,7 +322,10 @@ export default function CentralVendedorPage() {
           </div>
 
           {/* Conta nova: o que falta para vender, em vez de três zeros */}
-          {!loading && produtos.length === 0 ? (
+          {/* Carregando: área neutra, para não piscar três zeros antes dos passos */}
+          {loading ? (
+            <div className="mt-6 h-[104px] animate-pulse rounded-2xl border border-border bg-background md:h-[116px]" aria-hidden="true" />
+          ) : produtos.length === 0 ? (
             <ol className="mt-6 space-y-2">
               {passos.map((p, i) => (
                 <li key={p.titulo} className="flex items-center gap-3 rounded-2xl border border-border bg-background p-3 md:p-4">
