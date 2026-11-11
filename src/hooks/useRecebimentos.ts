@@ -10,7 +10,7 @@ import type { ContaConectadaResponse } from "@/types/contaConectada"
  * Se a conta de recebimentos (Stripe) está pronta. "desconhecido" quando não deu para
  * consultar: a tela segue e o servidor recusa se faltar, então ninguém fica preso por erro de rede.
  */
-export type Recebimentos = "carregando" | "pronto" | "pendente" | "desconhecido"
+export type Recebimentos = "carregando" | "pronto" | "pendente" | "analise" | "desconhecido"
 
 /** Devolve o estado e uma função para conferir de novo (ex.: depois de ativar em outra aba). */
 export function useRecebimentos(): [Recebimentos, () => void] {
@@ -29,12 +29,12 @@ export function useRecebimentos(): [Recebimentos, () => void] {
         ;(async () => {
             try {
                 const { data } = await api.get<ContaConectadaResponse>("/api/conta-conectada/status")
-                let pronto = data.onboardingCompleto
+                let atual = data
                 // Terminou o cadastro sem passar pela página de retorno: confere direto no Stripe
-                if (!pronto && data.temConta) {
-                    pronto = (await api.post<ContaConectadaResponse>("/api/conta-conectada/atualizar-status")).data.onboardingCompleto
+                if (!atual.onboardingCompleto && atual.temConta && !atual.emAnalise) {
+                    atual = (await api.post<ContaConectadaResponse>("/api/conta-conectada/atualizar-status")).data
                 }
-                if (ativo) setEstado(pronto ? "pronto" : "pendente")
+                if (ativo) setEstado(atual.onboardingCompleto ? "pronto" : atual.emAnalise ? "analise" : "pendente")
             } catch {
                 if (ativo) setEstado("desconhecido")
             }

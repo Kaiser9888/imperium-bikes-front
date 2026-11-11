@@ -9,6 +9,7 @@ import { apiFetch } from "@/lib/apiClient";
 import { useUserSync } from "@/lib/UserSyncContext";
 import type { ContaConectadaResponse } from "@/types/contaConectada";
 import { CHAVE_VOLTAR_ONBOARDING } from "@/components/carteira/ConnectStripeButton";
+import { EmAnaliseStripe } from "@/components/carteira/EmAnaliseStripe";
 
 /** Página de onde a pessoa saiu para o cadastro (ex.: anunciar); só caminho interno. */
 function lerVoltar(): string | null {
@@ -96,6 +97,16 @@ export default function OnboardingCompletoPage() {
             }}
           >
             {lerVoltar() ? "Continuar de onde parei" : "Ir para minha carteira"}
+          </Button>
+        </>
+      ) : status.emAnalise ? (
+        <>
+          <h1 className="font-heading text-2xl text-foreground mb-4">Cadastro enviado!</h1>
+          <div className="text-left">
+            <EmAnaliseStripe onPronto={setStatus} />
+          </div>
+          <Button className="mt-6" variant="ghost" onClick={() => router.push("/carteira")}>
+            Ir para minha carteira
           </Button>
         </>
       ) : (

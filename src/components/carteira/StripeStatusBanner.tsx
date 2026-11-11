@@ -1,10 +1,19 @@
 // components/carteira/StripeStatusBanner.tsx
 "use client";
 
+import { useState } from "react";
+
 import type { ContaConectadaResponse } from "@/types/contaConectada";
 import ConnectStripeButton from "./ConnectStripeButton";
+import { EmAnaliseStripe } from "./EmAnaliseStripe";
 
-export default function StripeStatusBanner({ status }: { status: ContaConectadaResponse }) {
+export default function StripeStatusBanner({ status: inicial }: { status: ContaConectadaResponse }) {
+  const [status, setStatus] = useState(inicial);
+
+  if (status.emAnalise && !status.onboardingCompleto) {
+    return <EmAnaliseStripe onPronto={setStatus} />;
+  }
+
   if (status.onboardingCompleto) {
     return (
       <div className="flex items-center gap-2.5 rounded-lg border border-verdigris/30 bg-verdigris/5 px-4 py-3">

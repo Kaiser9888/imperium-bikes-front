@@ -15,7 +15,7 @@ import { AtivarRecebimentos } from "./AtivarRecebimentos"
  * (o servidor confere de novo ao publicar, então escolher preço fixo depois ainda é barrado).
  */
 export function GateRecebimentos({ children }: { children: React.ReactNode }) {
-    const [estado] = useRecebimentos()
+    const [estado, conferir] = useRecebimentos()
     const pathname = usePathname()
     const [soVitrine, setSoVitrine] = useState(false)
 
@@ -32,6 +32,8 @@ export function GateRecebimentos({ children }: { children: React.ReactNode }) {
             <div className="mt-6">
                 <AtivarRecebimentos
                     titulo="Ative seus recebimentos"
+                    emAnalise={estado === "analise"}
+                    onPronto={conferir}
                     texto="Quando alguém comprar, o dinheiro fica protegido e depois vai direto para a sua conta bancária. Para isso, o Stripe (nosso parceiro de pagamentos) precisa do seu cadastro."
                 >
                     {servico && (

@@ -206,7 +206,7 @@ export default function CriarTorneioPage() {
 
     const data = partesDaData(form.dataInicio)
     const valor = Number(form.valorInscricao) || 0
-    const semRecebimentos = valor > 0 && recebimentos === "pendente"
+    const semRecebimentos = valor > 0 && (recebimentos === "pendente" || recebimentos === "analise")
 
     return (
         <div className="min-h-screen bg-background text-foreground">
@@ -500,6 +500,8 @@ export default function CriarTorneioPage() {
                         {semRecebimentos && (
                             <AtivarRecebimentos
                                 novaAba
+                                emAnalise={recebimentos === "analise"}
+                                onPronto={conferirRecebimentos}
                                 titulo="Ative seus recebimentos para cobrar inscrição"
                                 texto="O cadastro abre em outra aba; este formulário continua aqui. Depois de terminar, volte e toque em “Já ativei”."
                             >

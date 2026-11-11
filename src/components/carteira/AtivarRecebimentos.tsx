@@ -4,13 +4,23 @@ import { usePathname } from "next/navigation"
 import { Wallet } from "lucide-react"
 
 import ConnectStripeButton from "./ConnectStripeButton"
+import { EmAnaliseStripe } from "./EmAnaliseStripe"
 
 /**
  * Aviso de quem ainda não pode receber pelo site. O botão leva ao cadastro do Stripe e
  * a volta cai de novo nesta página (ver /onboarding/completo).
  */
-export function AtivarRecebimentos({ titulo, texto, novaAba = false, children }: { titulo: string; texto: string; novaAba?: boolean; children?: React.ReactNode }) {
+export function AtivarRecebimentos({ titulo, texto, novaAba = false, emAnalise = false, onPronto, children }: {
+    titulo: string
+    texto: string
+    novaAba?: boolean
+    /** Cadastro já enviado: mostra a espera em vez de mandar ao formulário de novo. */
+    emAnalise?: boolean
+    onPronto?: () => void
+    children?: React.ReactNode
+}) {
     const pathname = usePathname()
+    if (emAnalise) return <EmAnaliseStripe onPronto={() => onPronto?.()} />
     return (
         <div className="rounded-xl border border-border bg-surface p-5">
             <div className="flex items-start gap-3">
