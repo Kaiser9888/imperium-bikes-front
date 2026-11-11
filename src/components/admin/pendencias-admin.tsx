@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useCallback, useEffect, useState } from "react"
-import { CheckCircle2, CircleAlert, HandCoins, Landmark, Loader2, type LucideIcon, Megaphone, Flag, LifeBuoy, Printer, Snowflake, ShieldAlert, Scale, Tag, Timer, Truck } from "lucide-react"
+import { CheckCircle2, CircleAlert, HandCoins, Landmark, Loader2, type LucideIcon, Megaphone, Flag, LifeBuoy, Printer, Receipt, Snowflake, ShieldAlert, Scale, Tag, Timer, Truck } from "lucide-react"
 
 import api from "@/lib/api"
 import { formatarPreco } from "@/lib/format"
@@ -10,7 +10,8 @@ import { cn } from "@/lib/utils"
 import { usuarioAdminService } from "@/services/adminService"
 import { mensagemDaApi } from "@/services/tournamentService"
 
-type Contagens = { campanhas: number; denuncias: number; chamados: number; contasCongeladas: number; bikesRoubadas: number; disputas: number; anunciosEmAnalise: number; retiradasParadas: number; enviosAtrasados: number; etiquetas: number; repassesTravados: number; pagosSemRegistro: number; dinheiroARecuperar: number }
+type Contagens = { campanhas: number; denuncias: number; chamados: number; contasCongeladas: number; bikesRoubadas: number; disputas: number; anunciosEmAnalise: number; retiradasParadas: number; enviosAtrasados: number; etiquetas: number; repassesTravados: number; pagosSemRegistro: number; dinheiroARecuperar: number; dividas: number }
+type Devedor = { userId: string; nome: string | null; email: string | null; valor: number }
 type ContaCongelada = { userId: string; fullName: string | null; email: string | null; congeladaEm: string }
 type AnuncioEmAnalise = { productId: string; title: string; price: number; vendedor: string | null; contaCriadaEm: string | null; createdAt: string }
 type RetiradaParada = { orderId: string; productTitle: string; valor: number; comprador: string | null; vendedor: string | null; createdAt: string; motivo?: string | null }
@@ -31,6 +32,7 @@ const FILAS: { chave: keyof Contagens; aba?: AbaPendencia; titulo: string; texto
     { chave: "repassesTravados", titulo: "Repasses travados", texto: "Vendas que já deviam ter ido para o vendedor", icon: Landmark, urgente: true },
     { chave: "pagosSemRegistro", titulo: "Pagos sem registro", texto: "O Stripe cobrou e o site não registrou", icon: CircleAlert, urgente: true },
     { chave: "dinheiroARecuperar", titulo: "Dinheiro a recuperar", texto: "Devolvido depois do repasse: reverter no Stripe", icon: HandCoins, urgente: true },
+    { chave: "dividas", titulo: "Vendedores com dívida", texto: "Tarifa de reembolso a descontar; perdoe se não foi culpa dele", icon: Receipt },
     { chave: "bikesRoubadas", aba: "bikes-roubadas", titulo: "Alertas de bike roubada", texto: "Conferir o boletim de ocorrência", icon: ShieldAlert },
     { chave: "campanhas", aba: "anuncios", titulo: "Anúncios em vídeo", texto: "Campanhas pagas esperando aprovação", icon: Megaphone },
     { chave: "denuncias", aba: "denuncias", titulo: "Denúncias", texto: "Conteúdo denunciado para analisar", icon: Flag },
@@ -47,6 +49,7 @@ export function PendenciasAdmin({ onAbrir }: { onAbrir: (aba: AbaPendencia) => v
     const [travados, setTravados] = useState<RetiradaParada[]>([])
     const [semRegistro, setSemRegistro] = useState<ItemSemId[]>([])
     const [recuperar, setRecuperar] = useState<ItemSemId[]>([])
+    const [devedores, setDevedores] = useState<Devedor[]>([])
     const [etiquetas, setEtiquetas] = useState<Etiquetas | null>(null)
     const [gerando, setGerando] = useState<string | null>(null)
     const [erro, setErro] = useState<string | null>(null)
@@ -54,7 +57,7 @@ export function PendenciasAdmin({ onAbrir }: { onAbrir: (aba: AbaPendencia) => v
     const carregar = useCallback(async () => {
         setErro(null)
         try {
-            const [c, contas, anuncios, paradas, envios, etiq, repasses, pagos, perdas] = await Promise.all([
+            const [c, contas, anuncios, paradas, envios, etiq, repasses, pagos, perdas, dividas] = await Promise.all([
                 api.get<Contagens>("/api/admin/pendencias"),
                 api.get<ContaCongelada[]>("/api/admin/pendencias/contas-congeladas"),
                 api.get<AnuncioEmAnalise[]>("/api/admin/pendencias/anuncios-em-analise"),
@@ -65,6 +68,7 @@ export function PendenciasAdmin({ onAbrir }: { onAbrir: (aba: AbaPendencia) => v
                 api.get<RetiradaParada[]>("/api/admin/pendencias/repasses-travados").catch(() => ({ data: [] as RetiradaParada[] })),
                 api.get<ItemSemId[]>("/api/admin/pendencias/pagos-sem-registro").catch(() => ({ data: [] as ItemSemId[] })),
                 api.get<ItemSemId[]>("/api/admin/pendencias/dinheiro-a-recuperar").catch(() => ({ data: [] as ItemSemId[] })),
+                api.get<Devedor[]>("/api/admin/pendencias/dividas").catch(() => ({ data: [] as Devedor[] })),
             ])
             setContagens(c.data)
             setCongeladas(contas.data)
@@ -75,6 +79,7 @@ export function PendenciasAdmin({ onAbrir }: { onAbrir: (aba: AbaPendencia) => v
             setTravados(repasses.data)
             setSemRegistro(pagos.data)
             setRecuperar(perdas.data)
+            setDevedores(dividas.data)
         } catch (cause) {
             setErro(mensagemDaApi(cause, "Não foi possível carregar as pendências."))
         }
@@ -120,6 +125,17 @@ export function PendenciasAdmin({ onAbrir }: { onAbrir: (aba: AbaPendencia) => v
         }
     }
 
+    async function perdoar(d: Devedor) {
+        if (!window.confirm(`Perdoar ${formatarPreco(Number(d.valor))} de ${d.nome || "este vendedor"}? A plataforma assume a tarifa.`)) return
+        setErro(null)
+        try {
+            await api.post(`/api/admin/pendencias/dividas/${d.userId}/perdoar`)
+            await carregar()
+        } catch (cause) {
+            setErro(mensagemDaApi(cause, "Não foi possível perdoar a dívida."))
+        }
+    }
+
     async function decidir(anuncio: AnuncioEmAnalise, aprovar: boolean) {
         setErro(null)
         try {
@@ -134,7 +150,8 @@ export function PendenciasAdmin({ onAbrir }: { onAbrir: (aba: AbaPendencia) => v
         return erro ? <p role="alert" className="type-body-small border-l-2 border-destructive pl-3 text-destructive">{erro}</p> : <Loader2 className="size-5 animate-spin text-muted-foreground" />
     }
 
-    const total = FILAS.reduce((soma, f) => soma + contagens[f.chave], 0)
+    // Fila nova no front antes do backend subir vem sem número: conta como zero
+    const total = FILAS.reduce((soma, f) => soma + (contagens[f.chave] ?? 0), 0)
 
     return (
         <section>
@@ -145,7 +162,7 @@ export function PendenciasAdmin({ onAbrir }: { onAbrir: (aba: AbaPendencia) => v
 
             <ul className="mt-5 grid gap-3 sm:grid-cols-2">
                 {FILAS.map((f) => {
-                    const n = contagens[f.chave]
+                    const n = contagens[f.chave] ?? 0
                     const Icone = n === 0 ? CheckCircle2 : f.icon
                     const conteudo = (
                         <>
@@ -299,6 +316,31 @@ export function PendenciasAdmin({ onAbrir }: { onAbrir: (aba: AbaPendencia) => v
                                 <p className="truncate text-xs text-muted-foreground">
                                     {r.comprador} → {r.vendedor} · pago em {new Date(r.createdAt).toLocaleDateString("pt-BR")}
                                 </p>
+                            </li>
+                        ))}
+                    </ul>
+                </section>
+            )}
+
+            {devedores.length > 0 && (
+                <section aria-labelledby="dividas-title" className="mt-8">
+                    <h2 id="dividas-title" className="type-label uppercase tracking-wider text-muted-foreground">
+                        Vendedores com dívida
+                    </h2>
+                    <p className="type-caption mt-1 text-muted-foreground">
+                        Tarifa do cartão de um reembolso por culpa do vendedor. Sai sozinha da próxima venda dele; até lá, ele não publica
+                        anúncio novo. Perdoe se provou que não teve culpa (ex.: o Correio perdeu o pacote).
+                    </p>
+                    <ul className="mt-3 divide-y divide-border border-y border-border">
+                        {devedores.map((d) => (
+                            <li key={d.userId} className="flex flex-wrap items-center gap-x-4 gap-y-1 py-3">
+                                <div className="min-w-0 flex-1">
+                                    <p className="truncate text-sm font-semibold">{d.nome || "Sem nome"} · {formatarPreco(Number(d.valor))}</p>
+                                    {d.email && <p className="truncate text-xs text-muted-foreground">{d.email}</p>}
+                                </div>
+                                <button type="button" onClick={() => perdoar(d)} className="line-btn line-btn--sm">
+                                    Perdoar
+                                </button>
                             </li>
                         ))}
                     </ul>

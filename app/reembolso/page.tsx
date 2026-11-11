@@ -69,6 +69,11 @@ export default function ReembolsoPage() {
                     <li>O vendedor pode aceitar o reembolso direto. Se ele não responder ou não concordar, a equipe analisa.</li>
                     <li>O reembolso devolve tudo o que você pagou por aquele item: produto, frete pelo app e Proteção Imperium.</li>
                     <li>
+                        <strong>Para quem vende:</strong> a tarifa do cartão não é devolvida pelo banco. Quando o reembolso é por
+                        responsabilidade do vendedor (não enviou no prazo ou o comprador ganhou a disputa), essa tarifa é descontada da
+                        próxima venda dele, e anúncios novos ficam bloqueados até lá. O comprador sempre recebe o valor inteiro.
+                    </li>
+                    <li>
                         Fora do app (pagamento combinado por fora) não há como protegermos a compra nem devolvermos o valor. Pague sempre
                         pelo app.
                     </li>

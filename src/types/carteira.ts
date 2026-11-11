@@ -7,7 +7,7 @@ export interface CarteiraResponse {
 
 export interface TransacaoResponse {
   id: string;
-  tipo: "VENDA_PENDENTE" | "VENDA_LIBERADA" | "ESTORNO" | "SAQUE";
+  tipo: "VENDA_PENDENTE" | "VENDA_LIBERADA" | "ESTORNO" | "SAQUE" | "DIVIDA";
   status: "PENDENTE" | "CONCLUIDA";
   valor: number;
   descricao: string;

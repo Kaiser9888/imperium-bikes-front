@@ -7,6 +7,7 @@ const LABELS_TIPO: Record<TransacaoResponse["tipo"], string> = {
   VENDA_LIBERADA: "Venda liberada",
   ESTORNO: "Estorno",
   SAQUE: "Saque",
+  DIVIDA: "Tarifa de reembolso",
 };
 
 
