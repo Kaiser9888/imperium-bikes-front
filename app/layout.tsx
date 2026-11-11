@@ -8,6 +8,7 @@ import { AvisoCookies } from '@/components/layout/aviso-cookies'
 import { Toaster } from '@/components/ui/sonner'
 import { RastreioNavegacao } from '@/components/ui/back-button'
 import { UserSyncProvider } from '@/lib/UserSyncContext'
+import { OuvirVoltar } from '@/lib/navegacao-voltar'
 import './globals.css'
 
 const geistSans = Geist({
@@ -81,6 +82,7 @@ export default function RootLayout({
             </UserSyncProvider>
             <Toaster />
             <RastreioNavegacao />
+            <OuvirVoltar />
           </ThemeProvider>
           {/* Estatísticas só carregam com consentimento */}
           <AvisoCookies />

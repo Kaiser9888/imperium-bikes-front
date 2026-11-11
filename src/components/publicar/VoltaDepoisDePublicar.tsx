@@ -1,35 +1,31 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { usePathname, useRouter } from "next/navigation"
+import { usePathname } from "next/navigation"
 
+import { chegouPeloVoltar } from "@/lib/navegacao-voltar"
 import { acabouDePublicar, limparPublicado } from "@/lib/publicar/storage"
 
 /**
- * Anúncio recém-publicado: voltar pelo histórico para uma etapa dele leva à Central do vendedor,
- * em vez de reabrir o formulário. Escolher categoria (/publicar) ou abrir com ?novo=1 começa um novo.
+ * Anúncio recém-publicado: o botão voltar do navegador pula todas as etapas de uma vez e cai onde a
+ * pessoa estava antes de começar (antes parava em cada etapa, ou prendia na Central). Entrar no
+ * fluxo por um clique (Anunciar, escolher categoria) é um anúncio novo e apaga a marca.
  */
 export function VoltaDepoisDePublicar({ children }: { children: React.ReactNode }) {
     const pathname = usePathname()
-    const router = useRouter()
-    const [voltando, setVoltando] = useState(false)
+    const [pulando, setPulando] = useState(false)
 
     useEffect(() => {
-        const partes = pathname.split("/").filter(Boolean) // ["publicar", categoria, etapa?]
-        const novo = new URLSearchParams(window.location.search).has("novo")
-        if (partes.length < 2 || novo) {
-            limparPublicado()
+        const categoria = pathname.split("/").filter(Boolean)[1] ?? ""
+        if (chegouPeloVoltar(pathname) && acabouDePublicar(categoria)) {
             // eslint-disable-next-line react-hooks/set-state-in-effect -- reage à rota
-            setVoltando(false)
+            setPulando(true)
+            window.history.back()
             return
         }
-        if (acabouDePublicar(partes[1])) {
-            setVoltando(true)
-            router.replace("/vendedor")
-        } else {
-            setVoltando(false)
-        }
-    }, [pathname, router])
+        if (!chegouPeloVoltar(pathname)) limparPublicado()
+        setPulando(false)
+    }, [pathname])
 
-    return voltando ? null : children
+    return pulando ? null : children
 }
