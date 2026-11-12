@@ -89,8 +89,9 @@ export function Galeria({
 
     return (
         <section aria-labelledby="galeria-titulo">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-                <h2 id="galeria-titulo" className="type-h2">
+            {/* A aba já diz "Fotos": o título fica só para leitor de tela */}
+            <div className="flex flex-wrap items-center justify-end gap-3 empty:hidden">
+                <h2 id="galeria-titulo" className="sr-only">
                     Fotos {fotos.length > 0 && <span className="text-muted-foreground tabular-nums">({fotos.length})</span>}
                 </h2>
                 {organizador && (

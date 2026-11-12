@@ -21,6 +21,7 @@ export interface Tournament {
     banner: string
     organizadorId: string
     organizadorNome: string
+    organizadorFoto: string | null
     /** Cancelado aparece como "encerrado" nas listas; aqui dá para diferenciar. */
     cancelado: boolean
     /** Como a classificação é decidida. */
@@ -56,6 +57,7 @@ function normalize(item: Raw): Tournament {
         banner: item.coverImageUrl ? urlDaArte(String(item.coverImageUrl)) : "/placeholder.svg",
         organizadorId: String(organizer.id ?? ""),
         organizadorNome: String(organizer.name ?? ""),
+        organizadorFoto: typeof organizer.avatarUrl === "string" && organizer.avatarUrl ? organizer.avatarUrl : null,
         cancelado: status === "CANCELLED",
         modo: modoDaApi(item.scoringMode),
         solidaria: typeof item.solidariaDescricao === "string" && item.solidariaDescricao ? item.solidariaDescricao : null,

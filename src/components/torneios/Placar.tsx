@@ -107,6 +107,31 @@ export function Podio({
     )
 }
 
+/** Antes do resultado: o lugar do pódio já aparece, vazio, para a pessoa saber o que vem. */
+export function PodioVazio() {
+    return (
+        <section aria-labelledby="podio-vazio-titulo" className="rounded-lg border border-dashed border-border px-5 pb-0 pt-5">
+            <h2 id="podio-vazio-titulo" className="type-label text-foreground">Top 3</h2>
+            <p className="type-caption mt-1 text-muted-foreground">Aparece aqui quando o organizador lançar o resultado.</p>
+            <ol className="mt-5 grid grid-cols-3 items-end gap-2 sm:gap-4" aria-hidden="true">
+                {[2, 1, 3].map((pos) => (
+                    <li key={pos} className="flex flex-col items-center">
+                        <span className={cn("rounded-full bg-surface-muted", pos === 1 ? "size-14" : "size-10")} />
+                        <span
+                            className={cn(
+                                "mt-3 grid w-full place-items-center rounded-t-md bg-surface-muted text-lg font-bold text-muted-foreground",
+                                pos === 1 ? "h-16" : pos === 2 ? "h-12" : "h-9",
+                            )}
+                        >
+                            {pos}º
+                        </span>
+                    </li>
+                ))}
+            </ol>
+        </section>
+    )
+}
+
 /**
  * Lista dos inscritos. Com resultado, segue a classificação e mostra a marca de cada um;
  * sem resultado, é a lista de quem confirmou, na ordem de inscrição.
@@ -129,14 +154,17 @@ export function Classificacao({ inscritos, modo, titulo }: { inscritos: Inscrito
                     return (
                         <li key={i.userId}>
                             <Link href={`/perfil/${i.userId}`} className="flex min-h-14 items-center gap-3 py-2 hover:bg-surface-muted">
-                                <span
-                                    className={cn(
-                                        "type-label w-8 shrink-0 text-right font-bold tabular-nums",
-                                        i.posicao && i.posicao <= 3 ? MEDALHA[i.posicao].cor : "text-muted-foreground",
-                                    )}
-                                >
-                                    {i.posicao ? `${i.posicao}º` : algumResultado ? "–" : ""}
-                                </span>
+                                {/* Sem resultado ainda, a coluna da colocação só deixaria um buraco */}
+                                {algumResultado && (
+                                    <span
+                                        className={cn(
+                                            "type-label w-8 shrink-0 text-right font-bold tabular-nums",
+                                            i.posicao && i.posicao <= 3 ? MEDALHA[i.posicao].cor : "text-muted-foreground",
+                                        )}
+                                    >
+                                        {i.posicao ? `${i.posicao}º` : "–"}
+                                    </span>
+                                )}
                                 <Avatar inscrito={i} className="size-10 shrink-0" />
                                 <span className="min-w-0 flex-1">
                                     <span className="type-body-small block truncate font-medium text-foreground">{i.nome}</span>

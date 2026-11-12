@@ -4,7 +4,7 @@ import Link from "next/link"
 import { useParams } from "next/navigation"
 import { useCallback, useEffect, useState } from "react"
 import { useUser } from "@clerk/nextjs"
-import { ArrowRight, CheckCircle, ClipboardList, HeartHandshake, Loader2, MapPin, Radio, Upload } from "lucide-react"
+import { ArrowRight, CheckCircle, ChevronRight, ClipboardList, HeartHandshake, Loader2, MapPin, Radio, ScrollText, Trophy, Upload } from "lucide-react"
 
 import { AppShell } from "@/components/layout/app-shell"
 import { BackButton } from "@/components/ui/back-button"
@@ -16,7 +16,7 @@ import { Loader } from "@/components/ui/loader"
 import { ShareButton } from "@/components/ui/share-button"
 import { Galeria } from "@/components/torneios/Galeria"
 import { Percurso } from "@/components/torneios/Percurso"
-import { Avatar, Classificacao, Podio } from "@/components/torneios/Placar"
+import { Avatar, Classificacao, Podio, PodioVazio } from "@/components/torneios/Placar"
 import { VideoCard } from "@/components/videos/VideoCard"
 import { VideoPlayer } from "@/components/videos/VideoPlayer"
 import { YouTubePlayer } from "@/components/videos/YouTubePlayer"
@@ -31,8 +31,18 @@ const CHECAR_LIVE_MS = 30_000
 /** Placar ao vivo: com o evento acontecendo, a classificação se atualiza sozinha. */
 const ATUALIZAR_PLACAR_MS = 15_000
 
-const ABAS = ["resultados", "sobre", "percurso", "inscritos", "fotos", "videos"] as const
+const ABAS = ["ranking", "sobre", "percurso", "fotos", "videos"] as const
 type Aba = (typeof ABAS)[number]
+/** Endereços antigos (#resultados, #inscritos) caem no ranking. */
+const ABA_ANTIGA: Record<string, Aba> = { resultados: "ranking", inscritos: "ranking" }
+
+/** Organizador digitou só o valor ("2000", "R$ 1.500"): mostra em reais. Texto livre fica como está. */
+function textoDaPremiacao(texto: string) {
+    const limpo = texto.trim()
+    if (!/^(R\$\s*)?\d{1,3}(\.?\d{3})*(,\d{1,2})?$/.test(limpo)) return limpo
+    const valor = Number(limpo.replace(/R\$\s*/, "").replace(/\./g, "").replace(",", "."))
+    return valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: Number.isInteger(valor) ? 0 : 2 })
+}
 
 /** Transmissão do organizador, no topo da página enquanto estiver no ar. */
 function AoVivo({ live }: { live: VideoItem }) {
@@ -81,8 +91,9 @@ function VideosDoEvento({ torneioId, logado }: { torneioId: string; logado: bool
 
     return (
         <section aria-labelledby="videos-evento">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-                <h2 id="videos-evento" className="type-h2">Vídeos do evento</h2>
+            {/* A aba já diz "Vídeos": o título fica só para leitor de tela */}
+            <div className="flex flex-wrap items-center justify-end gap-3">
+                <h2 id="videos-evento" className="sr-only">Vídeos do evento</h2>
                 {logado && (
                     <Link href={`/videos/upload?torneio=${torneioId}`} className="line-btn line-btn--sm">
                         <Upload aria-hidden="true" />
@@ -191,8 +202,9 @@ export default function TorneioDetalhesPage() {
     const [abaEscolhida, setAbaEscolhida] = useState<Aba | null>(null)
     useEffect(() => {
         const hash = window.location.hash.slice(1)
+        const aba = ABA_ANTIGA[hash] ?? hash
         // eslint-disable-next-line react-hooks/set-state-in-effect -- só no navegador existe o hash
-        if ((ABAS as readonly string[]).includes(hash)) setAbaEscolhida(hash as Aba)
+        if ((ABAS as readonly string[]).includes(aba)) setAbaEscolhida(aba as Aba)
     }, [])
     function escolherAba(aba: Aba) {
         setAbaEscolhida(aba)
@@ -287,12 +299,14 @@ export default function TorneioDetalhesPage() {
     const organizador = !!meuId && meuId === torneio.organizadorId
     const comResultado = inscritos.some((i) => i.posicao !== null)
 
-    // Com resultado, o placar abre a página (é o que todo mundo veio ver) e já inclui todos os inscritos
+    // Uma aba só para quem participa: lista antes da prova, ranking com o top 3 depois.
+    // Com resultado, ela abre a página (é o que todo mundo veio ver).
+    const abaRanking = { id: "ranking" as const, rotulo: comResultado ? "Ranking" : "Participantes", contagem: inscritos.length }
     const abas: { id: Aba; rotulo: string; contagem?: number }[] = [
-        ...(comResultado ? [{ id: "resultados" as const, rotulo: andamento ? "Ao vivo" : "Resultados" }] : []),
+        ...(comResultado ? [abaRanking] : []),
         { id: "sobre", rotulo: "Sobre" },
+        ...(!comResultado ? [abaRanking] : []),
         ...(torneio.rota ? [{ id: "percurso" as const, rotulo: "Percurso" }] : []),
-        ...(!comResultado ? [{ id: "inscritos" as const, rotulo: "Inscritos", contagem: inscritos.length }] : []),
         { id: "fotos", rotulo: "Fotos", contagem: fotos.length },
         { id: "videos", rotulo: "Vídeos" },
     ]
@@ -324,12 +338,11 @@ export default function TorneioDetalhesPage() {
         </div>
     )
 
-    // Seções numeradas só com o que o organizador preencheu
-    const secoes = [
-        { titulo: "Sobre", texto: torneio.descricao },
-        { titulo: "Premiação", texto: torneio.premiacao },
-        { titulo: "Regras", texto: torneio.regras },
-    ].filter((s) => s.texto.trim())
+    // Blocos só com o que o organizador preencheu
+    const blocos = [
+        { titulo: "Premiação", icone: Trophy, texto: textoDaPremiacao(torneio.premiacao) },
+        { titulo: "Regras", icone: ScrollText, texto: torneio.regras.trim() },
+    ].filter((b) => b.texto)
 
     return (
         <AppShell>
@@ -532,7 +545,8 @@ export default function TorneioDetalhesPage() {
                     </aside>
 
                     <article className="min-w-0 lg:col-start-1 lg:row-start-1">
-                        <div role="tablist" aria-label="Seções do evento" className="-mx-4 flex gap-1 overflow-x-auto border-b border-border px-4 [scrollbar-width:none] sm:mx-0 sm:px-0">
+                        {/* Abas dividem a largura por igual; com muitas, rolam de lado */}
+                        <div role="tablist" aria-label="Seções do evento" className="-mx-4 flex overflow-x-auto border-b border-border px-4 [scrollbar-width:none] sm:mx-0 sm:px-0">
                             {abas.map((a) => (
                                 <button
                                     key={a.id}
@@ -542,74 +556,98 @@ export default function TorneioDetalhesPage() {
                                     aria-selected={abaAtual === a.id}
                                     aria-controls={`painel-${a.id}`}
                                     onClick={() => escolherAba(a.id)}
-                                    className={`type-label -mb-px flex min-h-11 shrink-0 items-center gap-1.5 border-b-2 px-3 transition-colors ${
-                                        abaAtual === a.id ? "border-foreground text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"
+                                    className={`type-label -mb-px flex min-h-12 flex-1 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap border-b-2 px-3 transition-colors ${
+                                        abaAtual === a.id ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"
                                     }`}
                                 >
-                                    {a.id === "resultados" && andamento && <span className="size-1.5 animate-pulse rounded-full bg-primary" aria-hidden="true" />}
+                                    {a.id === "ranking" && andamento && comResultado && <span className="size-1.5 animate-pulse rounded-full bg-primary" aria-hidden="true" />}
                                     {a.rotulo}
-                                    {a.contagem !== undefined && a.contagem > 0 && <span className="tabular-nums text-muted-foreground">{a.contagem}</span>}
+                                    {a.contagem !== undefined && a.contagem > 0 && (
+                                        <span className="grid h-5 min-w-5 place-items-center rounded-full bg-surface-muted px-1.5 text-xs tabular-nums text-muted-foreground">{a.contagem}</span>
+                                    )}
                                 </button>
                             ))}
                         </div>
 
-                        <div role="tabpanel" id={`painel-${abaAtual}`} aria-labelledby={`aba-${abaAtual}`} className="pt-8">
-                            {abaAtual === "resultados" && (
-                                <div className="space-y-8">
-                                    {filtroCategorias}
-                                    <Podio
-                                        inscritos={daCategoria}
-                                        modo={torneio.modo}
-                                        aoVivo={andamento}
-                                        imagemHref={`/torneios/${torneio.id}/podio${categoriaAtual ? `?categoria=${encodeURIComponent(categoriaAtual)}` : ""}`}
-                                    />
-                                    <Classificacao
-                                        inscritos={daCategoria}
-                                        modo={torneio.modo}
-                                        titulo={`${andamento ? "Classificação ao vivo" : "Classificação"}${categoriaAtual ? ` · ${categoriaAtual}` : ""}`}
-                                    />
-                                    {andamento && <p className="type-caption text-muted-foreground">Atualiza sozinha a cada 15 segundos.</p>}
-                                </div>
-                            )}
+                        <div role="tabpanel" id={`painel-${abaAtual}`} aria-labelledby={`aba-${abaAtual}`} className="pt-6">
+                            {abaAtual === "ranking" &&
+                                (inscritos.length === 0 ? (
+                                    <div className="space-y-6">
+                                        <PodioVazio />
+                                        <p className="type-body-small text-muted-foreground">Ninguém confirmou a inscrição ainda. Seja o primeiro.</p>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-6">
+                                        {filtroCategorias}
+                                        {comResultado ? (
+                                            <Podio
+                                                inscritos={daCategoria}
+                                                modo={torneio.modo}
+                                                aoVivo={andamento}
+                                                imagemHref={`/torneios/${torneio.id}/podio${categoriaAtual ? `?categoria=${encodeURIComponent(categoriaAtual)}` : ""}`}
+                                            />
+                                        ) : (
+                                            <PodioVazio />
+                                        )}
+                                        <Classificacao
+                                            inscritos={daCategoria}
+                                            modo={torneio.modo}
+                                            titulo={`${comResultado ? (andamento ? "Classificação ao vivo" : "Classificação") : "Participantes"}${categoriaAtual ? ` · ${categoriaAtual}` : ""}`}
+                                        />
+                                        {andamento && comResultado && <p className="type-caption text-muted-foreground">Atualiza sozinha a cada 15 segundos.</p>}
+                                    </div>
+                                ))}
 
                             {abaAtual === "sobre" && (
-                                <>
-                                    {secoes.length === 0 && (
-                                        <p className="type-body text-muted-foreground">O organizador ainda não escreveu os detalhes deste evento.</p>
+                                <div className="space-y-6">
+                                    {torneio.descricao.trim() ? (
+                                        <p className="type-body whitespace-pre-line text-foreground/90">{torneio.descricao.trim()}</p>
+                                    ) : (
+                                        blocos.length === 0 && <p className="type-body text-muted-foreground">O organizador ainda não escreveu os detalhes deste evento.</p>
                                     )}
-                                    {secoes.map((s, i) => (
-                                        <section key={s.titulo} className={i > 0 ? "mt-10 border-t border-border pt-8" : ""}>
-                                            <h2 className="flex items-baseline gap-3">
-                                                <span className="text-sm font-bold tabular-nums text-accent">{String(i + 1).padStart(2, "0")}</span>
-                                                <span className="type-h2">{s.titulo}</span>
-                                            </h2>
-                                            <p className="type-body mt-3 whitespace-pre-line text-foreground/85">{s.texto}</p>
-                                        </section>
-                                    ))}
+
+                                    {blocos.length > 0 && (
+                                        <div className="grid gap-3 sm:grid-cols-2">
+                                            {blocos.map(({ titulo, icone: Icone, texto }) => (
+                                                <section key={titulo} className="rounded-lg border border-border bg-surface p-4">
+                                                    <h2 className="type-caption flex items-center gap-2 font-semibold uppercase tracking-wider text-muted-foreground">
+                                                        <Icone className="size-4" aria-hidden="true" />
+                                                        {titulo}
+                                                    </h2>
+                                                    <p className="type-body mt-2 whitespace-pre-line text-foreground">{texto}</p>
+                                                </section>
+                                            ))}
+                                        </div>
+                                    )}
+
                                     {torneio.organizadorId && (
-                                        <p className="type-body-small mt-12 border-t border-border pt-5 text-muted-foreground">
-                                            Organizado por{" "}
-                                            <Link href={`/perfil/${torneio.organizadorId}`} className="line-btn line-btn--sm ml-1 align-baseline">
-                                                {torneio.organizadorNome || "ver perfil"}
+                                        <div className="border-t border-border pt-6">
+                                            <Link
+                                                href={`/perfil/${torneio.organizadorId}`}
+                                                className="flex items-center gap-3 rounded-lg border border-border bg-surface p-3 transition-colors hover:border-foreground/40"
+                                            >
+                                                {torneio.organizadorFoto ? (
+                                                    // eslint-disable-next-line @next/next/no-img-element -- foto do perfil, domínio do Clerk
+                                                    <img src={torneio.organizadorFoto} alt="" className="size-11 shrink-0 rounded-full bg-surface-muted object-cover" />
+                                                ) : (
+                                                    <span aria-hidden="true" className="grid size-11 shrink-0 place-items-center rounded-full bg-surface-muted font-semibold text-muted-foreground">
+                                                        {(torneio.organizadorNome || "?").slice(0, 1).toUpperCase()}
+                                                    </span>
+                                                )}
+                                                <span className="min-w-0 flex-1">
+                                                    <span className="type-caption block text-muted-foreground">Organizado por</span>
+                                                    <span className="type-label block truncate text-foreground">{torneio.organizadorNome || "Ver perfil"}</span>
+                                                </span>
+                                                <ChevronRight className="size-5 shrink-0 text-muted-foreground" aria-hidden="true" />
                                             </Link>
-                                        </p>
+                                            <DenunciarButton tipo="TOURNAMENT" id={torneio.id} className="mt-3" />
+                                        </div>
                                     )}
-                                    <DenunciarButton tipo="TOURNAMENT" id={torneio.id} className="mt-6" />
-                                </>
+                                </div>
                             )}
 
                             {abaAtual === "percurso" &&
                                 (rota ? <Percurso rota={rota} nome={torneio.nome} /> : <p className="type-body-small text-muted-foreground">Carregando o percurso…</p>)}
-
-                            {abaAtual === "inscritos" &&
-                                (inscritos.length > 0 ? (
-                                    <div className="space-y-5">
-                                        {filtroCategorias}
-                                        <Classificacao inscritos={daCategoria} modo={torneio.modo} titulo={categoriaAtual ? `Inscritos · ${categoriaAtual}` : "Inscritos"} />
-                                    </div>
-                                ) : (
-                                    <p className="type-body-small text-muted-foreground">Ninguém confirmou a inscrição ainda. Seja o primeiro.</p>
-                                ))}
 
                             {abaAtual === "fotos" && (
                                 <Galeria torneioId={torneio.id} fotos={fotos} organizador={organizador} aoMudar={carregarFotos} />
