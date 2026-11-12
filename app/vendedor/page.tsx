@@ -182,6 +182,18 @@ export default function CentralVendedorPage() {
       .catch(() => setEnderecoPronto(null))
   }, [isSignedIn])
 
+  // Vendas pagas esperando o vendedor (digitar o código, enviar): ficam em destaque no topo
+  const [vendasAbertas, setVendasAbertas] = useState<{ total: number; codigo: number }>({ total: 0, codigo: 0 })
+  useEffect(() => {
+    if (!isSignedIn) return
+    api.get<{ comprador: boolean; status: string; retiradaEmMaos: boolean }[]>("/api/orders/mine")
+      .then(({ data }) => {
+        const abertas = data.filter((p) => !p.comprador && p.status === "PAGO")
+        setVendasAbertas({ total: abertas.length, codigo: abertas.filter((p) => p.retiradaEmMaos).length })
+      })
+      .catch(() => setVendasAbertas({ total: 0, codigo: 0 }))
+  }, [isSignedIn])
+
   const visiveis = useMemo(() => {
     const termo = busca.trim().toLowerCase()
     return produtos.filter(
@@ -290,7 +302,7 @@ export default function CentralVendedorPage() {
   ]
 
   const atalhos = [
-    { href: "/pedidos?aba=vendas", label: "Minhas vendas", icon: Receipt },
+    { href: "/vendedor/vendas", label: "Minhas vendas", icon: Receipt },
     { href: "/carteira", label: "Carteira", icon: Wallet },
     ...(ETIQUETA_AUTOMATICA ? [{ href: "/configuracoes/endereco-envio", label: "Endereço de envio", icon: MapPin }] : []),
   ]
@@ -374,6 +386,27 @@ export default function CentralVendedorPage() {
           </div>
           )}
         </section>
+
+        {/* ---------- VENDAS ESPERANDO ---------- */}
+        {vendasAbertas.total > 0 && (
+          <Link
+            href="/vendedor/vendas"
+            className="mt-4 flex items-center gap-3 rounded-2xl border border-primary bg-primary/10 p-4 transition-colors hover:bg-primary/15"
+          >
+            <span className="grid size-10 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground">
+              <Receipt className="size-5" aria-hidden="true" />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-sm font-semibold">
+                {vendasAbertas.total === 1 ? "1 venda esperando você" : `${vendasAbertas.total} vendas esperando você`}
+              </span>
+              <span className="block text-xs text-muted-foreground">
+                {vendasAbertas.codigo > 0 ? "Digite aqui o código que o comprador te passa na entrega." : "Envie e informe o rastreio."}
+              </span>
+            </span>
+            <ChevronRight className="size-5 shrink-0 text-muted-foreground" aria-hidden="true" />
+          </Link>
+        )}
 
         {/* ---------- ATALHOS ---------- */}
         {/* Quebra de linha em vez de rolar de lado: no celular o último cortava no meio e parecia defeito */}
