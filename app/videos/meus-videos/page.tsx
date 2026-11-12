@@ -50,7 +50,7 @@ import api from "@/lib/api";
 import { formatarPreco } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { deleteVideo, fetchLikedVideos, fetchMyVideos, fetchSavedVideos, setVideoCapa } from "@/lib/videos/api";
-import { formatViews, timeAgo } from "@/lib/videos/format";
+import { formatViews, timeAgo, visualizacoes } from "@/lib/videos/format";
 import type { VideoItem, VideoPage } from "@/lib/videos/types";
 
 type Aba = "canal" | "salvos" | "curtidos";
@@ -340,7 +340,7 @@ function Central() {
                 <p className="type-caption font-semibold uppercase tracking-[0.2em] text-primary">Central de Vídeos</p>
                 <h1 id="central-title" className="type-h2 truncate text-foreground">{nome}</h1>
                 <p className="type-caption text-muted-foreground">
-                  {videos ? `${published.length} publicados · ${formatViews(totalViews)} views` : "Carregando canal..."}
+                  {videos ? `${published.length} publicados · ${visualizacoes(totalViews)}` : "Carregando canal..."}
                 </p>
               </div>
             </div>
@@ -504,7 +504,7 @@ function Central() {
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir este vídeo?</AlertDialogTitle>
             <AlertDialogDescription>
-              “{excluindo?.title || "Sem título"}” sai do seu canal com as views, curtidas e comentários. Não dá para desfazer.
+              “{excluindo?.title || "Sem título"}” sai do seu canal com as visualizações, curtidas e comentários. Não dá para desfazer.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -589,7 +589,7 @@ function ItemDoCanal({
         </div>
         {video.description && <p className="type-body-small mt-1 line-clamp-1 text-muted-foreground">{video.description}</p>}
         <ul className="type-caption mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-muted-foreground">
-          <li className="inline-flex items-center gap-1.5"><Eye className="size-3.5" aria-hidden="true" />{formatViews(video.viewCount)} views</li>
+          <li className="inline-flex items-center gap-1.5"><Eye className="size-3.5" aria-hidden="true" />{visualizacoes(video.viewCount)}</li>
           <li className="inline-flex items-center gap-1.5"><Heart className="size-3.5" aria-hidden="true" />{video.likesCount ?? 0}</li>
           <li className="inline-flex items-center gap-1.5"><MessageSquare className="size-3.5" aria-hidden="true" />{video.commentsCount}</li>
           <li className="inline-flex items-center gap-1.5"><Clock className="size-3.5" aria-hidden="true" />{timeAgo(video.createdAt)}</li>

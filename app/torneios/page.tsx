@@ -8,7 +8,7 @@ import { ArrowRight, Plus, Search } from "lucide-react"
 
 import { AppShell } from "@/components/layout/app-shell"
 import { CapaEvento } from "@/components/torneios/CapaEvento"
-import { formatarPreco, partesDaData } from "@/lib/format"
+import { formatarPreco, partesDaData, textoDaPremiacao } from "@/lib/format"
 import { cn } from "@/lib/utils"
 import { tournamentService, type Tournament, type TournamentStatus } from "@/services/tournamentService"
 
@@ -188,7 +188,7 @@ function CartaoEvento({ torneio: t }: { torneio: Tournament }) {
                 <h2 className="type-h3 mt-1 line-clamp-2 decoration-accent decoration-2 underline-offset-4 group-hover:underline group-focus-visible:underline">
                     {t.nome}
                 </h2>
-                {t.premiacao && <p className="type-body-small mt-1 line-clamp-1 text-muted-foreground">Prêmio: {t.premiacao}</p>}
+                {t.premiacao && <p className="type-body-small mt-1 line-clamp-1 text-muted-foreground">Prêmio: {textoDaPremiacao(t.premiacao)}</p>}
 
                 <div className="mt-4 flex items-end justify-between gap-4 border-t border-border pt-3">
                     {encerrado ? (

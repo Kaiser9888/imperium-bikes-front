@@ -21,7 +21,7 @@ import { VideoCard } from "@/components/videos/VideoCard"
 import { VideoPlayer } from "@/components/videos/VideoPlayer"
 import { YouTubePlayer } from "@/components/videos/YouTubePlayer"
 import api from "@/lib/api"
-import { formatarPreco, partesDaData } from "@/lib/format"
+import { formatarPreco, partesDaData, textoDaPremiacao } from "@/lib/format"
 import { MODOS } from "@/lib/placar"
 import { fetchTournamentLive, fetchTournamentVideos, playbackIdFrom } from "@/lib/videos/api"
 import type { VideoItem } from "@/lib/videos/types"
@@ -36,14 +36,6 @@ const ABAS = ["ranking", "videos", "fotos", "percurso", "sobre"] as const
 type Aba = (typeof ABAS)[number]
 /** Endereços antigos (#resultados, #inscritos) caem no ranking. */
 const ABA_ANTIGA: Record<string, Aba> = { resultados: "ranking", inscritos: "ranking" }
-
-/** Organizador digitou só o valor ("2000", "R$ 1.500"): mostra em reais. Texto livre fica como está. */
-function textoDaPremiacao(texto: string) {
-    const limpo = texto.trim()
-    if (!/^(R\$\s*)?\d{1,3}(\.?\d{3})*(,\d{1,2})?$/.test(limpo)) return limpo
-    const valor = Number(limpo.replace(/R\$\s*/, "").replace(/\./g, "").replace(",", "."))
-    return valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: Number.isInteger(valor) ? 0 : 2 })
-}
 
 /** Transmissão do organizador, no topo da página enquanto estiver no ar. */
 function AoVivo({ live }: { live: VideoItem }) {

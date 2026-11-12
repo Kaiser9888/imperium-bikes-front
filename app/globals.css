@@ -652,13 +652,14 @@ mux-player.mux-player-cover {
         display: inline-flex;
         height: 2.75rem;
         min-width: 100px;
-        padding-inline: 0.625rem 1rem;
+        padding-inline: 0.3125rem 1rem;
         align-items: center;
-        justify-content: center;
+        justify-content: flex-start;
         flex-shrink: 0;
         border: none;
         border-radius: 3px;
-        background: var(--surface);
+        /* Sem fundo parado: a seta fica alinhada com o texto da página (o fundo cinza saía da margem) */
+        background: transparent;
         color: var(--foreground);
         font-size: 0.875rem;
         font-weight: 500;
@@ -676,6 +677,7 @@ mux-player.mux-player-cover {
     }
     .back-btn:hover,
     .back-btn:focus-visible {
+        background: var(--surface);
         box-shadow: 9px 9px 33px oklch(0.21 0.03 255 / 18%), -9px -9px 33px var(--surface);
         transform: translateY(-2px);
     }

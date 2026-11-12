@@ -46,11 +46,11 @@ export function Logo({ compact = false, className }: LogoProps) {
         <Link
             href="/"
             aria-label="Imperium Bikes — início"
-            className={cn("flex shrink-0 items-center gap-2.5 rounded-lg", className)}
+            className={cn("flex shrink-0 items-center gap-2 rounded-lg sm:gap-2.5", className)}
         >
-            <OrcaMark priority className={compact ? "h-7" : "h-8"} />
+            <OrcaMark priority className={compact ? "h-7" : "h-7 sm:h-8"} />
             {!compact && (
-                <span className="brand-name text-xl leading-none">Imperium Bikes</span>
+                <span className="brand-name text-lg leading-none sm:text-xl">Imperium Bikes</span>
             )}
         </Link>
     )

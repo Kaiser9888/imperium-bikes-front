@@ -61,10 +61,11 @@ export function Header() {
 
     return (
         <header className="sticky top-0 z-40 border-b border-border bg-background/95 pt-[env(safe-area-inset-top)] backdrop-blur-md">
-            <div className="mx-auto flex w-full max-w-7xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-2.5 sm:px-6 md:flex-nowrap md:py-3 lg:px-8">
+            <div className="mx-auto flex w-full max-w-7xl flex-wrap items-center gap-x-2 gap-y-2 px-4 sm:gap-x-4 py-2.5 sm:px-6 md:flex-nowrap md:py-3 lg:px-8">
                 <Logo className="order-1" />
 
-                <div className="order-2 ml-auto flex items-center gap-1 md:order-3 md:ml-0">
+                {/* Celular: ícones colados e um pouco menores em telas estreitas, para logo e ícones caberem numa linha só */}
+                <div className="order-2 ml-auto flex items-center sm:gap-1 md:order-3 md:ml-0">
                     {/* Computador: sem a barra de baixo, Eventos e Vídeos ficam aqui */}
                     <nav aria-label="Seções" className="mr-2 hidden items-center gap-1 lg:flex">
                         {SECOES.map(({ href, label, icon: Icone }) => (
@@ -81,7 +82,7 @@ export function Header() {
                     </nav>
 
                     <Authed>
-                        <Button asChild variant="ghost" size="icon" className="relative rounded-full">
+                        <Button asChild variant="ghost" size="icon" className="relative rounded-full max-[379px]:size-9">
                             <Link
                                 href="/notificacoes"
                                 aria-label={notificacoes > 0 ? `Notificações, ${notificacoes} não ${notificacoes === 1 ? "lida" : "lidas"}` : "Notificações"}
@@ -92,7 +93,7 @@ export function Header() {
                         </Button>
                     </Authed>
 
-                    <Button asChild variant="ghost" size="icon" className="relative rounded-full">
+                    <Button asChild variant="ghost" size="icon" className="relative rounded-full max-[379px]:size-9">
                         <Link href="/carrinho" aria-label={cartLabel}>
                             <ShoppingCart className="size-[22px]" aria-hidden="true" />
                             {cartCount > 0 && (
@@ -102,13 +103,13 @@ export function Header() {
                     </Button>
 
                     <Guest>
-                        <Button asChild variant="ghost" size="icon" className="rounded-full" aria-label="Entrar"><Link href="/sign-in">
+                        <Button asChild variant="ghost" size="icon" className="rounded-full max-[379px]:size-9" aria-label="Entrar"><Link href="/sign-in">
                                 <User className="size-[22px]" aria-hidden="true" />
                             </Link></Button>
                     </Guest>
 
                     <Authed>
-                        <div className="flex size-10 items-center justify-center">
+                        <div className="flex size-10 items-center justify-center max-[379px]:size-9">
                             <UserButton appearance={{ elements: { avatarBox: "size-8" } }} />
                         </div>
                     </Authed>
@@ -116,7 +117,7 @@ export function Header() {
                     <Button
                         variant="ghost"
                         size="icon"
-                        className="relative rounded-full"
+                        className="relative rounded-full max-[379px]:size-9"
                         onClick={openMenu}
                         aria-label={mensagens > 0 ? `Abrir menu, ${mensagens} ${mensagens === 1 ? "mensagem não lida" : "mensagens não lidas"}` : "Abrir menu"}
                     >

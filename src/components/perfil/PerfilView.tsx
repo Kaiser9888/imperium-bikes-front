@@ -154,7 +154,8 @@ export function PerfilView({
                             />
                             {avatarExtra}
                         </div>
-                        {acoes && <div className="flex flex-wrap gap-2 sm:pb-1">{acoes}</div>}
+                        {/* Celular: botões um embaixo do outro, com a mesma largura */}
+                        {acoes && <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:pb-1 max-sm:[&>*]:w-full">{acoes}</div>}
                     </div>
 
                     <div className="mt-4 min-w-0">

@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useVideoFeed } from "@/hooks/useVideoFeed";
 import { fetchLiveVideos, fetchVideoPage } from "@/lib/videos/api";
 import type { FeedOrder, VideoItem } from "@/lib/videos/types";
-import { formatViews, timeAgo } from "@/lib/videos/format";
+import { timeAgo, visualizacoes } from "@/lib/videos/format";
 import { CategoryFilter } from "@/components/videos/CategoryFilter";
 import { VideoCard } from "@/components/videos/VideoCard";
 import { VideoAvatar } from "@/components/videos/VideoAvatar";
@@ -50,10 +50,11 @@ export default function VideosPage() {
   }, []);
 
   // O destaque já aparece no topo: não repete na grade de "Recomendados"
-  const visible = useMemo(
-    () => (category === DEFAULT_CATEGORY && featured ? videos.filter((v) => v.id !== featured.id) : videos),
-    [videos, category, featured]
-  );
+  // (com um vídeo só, a grade ficaria vazia e diria "Nenhum vídeo encontrado" logo abaixo dele)
+  const visible = useMemo(() => {
+    const semDestaque = category === DEFAULT_CATEGORY && featured ? videos.filter((v) => v.id !== featured.id) : videos;
+    return semDestaque.length > 0 ? semDestaque : videos;
+  }, [videos, category, featured]);
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
@@ -150,7 +151,7 @@ function FeaturedHero({ video }: { video: VideoItem }) {
             <VideoAvatar name={video.userName} url={video.userAvatarUrl} className="size-7 border-white/30" />
             <span className="truncate font-medium text-white">{video.userName}</span>
             <span aria-hidden="true">·</span>
-            <span>{formatViews(video.viewCount)} views</span>
+            <span>{visualizacoes(video.viewCount)}</span>
             <span aria-hidden="true">·</span>
             <time dateTime={video.createdAt}>{timeAgo(video.createdAt)}</time>
           </div>
@@ -247,7 +248,7 @@ function MementoRail({ mementos }: { mementos: VideoItem[] }) {
               <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent" />
               <div className="absolute inset-x-0 bottom-0 p-2.5">
                 <p className="line-clamp-2 text-xs font-semibold leading-snug text-white">{m.title}</p>
-                <p className="mt-1 text-[0.625rem] text-white/70">{formatViews(m.viewCount)} views</p>
+                <p className="mt-1 text-[0.625rem] text-white/70">{visualizacoes(m.viewCount)}</p>
               </div>
             </Link>
           </li>

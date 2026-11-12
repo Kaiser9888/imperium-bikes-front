@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Play } from "lucide-react";
 import type { VideoItem } from "@/lib/videos/types";
-import { formatViews, timeAgo } from "@/lib/videos/format";
+import { timeAgo, visualizacoes } from "@/lib/videos/format";
 import { VideoAvatar } from "./VideoAvatar";
 import { SaveButton } from "./SaveButton";
 
@@ -62,7 +62,7 @@ export function VideoCard({ video, priority = false }: VideoCardProps) {
                         <VideoAvatar name={video.userName} url={video.userAvatarUrl} className="size-5" />
                         <span className="truncate">{video.userName}</span>
                         <span aria-hidden="true">·</span>
-                        <span className="shrink-0">{formatViews(video.viewCount)} views</span>
+                        <span className="shrink-0">{visualizacoes(video.viewCount)}</span>
                         <span aria-hidden="true">·</span>
                         <time dateTime={video.createdAt} className="shrink-0">{timeAgo(video.createdAt)}</time>
                     </p>

@@ -213,7 +213,8 @@ function BuscarPageContent() {
         <div className="mx-auto flex w-full max-w-7xl items-center gap-3 px-4 py-3 sm:gap-4 sm:px-6 lg:px-8">
           <BackButton
             onClick={() => (window.history.length > 1 ? router.back() : router.push("/"))}
-            className="shrink-0"
+            // Celular: só a seta, para o campo de busca ter espaço
+            className="shrink-0 max-sm:min-w-11 max-sm:px-0 max-sm:[&>span]:sr-only"
           />
 
           <form role="search" onSubmit={enviar} className="relative min-w-0 flex-1">
@@ -224,7 +225,7 @@ function BuscarPageContent() {
               enterKeyHint="search"
               value={texto}
               onChange={(event) => setTexto(event.target.value)}
-              placeholder="Buscar bikes, peças, equipamentos..."
+              placeholder="Buscar bikes, peças..."
               aria-label="Buscar produtos"
               className="h-12 w-full rounded-xl border border-border bg-surface pl-11 pr-11 text-base text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-primary/50 focus:ring-2 focus:ring-primary/15 [&::-webkit-search-cancel-button]:appearance-none"
             />

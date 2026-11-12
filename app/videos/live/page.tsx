@@ -239,7 +239,7 @@ function LiveStudio() {
                                     onClick={() => setFonte("imperium")}
                                     Icone={Radio}
                                     titulo="Transmitir pelo Imperium"
-                                    texto={ANUNCIOS_ABERTOS ? "Pelo OBS ou um app de live. Chat, views e monetização ficam aqui." : "Pelo OBS ou um app de live. Chat e views ficam aqui."}
+                                    texto={ANUNCIOS_ABERTOS ? "Pelo OBS ou um app de live. Chat, visualizações e monetização ficam aqui." : "Pelo OBS ou um app de live. Chat e visualizações ficam aqui."}
                                 />
                                 <OpcaoFonte
                                     ativa={fonte === "youtube"}

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Play } from "lucide-react";
 import type { VideoItem } from "@/lib/videos/types";
-import { formatViews, timeAgo } from "@/lib/videos/format";
+import { timeAgo, visualizacoes } from "@/lib/videos/format";
 
 interface VideoSidebarProps {
     videos: VideoItem[];
@@ -42,7 +42,7 @@ export function VideoSidebar({ videos }: VideoSidebarProps) {
                                     </p>
                                     <p className="mt-1 truncate text-xs text-muted-foreground">{v.userName}</p>
                                     <p className="text-xs text-muted-foreground">
-                                        {formatViews(v.viewCount)} views · {timeAgo(v.createdAt)}
+                                        {visualizacoes(v.viewCount)} · {timeAgo(v.createdAt)}
                                     </p>
                                 </div>
                             </Link>
