@@ -162,6 +162,10 @@ export default function TermosPage() {
                         bancária, nos prazos do Stripe.
                     </li>
                     <li>
+                        <strong>Formas de pagamento:</strong> cartão de crédito e Pix. O código Pix vale por 10 minutos; depois disso, é
+                        preciso gerar outro.
+                    </li>
+                    <li>
                         <strong>Vendas:</strong> vender não tem taxa: o vendedor recebe 100% do preço anunciado, mais o frete pago pelo
                         comprador, quando o valor é liberado. O comprador paga a <Link href="/protecao">Proteção Imperium</Link>, mostrada
                         na página do produto e no pagamento: a tarifa do cartão (3,99% + R$ 0,39 sobre tudo o que ele paga) mais 3% do
@@ -187,6 +191,14 @@ export default function TermosPage() {
                     <li>
                         O organizador é o responsável pelo evento: local, segurança, autorizações, regras, premiação e comunicação com os
                         participantes.
+                    </li>
+                    <li>
+                        A premiação mostrada na página do evento é prometida e paga pelo organizador. O {empresa.marca} não paga, não
+                        garante nem intermedeia prêmios.
+                    </li>
+                    <li>
+                        Os resultados (tempo, pontos ou colocação) são lançados pelo organizador e aparecem no ranking público do evento. Erros
+                        no resultado devem ser tratados com o organizador.
                     </li>
                     <li>Se o organizador cancelar o evento, as inscrições pagas são reembolsadas automaticamente.</li>
                     <li>

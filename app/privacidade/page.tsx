@@ -65,7 +65,7 @@ export default function PrivacidadePage() {
                         deixam de aparecer para ele quando o pedido é enviado).
                     </li>
                     <li>
-                        <strong>Pagamentos:</strong> o pagamento é feito na página do Stripe. Os dados do cartão (ou do Pix/boleto, quando
+                        <strong>Pagamentos:</strong> o pagamento é feito na página do Stripe. Os dados do cartão (ou do Pix, quando
                         disponíveis) vão direto para o Stripe e não passam pelos nossos servidores. Guardamos o valor, a situação e o
                         identificador da transação.
                     </li>
@@ -130,7 +130,9 @@ export default function PrivacidadePage() {
                 </ul>
                 <p>
                     Entre usuários: o seu nome, foto e perfil público aparecem para os outros. Numa compra, o vendedor recebe os dados
-                    necessários para entregar o pedido. O organizador de um evento vê a lista de inscritos.
+                    necessários para entregar o pedido. O organizador de um evento vê a lista de inscritos. Ao se inscrever num evento,
+                    seu nome, foto, categoria, número de peito e resultado (tempo, pontos ou colocação) aparecem na página pública do
+                    evento e podem entrar na imagem do pódio.
                 </p>
                 <p>Também podemos fornecer dados quando houver ordem judicial ou requisição de autoridade competente.</p>
             </Secao>

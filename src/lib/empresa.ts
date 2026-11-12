@@ -25,7 +25,7 @@ export const empresa = {
 } as const
 
 /** Data da última revisão dos documentos legais (mostrada no topo de cada um). */
-export const REVISAO_DOCUMENTOS = "5 de novembro de 2026"
+export const REVISAO_DOCUMENTOS = "12 de novembro de 2026"
 
 /** "CNPJ ..." ou, sem empresa aberta, "CPF ...". */
 export function documentoEmpresa(): string {

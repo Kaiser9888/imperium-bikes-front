@@ -116,8 +116,8 @@ export default function ReembolsoPage() {
             <Secao id="prazos" titulo="7. Como e quando o dinheiro volta">
                 <p>
                     O reembolso é feito pelo Stripe na mesma forma de pagamento da compra. No cartão de crédito, costuma aparecer em 5 a
-                    10 dias úteis, podendo cair na fatura seguinte, conforme o banco emissor. Em outras formas de pagamento, o prazo depende
-                    do meio usado. A situação do reembolso aparece em Pedidos.
+                    10 dias úteis, podendo cair na fatura seguinte, conforme o banco emissor. No Pix, o valor volta para a conta que fez o
+                    pagamento. A situação do reembolso aparece em Meus pedidos.
                 </p>
             </Secao>
         </Documento>
