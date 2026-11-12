@@ -241,11 +241,13 @@ export default function GerenciarTorneioPage() {
         </p>
       )}
 
-      {torneio.modo !== "posicao" && !torneio.cancelado && (
+      {/* Na colocação manual não há placar, mas os números de peito continuam aqui */}
+      {!torneio.cancelado && (
         <PlacarOrganizador
           torneioId={id}
           modo={torneio.modo}
           aberto={torneio.status !== "aberto"}
+          numeracaoAberta={torneio.status !== "encerrado"}
           competidores={participantes
             .filter((p) => p.paymentStatus === "PAID")
             .map((p) => ({

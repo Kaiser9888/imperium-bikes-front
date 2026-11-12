@@ -249,10 +249,18 @@ export const tournamentService = {
         await api.delete(`/api/tournaments/${tournamentId}/fotos/${fotoId}`)
     },
 
-    /** Dá número de peito a todos os confirmados que ainda não têm. Devolve quantos numerou. */
-    async numerarInscritos(tournamentId: string): Promise<number> {
-        const { data } = await api.post(`/api/tournaments/${tournamentId}/numeros`)
+    /**
+     * Dá número de peito a todos os confirmados que ainda não têm. Devolve quantos numerou.
+     * aPartirDe: começa nesse número (reserva os anteriores para quem se inscreveu na hora).
+     */
+    async numerarInscritos(tournamentId: string, aPartirDe?: number): Promise<number> {
+        const { data } = await api.post(`/api/tournaments/${tournamentId}/numeros`, null, { params: aPartirDe ? { aPartirDe } : undefined })
         return Number(data?.numerados ?? 0)
+    },
+
+    /** Dá, troca ou tira (null) o número de peito de um inscrito. */
+    async trocarNumero(participantId: string, numero: number | null): Promise<void> {
+        await api.put(`/api/tournaments/participants/${participantId}/bib`, { bibNumber: numero })
     },
 
     /** Só o organizador. Dar colocação já marca presença (check-in). */

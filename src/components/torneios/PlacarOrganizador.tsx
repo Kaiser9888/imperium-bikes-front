@@ -105,6 +105,89 @@ function CampoMarca({ competidor, modo, aoMudar }: { competidor: Competidor; mod
     )
 }
 
+/** Número de peito: toque para trocar. Vazio tira o número. Número de outra pessoa é recusado pelo servidor. */
+function CampoNumero({ competidor, editavel, aoMudar }: { competidor: Competidor; editavel: boolean; aoMudar: () => Promise<void> }) {
+    const [editando, setEditando] = useState(false)
+    const [valor, setValor] = useState("")
+    const [ocupado, setOcupado] = useState(false)
+    const [erro, setErro] = useState<string | null>(null)
+
+    const selo = (
+        <span className="grid h-8 min-w-10 place-items-center rounded border border-foreground px-1.5 text-sm font-bold tabular-nums">
+            {competidor.bibNumber ?? "?"}
+        </span>
+    )
+    if (!editavel) return <span className="shrink-0">{selo}</span>
+    if (!editando) {
+        return (
+            <button
+                type="button"
+                onClick={() => {
+                    setValor(competidor.bibNumber ? String(competidor.bibNumber) : "")
+                    setErro(null)
+                    setEditando(true)
+                }}
+                aria-label={`Trocar o número de ${competidor.userName}`}
+                className="shrink-0 rounded hover:opacity-80"
+            >
+                {selo}
+            </button>
+        )
+    }
+
+    async function salvar(e: React.FormEvent) {
+        e.preventDefault()
+        const numero = valor.trim() ? Number(valor) : null
+        if (numero !== null && (!Number.isInteger(numero) || numero < 1)) {
+            setErro("Use um número inteiro, a partir de 1.")
+            return
+        }
+        if (numero === competidor.bibNumber) {
+            setEditando(false)
+            return
+        }
+        setOcupado(true)
+        setErro(null)
+        try {
+            await tournamentService.trocarNumero(competidor.id, numero)
+            await aoMudar()
+            setEditando(false)
+        } catch (cause) {
+            setErro(mensagemDaApi(cause, "Não foi possível trocar o número."))
+        } finally {
+            setOcupado(false)
+        }
+    }
+
+    return (
+        <form onSubmit={salvar} className="order-last flex basis-full flex-wrap items-center gap-2 pl-11">
+            <label htmlFor={`numero-${competidor.id}`} className="type-caption text-muted-foreground">
+                Nº de peito de {competidor.userName}
+            </label>
+            <input
+                id={`numero-${competidor.id}`}
+                inputMode="numeric"
+                autoFocus
+                value={valor}
+                onChange={(e) => setValor(e.target.value.replace(/\D/g, "").slice(0, 5))}
+                placeholder="Vazio tira"
+                className="h-9 w-24 rounded-lg bg-surface px-2 text-base tabular-nums"
+            />
+            <button type="submit" disabled={ocupado} className="line-btn line-btn--sm">
+                {ocupado ? "Salvando…" : "Salvar"}
+            </button>
+            <button type="button" onClick={() => setEditando(false)} disabled={ocupado} className="type-caption font-semibold text-muted-foreground underline underline-offset-2">
+                Cancelar
+            </button>
+            {erro && (
+                <span role="alert" className="type-caption basis-full text-destructive">
+                    {erro}
+                </span>
+            )}
+        </form>
+    )
+}
+
 /**
  * Placar do organizador: acha o atleta pelo número de peito ou pelo nome e lança o tempo ou a nota.
  * A página pública do evento acompanha sozinha.
@@ -113,14 +196,18 @@ export function PlacarOrganizador({
     torneioId,
     modo,
     aberto,
+    numeracaoAberta,
     competidores,
     categorias,
     recarregar,
 }: {
     torneioId: string
-    modo: Exclude<ModoPontuacao, "posicao">
+    /** Colocação manual não tem placar: a lista serve só para os números de peito. */
+    modo: ModoPontuacao
     /** Evento já começou: dá para lançar marcas. Antes disso, só numerar. */
     aberto: boolean
+    /** Até o fim do evento os números de peito podem ser dados e trocados. */
+    numeracaoAberta: boolean
     competidores: Competidor[]
     /** Categorias do evento: cada uma tem a sua classificação. */
     categorias: string[]
@@ -138,11 +225,15 @@ export function PlacarOrganizador({
         .filter((c) => !termo || String(c.bibNumber ?? "") === termo || c.userName.toLowerCase().includes(termo))
         .sort((a, b) => (a.rankPosition ?? Infinity) - (b.rankPosition ?? Infinity) || (a.bibNumber ?? Infinity) - (b.bibNumber ?? Infinity))
 
+    // Começar de outro número: reserva os primeiros para quem se inscreveu na hora, fora do site
+    const [aPartirDe, setAPartirDe] = useState("")
+    const placar = modo !== "posicao"
+
     async function numerar() {
         setNumerando(true)
         setAviso(null)
         try {
-            const n = await tournamentService.numerarInscritos(torneioId)
+            const n = await tournamentService.numerarInscritos(torneioId, aPartirDe ? Number(aPartirDe) : undefined)
             await recarregar()
             setAviso(n === 1 ? "1 pessoa recebeu número." : `${n} pessoas receberam número.`)
         } catch (cause) {
@@ -154,20 +245,40 @@ export function PlacarOrganizador({
 
     return (
         <section aria-labelledby="placar-titulo" className="mt-12">
-            <h2 id="placar-titulo" className="type-h2">Placar ao vivo</h2>
+            <h2 id="placar-titulo" className="type-h2">{placar ? "Placar ao vivo" : "Números de peito"}</h2>
             <p className="type-body-small mt-1 text-muted-foreground">
-                {aberto
+                {!placar
+                    ? "Dê os números para entregar na largada. Toque no número de alguém para trocar."
+                    : aberto
                     ? modo === "tempo"
                         ? "Digite o tempo de cada um (2:15.4 ou 1:02:15) e toque em Salvar. A classificação da página do evento muda na hora."
                         : "Digite a nota de cada um (ex.: 8,75) e toque em Salvar. Maior nota fica na frente."
-                    : "O placar abre no dia do evento. Antes disso, dê os números de peito para entregar na largada."}
+                    : "O placar abre no dia do evento. Antes disso, dê os números de peito. Toque no número de alguém para trocar."}
             </p>
 
-            {semNumero > 0 && (
-                <button type="button" onClick={numerar} disabled={numerando} className="line-btn line-btn--sm mt-4">
-                    <Hash aria-hidden="true" />
-                    {numerando ? "Numerando…" : `Dar número de peito (${semNumero} sem número)`}
-                </button>
+            {numeracaoAberta && semNumero > 0 && (
+                <div className="mt-4 rounded-lg border border-border p-3">
+                    <div className="flex flex-wrap items-end gap-2">
+                        <label className="flex flex-col gap-1">
+                            <span className="type-caption text-muted-foreground">Começar do nº (opcional)</span>
+                            <input
+                                inputMode="numeric"
+                                value={aPartirDe}
+                                onChange={(e) => setAPartirDe(e.target.value.replace(/\D/g, "").slice(0, 5))}
+                                placeholder="Ex.: 101"
+                                className="h-9 w-28 rounded-lg bg-surface px-2 text-base tabular-nums"
+                            />
+                        </label>
+                        <button type="button" onClick={numerar} disabled={numerando} className="line-btn line-btn--sm">
+                            <Hash aria-hidden="true" />
+                            {numerando ? "Numerando…" : `Dar números (${semNumero} sem número)`}
+                        </button>
+                    </div>
+                    <p className="type-caption mt-2 text-muted-foreground">
+                        Vai ter inscrição na hora, fora do site? Comece do 101, por exemplo, e use do 1 ao 100 para essas pessoas. Número já usado
+                        é pulado: nunca repete.
+                    </p>
+                </div>
             )}
             {aviso && (
                 <p role="status" className="type-caption mt-2 text-muted-foreground">
@@ -217,9 +328,7 @@ export function PlacarOrganizador({
                                 <span className={cn("type-label w-8 shrink-0 text-right font-bold tabular-nums", c.rankPosition ? "text-foreground" : "text-muted-foreground")}>
                                     {c.rankPosition ? `${c.rankPosition}º` : "–"}
                                 </span>
-                                <span className="grid h-8 min-w-10 shrink-0 place-items-center rounded border border-foreground px-1.5 text-sm font-bold tabular-nums">
-                                    {c.bibNumber ?? "?"}
-                                </span>
+                                <CampoNumero key={`${c.id}-${c.bibNumber}`} competidor={c} editavel={numeracaoAberta} aoMudar={recarregar} />
                                 {c.userAvatarUrl ? (
                                     // eslint-disable-next-line @next/next/no-img-element -- foto do perfil, domínio do Clerk
                                     <img src={c.userAvatarUrl} alt="" className="size-9 shrink-0 rounded-full bg-surface-muted object-cover" />
@@ -232,7 +341,7 @@ export function PlacarOrganizador({
                                     <span className="type-body-small block truncate font-medium text-foreground">{c.userName}</span>
                                     {categorias.length > 0 && <span className="type-caption block truncate text-muted-foreground">{c.categoria}</span>}
                                 </span>
-                                {aberto && (
+                                {aberto && placar && (
                                     // No celular o campo vai sempre para a linha de baixo: o nome não fica cortado
                                     <div className="basis-full pl-11 sm:ml-auto sm:basis-auto sm:pl-0">
                                         {/* key com a marca: quando outra mudança refaz a lista, o campo volta ao valor salvo */}
