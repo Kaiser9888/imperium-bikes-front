@@ -15,6 +15,17 @@ const MEDALHA: Record<number, { cor: string; anel: string; degrau: string; altur
     3: { cor: "text-[#C7834A]", anel: "ring-[#C7834A]", degrau: "from-[#D9955C] to-[#8A5528]", altura: "h-14 sm:h-16" },
 }
 
+/** Quem foi inscrito na hora pelo organizador não tem perfil: mostra sem link. */
+function LinkPerfil({ userId, className, children }: { userId: string | null; className: string; children: React.ReactNode }) {
+    return userId ? (
+        <Link href={`/perfil/${userId}`} className={className}>
+            {children}
+        </Link>
+    ) : (
+        <div className={className}>{children}</div>
+    )
+}
+
 export function Avatar({ inscrito, className }: { inscrito: InscritoPublico; className: string }) {
     return inscrito.avatarUrl ? (
         // eslint-disable-next-line @next/next/no-img-element -- foto do perfil, domínio do Clerk
@@ -76,7 +87,7 @@ export function Podio({
                             aria-label={primeira ? `${pos}º lugar: ${pessoas.map((p) => p.nome).join(" e ")}` : `${pos}º lugar: sem resultado`}
                         >
                             {primeira ? (
-                                <Link href={`/perfil/${primeira.userId}`} className="flex w-full min-w-0 flex-col items-center gap-2 px-1">
+                                <LinkPerfil userId={primeira.userId} className="flex w-full min-w-0 flex-col items-center gap-2 px-1">
                                     {pos === 1 && <Crown className={cn("size-6", m.cor)} aria-hidden="true" />}
                                     <Avatar inscrito={primeira} className={cn("ring-4", m.anel, pos === 1 ? "size-20 sm:size-24" : "size-14 sm:size-16")} />
                                     <span className="type-label line-clamp-2 w-full break-words">
@@ -86,7 +97,7 @@ export function Podio({
                                     {marcaDe(primeira, modo) && (
                                         <span className={cn("type-caption font-semibold tabular-nums", m.cor)}>{marcaDe(primeira, modo)}</span>
                                     )}
-                                </Link>
+                                </LinkPerfil>
                             ) : (
                                 <span className="type-caption pb-2 text-white/50">—</span>
                             )}
@@ -152,8 +163,8 @@ export function Classificacao({ inscritos, modo, titulo }: { inscritos: Inscrito
                 {visiveis.map((i) => {
                     const marca = marcaDe(i, modo)
                     return (
-                        <li key={i.userId}>
-                            <Link href={`/perfil/${i.userId}`} className="flex min-h-14 items-center gap-3 py-2 hover:bg-surface-muted">
+                        <li key={i.id}>
+                            <LinkPerfil userId={i.userId} className="flex min-h-14 items-center gap-3 py-2 hover:bg-surface-muted">
                                 {/* Sem resultado ainda, a coluna da colocação só deixaria um buraco */}
                                 {algumResultado && (
                                     <span
@@ -176,7 +187,7 @@ export function Classificacao({ inscritos, modo, titulo }: { inscritos: Inscrito
                                     // Colocação manual não tem marca: o lugar já é o resultado
                                     algumResultado && modo !== "posicao" && <span className="type-caption shrink-0 text-muted-foreground">sem marca</span>
                                 )}
-                            </Link>
+                            </LinkPerfil>
                         </li>
                     )
                 })}

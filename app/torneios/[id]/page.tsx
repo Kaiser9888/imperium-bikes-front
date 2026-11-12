@@ -4,7 +4,7 @@ import Link from "next/link"
 import { useParams } from "next/navigation"
 import { useCallback, useEffect, useState } from "react"
 import { useUser } from "@clerk/nextjs"
-import { ArrowRight, CheckCircle, ChevronRight, ClipboardList, HeartHandshake, Loader2, MapPin, Radio, ScrollText, Trophy, Upload } from "lucide-react"
+import { ArrowRight, Award, CheckCircle, ChevronRight, ClipboardList, HeartHandshake, Loader2, MapPin, Radio, ScrollText, Ticket, Trophy, Upload } from "lucide-react"
 
 import { AppShell } from "@/components/layout/app-shell"
 import { BackButton } from "@/components/ui/back-button"
@@ -25,7 +25,7 @@ import { formatarPreco, partesDaData } from "@/lib/format"
 import { MODOS } from "@/lib/placar"
 import { fetchTournamentLive, fetchTournamentVideos, playbackIdFrom } from "@/lib/videos/api"
 import type { VideoItem } from "@/lib/videos/types"
-import { mensagemDaApi, tournamentService, type FotoEvento, type InscritoPublico, type MinhaInscricao, type Rota, type Tournament } from "@/services/tournamentService"
+import { mensagemDaApi, tournamentService, type Cupom, type FotoEvento, type InscritoPublico, type MinhaInscricao, type Rota, type Tournament } from "@/services/tournamentService"
 
 /** De quanto em quanto tempo a página pergunta se o organizador entrou ou saiu do ar. */
 const CHECAR_LIVE_MS = 30_000
@@ -179,6 +179,38 @@ export default function TorneioDetalhesPage() {
         void carregar()
     }, [carregar])
 
+    // Ajudante do placar (convidado pelo organizador) ganha um atalho para lançar os resultados
+    const [ajudante, setAjudante] = useState(false)
+    useEffect(() => {
+        if (!isSignedIn) return
+        tournamentService.souAjudante(id).then(setAjudante).catch(() => {})
+    }, [id, isSignedIn])
+
+    // Cupom de desconto: conferido antes de se inscrever, para mostrar o preço novo
+    const [cupomAberto, setCupomAberto] = useState(false)
+    const [cupomCodigo, setCupomCodigo] = useState("")
+    const [cupom, setCupom] = useState<Cupom | null>(null)
+    const [cupomErro, setCupomErro] = useState<string | null>(null)
+    const [conferindo, setConferindo] = useState(false)
+    async function conferirCupom(e: React.FormEvent) {
+        e.preventDefault()
+        if (!cupomCodigo.trim()) return
+        if (!isSignedIn) {
+            window.location.assign(`/sign-in?redirect_url=${encodeURIComponent(window.location.pathname)}`)
+            return
+        }
+        setConferindo(true)
+        setCupomErro(null)
+        try {
+            setCupom(await tournamentService.conferirCupom(id, cupomCodigo.trim()))
+        } catch (cause) {
+            setCupom(null)
+            setCupomErro(mensagemDaApi(cause, "Não foi possível conferir o cupom."))
+        } finally {
+            setConferindo(false)
+        }
+    }
+
     useEffect(() => {
         if (!isSignedIn) return
         tournamentService.minhaInscricao(id).then(setInscricao).catch(() => {})
@@ -231,9 +263,11 @@ export default function TorneioDetalhesPage() {
 
     async function sair() {
         if (!torneio) return
-        const pago = inscricao?.situacao === "PAGA" && torneio.valorInscricao > 0
+        // Com cupom a pessoa pagou menos (ou nada): devolve o que foi pago de fato
+        const valorPago = inscricao?.valorPago ?? 0
+        const pago = inscricao?.situacao === "PAGA" && valorPago > 0
         const aviso = pago
-            ? `Cancelar sua inscrição? O valor de ${formatarPreco(torneio.valorInscricao)} volta na forma de pagamento original.`
+            ? `Cancelar sua inscrição? O valor de ${formatarPreco(valorPago)} volta na forma de pagamento original.`
             : "Cancelar sua inscrição?"
         if (!window.confirm(aviso)) return
         setEnviando(true)
@@ -261,12 +295,21 @@ export default function TorneioDetalhesPage() {
         setEnviando(true)
         setErro(null)
         try {
+            let confirmada = false
             if (!inscricao) {
                 const categoria = torneio.categorias.length > 0 ? categoriaInscricao : "Geral"
-                await tournamentService.inscrever(id, categoria)
-                setInscricao({ situacao: torneio.valorInscricao > 0 ? "PENDENTE" : "PAGA", numero: null, categoria })
+                confirmada = await tournamentService.inscrever(id, categoria, cupom?.codigo)
+                setInscricao({ id: "", situacao: confirmada ? "PAGA" : "PENDENTE", numero: null, categoria, valorPago: null, cupom: cupom?.codigo ?? null })
+            } else if (cupom && cupom.codigo !== inscricao.cupom) {
+                // Voltou para pagar e trouxe um cupom: vale para a inscrição já reservada
+                confirmada = await tournamentService.aplicarCupom(id, cupom.codigo)
+                if (confirmada) setInscricao({ ...inscricao, situacao: "PAGA", cupom: cupom.codigo })
             }
-            if (torneio.valorInscricao > 0) {
+            if (confirmada) {
+                // Grátis ou cupom de 100%: atualiza a lista e não passa pelo pagamento
+                void carregar()
+                tournamentService.minhaInscricao(id).then(setInscricao).catch(() => {})
+            } else if (torneio.valorInscricao > 0) {
                 window.location.assign(await tournamentService.pagarInscricao(id, torneio.nome))
                 return
             }
@@ -479,7 +522,7 @@ export default function TorneioDetalhesPage() {
                             <div className="mt-4 flex items-center gap-3">
                                 <div className="flex -space-x-2" aria-hidden="true">
                                     {inscritos.slice(0, 5).map((i) => (
-                                        <Avatar key={i.userId} inscrito={i} className="size-8 ring-2 ring-surface" />
+                                        <Avatar key={i.id} inscrito={i} className="size-8 ring-2 ring-surface" />
                                     ))}
                                 </div>
                                 <p className="type-caption text-muted-foreground">
@@ -519,6 +562,13 @@ export default function TorneioDetalhesPage() {
                                             Seu número de peito: <strong className="text-lg font-bold tabular-nums text-foreground">{inscricao.numero}</strong>
                                         </p>
                                     )}
+                                    {/* Depois do evento: imagem pronta para postar, com nome, colocação e marca */}
+                                    {torneio.status === "encerrado" && !torneio.cancelado && inscricao.id && (
+                                        <a href={`/torneios/${torneio.id}/certificado?p=${inscricao.id}`} target="_blank" rel="noopener" className="line-btn line-btn--sm">
+                                            <Award aria-hidden="true" />
+                                            Baixar meu certificado
+                                        </a>
+                                    )}
                                     {torneio.status === "aberto" && !torneio.cancelado && (
                                         <button type="button" onClick={sair} disabled={enviando} className="type-caption font-semibold text-muted-foreground underline underline-offset-2 hover:text-destructive">
                                             Cancelar inscrição
@@ -542,8 +592,61 @@ export default function TorneioDetalhesPage() {
                                         </select>
                                     </label>
                                 )}
+                                {torneio.valorInscricao > 0 &&
+                                    (cupomAberto || cupom ? (
+                                        <form onSubmit={conferirCupom} className="flex w-full flex-col gap-1.5">
+                                            <label htmlFor="cupom" className="type-label text-foreground">
+                                                Cupom de desconto
+                                            </label>
+                                            <div className="flex gap-2">
+                                                <input
+                                                    id="cupom"
+                                                    value={cupomCodigo}
+                                                    onChange={(e) => {
+                                                        setCupomCodigo(e.target.value.toUpperCase().replace(/\s/g, "").slice(0, 30))
+                                                        setCupom(null)
+                                                        setCupomErro(null)
+                                                    }}
+                                                    autoCapitalize="characters"
+                                                    autoComplete="off"
+                                                    placeholder="Ex.: AMIGO10"
+                                                    className="h-11 min-w-0 flex-1 rounded-lg border border-border bg-surface px-3 text-base uppercase md:text-sm"
+                                                />
+                                                <button type="submit" disabled={conferindo || !cupomCodigo.trim() || !!cupom} className="line-btn line-btn--sm min-h-11">
+                                                    {conferindo ? "…" : cupom ? "Aplicado" : "Aplicar"}
+                                                </button>
+                                            </div>
+                                            {cupom && (
+                                                <p role="status" className="type-body-small text-success">
+                                                    {cupom.percentual}% de desconto:{" "}
+                                                    {cupom.valorComDesconto > 0 ? (
+                                                        <>
+                                                            você paga <strong>{formatarPreco(cupom.valorComDesconto)}</strong>{" "}
+                                                            <s className="text-muted-foreground">{formatarPreco(torneio.valorInscricao)}</s>
+                                                        </>
+                                                    ) : (
+                                                        <strong>inscrição grátis</strong>
+                                                    )}
+                                                </p>
+                                            )}
+                                            {cupomErro && (
+                                                <p role="alert" className="type-caption text-destructive">
+                                                    {cupomErro}
+                                                </p>
+                                            )}
+                                        </form>
+                                    ) : (
+                                        <button type="button" onClick={() => setCupomAberto(true)} className="type-caption inline-flex items-center gap-1.5 font-semibold text-muted-foreground underline underline-offset-2">
+                                            <Ticket className="size-3.5" aria-hidden="true" />
+                                            Tenho um cupom
+                                        </button>
+                                    ))}
                                 <Button type="button" variant="accent" size="lg" onClick={inscrever} disabled={enviando} aria-busy={enviando} className="w-full">
-                                    {inscricao?.situacao === "PENDENTE" ? "Pagar inscrição" : "Quero participar"}
+                                    {cupom && cupom.valorComDesconto <= 0
+                                        ? "Confirmar inscrição grátis"
+                                        : inscricao?.situacao === "PENDENTE"
+                                          ? "Pagar inscrição"
+                                          : "Quero participar"}
                                     {enviando ? <Loader2 className="animate-spin" aria-hidden="true" /> : <ArrowRight aria-hidden="true" />}
                                 </Button>
                                 </>
@@ -572,6 +675,17 @@ export default function TorneioDetalhesPage() {
                             <p role="alert" className="type-body-small mt-4 border-l-2 border-destructive pl-3 text-destructive">
                                 {erro}
                             </p>
+                        )}
+                        {ajudante && !organizador && !torneio.cancelado && torneio.status !== "encerrado" && (
+                            <div className="mt-6 border-t border-border pt-5">
+                                <p className="type-caption font-semibold uppercase tracking-[0.14em] text-muted-foreground">Você ajuda no placar</p>
+                                <Button asChild variant="default" className="mt-3 w-full">
+                                    <Link href={`/torneios/${torneio.id}/juiz`}>
+                                        <ClipboardList aria-hidden="true" />
+                                        Abrir o placar
+                                    </Link>
+                                </Button>
+                            </div>
                         )}
                         {/* Ferramentas do organizador separadas do que o público vê */}
                         {organizador && (

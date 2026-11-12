@@ -132,7 +132,9 @@ export default function PrivacidadePage() {
                     Entre usuários: o seu nome, foto e perfil público aparecem para os outros. Numa compra, o vendedor recebe os dados
                     necessários para entregar o pedido. O organizador de um evento vê a lista de inscritos. Ao se inscrever num evento,
                     seu nome, foto, categoria, número de peito e resultado (tempo, pontos ou colocação) aparecem na página pública do
-                    evento e podem entrar na imagem do pódio.
+                    evento e podem entrar na imagem do pódio e no certificado de participação. Ajudantes do placar convidados pelo
+                    organizador veem a lista de inscritos sem valores pagos. Quem se inscreve no local, fora do site, aparece no ranking
+                    só com o nome informado pelo organizador, que é responsável por ter a autorização da pessoa.
                 </p>
                 <p>Também podemos fornecer dados quando houver ordem judicial ou requisição de autoridade competente.</p>
             </Secao>

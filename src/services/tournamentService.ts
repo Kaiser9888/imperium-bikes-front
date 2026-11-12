@@ -82,7 +82,10 @@ export interface Participacao {
 
 /** Inscrito confirmado, como aparece na página pública do evento (sem dados de pagamento). */
 export interface InscritoPublico {
-    userId: string
+    /** Id da inscrição. */
+    id: string
+    /** null: inscrito na hora pelo organizador, sem conta no site (sem perfil). */
+    userId: string | null
     nome: string
     avatarUrl: string | null
     numero: number | null
@@ -113,10 +116,44 @@ export interface FotoEvento {
 
 /** Inscrição do usuário logado num evento. */
 export interface MinhaInscricao {
+    /** Id da inscrição (para o certificado); vazio logo depois de se inscrever, até recarregar. */
+    id: string
     situacao: "PAGA" | "PENDENTE"
     categoria: string | null
     /** Número de peito, depois que o organizador numera. */
     numero: number | null
+    /** Quanto foi pago de fato (com cupom é menos que o valor do evento); null se não pagou ou foi grátis. */
+    valorPago: number | null
+    /** Cupom usado, se houver. */
+    cupom: string | null
+}
+
+/** Cupom de desconto da inscrição. */
+export interface Cupom {
+    id: string
+    codigo: string
+    percentual: number
+    limiteUsos: number | null
+    usos: number
+    /** Preço da inscrição com o desconto. */
+    valorComDesconto: number
+}
+
+/** Ajudantes do placar e o código do link de convite (null até gerar). */
+export interface EquipePlacar {
+    codigo: string | null
+    juizes: { userId: string; nome: string; avatarUrl: string | null }[]
+}
+
+function cupomDaApi(c: Raw): Cupom {
+    return {
+        id: String(c.id),
+        codigo: String(c.codigo ?? ""),
+        percentual: Number(c.percentual ?? 0),
+        limiteUsos: typeof c.limiteUsos === "number" ? c.limiteUsos : null,
+        usos: Number(c.usos ?? 0),
+        valorComDesconto: Number(c.valorComDesconto ?? 0),
+    }
 }
 
 export interface CriarTorneio {
@@ -187,9 +224,12 @@ export const tournamentService = {
         const inscricao = (data.content as Raw[]).find((p) => p.tournamentId === tournamentId)
         if (!inscricao) return null
         return {
+            id: String(inscricao.id),
             situacao: inscricao.paymentStatus === "PAID" ? "PAGA" : "PENDENTE",
             numero: typeof inscricao.bibNumber === "number" ? inscricao.bibNumber : null,
             categoria: typeof inscricao.category === "string" ? inscricao.category : null,
+            valorPago: inscricao.paidAmount === null || inscricao.paidAmount === undefined ? null : Number(inscricao.paidAmount),
+            cupom: typeof inscricao.cupom === "string" ? inscricao.cupom : null,
         }
     },
 
@@ -210,7 +250,9 @@ export const tournamentService = {
     async inscritos(tournamentId: string): Promise<InscritoPublico[]> {
         const { data } = await api.get(`/api/tournaments/${tournamentId}/participants/public`)
         return (data as Raw[]).map((p) => ({
-            userId: String(p.userId),
+            id: String(p.id),
+            // Inscrito na hora pelo organizador não tem conta
+            userId: typeof p.userId === "string" ? p.userId : null,
             nome: String(p.userName ?? "Participante"),
             avatarUrl: typeof p.userAvatarUrl === "string" && p.userAvatarUrl ? p.userAvatarUrl : null,
             numero: typeof p.bibNumber === "number" ? p.bibNumber : null,
@@ -271,8 +313,74 @@ export const tournamentService = {
         })
     },
 
-    async inscrever(tournamentId: string, categoria = "Geral"): Promise<void> {
-        await api.post(`/api/tournaments/${tournamentId}/join`, { category: categoria })
+    /** Devolve true se a inscrição já ficou confirmada (evento grátis ou cupom de 100%). */
+    async inscrever(tournamentId: string, categoria = "Geral", cupom?: string): Promise<boolean> {
+        const { data } = await api.post(`/api/tournaments/${tournamentId}/join`, { category: categoria, cupom: cupom || undefined })
+        return data?.paymentStatus === "PAID"
+    },
+
+    /** Prévia do cupom: lança com a mensagem do servidor se não vale. */
+    async conferirCupom(tournamentId: string, codigo: string): Promise<Cupom> {
+        return cupomDaApi((await api.get(`/api/tournaments/${tournamentId}/cupons/conferir`, { params: { codigo } })).data)
+    },
+
+    /** Cupom numa inscrição que ainda espera pagamento. Devolve true se ficou confirmada (100%). */
+    async aplicarCupom(tournamentId: string, codigo: string): Promise<boolean> {
+        const { data } = await api.put(`/api/tournaments/${tournamentId}/cupom`, { cupom: codigo })
+        return data?.paymentStatus === "PAID"
+    },
+
+    /** Só o organizador. */
+    async cupons(tournamentId: string): Promise<Cupom[]> {
+        return ((await api.get(`/api/tournaments/${tournamentId}/cupons`)).data as Raw[]).map(cupomDaApi)
+    },
+
+    async criarCupom(tournamentId: string, cupom: { codigo: string; percentual: number; limiteUsos: number | null }): Promise<Cupom> {
+        return cupomDaApi((await api.post(`/api/tournaments/${tournamentId}/cupons`, cupom)).data)
+    },
+
+    async desativarCupom(tournamentId: string, cupomId: string): Promise<void> {
+        await api.delete(`/api/tournaments/${tournamentId}/cupons/${cupomId}`)
+    },
+
+    /** Só o organizador: ajudantes do placar e o código do convite. */
+    async equipe(tournamentId: string): Promise<EquipePlacar> {
+        const { data } = await api.get(`/api/tournaments/${tournamentId}/juizes`)
+        return {
+            codigo: typeof data?.codigo === "string" ? data.codigo : null,
+            juizes: ((data?.juizes ?? []) as Raw[]).map((j) => ({
+                userId: String(j.userId),
+                nome: String(j.nome ?? "Ajudante"),
+                avatarUrl: typeof j.avatarUrl === "string" && j.avatarUrl ? j.avatarUrl : null,
+            })),
+        }
+    },
+
+    /** Novo link de convite; o anterior para de funcionar. Devolve o código. */
+    async gerarConvite(tournamentId: string): Promise<string> {
+        return String((await api.post(`/api/tournaments/${tournamentId}/juizes/convite`)).data.codigo)
+    },
+
+    async removerAjudante(tournamentId: string, userId: string): Promise<void> {
+        await api.delete(`/api/tournaments/${tournamentId}/juizes/${userId}`)
+    },
+
+    /** Quem abriu o link de convite logado vira ajudante. */
+    async entrarComoAjudante(tournamentId: string, codigo: string): Promise<void> {
+        await api.post(`/api/tournaments/${tournamentId}/juizes/entrar`, { codigo })
+    },
+
+    async souAjudante(tournamentId: string): Promise<boolean> {
+        return Boolean((await api.get(`/api/tournaments/${tournamentId}/juizes/eu`)).data?.juiz)
+    },
+
+    /** Inscrito na hora, fora do site: entra no placar e no pódio só com o nome. */
+    async adicionarPresencial(tournamentId: string, dados: { nome: string; categoria: string; numero: number | null }): Promise<void> {
+        await api.post(`/api/tournaments/${tournamentId}/presenciais`, dados)
+    },
+
+    async removerPresencial(participantId: string): Promise<void> {
+        await api.delete(`/api/tournaments/participants/${participantId}/presencial`)
     },
 
     /** Percurso completo (pontos [lat, lon, alt]); null quando o evento não tem. */

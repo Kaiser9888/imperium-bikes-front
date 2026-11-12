@@ -175,6 +175,8 @@ export default function TermosPage() {
                     <li>
                         <strong>Eventos pagos:</strong> de cada inscrição, 10% ficam com a plataforma, já incluindo a tarifa do cartão. Os
                         outros 90% vão para o organizador 7 dias depois do fim do evento, prazo em que o inscrito pode reclamar se o evento não aconteceu. A inscrição paga mínima é R$ 10,00.
+                        Com cupom de desconto do organizador, os 10% e os 90% são calculados sobre o valor efetivamente pago; um cupom de
+                        100% deixa a inscrição grátis e não gera repasse.
                     </li>
                     <li><strong>Anúncios:</strong> 55% do valor de cada exibição vai para o criador do vídeo.</li>
                     <li>
@@ -197,8 +199,21 @@ export default function TermosPage() {
                         garante nem intermedeia prêmios.
                     </li>
                     <li>
-                        Os resultados (tempo, pontos ou colocação) são lançados pelo organizador e aparecem no ranking público do evento. Erros
-                        no resultado devem ser tratados com o organizador.
+                        Os resultados (tempo, pontos ou colocação) são lançados pelo organizador, ou por ajudantes que ele convidar para o
+                        placar, e aparecem no ranking público do evento. O organizador responde pelos ajudantes que convida. Erros no
+                        resultado devem ser tratados com o organizador.
+                    </li>
+                    <li>
+                        O organizador pode incluir no ranking quem se inscreveu no local, fora do site, informando só o nome. Ele é
+                        responsável por ter a autorização dessas pessoas para mostrar o nome e o resultado na página pública.
+                    </li>
+                    <li>
+                        Cupons de desconto são criados e controlados pelo organizador. Cada cupom vale só para o evento em que foi criado,
+                        pode ter limite de usos e pode ser desativado a qualquer momento; quem já usou mantém o desconto.
+                    </li>
+                    <li>
+                        Depois de encerrado o evento, cada participante pode baixar um certificado de participação com nome, evento,
+                        categoria e resultado, como lançados pelo organizador.
                     </li>
                     <li>Se o organizador cancelar o evento, as inscrições pagas são reembolsadas automaticamente.</li>
                     <li>

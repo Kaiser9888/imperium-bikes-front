@@ -84,7 +84,7 @@ export default function ReembolsoPage() {
                 <ul>
                     <li>
                         <strong>Você desistiu:</strong> cancele a inscrição na página do evento a qualquer momento antes de ele começar. O
-                        valor pago é devolvido integralmente.
+                        valor pago é devolvido integralmente (com cupom de desconto, é devolvido o que você pagou de fato).
                     </li>
                     <li>
                         <strong>O organizador cancelou</strong> ou o evento foi cancelado por não atingir o mínimo de inscritos: o

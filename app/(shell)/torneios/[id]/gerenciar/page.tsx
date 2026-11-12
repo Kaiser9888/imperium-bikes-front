@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react"
 import Link from "next/link"
 import { useParams } from "next/navigation"
-import { Eye, Images } from "lucide-react"
+import { Award, Eye, Images } from "lucide-react"
 
 import { PageHeading } from "@/components/layout/page-heading"
 import {
@@ -19,7 +19,9 @@ import {
 } from "@/components/ui/alert-dialog"
 import { ErrorState } from "@/components/ui/error-state"
 import { EditarEvento } from "@/components/torneios/EditarEvento"
-import { PlacarOrganizador } from "@/components/torneios/PlacarOrganizador"
+import { AjudantesPlacar } from "@/components/torneios/AjudantesPlacar"
+import { CuponsEvento } from "@/components/torneios/CuponsEvento"
+import { competidoresDe, PlacarOrganizador } from "@/components/torneios/PlacarOrganizador"
 import { RotaOrganizador } from "@/components/torneios/RotaOrganizador"
 import { Loader } from "@/components/ui/loader"
 import api from "@/lib/api"
@@ -37,6 +39,10 @@ type Participant = {
   points: number | null
   category: string
   doacaoEntregue: boolean
+  presencial: boolean
+  /** Cupom usado na inscrição. */
+  cupom: string | null
+  paidAmount: number | null
 }
 type Estado = { status: "loading" } | { status: "error"; semAcesso: boolean } | { status: "ok"; torneio: Tournament; participantes: Participant[] }
 
@@ -248,22 +254,15 @@ export default function GerenciarTorneioPage() {
           modo={torneio.modo}
           aberto={torneio.status !== "aberto"}
           numeracaoAberta={torneio.status !== "encerrado"}
-          competidores={participantes
-            .filter((p) => p.paymentStatus === "PAID")
-            .map((p) => ({
-              id: p.id,
-              userName: p.userName,
-              userAvatarUrl: p.userAvatarUrl,
-              bibNumber: p.bibNumber,
-              rankPosition: p.rankPosition,
-              finalTimeMs: p.finalTimeMs,
-              points: p.points === null ? null : Number(p.points),
-              categoria: p.category,
-            }))}
+          competidores={competidoresDe(participantes)}
           categorias={torneio.categorias}
           recarregar={recarregarParticipantes}
         />
       )}
+
+      {!encerradoOuCancelado && <AjudantesPlacar torneioId={id} />}
+
+      {!encerradoOuCancelado && torneio.valorInscricao > 0 && <CuponsEvento torneioId={id} valorInscricao={torneio.valorInscricao} />}
 
       {/* Depois do evento só faz sentido mexer no percurso se ele já existe */}
       {!torneio.cancelado && (torneio.status !== "encerrado" || torneio.rota) && (
@@ -298,8 +297,30 @@ export default function GerenciarTorneioPage() {
                 <span className="w-7 shrink-0 tabular-nums text-muted-foreground">{String(i + 1).padStart(2, "0")}</span>
                 <span className="min-w-0 flex-1">
                   <span className="block truncate font-medium text-foreground">{p.userName}</span>
-                  {torneio.categorias.length > 0 && <span className="type-caption block truncate text-muted-foreground">{p.category}</span>}
+                  {(torneio.categorias.length > 0 || p.presencial || p.cupom) && (
+                    <span className="type-caption block truncate text-muted-foreground">
+                      {[
+                        torneio.categorias.length > 0 ? p.category : null,
+                        p.presencial ? "inscrito na hora" : null,
+                        p.cupom ? `cupom ${p.cupom}${p.paidAmount ? ` · pagou ${formatarPreco(Number(p.paidAmount))}` : ""}` : null,
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </span>
+                  )}
                 </span>
+                {torneio.status === "encerrado" && !torneio.cancelado && p.paymentStatus === "PAID" && (
+                  <a
+                    href={`/torneios/${id}/certificado?p=${p.id}`}
+                    target="_blank"
+                    rel="noopener"
+                    aria-label={`Certificado de ${p.userName}`}
+                    className="type-caption inline-flex shrink-0 items-center gap-1 font-semibold text-muted-foreground underline underline-offset-2"
+                  >
+                    <Award className="size-3.5" aria-hidden="true" />
+                    Certificado
+                  </a>
+                )}
                 {torneio.solidaria && p.paymentStatus === "PAID" && (
                   <label className="type-caption flex shrink-0 cursor-pointer items-center gap-1.5 text-muted-foreground">
                     <input type="checkbox" checked={p.doacaoEntregue} onChange={(e) => marcarDoacao(p, e.target.checked)} className="size-4 accent-[var(--success)]" />

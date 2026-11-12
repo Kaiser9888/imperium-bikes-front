@@ -177,6 +177,22 @@ export const topicos: Topico[] = [
                 resposta: "De cada inscrição, 10% ficam com a Imperium, já incluindo a tarifa do cartão; os outros 90% vão para a sua Carteira 7 dias depois do fim do evento (prazo para algum inscrito reclamar) e é transferido pelo Stripe para a sua conta de recebimentos. Ao criar o evento, o site mostra quanto você recebe por inscrição. Para cobrar inscrição, ative seus recebimentos antes; a inscrição paga mínima é R$ 10,00.",
             },
             {
+                pergunta: "Como faço um cupom de desconto?",
+                resposta: "Em Gerenciar evento, na parte Cupons de desconto, crie um código (ex.: AMIGO10), escolha a porcentagem e, se quiser, um limite de usos. Quem digitar o código ao se inscrever paga menos. O desconto sai do valor da inscrição: você recebe 90% do que a pessoa pagou de fato. Um cupom de 100% deixa a inscrição grátis. Com desconto, a inscrição precisa continuar valendo pelo menos R$ 10,00.",
+            },
+            {
+                pergunta: "Alguém pode me ajudar a lançar os resultados?",
+                resposta: "Sim. Em Gerenciar evento, na parte Ajudantes do placar, crie o link de convite e mande para a pessoa. Ela abre o link logada na conta dela e passa a lançar tempos, notas e colocações pelo celular. Ajudante não edita o evento nem vê valores. Para tirar alguém, toque no X ao lado do nome.",
+            },
+            {
+                pergunta: "E quem se inscreveu na hora, fora do site?",
+                resposta: "No placar de Gerenciar evento, toque em Adicionar inscrito na hora e digite o nome (e o número de peito, se já tiver). A pessoa entra no ranking e no pódio como os outros. Peça a autorização dela para mostrar o nome na página do evento.",
+            },
+            {
+                pergunta: "Como pego meu certificado?",
+                resposta: "Depois que o organizador encerra o evento, aparece o botão Baixar meu certificado na página do evento, com seu nome, categoria, colocação e marca. É uma imagem pronta para postar.",
+            },
+            {
                 pergunta: "Desisti de um evento. Recebo o dinheiro de volta?",
                 resposta: "Sim, se cancelar a inscrição na página do evento antes de ele começar. Se o organizador cancelar o evento, o reembolso é automático.",
                 link: { href: "/reembolso#eventos", label: "Ver regras de reembolso" },

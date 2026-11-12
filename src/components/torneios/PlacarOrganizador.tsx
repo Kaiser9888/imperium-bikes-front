@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Hash, Search, X } from "lucide-react"
+import { Hash, Search, Trash2, UserPlus, X } from "lucide-react"
 
 import { formatarPontos, formatarTempo, lerPontos, lerTempo, type ModoPontuacao } from "@/lib/placar"
 import { cn } from "@/lib/utils"
@@ -17,6 +17,210 @@ export type Competidor = {
     finalTimeMs: number | null
     points: number | null
     categoria: string
+    /** Inscrito na hora, fora do site (só o nome). */
+    presencial: boolean
+}
+
+/** Lista do servidor (/participants) → quem entra no placar: só os confirmados. */
+export function competidoresDe(lista: Record<string, unknown>[]): Competidor[] {
+    return lista
+        .filter((p) => p.paymentStatus === "PAID")
+        .map((p) => ({
+            id: String(p.id),
+            userName: String(p.userName ?? "Participante"),
+            userAvatarUrl: typeof p.userAvatarUrl === "string" && p.userAvatarUrl ? p.userAvatarUrl : null,
+            bibNumber: typeof p.bibNumber === "number" ? p.bibNumber : null,
+            rankPosition: typeof p.rankPosition === "number" ? p.rankPosition : null,
+            finalTimeMs: typeof p.finalTimeMs === "number" ? p.finalTimeMs : null,
+            points: p.points === null || p.points === undefined ? null : Number(p.points),
+            categoria: String(p.category ?? "Geral"),
+            presencial: p.presencial === true,
+        }))
+}
+
+/**
+ * Inscrição na hora, fora do site: nome, categoria e (se já tiver) o número de peito.
+ * A pessoa entra no placar e no pódio como qualquer inscrito.
+ */
+function NovoPresencial({ torneioId, categorias, aoAdicionar }: { torneioId: string; categorias: string[]; aoAdicionar: () => Promise<void> }) {
+    const [aberto, setAberto] = useState(false)
+    const [nome, setNome] = useState("")
+    const [categoria, setCategoria] = useState("")
+    const [numero, setNumero] = useState("")
+    const [ocupado, setOcupado] = useState(false)
+    const [erro, setErro] = useState<string | null>(null)
+    const [aviso, setAviso] = useState<string | null>(null)
+
+    async function salvar(e: React.FormEvent) {
+        e.preventDefault()
+        if (nome.trim().length < 2) return setErro("Digite o nome da pessoa.")
+        if (categorias.length > 0 && !categoria) return setErro("Escolha a categoria.")
+        setOcupado(true)
+        setErro(null)
+        try {
+            await tournamentService.adicionarPresencial(torneioId, { nome: nome.trim(), categoria: categoria || "Geral", numero: numero ? Number(numero) : null })
+            await aoAdicionar()
+            setAviso(`${nome.trim()} entrou na lista.`)
+            // Categoria fica: quem chega junto costuma ser da mesma
+            setNome("")
+            setNumero("")
+        } catch (cause) {
+            setErro(mensagemDaApi(cause, "Não foi possível adicionar."))
+        } finally {
+            setOcupado(false)
+        }
+    }
+
+    if (!aberto) {
+        return (
+            <div className="mt-4">
+                <button type="button" onClick={() => setAberto(true)} className="line-btn line-btn--sm">
+                    <UserPlus aria-hidden="true" />
+                    Adicionar inscrito na hora
+                </button>
+                {aviso && (
+                    <p role="status" className="type-caption mt-2 text-muted-foreground">
+                        {aviso}
+                    </p>
+                )}
+            </div>
+        )
+    }
+
+    return (
+        <form onSubmit={salvar} className="mt-4 rounded-lg border border-border p-3">
+            <p className="type-label">Inscrito na hora</p>
+            <p className="type-caption mt-0.5 text-muted-foreground">Para quem se inscreveu no local, fora do site. Aparece no ranking e no pódio só com o nome.</p>
+            <div className="mt-3 flex flex-wrap items-end gap-2">
+                <label className="flex min-w-48 flex-1 flex-col gap-1">
+                    <span className="type-caption text-muted-foreground">Nome</span>
+                    <input
+                        value={nome}
+                        onChange={(e) => setNome(e.target.value.slice(0, 100))}
+                        autoFocus
+                        autoComplete="off"
+                        placeholder="Nome e sobrenome"
+                        className="h-10 rounded-lg bg-surface px-3 text-base"
+                    />
+                </label>
+                {categorias.length > 0 && (
+                    <label className="flex flex-col gap-1">
+                        <span className="type-caption text-muted-foreground">Categoria</span>
+                        <select value={categoria} onChange={(e) => setCategoria(e.target.value)} className="h-10 rounded-lg bg-surface px-2 text-base md:text-sm">
+                            <option value="">Escolha…</option>
+                            {categorias.map((c) => (
+                                <option key={c} value={c}>
+                                    {c}
+                                </option>
+                            ))}
+                        </select>
+                    </label>
+                )}
+                <label className="flex flex-col gap-1">
+                    <span className="type-caption text-muted-foreground">Nº (opcional)</span>
+                    <input
+                        inputMode="numeric"
+                        value={numero}
+                        onChange={(e) => setNumero(e.target.value.replace(/\D/g, "").slice(0, 5))}
+                        className="h-10 w-24 rounded-lg bg-surface px-2 text-base tabular-nums"
+                    />
+                </label>
+            </div>
+            <div className="mt-3 flex items-center gap-4">
+                <button type="submit" disabled={ocupado} className="line-btn line-btn--sm">
+                    {ocupado ? "Adicionando…" : "Adicionar"}
+                </button>
+                <button type="button" onClick={() => setAberto(false)} className="type-caption font-semibold text-muted-foreground underline underline-offset-2">
+                    Fechar
+                </button>
+            </div>
+            {erro && (
+                <p role="alert" className="type-caption mt-2 text-destructive">
+                    {erro}
+                </p>
+            )}
+            {aviso && !erro && (
+                <p role="status" className="type-caption mt-2 text-success">
+                    {aviso}
+                </p>
+            )}
+        </form>
+    )
+}
+
+/** Colocação digitada (evento por colocação manual). Dar colocação já confirma a presença. */
+function CampoColocacao({ competidor, aoMudar }: { competidor: Competidor; aoMudar: () => Promise<void> }) {
+    const [valor, setValor] = useState(competidor.rankPosition ? String(competidor.rankPosition) : "")
+    const [ocupado, setOcupado] = useState(false)
+    const [erro, setErro] = useState<string | null>(null)
+    const numero = Number(valor)
+    const mudou = Number.isInteger(numero) && numero > 0 && numero !== competidor.rankPosition
+
+    async function salvar(e: React.FormEvent) {
+        e.preventDefault()
+        if (!mudou) return
+        setOcupado(true)
+        setErro(null)
+        try {
+            await tournamentService.lancarColocacao(competidor.id, numero)
+            await aoMudar()
+        } catch (cause) {
+            setErro(mensagemDaApi(cause, "Não foi possível salvar."))
+        } finally {
+            setOcupado(false)
+        }
+    }
+
+    return (
+        <form onSubmit={salvar} className="flex flex-wrap items-center gap-1.5">
+            <label htmlFor={`pos-${competidor.id}`} className="sr-only">
+                Colocação de {competidor.userName}
+            </label>
+            <input
+                id={`pos-${competidor.id}`}
+                inputMode="numeric"
+                value={valor}
+                onChange={(e) => setValor(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                placeholder="Pos."
+                className="h-11 w-16 rounded-lg bg-surface px-2 text-center text-base tabular-nums"
+            />
+            <button type="submit" disabled={!mudou || ocupado} className="line-btn line-btn--sm min-h-11">
+                {ocupado ? "…" : competidor.rankPosition && !mudou ? "Salvo" : "Salvar"}
+            </button>
+            {erro && (
+                <span role="alert" className="type-caption basis-full text-destructive">
+                    {erro}
+                </span>
+            )}
+        </form>
+    )
+}
+
+/** Tira quem foi adicionado na hora por engano (nome errado, duplicado). */
+function RemoverPresencial({ competidor, aoMudar }: { competidor: Competidor; aoMudar: () => Promise<void> }) {
+    const [ocupado, setOcupado] = useState(false)
+    async function remover() {
+        if (!window.confirm(`Tirar ${competidor.userName} do evento?`)) return
+        setOcupado(true)
+        try {
+            await tournamentService.removerPresencial(competidor.id)
+            await aoMudar()
+        } catch (cause) {
+            window.alert(mensagemDaApi(cause, "Não foi possível tirar."))
+            setOcupado(false)
+        }
+    }
+    return (
+        <button
+            type="button"
+            onClick={remover}
+            disabled={ocupado}
+            aria-label={`Tirar ${competidor.userName} do evento`}
+            className="grid size-9 shrink-0 place-items-center rounded-lg text-muted-foreground hover:bg-surface-muted hover:text-destructive"
+        >
+            <Trash2 className="size-4" aria-hidden="true" />
+        </button>
+    )
 }
 
 const marcaAtual = (c: Competidor, modo: ModoPontuacao) =>
@@ -200,7 +404,13 @@ export function PlacarOrganizador({
     competidores,
     categorias,
     recarregar,
+    podeNumerarTodos = true,
+    comColocacao = false,
 }: {
+    /** Colocação manual dentro do placar (a tela do ajudante; o organizador digita na lista de participantes). */
+    comColocacao?: boolean
+    /** Numerar todos de uma vez é do organizador; o ajudante só troca um por um. */
+    podeNumerarTodos?: boolean
     torneioId: string
     /** Colocação manual não tem placar: a lista serve só para os números de peito. */
     modo: ModoPontuacao
@@ -256,7 +466,9 @@ export function PlacarOrganizador({
                     : "O placar abre no dia do evento. Antes disso, dê os números de peito. Toque no número de alguém para trocar."}
             </p>
 
-            {numeracaoAberta && semNumero > 0 && (
+            {numeracaoAberta && <NovoPresencial torneioId={torneioId} categorias={categorias} aoAdicionar={recarregar} />}
+
+            {podeNumerarTodos && numeracaoAberta && semNumero > 0 && (
                 <div className="mt-4 rounded-lg border border-border p-3">
                     <div className="flex flex-wrap items-end gap-2">
                         <label className="flex flex-col gap-1">
@@ -339,8 +551,18 @@ export function PlacarOrganizador({
                                 )}
                                 <span className="min-w-0 flex-1">
                                     <span className="type-body-small block truncate font-medium text-foreground">{c.userName}</span>
-                                    {categorias.length > 0 && <span className="type-caption block truncate text-muted-foreground">{c.categoria}</span>}
+                                    {(categorias.length > 0 || c.presencial) && (
+                                        <span className="type-caption block truncate text-muted-foreground">
+                                            {[categorias.length > 0 ? c.categoria : null, c.presencial ? "inscrito na hora" : null].filter(Boolean).join(" · ")}
+                                        </span>
+                                    )}
                                 </span>
+                                {c.presencial && numeracaoAberta && <RemoverPresencial competidor={c} aoMudar={recarregar} />}
+                                {aberto && !placar && comColocacao && (
+                                    <div className="basis-full pl-11 sm:ml-auto sm:basis-auto sm:pl-0">
+                                        <CampoColocacao key={`${c.id}-${c.rankPosition}`} competidor={c} aoMudar={recarregar} />
+                                    </div>
+                                )}
                                 {aberto && placar && (
                                     // No celular o campo vai sempre para a linha de baixo: o nome não fica cortado
                                     <div className="basis-full pl-11 sm:ml-auto sm:basis-auto sm:pl-0">
