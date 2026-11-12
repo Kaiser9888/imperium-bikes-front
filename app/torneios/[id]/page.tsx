@@ -22,6 +22,7 @@ import { VideoPlayer } from "@/components/videos/VideoPlayer"
 import { YouTubePlayer } from "@/components/videos/YouTubePlayer"
 import api from "@/lib/api"
 import { formatarPreco, partesDaData } from "@/lib/format"
+import { MODOS } from "@/lib/placar"
 import { fetchTournamentLive, fetchTournamentVideos, playbackIdFrom } from "@/lib/videos/api"
 import type { VideoItem } from "@/lib/videos/types"
 import { mensagemDaApi, tournamentService, type FotoEvento, type InscritoPublico, type MinhaInscricao, type Rota, type Tournament } from "@/services/tournamentService"
@@ -31,7 +32,7 @@ const CHECAR_LIVE_MS = 30_000
 /** Placar ao vivo: com o evento acontecendo, a classificação se atualiza sozinha. */
 const ATUALIZAR_PLACAR_MS = 15_000
 
-const ABAS = ["ranking", "sobre", "percurso", "fotos", "videos"] as const
+const ABAS = ["ranking", "videos", "fotos", "percurso", "sobre"] as const
 type Aba = (typeof ABAS)[number]
 /** Endereços antigos (#resultados, #inscritos) caem no ranking. */
 const ABA_ANTIGA: Record<string, Aba> = { resultados: "ranking", inscritos: "ranking" }
@@ -122,6 +123,12 @@ function dataPorExtenso(iso: string) {
     // Meio-dia evita o dia anterior por causa do fuso
     const d = new Date(`${iso}T12:00:00`)
     return Number.isNaN(d.getTime()) ? "" : d.toLocaleDateString("pt-BR", { weekday: "short", day: "numeric", month: "long" })
+}
+
+/** "sáb., 14": para o primeiro dia de um evento que termina no mesmo mês. */
+function diaDaSemana(iso: string) {
+    const d = new Date(`${iso}T12:00:00`)
+    return Number.isNaN(d.getTime()) ? "" : d.toLocaleDateString("pt-BR", { weekday: "short", day: "numeric" })
 }
 
 export default function TorneioDetalhesPage() {
@@ -290,7 +297,13 @@ export default function TorneioDetalhesPage() {
 
     const inicio = partesDaData(torneio.dataInicio)
     const variosDias = torneio.dataFim && torneio.dataFim !== torneio.dataInicio
-    const quando = variosDias ? `${dataPorExtenso(torneio.dataInicio)} a ${dataPorExtenso(torneio.dataFim)}` : dataPorExtenso(torneio.dataInicio)
+    // Mesmo mês: "Sáb., 14 a dom., 15 de novembro" (cabe numa linha no celular)
+    const mesmoMes = variosDias && torneio.dataInicio.slice(0, 7) === torneio.dataFim.slice(0, 7)
+    const quando = !variosDias
+        ? dataPorExtenso(torneio.dataInicio)
+        : mesmoMes
+          ? `${diaDaSemana(torneio.dataInicio)} a ${dataPorExtenso(torneio.dataFim)}`
+          : `${dataPorExtenso(torneio.dataInicio)} a ${dataPorExtenso(torneio.dataFim)}`
     const preco = torneio.valorInscricao > 0 ? formatarPreco(torneio.valorInscricao) : "Grátis"
     const limite = torneio.maxParticipantes > 0
     const restantes = Math.max(0, torneio.maxParticipantes - torneio.participantes)
@@ -299,16 +312,13 @@ export default function TorneioDetalhesPage() {
     const organizador = !!meuId && meuId === torneio.organizadorId
     const comResultado = inscritos.some((i) => i.posicao !== null)
 
-    // Uma aba só para quem participa: lista antes da prova, ranking com o top 3 depois.
-    // Com resultado, ela abre a página (é o que todo mundo veio ver).
-    const abaRanking = { id: "ranking" as const, rotulo: comResultado ? "Ranking" : "Participantes", contagem: inscritos.length }
+    // Quem participa vem primeiro (lista antes da prova, ranking com o top 3 depois); detalhes ficam por último
     const abas: { id: Aba; rotulo: string; contagem?: number }[] = [
-        ...(comResultado ? [abaRanking] : []),
-        { id: "sobre", rotulo: "Sobre" },
-        ...(!comResultado ? [abaRanking] : []),
-        ...(torneio.rota ? [{ id: "percurso" as const, rotulo: "Percurso" }] : []),
-        { id: "fotos", rotulo: "Fotos", contagem: fotos.length },
+        { id: "ranking", rotulo: comResultado ? "Ranking" : "Participantes", contagem: inscritos.length },
         { id: "videos", rotulo: "Vídeos" },
+        { id: "fotos", rotulo: "Fotos", contagem: fotos.length },
+        ...(torneio.rota ? [{ id: "percurso" as const, rotulo: "Percurso" }] : []),
+        { id: "sobre", rotulo: "Sobre" },
     ]
     const abaAtual: Aba = abas.some((a) => a.id === abaEscolhida) ? abaEscolhida! : abas[0].id
 
@@ -338,11 +348,41 @@ export default function TorneioDetalhesPage() {
         </div>
     )
 
-    // Blocos só com o que o organizador preencheu
-    const blocos = [
-        { titulo: "Premiação", icone: Trophy, texto: textoDaPremiacao(torneio.premiacao) },
-        { titulo: "Regras", icone: ScrollText, texto: torneio.regras.trim() },
-    ].filter((b) => b.texto)
+    // Premiação fica no cartão principal, à vista; texto longo aparece inteiro no Sobre
+    const premio = textoDaPremiacao(torneio.premiacao)
+    const premioCurto = premio.length <= 16
+    const formato = MODOS.find((m) => m.id === torneio.modo)
+
+    // Ficha do Sobre: só as linhas que o evento tem
+    const ficha: { rotulo: string; valor: React.ReactNode }[] = [
+        { rotulo: "Data", valor: <span className="block first-letter:uppercase">{quando}</span> },
+        ...(torneio.local
+            ? [{
+                  rotulo: "Local",
+                  valor: (
+                      <>
+                          {torneio.local}
+                          <a
+                              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(torneio.local)}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="mt-1 flex items-center gap-1 font-semibold text-primary underline underline-offset-2"
+                          >
+                              <MapPin className="size-3.5" aria-hidden="true" />
+                              Como chegar
+                          </a>
+                      </>
+                  ),
+              }]
+            : []),
+        // Só a regra ("Menor tempo vence"); os exemplos de modalidade são para quem cria o evento
+        ...(formato ? [{ rotulo: "Disputa", valor: <>{formato.titulo}<span className="block text-muted-foreground">{formato.texto.split(".")[0]}.</span></> }] : []),
+        ...(torneio.categorias.length > 0 ? [{ rotulo: "Categorias", valor: torneio.categorias.join(", ") }] : []),
+        { rotulo: "Inscrição", valor: preco },
+        ...(premio && !premioCurto ? [{ rotulo: "Premiação", valor: <span className="whitespace-pre-line">{premio}</span> }] : []),
+        { rotulo: "Vagas", valor: limite ? `${torneio.maxParticipantes} no total` : "Sem limite" },
+        ...(torneio.solidaria ? [{ rotulo: "Solidária", valor: `Levar ${torneio.solidaria} no dia` }] : []),
+    ]
 
     return (
         <AppShell>
@@ -351,12 +391,12 @@ export default function TorneioDetalhesPage() {
 
                 {live && <AoVivo live={live} />}
 
-                <header className="mt-6 flex gap-5 sm:gap-7">
+                {/* Topo enxuto: espaço no celular é valioso. Detalhes (como chegar, regras) ficam no Sobre */}
+                <header className="mt-3 flex items-start gap-4 sm:gap-7">
                     {inicio && (
-                        <div className="h-fit shrink-0 border border-foreground px-3 py-2.5 text-center shadow-[4px_4px_0_var(--foreground)]">
-                            <p className="text-3xl font-bold leading-none tabular-nums sm:text-5xl">{inicio.dia}</p>
-                            <p className="mt-1.5 text-xs font-semibold uppercase tracking-[0.16em]">{inicio.mes}</p>
-                            <p className="text-xs tabular-nums text-muted-foreground">{inicio.ano}</p>
+                        <div className="shrink-0 border border-foreground px-2.5 py-2 text-center shadow-[3px_3px_0_var(--foreground)]">
+                            <p className="text-2xl font-bold leading-none tabular-nums sm:text-5xl">{inicio.dia}</p>
+                            <p className="mt-1 text-[0.6875rem] font-semibold uppercase tracking-[0.16em]">{inicio.mes}</p>
                         </div>
                     )}
                     <div className="min-w-0">
@@ -364,18 +404,12 @@ export default function TorneioDetalhesPage() {
                             <span className={`size-1.5 rounded-full ${torneio.status === "encerrado" ? "bg-muted-foreground" : "bg-accent"} ${torneio.status === "andamento" ? "animate-pulse" : ""}`} />
                             {status}
                         </p>
-                        <h1 className="type-display mt-2 text-balance">{torneio.nome}</h1>
-                        <p className="type-body mt-2 text-muted-foreground">{torneio.local}</p>
+                        <h1 className="type-h1 mt-1 text-balance">{torneio.nome}</h1>
                         {torneio.local && (
-                            <a
-                                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(torneio.local)}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="type-label mt-2 inline-flex min-h-9 items-center gap-1.5 text-primary underline underline-offset-2"
-                            >
-                                <MapPin className="size-4" aria-hidden="true" />
-                                Como chegar
-                            </a>
+                            <p className="type-body-small mt-1 flex items-center gap-1 text-muted-foreground">
+                                <MapPin className="size-3.5 shrink-0" aria-hidden="true" />
+                                <span className="truncate">{torneio.local}</span>
+                            </p>
                         )}
                     </div>
                 </header>
@@ -384,15 +418,33 @@ export default function TorneioDetalhesPage() {
                     src={torneio.banner}
                     nome={torneio.nome}
                     apagada={torneio.status === "encerrado"}
-                    className="mt-8 aspect-[16/9] w-full rounded-lg border border-foreground bg-surface-muted sm:aspect-[21/9]"
+                    className="mt-4 aspect-[2/1] w-full rounded-lg border border-foreground bg-surface-muted sm:aspect-[21/9]"
                 />
 
-                <div className="mt-10 grid gap-10 lg:grid-cols-[1fr_20rem] lg:gap-14">
-                    <aside className="order-first h-fit rounded-lg border border-foreground bg-surface p-5 shadow-[4px_4px_0_var(--foreground)] lg:order-none lg:sticky lg:top-24 lg:col-start-2 lg:row-start-1">
-                        <p className="type-caption text-muted-foreground">Inscrição</p>
-                        <p className="mt-0.5 text-3xl font-bold tabular-nums">{preco}</p>
+                <div className="mt-5 grid gap-6 lg:mt-10 lg:grid-cols-[1fr_20rem] lg:gap-14">
+                    <aside className="order-first h-fit rounded-lg border border-foreground bg-surface p-4 shadow-[4px_4px_0_var(--foreground)] sm:p-5 lg:order-none lg:sticky lg:top-24 lg:col-start-2 lg:row-start-1">
+                        {/* Inscrição e premiação lado a lado: as duas coisas que a pessoa quer saber primeiro */}
+                        <div className={premio ? "grid grid-cols-2 gap-4" : ""}>
+                            <div>
+                                <p className="type-caption text-muted-foreground">Inscrição</p>
+                                <p className="mt-0.5 text-2xl font-bold tabular-nums">{preco}</p>
+                            </div>
+                            {premio && (
+                                <div className="min-w-0 border-l border-border pl-4">
+                                    <p className="type-caption flex items-center gap-1.5 text-muted-foreground">
+                                        <Trophy className="size-3.5 text-[#E8B931]" aria-hidden="true" />
+                                        Premiação
+                                    </p>
+                                    {premioCurto ? (
+                                        <p className="mt-0.5 break-words text-2xl font-bold tabular-nums text-[#E8B931]">{premio}</p>
+                                    ) : (
+                                        <p className="type-body-small mt-1 line-clamp-2 font-semibold text-foreground">{premio}</p>
+                                    )}
+                                </div>
+                            )}
+                        </div>
 
-                        <dl className="type-body-small mt-5 divide-y divide-border border-y border-border">
+                        <dl className="type-body-small mt-4 divide-y divide-border border-y border-border">
                             <div className="flex justify-between gap-4 py-2.5">
                                 <dt className="text-muted-foreground">Quando</dt>
                                 <dd className="text-right font-medium first-letter:uppercase">{quando}</dd>
@@ -450,7 +502,7 @@ export default function TorneioDetalhesPage() {
                             </div>
                         )}
 
-                        <div className="mt-6 flex flex-col items-start gap-5">
+                        <div className="mt-5 flex flex-col items-start gap-4">
                             {inscricao?.situacao === "PAGA" ? (
                                 <div className="flex flex-col items-start gap-2">
                                     <p role="status" className="type-label flex items-center gap-2 text-success">
@@ -508,10 +560,12 @@ export default function TorneioDetalhesPage() {
                                 Sua vaga fica reservada por 30 minutos enquanto você paga. Depois disso, ela volta a ficar livre.
                             </p>
                         )}
-                        {torneio.valorInscricao > 0 && (
-                            <p className="type-caption mt-4 text-muted-foreground">
-                                Pode cancelar até o início e receber o valor de volta. Evento cancelado é reembolsado automaticamente.{" "}
-                                <Link href="/reembolso#eventos" className="underline underline-offset-2">Política de reembolso</Link>
+                        {torneio.valorInscricao > 0 && torneio.status === "aberto" && !torneio.cancelado && (
+                            <p className="type-caption mt-3 text-muted-foreground">
+                                Pode cancelar até o início e receber o valor de volta.{" "}
+                                <button type="button" onClick={() => escolherAba("sobre")} className="underline underline-offset-2">
+                                    Detalhes
+                                </button>
                             </p>
                         )}
                         {erro && (
@@ -600,24 +654,36 @@ export default function TorneioDetalhesPage() {
 
                             {abaAtual === "sobre" && (
                                 <div className="space-y-6">
-                                    {torneio.descricao.trim() ? (
+                                    {torneio.descricao.trim() && (
                                         <p className="type-body whitespace-pre-line text-foreground/90">{torneio.descricao.trim()}</p>
-                                    ) : (
-                                        blocos.length === 0 && <p className="type-body text-muted-foreground">O organizador ainda não escreveu os detalhes deste evento.</p>
                                     )}
 
-                                    {blocos.length > 0 && (
-                                        <div className="grid gap-3 sm:grid-cols-2">
-                                            {blocos.map(({ titulo, icone: Icone, texto }) => (
-                                                <section key={titulo} className="rounded-lg border border-border bg-surface p-4">
-                                                    <h2 className="type-caption flex items-center gap-2 font-semibold uppercase tracking-wider text-muted-foreground">
-                                                        <Icone className="size-4" aria-hidden="true" />
-                                                        {titulo}
-                                                    </h2>
-                                                    <p className="type-body mt-2 whitespace-pre-line text-foreground">{texto}</p>
-                                                </section>
-                                            ))}
-                                        </div>
+                                    {/* Ficha do evento: tudo num lugar só, uma linha por informação */}
+                                    <dl className="type-body-small divide-y divide-border rounded-lg border border-border bg-surface px-4">
+                                        {ficha.map(({ rotulo, valor }) => (
+                                            <div key={rotulo} className="grid grid-cols-[6.5rem_1fr] gap-3 py-3">
+                                                <dt className="text-muted-foreground">{rotulo}</dt>
+                                                <dd className="min-w-0 text-foreground">{valor}</dd>
+                                            </div>
+                                        ))}
+                                    </dl>
+
+                                    {torneio.regras.trim() && (
+                                        <section className="rounded-lg border border-border bg-surface p-4">
+                                            <h2 className="type-caption flex items-center gap-2 font-semibold uppercase tracking-wider text-muted-foreground">
+                                                <ScrollText className="size-4" aria-hidden="true" />
+                                                Regras
+                                            </h2>
+                                            <p className="type-body mt-2 whitespace-pre-line text-foreground">{torneio.regras.trim()}</p>
+                                        </section>
+                                    )}
+
+                                    {torneio.valorInscricao > 0 && (
+                                        <p className="type-body-small text-muted-foreground">
+                                            <strong className="text-foreground">Reembolso:</strong> pode cancelar até o início e receber o valor de volta. Evento cancelado
+                                            pelo organizador é reembolsado automaticamente.{" "}
+                                            <Link href="/reembolso#eventos" className="underline underline-offset-2">Política de reembolso</Link>
+                                        </p>
                                     )}
 
                                     {torneio.organizadorId && (
