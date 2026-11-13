@@ -26,7 +26,7 @@ export default function SaldoCard({ carteira }: { carteira: CarteiraResponse }) 
           {formatarPreco(carteira.saldoPendente)}
         </span>
         <span className="text-xs text-muted-foreground mt-1">
-          Liberado 7 dias após a entrega confirmada
+          Liberado quando o comprador confirma a entrega ou o prazo para reclamar acaba
         </span>
       </div>
     </div>
