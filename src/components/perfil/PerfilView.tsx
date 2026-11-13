@@ -208,8 +208,8 @@ export function PerfilView({
                             <p className="type-body mt-4 max-w-prose whitespace-pre-line text-pretty text-foreground">{perfil.bio}</p>
                         )}
                         {aviso}
-                        {/* Lado a lado e com a mesma largura no celular */}
-                        {acoes && <div className="mt-5 flex gap-2 max-sm:[&>*]:flex-1">{acoes}</div>}
+                        {/* Lado a lado quando cabem; em tela estreita o segundo desce em vez de vazar do cartão */}
+                        {acoes && <div className="mt-5 flex flex-wrap gap-2 max-sm:[&>*]:grow">{acoes}</div>}
                     </div>
                 </div>
             </section>
