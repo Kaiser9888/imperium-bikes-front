@@ -14,7 +14,8 @@ export default function SaldoCard({ carteira }: { carteira: CarteiraResponse }) 
           {formatarPreco(carteira.saldoDisponivel)}
         </span>
         <span className="text-xs text-muted-foreground mt-1">
-          Já liberado, cai na sua conta automaticamente
+          Já é seu. O Stripe deposita no seu banco sozinho: venda paga com Pix leva
+          uns 2 dias úteis, com cartão pode levar até 30 dias.
         </span>
       </div>
 
