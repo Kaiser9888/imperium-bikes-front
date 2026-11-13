@@ -114,6 +114,11 @@ export const sellerProductService = {
     await api.post(`/api/products/${id}/${status === "PAUSADO" ? "disable" : "reactivate"}`)
   },
 
+  // Vendido fora do site: baixa 1 unidade; na última, o anúncio vira VENDIDO e some do marketplace
+  async marcarVendido(id: string | number) {
+    await api.post(`/api/products/${id}/sold`)
+  },
+
   async remove(id: string | number) {
     await api.delete(`/api/products/${id}`)
   },

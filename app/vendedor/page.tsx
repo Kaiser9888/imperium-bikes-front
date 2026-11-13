@@ -143,6 +143,7 @@ export default function CentralVendedorPage() {
   const [acoes, setAcoes] = useState<ProdutoItem | null>(null)
   const [editando, setEditando] = useState<ProdutoItem | null>(null)
   const [excluindo, setExcluindo] = useState<ProdutoItem | null>(null)
+  const [vendendo, setVendendo] = useState<ProdutoItem | null>(null)
 
   const carregar = useCallback(async () => {
     setLoading(true)
@@ -225,6 +226,23 @@ export default function CentralVendedorPage() {
       setExcluindo(null)
     } catch {
       setErro("Não foi possível excluir o anúncio.")
+    }
+    setOcupado(null)
+  }
+
+  async function confirmarVendido() {
+    if (!vendendo) return
+    const p = vendendo
+    setOcupado(p.id)
+    try {
+      await sellerProductService.marcarVendido(p.id)
+      const resta = (p.stock ?? 1) - 1
+      setProdutos((lista) => lista.map((x) => (x.id === p.id ? { ...x, stock: resta, ...(resta <= 0 ? { status: "VENDIDO" } : {}) } : x)))
+      setVendendo(null)
+    } catch (e) {
+      const motivo = (e as { response?: { data?: { message?: string } } })?.response?.data?.message
+      setErro(motivo ?? "Não foi possível marcar como vendido.")
+      setVendendo(null)
     }
     setOcupado(null)
   }
@@ -685,6 +703,16 @@ export default function CentralVendedorPage() {
                 setAcoes(null)
               }}
             />
+            {statusDe(acoes) !== "VENDIDO" && (
+              <LinhaAcao
+                icon={BadgeCheck}
+                texto="Marcar como vendido"
+                onClick={() => {
+                  setVendendo(acoes)
+                  setAcoes(null)
+                }}
+              />
+            )}
             <LinhaAcao
               icon={Trash2}
               texto="Excluir anúncio"
@@ -729,6 +757,26 @@ export default function CentralVendedorPage() {
             >
               {ocupado === excluindo.id && <Loader2 className="size-3.5 animate-spin" />}
               Excluir
+            </Button>
+          </div>
+        </Sheet>
+      )}
+
+      {vendendo && (
+        <Sheet titulo="Vendeu fora do site?" onClose={() => setVendendo(null)}>
+          <p className="text-sm text-muted-foreground">
+            {(vendendo.stock ?? 1) > 1
+              ? `Tira 1 unidade de “${vendendo.title}”. Ficam ${(vendendo.stock ?? 1) - 1} à venda.`
+              : `“${vendendo.title}” sai do marketplace e vai para Vendidos. Não dá para desfazer.`}{" "}
+            Venda combinada direto não tem a Proteção do site.
+          </p>
+          <div className="mt-6 flex gap-2">
+            <Button onClick={() => setVendendo(null)} variant="outline" size="lg" className="flex-1">
+              Cancelar
+            </Button>
+            <Button onClick={confirmarVendido} disabled={ocupado === vendendo.id} size="lg" className="flex-1">
+              {ocupado === vendendo.id && <Loader2 className="size-3.5 animate-spin" />}
+              Marcar como vendido
             </Button>
           </div>
         </Sheet>
