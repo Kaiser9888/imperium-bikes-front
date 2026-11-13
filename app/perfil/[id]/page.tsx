@@ -63,7 +63,7 @@ export default function PerfilPublicoPage() {
     }, [id, carregar])
 
     return (
-        <AppShell>
+        <AppShell busca={false}>
             <main className="mx-auto w-full max-w-4xl px-4 pb-16 pt-6 sm:px-6 lg:pt-10">
                 {estado.status === "loading" && <PerfilViewSkeleton />}
 

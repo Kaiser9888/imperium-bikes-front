@@ -39,7 +39,7 @@ const SECOES = [
     { href: "/videos", label: "Vídeos", icon: TvMinimalPlay },
 ]
 
-export function Header() {
+export function Header({ busca = true }: { busca?: boolean }) {
     const { openMenu } = useAppShell()
     const pathname = usePathname()
     const [cartCount, setCartCount] = useState(0)
@@ -65,7 +65,7 @@ export function Header() {
                 <Logo className="order-1" />
 
                 {/* Celular: ícones colados e um pouco menores em telas estreitas, para logo e ícones caberem numa linha só */}
-                <div className="order-2 ml-auto flex items-center sm:gap-1 md:order-3 md:ml-0">
+                <div className={`order-2 ml-auto flex items-center sm:gap-1 md:order-3 ${busca ? "md:ml-0" : ""}`}>
                     {/* Computador: sem a barra de baixo, Eventos e Vídeos ficam aqui */}
                     <nav aria-label="Seções" className="mr-2 hidden items-center gap-1 lg:flex">
                         {SECOES.map(({ href, label, icon: Icone }) => (
@@ -128,7 +128,7 @@ export function Header() {
                     </Button>
                 </div>
 
-                <SearchBar className="order-3 w-full md:order-2 md:mx-auto md:max-w-xl md:flex-1" />
+                {busca && <SearchBar className="order-3 w-full md:order-2 md:mx-auto md:max-w-xl md:flex-1" />}
             </div>
         </header>
     )

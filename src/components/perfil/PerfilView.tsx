@@ -113,9 +113,9 @@ export function PerfilView({
 
     // Só o que as abas não mostram: anúncios e vídeos já aparecem com a contagem na aba
     const numeros = [
-        { rotulo: "Eventos", valor: participacoes.length },
-        { rotulo: "Pódios", valor: podios.length },
-        { rotulo: "Vitórias", valor: vitorias, destaque: true },
+        { rotulo: "Eventos", um: "evento", varios: "eventos", icon: Trophy, valor: participacoes.length },
+        { rotulo: "Pódios", um: "pódio", varios: "pódios", icon: Medal, valor: podios.length },
+        { rotulo: "Vitórias", um: "vitória", varios: "vitórias", icon: Trophy, valor: vitorias, destaque: true },
     ].filter((n) => n.valor > 0)
     const abas = [
         produtos.length > 0 && "anuncios",
@@ -144,18 +144,14 @@ export function PerfilView({
                 </div>
 
                 <div className="px-5 pb-6 sm:px-8">
-                    <div className="-mt-12 flex flex-col gap-4 sm:-mt-14 sm:flex-row sm:items-end sm:justify-between">
-                        <div className="relative size-24 shrink-0 sm:size-28">
-                            {/* eslint-disable-next-line @next/next/no-img-element -- avatar do Clerk ou do backend, domínio variável */}
-                            <img
-                                src={perfil.avatarUrl || "/placeholder.svg"}
-                                alt=""
-                                className="size-full rounded-full bg-surface-muted object-cover ring-4 ring-surface"
-                            />
-                            {avatarExtra}
-                        </div>
-                        {/* Celular: botões um embaixo do outro, com a mesma largura */}
-                        {acoes && <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:pb-1 max-sm:[&>*]:w-full">{acoes}</div>}
+                    <div className="relative -mt-12 size-24 shrink-0 sm:-mt-14 sm:size-28">
+                        {/* eslint-disable-next-line @next/next/no-img-element -- avatar do Clerk ou do backend, domínio variável */}
+                        <img
+                            src={perfil.avatarUrl || "/placeholder.svg"}
+                            alt=""
+                            className="size-full rounded-full bg-surface-muted object-cover ring-4 ring-surface"
+                        />
+                        {avatarExtra}
                     </div>
 
                     <div className="mt-4 min-w-0">
@@ -195,32 +191,29 @@ export function PerfilView({
                                     {Number(perfil.reputacao).toFixed(1)} ({perfil.totalAvaliacoes} avaliações)
                                 </li>
                             )}
+                            {/* Números numa linha com o resto: um número sozinho não ocupa mais uma faixa inteira */}
+                            {numeros.map((n) => (
+                                <li key={n.rotulo} className={cn("flex items-center gap-1.5", n.destaque && "text-warning")}>
+                                    <n.icon className="size-4 shrink-0" aria-hidden="true" />
+                                    <span>
+                                        <b className="font-semibold tabular-nums text-foreground">{n.valor}</b> {n.valor === 1 ? n.um : n.varios}
+                                    </span>
+                                </li>
+                            ))}
                         </ul>
+
+                        <SponsorBanners sponsors={perfil.sponsors} gerenciarHref={dono ? "/configuracoes/patrocinadores" : undefined} />
 
                         {perfil.bio && (
                             <p className="type-body mt-4 max-w-prose whitespace-pre-line text-pretty text-foreground">{perfil.bio}</p>
                         )}
                         {aviso}
+                        {/* Lado a lado e com a mesma largura no celular */}
+                        {acoes && <div className="mt-5 flex gap-2 max-sm:[&>*]:flex-1">{acoes}</div>}
                     </div>
                 </div>
-
-                {/* gap-px sobre fundo de borda desenha as divisórias entre os números */}
-                {numeros.length > 0 && (
-                    <dl
-                        className={cn(
-                            "grid gap-px border-t border-border bg-border",
-                            numeros.length === 1 ? "grid-cols-1" : numeros.length === 3 ? "grid-cols-3" : "grid-cols-2 sm:grid-cols-4",
-                            numeros.length === 2 && "sm:grid-cols-2",
-                        )}
-                    >
-                        {numeros.map((n) => (
-                            <Numero key={n.rotulo} rotulo={n.rotulo} valor={n.valor} destaque={n.destaque} />
-                        ))}
-                    </dl>
-                )}
             </section>
 
-            <SponsorBanners sponsors={perfil.sponsors} gerenciarHref={dono ? "/configuracoes/patrocinadores" : undefined} />
             {!dono && <DenunciarButton tipo="USER" id={perfil.id} className="mt-3" />}
 
             {carregando && abas.length === 0 && <ListaCarregando />}
@@ -352,17 +345,6 @@ export function PerfilView({
     )
 }
 
-function Numero({ rotulo, valor, destaque }: { rotulo: string; valor: number; destaque?: boolean }) {
-    return (
-        <div className="flex flex-col items-center gap-0.5 bg-surface px-3 py-4 text-center">
-            <dt className="type-caption order-2 uppercase tracking-wider text-muted-foreground">{rotulo}</dt>
-            <dd className={cn("type-h2 order-1 tabular-nums", destaque ? "text-warning" : "text-foreground")}>
-                {valor}
-            </dd>
-        </div>
-    )
-}
-
 function Aba({ value, rotulo, total }: { value: string; rotulo: string; total?: number }) {
     return (
         <TabsTrigger
@@ -412,7 +394,6 @@ export function PerfilViewSkeleton() {
                 <Skeleton className="mt-2 h-4 w-1/3" />
                 <Skeleton className="mt-4 h-4 w-2/3" />
             </div>
-            <Skeleton className="h-20 rounded-none" />
         </div>
     )
 }

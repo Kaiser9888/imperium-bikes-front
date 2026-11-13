@@ -11,7 +11,8 @@ export function sponsorImageUrl(imageUrl: string): string {
 }
 
 /**
- * Marcas que patrocinam o usuário. Para visitantes, não renderiza nada sem patrocinadores.
+ * Marcas que patrocinam o usuário, dentro do cartão do perfil (logo abaixo do nome).
+ * Para visitantes, não renderiza nada sem patrocinadores.
  * Com `gerenciarHref` (perfil do dono), mostra o atalho de edição e um convite quando está vazio.
  */
 export function SponsorBanners({ sponsors, gerenciarHref }: { sponsors: Sponsor[]; gerenciarHref?: string }) {
@@ -26,43 +27,42 @@ export function SponsorBanners({ sponsors, gerenciarHref }: { sponsors: Sponsor[
         )
     }
     return (
-        <section aria-labelledby="patrocinadores-title" className="mt-8">
-            <div className="flex items-center justify-between gap-3">
-                <h2 id="patrocinadores-title" className="type-label uppercase tracking-wider text-muted-foreground">
-                    Marcas parceiras
+        <section aria-labelledby="patrocinadores-title" className="mt-4">
+            <div className="flex items-center gap-3">
+                <h2 id="patrocinadores-title" className="type-caption uppercase tracking-wider text-muted-foreground">
+                    Patrocínio
                 </h2>
                 {gerenciarHref && (
-                    <Link href={gerenciarHref} className="type-label text-primary hover:underline">
+                    <Link href={gerenciarHref} className="type-caption ml-auto text-primary hover:underline">
                         Gerenciar
                     </Link>
                 )}
             </div>
 
-                <ul className="mt-3 grid grid-cols-3 gap-3 sm:grid-cols-6">
-                    {sponsors.map((sponsor, index) => {
-                        const banner = (
-                            // eslint-disable-next-line @next/next/no-img-element -- imagem enviada pelo usuário, domínio variável
-                            <img
-                                src={sponsorImageUrl(sponsor.imageUrl)}
-                                alt={sponsor.name || "Patrocinador"}
-                                loading="lazy"
-                                className="h-16 w-full rounded-xl border border-border bg-surface object-contain p-2 transition-colors hover:border-primary/40"
-                            />
-                        )
-                        return (
-                            <li key={`${sponsor.imageUrl}-${index}`}>
-                                {sponsor.linkUrl ? (
-                                    <a href={sponsor.linkUrl} target="_blank" rel="noopener noreferrer sponsored" title={sponsor.name ?? undefined}>
-                                        {banner}
-                                    </a>
-                                ) : (
-                                    banner
-                                )}
-                            </li>
-                        )
-                    })}
-                </ul>
-
+            <ul className="mt-2 flex flex-wrap gap-2">
+                {sponsors.map((sponsor, index) => {
+                    const banner = (
+                        // eslint-disable-next-line @next/next/no-img-element -- imagem enviada pelo usuário, domínio variável
+                        <img
+                            src={sponsorImageUrl(sponsor.imageUrl)}
+                            alt={sponsor.name || "Patrocinador"}
+                            loading="lazy"
+                            className="h-12 w-28 rounded-lg border border-border bg-background object-contain p-1.5 transition-colors hover:border-primary/40 sm:w-32"
+                        />
+                    )
+                    return (
+                        <li key={`${sponsor.imageUrl}-${index}`}>
+                            {sponsor.linkUrl ? (
+                                <a href={sponsor.linkUrl} target="_blank" rel="noopener noreferrer sponsored" title={sponsor.name ?? undefined}>
+                                    {banner}
+                                </a>
+                            ) : (
+                                banner
+                            )}
+                        </li>
+                    )
+                })}
+            </ul>
         </section>
     )
 }

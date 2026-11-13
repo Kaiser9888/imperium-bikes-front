@@ -180,7 +180,7 @@ export default function PerfilPage() {
 
     if (isLoaded && !isSignedIn) {
         return (
-            <AppShell>
+            <AppShell busca={false}>
                 <main className="mx-auto max-w-3xl px-4 py-10">
                     <EmptyState
                         icon={UserRound}
@@ -198,7 +198,7 @@ export default function PerfilPage() {
     }
 
     return (
-        <AppShell>
+        <AppShell busca={false}>
             <main className="mx-auto w-full max-w-4xl px-4 pb-16 pt-6 sm:px-6 lg:pt-10">
                 {(!isLoaded || estado.status === "loading") && <PerfilViewSkeleton />}
 
@@ -262,6 +262,7 @@ export default function PerfilPage() {
                         acoes={
                             <>
                                 <Button
+                                    variant="outline"
                                     onClick={() => {
                                         setErroSalvar(null)
                                         setEditando({ ...estado.perfil, fullName: estado.perfil.fullName || user.fullName || "" })

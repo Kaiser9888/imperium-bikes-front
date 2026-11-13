@@ -37,7 +37,16 @@ export function AppShellProvider({ children }: { children: React.ReactNode }) {
 }
 
 /** Estrutura padrão de página: Header, conteúdo e BottomNav. */
-export function AppShell({ children, footer }: { children: React.ReactNode; footer?: React.ReactNode }) {
+export function AppShell({
+    children,
+    footer,
+    busca = true,
+}: {
+    children: React.ReactNode
+    footer?: React.ReactNode
+    /** false: topo sem a barra de busca (perfil) */
+    busca?: boolean
+}) {
     return (
         <div className="min-h-screen bg-background">
             {/* Teclado: primeiro Tab mostra este atalho, que pula o cabeçalho */}
@@ -54,7 +63,7 @@ export function AppShell({ children, footer }: { children: React.ReactNode; foot
             >
                 Pular para o conteúdo
             </a>
-            <Header />
+            <Header busca={busca} />
             {children}
             {/* Beta discreto no fim da página; ideias de quem usa de verdade valem ouro. ponytail: tirar o "beta" quando sair do beta */}
             <p className="px-4 pb-3 pt-8 text-center text-[0.6875rem] text-muted-foreground/80">
