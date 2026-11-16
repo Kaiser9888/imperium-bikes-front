@@ -633,7 +633,7 @@ export default function TorneioDetalhesPage() {
                                             Tenho um cupom
                                         </button>
                                     ))}
-                                <Button type="button" variant="accent" size="lg" onClick={inscrever} disabled={enviando} aria-busy={enviando} className="w-full">
+                                <Button type="button" variant="default" size="lg" onClick={inscrever} disabled={enviando} aria-busy={enviando} className="w-full">
                                     {cupom && cupom.valorComDesconto <= 0
                                         ? "Confirmar inscrição grátis"
                                         : inscricao?.situacao === "PENDENTE"

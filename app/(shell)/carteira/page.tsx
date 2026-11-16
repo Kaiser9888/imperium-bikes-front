@@ -80,7 +80,7 @@ export default function CarteiraPage() {
 
   return (
     <main className="max-w-2xl mx-auto px-4 pb-10 pt-4">
-      <PageHeading title="Carteira" description="Saldo das vendas e inscrições, e o extrato." back={{ href: "/vendedor", label: "Central do vendedor" }} />
+      <PageHeading title="Carteira" description="Saldo das vendas e inscrições, e o extrato." back={{ href: "/vendedor", label: "Meus anúncios" }} />
 
       {statusConta && (
         <div className="mt-6">

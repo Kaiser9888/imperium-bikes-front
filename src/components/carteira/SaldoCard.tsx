@@ -10,7 +10,8 @@ export default function SaldoCard({ carteira }: { carteira: CarteiraResponse }) 
         <span className="text-xs uppercase tracking-wider text-muted-foreground">
           Disponível
         </span>
-        <span className="font-heading text-3xl text-primary">
+        {/* Verde: dinheiro que já é seu (vermelho passava a ideia de dívida) */}
+        <span className="font-heading text-3xl text-success">
           {formatarPreco(carteira.saldoDisponivel)}
         </span>
         <span className="text-xs text-muted-foreground mt-1">
@@ -23,7 +24,7 @@ export default function SaldoCard({ carteira }: { carteira: CarteiraResponse }) 
         <span className="text-xs uppercase tracking-wider text-muted-foreground">
           Pendente
         </span>
-        <span className="font-heading text-3xl text-accent-foreground">
+        <span className="font-heading text-3xl text-foreground">
           {formatarPreco(carteira.saldoPendente)}
         </span>
         <span className="text-xs text-muted-foreground mt-1">

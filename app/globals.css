@@ -212,17 +212,21 @@
 }
 
 /*
-  Campos de texto escritos direto na página (fora do componente Input) ganham a
-  mesma borda e sombra sólida. Fica fora de @layer para valer sobre as classes
-  utilitárias da página; data-plain desliga em campos embutidos (barra de busca).
+  Campos de texto escritos direto na página (fora do componente Input) ganham o
+  mesmo campo liso do componente Input (borda fina; no foco, borda e halo vermelhos).
+  Fica fora de @layer para valer sobre as classes utilitárias da página;
+  data-plain desliga em campos embutidos (barra de busca).
 */
 :where(input:not([type="checkbox"], [type="radio"], [type="range"], [type="file"], [type="hidden"], [type="color"], [type="submit"], [type="button"]), textarea, select):not([data-plain], [cmdk-input], [data-input-otp], [class*="cl-"]) {
-    border: 1.5px solid var(--foreground);
-    box-shadow: 2.5px 3px 0 var(--foreground);
-    transition: box-shadow 0.2s;
+    border: 1px solid var(--input);
+    transition: border-color 0.2s, box-shadow 0.2s;
 
+    &:hover {
+        border-color: color-mix(in oklch, var(--foreground) 40%, transparent);
+    }
     &:focus-visible {
-        box-shadow: 5.5px 7px 0 var(--foreground);
+        border-color: var(--accent);
+        box-shadow: 0 0 0 4px color-mix(in oklch, var(--accent) 15%, transparent);
         outline: none;
     }
     &[aria-invalid="true"] {

@@ -20,7 +20,7 @@ const grupos = [
         links: [
             { label: "Produtos", href: "/produtos" },
             { label: "Favoritos", href: "/favoritos" },
-            { label: "Central do vendedor", href: "/vendedor" },
+            { label: "Meus anúncios", href: "/vendedor" },
         ],
     },
     {

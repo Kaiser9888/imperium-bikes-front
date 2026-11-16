@@ -202,7 +202,7 @@ export function ListaPedidos({ lado }: { lado: "compras" | "vendas" }) {
                         <span className="type-label block text-foreground">
                             {vendasAbertas === 1 ? "Você tem 1 venda esperando" : `Você tem ${vendasAbertas} vendas esperando`}
                         </span>
-                        <span className="type-caption block text-muted-foreground">Código e envio ficam em Minhas vendas, na Central do vendedor.</span>
+                        <span className="type-caption block text-muted-foreground">Código e envio ficam em Minhas vendas, dentro de Meus anúncios.</span>
                     </span>
                     <ChevronRight className="size-5 shrink-0 text-muted-foreground" aria-hidden="true" />
                 </Link>

@@ -15,8 +15,7 @@ import { DenunciasAdmin } from "@/components/admin/denuncias-admin"
 import { SuporteAdmin } from "@/components/admin/suporte-admin"
 import { UsuariosAdmin } from "@/components/admin/usuarios-admin"
 import { BottomNav } from "@/components/layout/bottom-nav"
-import { Logo } from "@/components/layout/logo"
-import { BackButton } from "@/components/ui/back-button"
+import { TopoFocado } from "@/components/layout/topo-focado"
 import { useIsAdmin } from "@/lib/use-is-admin"
 
 const ABAS = [
@@ -97,13 +96,7 @@ export default function AdminPage() {
 
     return (
         <div className="min-h-screen bg-background text-foreground">
-            <header className="sticky top-0 z-40 border-b border-border bg-background/90 backdrop-blur">
-                <div className="mx-auto flex max-w-5xl items-center gap-2 px-3 py-2.5 md:px-6">
-                    <BackButton href="/" />
-                    <p className="type-caption font-semibold uppercase tracking-[0.18em] text-muted-foreground">Administração</p>
-                    <Logo compact className="ml-auto" />
-                </div>
-            </header>
+            <TopoFocado titulo="Administração" voltarPara="/" />
             <main className="mx-auto max-w-5xl px-4 pb-32 pt-6 md:px-6">{conteudo}</main>
             <BottomNav />
         </div>

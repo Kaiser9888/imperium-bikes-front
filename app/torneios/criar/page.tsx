@@ -7,8 +7,7 @@ import { useUser } from "@clerk/nextjs"
 import { ArrowRight, Check, ImagePlus, Loader2, Plus, X } from "lucide-react"
 
 import { BottomNav } from "@/components/layout/bottom-nav"
-import { Logo } from "@/components/layout/logo"
-import { BackButton } from "@/components/ui/back-button"
+import { TopoFocado } from "@/components/layout/topo-focado"
 import { Button } from "@/components/ui/button"
 import { formatarPreco, partesDaData } from "@/lib/format"
 import { compactarImagem } from "@/lib/imagem"
@@ -149,15 +148,7 @@ export default function CriarTorneioPage() {
     const alcancavel = (p: number) => Array.from({ length: p - 1 }, (_, i) => i + 1).every((q) => !pendencia(q))
     const falta = pendencia(passo)
 
-    const cabecalho = (
-        <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur-md">
-            <div className="mx-auto flex w-full max-w-3xl items-center justify-between gap-3 px-4 py-2.5">
-                <BackButton href="/torneios" className="-ml-2.5" />
-                <p className="type-caption font-semibold uppercase tracking-[0.18em] text-muted-foreground">Novo evento</p>
-                <Logo compact />
-            </div>
-        </header>
-    )
+    const cabecalho = <TopoFocado titulo="Novo evento" voltarPara="/torneios" largura="max-w-3xl" />
 
     if (criadoId) {
         return (
@@ -544,7 +535,7 @@ export default function CriarTorneioPage() {
                             {falta && <p className="type-body-small mt-6 text-white/80">{falta}</p>}
                             <Button
                                 type="button"
-                                variant="accent"
+                                variant="default"
                                 size="lg"
                                 onClick={handleSubmit}
                                 disabled={enviando || semRecebimentos || !!falta}

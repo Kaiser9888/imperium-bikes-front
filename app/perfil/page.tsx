@@ -274,7 +274,7 @@ export default function PerfilPage() {
                                 <Button asChild variant="outline">
                                     <Link href="/vendedor">
                                         <Store aria-hidden="true" />
-                                        Central do vendedor
+                                        Meus anúncios
                                     </Link>
                                 </Button>
                             </>

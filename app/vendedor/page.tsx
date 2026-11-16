@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button"
 
 import { useEffect, useMemo, useRef, useState, useCallback, useSyncExternalStore } from "react"
 import Link from "next/link"
-import { Logo } from "@/components/layout/logo"
+import { TopoFocado } from "@/components/layout/topo-focado"
 import { useUser } from "@clerk/nextjs"
 import {
   ArrowRight,
@@ -42,7 +42,6 @@ import {
   type ProdutoItem,
 } from "@/services/publish/seller-products.service"
 import { clearDraft } from "@/lib/publicar/categorias"
-import { BackButton } from "@/components/ui/back-button"
 import { ETIQUETA_AUTOMATICA } from "@/lib/etiqueta"
 import { ESPORTES_ABERTOS } from "@/lib/esportes"
 import api from "@/lib/api"
@@ -248,15 +247,7 @@ export default function CentralVendedorPage() {
   }
 
   /* Voltar vai para a página principal */
-  const Topo = (
-    <header className="sticky top-0 z-40 border-b border-border bg-background/90 backdrop-blur">
-      <div className="mx-auto flex max-w-5xl items-center gap-2 px-3 py-2.5 md:px-6">
-        <BackButton href="/" />
-        <h1 className="font-heading text-lg font-bold">Central do vendedor</h1>
-        <Logo compact className="ml-auto" />
-      </div>
-    </header>
-  )
+  const Topo = <TopoFocado titulo="Meus anúncios" voltarPara="/" />
 
   if (!isLoaded) {
     return (
@@ -336,7 +327,7 @@ export default function CentralVendedorPage() {
         <section className="rounded-3xl border border-border bg-surface p-5 md:p-7">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
-              <p className="font-heading text-2xl font-bold leading-tight md:text-3xl">Sua loja</p>
+              <p className="font-heading text-2xl font-bold leading-tight md:text-3xl">Seu resumo</p>
               <p className="mt-1 text-sm text-muted-foreground">
                 {contagem.TODOS === 0
                   ? "Publique o primeiro anúncio e comece a vender."

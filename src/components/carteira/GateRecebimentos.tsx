@@ -1,10 +1,9 @@
 "use client"
 
 import { useState } from "react"
-import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { ArrowLeft } from "lucide-react"
 
+import { TopoFocado } from "@/components/layout/topo-focado"
 import { Loader } from "@/components/ui/loader"
 import { useRecebimentos } from "@/hooks/useRecebimentos"
 import { AtivarRecebimentos } from "./AtivarRecebimentos"
@@ -24,11 +23,10 @@ export function GateRecebimentos({ children }: { children: React.ReactNode }) {
 
     const servico = pathname.includes("/servicos")
     return (
+        <>
+        <TopoFocado titulo="Novo anúncio" voltarPara="/vendedor" largura="max-w-xl" />
         <main className="mx-auto w-full max-w-xl px-4 pb-16 pt-6">
-            <Link href="/" className="type-body-small inline-flex items-center gap-1.5 text-muted-foreground hover:text-foreground">
-                <ArrowLeft className="size-4" aria-hidden /> Voltar
-            </Link>
-            <h1 className="type-h1 mt-4">Antes de anunciar</h1>
+            <h2 className="type-h1">Antes de anunciar</h2>
             <div className="mt-6">
                 <AtivarRecebimentos
                     titulo="Ative seus recebimentos"
@@ -48,5 +46,6 @@ export function GateRecebimentos({ children }: { children: React.ReactNode }) {
                 </AtivarRecebimentos>
             </div>
         </main>
+        </>
     )
 }

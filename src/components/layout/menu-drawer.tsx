@@ -64,7 +64,7 @@ const menuSections: MenuSection[] = [
         // Tudo de anunciar (publicar, rascunhos, gerenciar) fica dentro da Central
         title: "Vender",
         items: [
-            { icon: Store, label: "Central do vendedor", href: "/vendedor" },
+            { icon: Store, label: "Meus anúncios", href: "/vendedor" },
             { icon: Wallet, label: "Carteira", href: "/carteira", conta: true },
             ...(ANUNCIOS_ABERTOS ? [{ icon: Megaphone, label: "Anunciar nos vídeos", href: "/anunciar", conta: true }] : []),
         ],
@@ -108,7 +108,7 @@ export function MenuDrawer({ open, onOpenChange }: MenuDrawerProps) {
     const todosOsLinks = secoes.flatMap((section) => section.items.map((item) => item.href))
 
     // Entre /torneios e /torneios/criar, só o link mais específico fica marcado
-    // e o fluxo de publicação (/publicar/...) conta como Central do vendedor
+    // e o fluxo de publicação (/publicar/...) conta como Meus anúncios
     const rota = isRouteActive(pathname, "/publicar") ? "/vendedor" : pathname
     const ativo = todosOsLinks
         .filter((href) => isRouteActive(rota, href))
@@ -119,7 +119,8 @@ export function MenuDrawer({ open, onOpenChange }: MenuDrawerProps) {
             <SheetContent side="right" className="flex w-[min(90vw,22.5rem)] flex-col gap-0 border-l-0 bg-surface p-0 sm:max-w-none">
                 <div className="flex items-center gap-2.5 px-6 pb-5 pt-6">
                     <OrcaMark className="h-8" />
-                    <SheetTitle className="brand-name text-xl">Imperium Bikes</SheetTitle>
+                    {/* text-primary: o text-foreground do SheetTitle apagava o vermelho da marca */}
+                    <SheetTitle className="brand-name text-xl font-normal text-primary">Imperium Bikes</SheetTitle>
                     <SheetDescription className="sr-only">Menu principal</SheetDescription>
                 </div>
 

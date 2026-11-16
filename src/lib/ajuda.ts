@@ -127,8 +127,8 @@ export const topicos: Topico[] = [
         perguntas: [
             {
                 pergunta: "Como anuncio um produto?",
-                resposta: "Abra a Central do vendedor, escolha a categoria e siga as etapas: informações, fotos, frete e preço. O anúncio entra no ar na hora.",
-                link: { href: "/vendedor", label: "Central do vendedor" },
+                resposta: "Abra Meus anúncios (no menu), escolha a categoria e siga as etapas: informações, fotos, frete e preço. O anúncio entra no ar na hora.",
+                link: { href: "/vendedor", label: "Meus anúncios" },
             },
             {
                 pergunta: "Como embalo e envio uma bike?",
@@ -149,8 +149,8 @@ export const topicos: Topico[] = [
             {
                 pergunta: "Vendi com envio. Como despacho?",
                 resposta: ETIQUETA_AUTOMATICA
-                    ? "O site compra a etiqueta com o frete que o comprador pagou. Em Minhas vendas, na Central do vendedor, toque em Imprimir etiqueta, cole na caixa com o peso e as medidas do anúncio e poste em até 3 dias úteis no local indicado (sem pagar nada). O rastreio entra sozinho. Antes da primeira venda, cadastre seu endereço de envio em Configurações."
-                    : "Em Minhas vendas, na Central do vendedor, aparecem o endereço de quem recebe e o serviço de frete escolhido. Compre a etiqueta no Melhor Envio nesse mesmo serviço (assim o valor bate com o frete pago, que você recebe junto com a venda), use a caixa com o peso e as medidas do anúncio, poste em até 3 dias úteis e informe o código de rastreio no pedido. O prazo de liberação só começa depois disso.",
+                    ? "O site compra a etiqueta com o frete que o comprador pagou. Em Minhas vendas, dentro de Meus anúncios, toque em Imprimir etiqueta, cole na caixa com o peso e as medidas do anúncio e poste em até 3 dias úteis no local indicado (sem pagar nada). O rastreio entra sozinho. Antes da primeira venda, cadastre seu endereço de envio em Configurações."
+                    : "Em Minhas vendas, dentro de Meus anúncios, aparecem o endereço de quem recebe e o serviço de frete escolhido. Compre a etiqueta no Melhor Envio nesse mesmo serviço (assim o valor bate com o frete pago, que você recebe junto com a venda), use a caixa com o peso e as medidas do anúncio, poste em até 3 dias úteis e informe o código de rastreio no pedido. O prazo de liberação só começa depois disso.",
                 link: { href: "/vendedor/vendas", label: "Abrir Minhas vendas" },
             },
             {
