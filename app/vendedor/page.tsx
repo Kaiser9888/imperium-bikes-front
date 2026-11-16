@@ -59,9 +59,9 @@ import { useRecebimentos } from "@/hooks/useRecebimentos"
   Dica: renomeie /publicar/bikes para /publicar/equipamentos quando puder.
 */
 const tiposDeAnuncio = [
-  { slug: "bikes", label: "Bikes e equipamentos", desc: "Bike completa, quadro ou e-bike", icon: Bike },
+  { slug: "bikes", label: "Bikes", desc: "Bike completa, quadro ou e-bike", icon: Bike },
   { slug: "pecas", label: "Peças e acessórios", desc: "Componentes, capacete, luvas, ciclocomputador", icon: Cog },
-  { slug: "servicos", label: "Serviços e aulas", desc: "Manutenção, treino, aulas e aluguel", icon: Wrench },
+  { slug: "servicos", label: "Oficina e serviços", desc: "Manutenção, treino, aulas e aluguel", icon: Wrench },
   { slug: "produtos", label: "Roupas e calçados", desc: "Vestuário, tênis, mochilas e itens gerais", icon: Shirt },
   { slug: "consumiveis", label: "Nutrição e hidratação", desc: "Suplementos, géis e isotônicos", icon: Droplets },
   ...(ESPORTES_ABERTOS ? [{ slug: "esportes", label: "Outros esportes", desc: "Montanha, corrida, água, quadra e mais", icon: Mountain }] : []),

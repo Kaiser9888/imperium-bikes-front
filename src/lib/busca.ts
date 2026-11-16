@@ -1,8 +1,9 @@
 import { API_BASE_URL } from "@/lib/api-config"
+import { nomeDaCategoria } from "@/lib/categorias-loja"
 import { esportes, modalidades } from "@/lib/esportes"
 
 /** Campos filtráveis da busca (o backend devolve a contagem de cada valor). */
-export const FILTROS = ["modality", "sport", "productType", "brand", "condition", "state"] as const
+export const FILTROS = ["category", "modality", "sport", "productType", "brand", "condition", "state"] as const
 export type Filtro = (typeof FILTROS)[number]
 
 export const ORDENS = [
@@ -44,6 +45,7 @@ export type BuscaResultado = {
 
 /** Texto amigável de cada valor de filtro. */
 export function rotuloDoValor(campo: Filtro, valor: string): string {
+    if (campo === "category") return nomeDaCategoria(valor) ?? capitalizar(valor)
     if (campo === "modality") return modalidades.find((m) => m.slug === valor)?.label ?? capitalizar(valor)
     if (campo === "sport") return esportes.find((e) => e.slug === valor)?.nome ?? capitalizar(valor)
     if (campo === "condition") return valor === "NEW" ? "Novo" : valor === "USED" ? "Usado" : valor

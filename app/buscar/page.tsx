@@ -15,6 +15,8 @@ import { Loader } from "@/components/ui/loader"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { Skeleton } from "@/components/ui/skeleton"
+import { CategoriasLista } from "@/components/home/categorias-lista"
+import { categoriasLoja, nomeDaCategoria } from "@/lib/categorias-loja"
 import { esportesVisiveis, modalidades } from "@/lib/esportes"
 import {
   FILTROS,
@@ -30,6 +32,7 @@ import { cn } from "@/lib/utils"
 const HISTORICO_KEY = "imperium-product-search-history"
 
 const ROTULOS: Record<Filtro, string> = {
+  category: "Categoria",
   modality: "Modalidade",
   sport: "Esporte",
   productType: "Tipo de produto",
@@ -40,16 +43,39 @@ const ROTULOS: Record<Filtro, string> = {
 
 /** Sem Meilisearch o backend não manda contagens; estes filtros continuam funcionando com a lista fixa. */
 const OPCOES_FIXAS: Partial<Record<Filtro, string[]>> = {
+  category: categoriasLoja.map((c) => c.slug),
   modality: modalidades.map((m) => m.slug),
   sport: esportesVisiveis.map((e) => e.slug),
   condition: ["NEW", "USED"],
 }
 
-/** Modalidades e esportes numa lista só, como na Home, mas filtrando aqui mesmo. */
-const CATEGORIAS: { campo: Filtro; valor: string; label: string }[] = [
-  ...modalidades.map((m) => ({ campo: "modality" as const, valor: m.slug, label: m.label })),
-  ...esportesVisiveis.map((e) => ({ campo: "sport" as const, valor: e.slug, label: e.nome })),
+/** Faixas de preço em um toque (pílulas do topo e do painel). */
+const FAIXAS_PRECO: { label: string; min?: string; max?: string }[] = [
+  { label: "Até R$ 500", max: "500" },
+  { label: "R$ 500 a 2 mil", min: "500", max: "2000" },
+  { label: "Acima de R$ 2 mil", min: "2000" },
 ]
+
+/** Campos que já têm pílula no topo; os demais aparecem como etiqueta removível. */
+const NAS_PILULAS: Filtro[] = ["category", "modality", "condition"]
+
+/** Pílula de filtro: escura quando escolhida (mesmo padrão do botão principal). */
+function Pilula({ ativo, onClick, children, contagem }: { ativo: boolean; onClick: () => void; children: React.ReactNode; contagem?: number }) {
+  return (
+    <button
+      type="button"
+      aria-pressed={ativo}
+      onClick={onClick}
+      className={cn(
+        "type-label inline-flex h-9 shrink-0 cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-full border px-3.5 transition-colors [&_svg]:size-4",
+        ativo ? "border-foreground bg-foreground text-background" : "border-border bg-surface text-foreground hover:border-foreground/40",
+      )}
+    >
+      {children}
+      {contagem !== undefined && <span className={cn("tabular-nums", ativo ? "opacity-70" : "text-muted-foreground")}>{contagem}</span>}
+    </button>
+  )
+}
 
 type Estado =
   | { status: "idle" }
@@ -254,7 +280,6 @@ function BuscarPageContent() {
               setHistorico([])
               salvarHistorico([])
             }}
-            onFiltro={(campo, valor) => atualizar({ [campo]: valor })}
             digitando={texto.trim().length === 1}
           />
         ) : (
@@ -267,7 +292,11 @@ function BuscarPageContent() {
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="min-w-0">
                   <h1 className="type-h2 truncate text-foreground">
-                    {params.q.trim() ? <>Resultados para “{params.q.trim()}”</> : "Explorar produtos"}
+                    {params.q.trim() ? (
+                      <>Resultados para “{params.q.trim()}”</>
+                    ) : (
+                      (params.filtros.category && nomeDaCategoria(params.filtros.category)) || "Explorar produtos"
+                    )}
                   </h1>
                   <p className="type-body-small mt-1 text-muted-foreground">
                     {resultado
@@ -319,16 +348,18 @@ function BuscarPageContent() {
                 </div>
               </div>
 
+              <FiltrosRapidos params={params} atualizar={atualizar} />
+
               {temFiltro && (
-                <ul className="mt-4 flex flex-wrap items-center gap-2" aria-label="Filtros ativos">
-                  {FILTROS.filter((campo) => params.filtros[campo]).map((campo) => (
+                <ul className="mt-3 flex flex-wrap items-center gap-2" aria-label="Filtros ativos">
+                  {FILTROS.filter((campo) => params.filtros[campo] && !NAS_PILULAS.includes(campo)).map((campo) => (
                     <li key={campo}>
                       <Chip onRemover={() => atualizar({ [campo]: null })}>
                         <span className="text-muted-foreground">{ROTULOS[campo]}:</span> {rotuloDoValor(campo, params.filtros[campo]!)}
                       </Chip>
                     </li>
                   ))}
-                  {(params.minPrice || params.maxPrice) && (
+                  {(params.minPrice || params.maxPrice) && !faixaEscolhida(params) && (
                     <li>
                       <Chip onRemover={() => atualizar({ minPrice: null, maxPrice: null })}>
                         <span className="text-muted-foreground">Preço:</span>{" "}
@@ -410,13 +441,11 @@ function Inicio({
   historico,
   onTermo,
   onLimparHistorico,
-  onFiltro,
   digitando,
 }: {
   historico: string[]
   onTermo: (termo: string) => void
   onLimparHistorico: () => void
-  onFiltro: (campo: Filtro, valor: string) => void
   digitando: boolean
 }) {
   return (
@@ -450,20 +479,12 @@ function Inicio({
         </section>
       )}
 
-      {/* Mesmo visual das Categorias da Home: texto com traço vermelho no hover */}
-      <section aria-labelledby="categorias-title">
-        <h2 id="categorias-title" className="type-h2 border-b border-border pb-3 text-foreground">
-          Explorar por categoria
+      {/* Os mesmos cartões da página Categorias */}
+      <section aria-labelledby="categorias-title" className="flex flex-col gap-5">
+        <h2 id="categorias-title" className="type-h2 text-foreground">
+          O que você procura?
         </h2>
-        <ul className="mt-5 flex flex-wrap gap-x-7 gap-y-2">
-          {CATEGORIAS.map(({ campo, valor, label }) => (
-            <li key={`${campo}-${valor}`}>
-              <button type="button" onClick={() => onFiltro(campo, valor)} className="underline-btn underline-btn--ink inline-block">
-                <span className="block py-1.5">{label}</span>
-              </button>
-            </li>
-          ))}
-        </ul>
+        <CategoriasLista />
       </section>
     </div>
   )
@@ -528,37 +549,15 @@ function GrupoFiltro({
   return (
     <fieldset className="py-5 first:pt-0">
       <legend className="type-label text-foreground">{titulo}</legend>
-      <ul className="mt-3 flex flex-col gap-0.5">
-        {lista.map((valor) => {
-          const ativo = valor === escolhido
-          return (
-            <li key={valor}>
-              <button
-                type="button"
-                aria-pressed={ativo}
-                onClick={() => onEscolher(valor)}
-                className={cn(
-                  "type-body-small flex w-full cursor-pointer items-center gap-3 rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-surface-muted",
-                  ativo ? "font-semibold text-foreground" : "text-muted-foreground",
-                )}
-              >
-                <span
-                  aria-hidden="true"
-                  className={cn(
-                    "grid size-4 shrink-0 place-items-center rounded-full border",
-                    ativo ? "border-primary bg-primary" : "border-border",
-                  )}
-                >
-                  {ativo && <span className="size-1.5 rounded-full bg-primary-foreground" />}
-                </span>
-                <span className="min-w-0 flex-1 truncate">{rotulo(valor)}</span>
-                {contagens[valor] !== undefined && (
-                  <span className="type-caption shrink-0 tabular-nums text-muted-foreground">{contagens[valor]}</span>
-                )}
-              </button>
-            </li>
-          )
-        })}
+      {/* Pílulas em vez de lista com bolinhas */}
+      <ul className="mt-3 flex flex-wrap gap-2">
+        {lista.map((valor) => (
+          <li key={valor}>
+            <Pilula ativo={valor === escolhido} onClick={() => onEscolher(valor)} contagem={contagens[valor]}>
+              {rotulo(valor)}
+            </Pilula>
+          </li>
+        ))}
       </ul>
       {valores.length > VISIVEIS && (
         <button type="button" onClick={() => setTodos(!todos)} className="type-label mt-2 cursor-pointer px-2 text-primary hover:underline">
@@ -583,7 +582,20 @@ function FiltroPreco({ min, max, onAplicar }: { min?: string; max?: string; onAp
     >
       <fieldset>
         <legend className="type-label text-foreground">Preço (R$)</legend>
-        <div className="mt-3 flex items-center gap-2">
+        <ul className="mt-3 flex flex-wrap gap-2">
+          {FAIXAS_PRECO.map((faixa) => {
+            const ativo = (min ?? "") === (faixa.min ?? "") && (max ?? "") === (faixa.max ?? "")
+            return (
+              <li key={faixa.label}>
+                <Pilula ativo={ativo} onClick={() => (ativo ? onAplicar(null, null) : onAplicar(faixa.min ?? null, faixa.max ?? null))}>
+                  {faixa.label}
+                </Pilula>
+              </li>
+            )
+          })}
+        </ul>
+        <p className="type-caption mt-4 text-muted-foreground">Ou escolha os valores</p>
+        <div className="mt-2 flex items-center gap-2">
           <Input inputMode="numeric" placeholder="Mínimo" aria-label="Preço mínimo" value={minimo} onChange={(e) => setMinimo(limpar(e.target.value))} />
           <span className="text-muted-foreground" aria-hidden="true">
             –
@@ -595,6 +607,75 @@ function FiltroPreco({ min, max, onAplicar }: { min?: string; max?: string; onAp
         </Button>
       </fieldset>
     </form>
+  )
+}
+
+function faixaEscolhida(params: BuscaParams) {
+  return FAIXAS_PRECO.find((f) => (params.minPrice ?? "") === (f.min ?? "") && (params.maxPrice ?? "") === (f.max ?? ""))
+}
+
+/**
+ * Filtros em um toque, logo abaixo do título: categoria (ou modalidade, dentro de Bikes),
+ * condição e faixa de preço. Rola de lado no celular. O botão Filtros abre o resto.
+ */
+function FiltrosRapidos({
+  params,
+  atualizar,
+}: {
+  params: BuscaParams
+  atualizar: (mudancas: Record<string, string | null | undefined>) => void
+}) {
+  const { category, modality, condition } = params.filtros
+  const faixa = faixaEscolhida(params)
+  const alternar = (campo: Filtro, valor: string, atual?: string) => atualizar({ [campo]: atual === valor ? null : valor })
+
+  return (
+    <ul className="-mx-4 mt-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:mx-0 sm:px-0" aria-label="Filtros rápidos">
+      {!category &&
+        categoriasLoja.map(({ slug, curto, icone: Icone }) => (
+          <li key={slug}>
+            <Pilula ativo={false} onClick={() => atualizar({ category: slug })}>
+              <Icone aria-hidden="true" />
+              {curto}
+            </Pilula>
+          </li>
+        ))}
+      {category && (
+        <li>
+          <Pilula ativo onClick={() => atualizar({ category: null, modality: null })}>
+            {nomeDaCategoria(category) ?? category}
+            <X aria-hidden="true" />
+            <span className="sr-only">(remover)</span>
+          </Pilula>
+        </li>
+      )}
+      {category === "bikes" &&
+        modalidades.map(({ slug, label }) => (
+          <li key={slug}>
+            <Pilula ativo={modality === slug} onClick={() => alternar("modality", slug, modality)}>
+              {label}
+            </Pilula>
+          </li>
+        ))}
+      {category !== "servicos" &&
+        (["USED", "NEW"] as const).map((valor) => (
+          <li key={valor}>
+            <Pilula ativo={condition === valor} onClick={() => alternar("condition", valor, condition)}>
+              {valor === "NEW" ? "Novo" : "Usado"}
+            </Pilula>
+          </li>
+        ))}
+      {FAIXAS_PRECO.map((f) => (
+        <li key={f.label}>
+          <Pilula
+            ativo={faixa === f}
+            onClick={() => atualizar(faixa === f ? { minPrice: null, maxPrice: null } : { minPrice: f.min ?? null, maxPrice: f.max ?? null })}
+          >
+            {f.label}
+          </Pilula>
+        </li>
+      ))}
+    </ul>
   )
 }
 

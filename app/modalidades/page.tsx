@@ -2,7 +2,6 @@ import type { Metadata } from "next"
 
 import { CategoriasLista } from "@/components/home/categorias-lista"
 import { PageHeading } from "@/components/layout/page-heading"
-import { ESPORTES_ABERTOS } from "@/lib/esportes"
 
 export const metadata: Metadata = { title: "Categorias | Imperium Bikes" }
 
@@ -11,7 +10,7 @@ export default function CategoriasPage() {
         <main className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 pb-16 pt-3 sm:px-6 lg:px-8 lg:pt-6">
             <PageHeading
                 title="Categorias"
-                description={ESPORTES_ABERTOS ? "Bikes e outros esportes. Escolha uma para ver os produtos." : "Escolha uma modalidade para ver os produtos."}
+                description="O que você está procurando?"
                 back={{ href: "/", label: "Início" }}
             />
             <CategoriasLista />
