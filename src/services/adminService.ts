@@ -62,6 +62,10 @@ export const denunciaService = {
     async resolver(id: string, notes: string): Promise<Denuncia> {
         return (await api.post<Denuncia>(`/api/reports/${id}/resolve`, { notes })).data
     },
+    /** Procedente: tira o item do ar (conta: congela) e resolve as denúncias abertas dele. */
+    async remover(id: string, notes: string): Promise<Denuncia> {
+        return (await api.post<Denuncia>(`/api/reports/${id}/remover`, { notes })).data
+    },
     async descartar(id: string, notes: string): Promise<Denuncia> {
         return (await api.post<Denuncia>(`/api/reports/${id}/dismiss`, { notes })).data
     },

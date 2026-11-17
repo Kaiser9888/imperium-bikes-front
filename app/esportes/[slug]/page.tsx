@@ -4,7 +4,7 @@ import { notFound } from "next/navigation"
 import { AppShell } from "@/components/layout/app-shell"
 import { PageHeading } from "@/components/layout/page-heading"
 import { CatalogoFiltrado } from "@/components/marketplace/catalogo-filtrado"
-import { esportes } from "@/lib/esportes"
+import { esportesVisiveis as esportes } from "@/lib/esportes"
 import { TIPOS_POR_ESPORTE } from "@/lib/publicar/taxonomia"
 
 type Props = { params: Promise<{ slug: string }> }

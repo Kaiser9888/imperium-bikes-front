@@ -24,11 +24,12 @@ const MOTIVO: Record<Denuncia["reason"], string> = {
     OTHER: "Outro",
 }
 
-const TIPO: Record<TipoDenunciado, { label: string; href?: (id: string) => string }> = {
-    PRODUCT: { label: "Anúncio", href: (id) => `/produtos/${id}` },
-    USER: { label: "Usuário", href: (id) => `/perfil/${id}` },
-    VIDEO: { label: "Vídeo", href: (id) => `/videos/watch/${id}` },
-    TOURNAMENT: { label: "Evento", href: (id) => `/torneios/${id}` },
+/** remover: o que o botão faz com o item denunciado (sem ele, só dá para resolver ou descartar). */
+const TIPO: Record<TipoDenunciado, { label: string; href?: (id: string) => string; remover?: { botao: string; efeito: string } }> = {
+    PRODUCT: { label: "Anúncio", href: (id) => `/produtos/${id}`, remover: { botao: "Remover anúncio", efeito: "O anúncio sai do site." } },
+    USER: { label: "Usuário", href: (id) => `/perfil/${id}`, remover: { botao: "Congelar conta", efeito: "A pessoa não entra mais e os anúncios dela saem do ar. Para liberar, descongele em Usuários." } },
+    VIDEO: { label: "Vídeo", href: (id) => `/videos/watch/${id}`, remover: { botao: "Remover vídeo", efeito: "O vídeo sai do site e é apagado no Mux." } },
+    TOURNAMENT: { label: "Evento", href: (id) => `/torneios/${id}`, remover: { botao: "Cancelar evento", efeito: "O evento é cancelado e as inscrições pagas são devolvidas." } },
     POST: { label: "Post do fórum" },
     COMMENT: { label: "Comentário" },
 }
@@ -69,6 +70,21 @@ export function DenunciasAdmin() {
                 await (tipo === "resolver" ? denunciaService.resolver(d.id, notas) : denunciaService.descartar(d.id, notas))
                 // Saiu da fila atual
                 setLista((l) => l?.filter((x) => x.id !== d.id) ?? null)
+            },
+        })
+    }
+
+    function remover(d: Denuncia) {
+        const r = TIPO[d.reportedType].remover
+        if (!r) return
+        setPedido({
+            titulo: r.botao,
+            descricao: `${r.efeito} As outras denúncias abertas sobre o mesmo item também são resolvidas. Escreva o motivo.`,
+            rotulo: "Motivo",
+            acao: r.botao,
+            confirmar: async (notas) => {
+                await denunciaService.remover(d.id, notas)
+                setLista((l) => l?.filter((x) => !(x.reportedType === d.reportedType && x.reportedId === d.reportedId)) ?? null)
             },
         })
     }
@@ -116,6 +132,11 @@ export function DenunciasAdmin() {
                                     )}
                                     {filtro === "PENDING" && (
                                         <>
+                                            {tipo.remover && (
+                                                <button type="button" onClick={() => remover(d)} className="line-btn line-btn--sm text-destructive">
+                                                    {tipo.remover.botao}
+                                                </button>
+                                            )}
                                             <button type="button" onClick={() => decidir(d, "resolver")} className="line-btn line-btn--sm">
                                                 Resolver
                                             </button>
