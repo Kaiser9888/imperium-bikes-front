@@ -18,6 +18,7 @@ import {
   modalidadeSugerida,
 } from '@/lib/publicar/taxonomia'
 import { PERGUNTAS } from '@/lib/publicar/perguntas'
+import { pareceNegociacaoFora } from '@/lib/seguranca'
 
 import { BackButton } from "@/components/ui/back-button"
 
@@ -202,6 +203,14 @@ export default function InformacoesPage() {
 
             <small>{descricao.length}/1000</small>
           </label>
+
+          {/* Mesma checagem do servidor: avisa antes, para o vendedor tirar e o anúncio ir ao ar na hora */}
+          {pareceNegociacaoFora(`${titulo} ${descricao}`) && (
+            <p className="field-note" role="note">
+              Telefone, Pix, WhatsApp ou links no anúncio mandam ele para análise antes de ir ao ar. Tire e
+              combine tudo pelo chat do Imperium, onde o pagamento tem proteção.
+            </p>
+          )}
 
           {!pedeDestino ? null : sugerida && destino === sugerida && !trocandoDestino ? (
             <div className="price-summary">

@@ -13,7 +13,7 @@ import { mensagemDaApi } from "@/services/tournamentService"
 type Contagens = { campanhas: number; denuncias: number; chamados: number; contasCongeladas: number; bikesRoubadas: number; disputas: number; anunciosEmAnalise: number; retiradasParadas: number; enviosAtrasados: number; etiquetas: number; repassesTravados: number; pagosSemRegistro: number; dinheiroARecuperar: number; dividas: number }
 type Devedor = { userId: string; nome: string | null; email: string | null; valor: number }
 type ContaCongelada = { userId: string; fullName: string | null; email: string | null; congeladaEm: string }
-type AnuncioEmAnalise = { productId: string; title: string; price: number; vendedor: string | null; contaCriadaEm: string | null; createdAt: string }
+type AnuncioEmAnalise = { productId: string; title: string; price: number; vendedor: string | null; contaCriadaEm: string | null; createdAt: string; motivo?: string | null }
 type RetiradaParada = { orderId: string; productTitle: string; valor: number; comprador: string | null; vendedor: string | null; createdAt: string; motivo?: string | null }
 /** Pagos sem registro podem não ter pagamento nem título no site. */
 type ItemSemId = Omit<RetiradaParada, "orderId" | "productTitle"> & { orderId: string | null; productTitle: string | null }
@@ -25,7 +25,7 @@ export type AbaPendencia = "disputas" | "anuncios" | "denuncias" | "suporte" | "
 const FILAS: { chave: keyof Contagens; aba?: AbaPendencia; titulo: string; texto: string; icon: LucideIcon; urgente?: boolean }[] = [
     { chave: "disputas", aba: "disputas", titulo: "Disputas de pedido", texto: "Dinheiro retido esperando decisão", icon: Scale, urgente: true },
     { chave: "contasCongeladas", titulo: "Contas congeladas", texto: "Confirme quem é o dono antes de liberar", icon: Snowflake, urgente: true },
-    { chave: "anunciosEmAnalise", titulo: "Anúncios caros em análise", texto: "Conta nova ou sem vendas", icon: Tag },
+    { chave: "anunciosEmAnalise", titulo: "Anúncios em análise", texto: "Caros de conta nova ou com sinal suspeito", icon: Tag },
     { chave: "retiradasParadas", titulo: "Retiradas paradas", texto: "Envio combinado sem código há 15 dias, ou retirada parada", icon: Timer, urgente: true },
     { chave: "enviosAtrasados", titulo: "Envios atrasados", texto: "Pagos há mais de 3 dias úteis sem rastreio", icon: Truck, urgente: true },
     { chave: "etiquetas", titulo: "Etiquetas com problema", texto: "O site não conseguiu gerar a etiqueta", icon: Printer, urgente: true },
@@ -350,7 +350,7 @@ export function PendenciasAdmin({ onAbrir }: { onAbrir: (aba: AbaPendencia) => v
             {emAnalise.length > 0 && (
                 <section aria-labelledby="em-analise-title" className="mt-8">
                     <h2 id="em-analise-title" className="type-label uppercase tracking-wider text-muted-foreground">
-                        Anúncios caros em análise
+                        Anúncios em análise
                     </h2>
                     <ul className="mt-3 divide-y divide-border border-y border-border">
                         {emAnalise.map((a) => (
@@ -362,6 +362,10 @@ export function PendenciasAdmin({ onAbrir }: { onAbrir: (aba: AbaPendencia) => v
                                     <p className="truncate text-xs text-muted-foreground">
                                         {a.vendedor || "Sem nome"}
                                         {a.contaCriadaEm && ` · conta de ${new Date(a.contaCriadaEm).toLocaleDateString("pt-BR")}`}
+                                    </p>
+                                    {/* Por que veio: checagem automática; sem motivo = anúncio caro de conta nova ou sem vendas */}
+                                    <p className={a.motivo ? "text-xs font-medium text-warning" : "text-xs text-muted-foreground"}>
+                                        {a.motivo ?? "Anúncio caro de conta nova ou sem vendas"}
                                     </p>
                                 </div>
                                 <button type="button" onClick={() => decidir(a, false)} className="line-btn line-btn--sm line-btn--danger">
