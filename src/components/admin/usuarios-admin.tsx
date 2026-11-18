@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react"
 import { Loader2, User } from "lucide-react"
 
 import { DialogoMotivo, type PedidoMotivo } from "@/components/admin/dialogo-motivo"
+import { DarSelo } from "@/components/admin/selos-admin"
 import { usuarioAdminService, type StatusUsuario, type UsuarioAdmin } from "@/services/adminService"
 import { mensagemDaApi } from "@/services/tournamentService"
 
@@ -151,6 +152,7 @@ export function UsuariosAdmin() {
                                         Congelada · descongelar
                                     </button>
                                 )}
+                                {u.status === "ACTIVE" && <DarSelo userId={u.userId} nome={u.fullName || "esta conta"} />}
                                 {!u.admin && (
                                     <div className="flex gap-5">
                                         {u.status === "ACTIVE" ? (

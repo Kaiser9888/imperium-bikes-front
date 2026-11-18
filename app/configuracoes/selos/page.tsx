@@ -120,7 +120,7 @@ function Vendedor({ dados }: { dados: Minhas }) {
     const itens: [boolean, string][] = [
         [v.identidade, v.identidade ? "Identidade confirmada pela Stripe" : "Ative os recebimentos na Carteira (a Stripe confirma sua identidade)"],
         [v.vendas >= dados.vendasMeta, `${Math.min(v.vendas, dados.vendasMeta)} de ${dados.vendasMeta} vendas entregues pelo Imperium`],
-        [notaOk, v.avaliacoes === 0 ? "Avaliação: ainda sem avaliações (não atrapalha)" : `Avaliação média ${Number(v.nota ?? 0).toFixed(1)} (precisa de 4,5 ou mais)`],
+        [notaOk, v.avaliacoes === 0 ? "Avaliação: ainda sem avaliações (não atrapalha)" : `Avaliação média ${Number(v.nota ?? 0).toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} (precisa de 4,5 ou mais)`],
         [v.diasConta >= 30, v.diasConta >= 30 ? "Conta com mais de 30 dias" : `Conta com ${v.diasConta} dias (precisa de 30)`],
         [v.semProblemas, v.semProblemas ? "Nenhuma denúncia procedente recente" : "Há uma suspensão ou denúncia procedente recente na conta"],
     ]
