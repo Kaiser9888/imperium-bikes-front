@@ -5,6 +5,8 @@ import { useEffect, useState } from "react"
 import { CalendarDays, Clapperboard, MapPin, Medal, ShieldCheck, Star, Trophy, type LucideIcon } from "lucide-react"
 
 import { ProdutoGrid } from "@/components/perfil/ProdutoGrid"
+import { Seguidores } from "@/components/perfil/Seguidores"
+import { SubscribeButton } from "@/components/videos/SubscribeButton"
 import { SponsorBanners, sponsorImageUrl, type Sponsor } from "@/components/perfil/SponsorBanners"
 import { DenunciarButton } from "@/components/ui/denunciar-button"
 import { VideoCard } from "@/components/videos/VideoCard"
@@ -88,6 +90,8 @@ export function PerfilView({
     aviso?: React.ReactNode
 }) {
     const [atividade, setAtividade] = useState<Atividade>({ status: "loading" })
+    // Visitante seguiu/deixou de seguir agora: soma no total sem buscar de novo
+    const [ajusteSeguidores, setAjusteSeguidores] = useState(0)
 
     useEffect(() => {
         let cancelado = false
@@ -202,6 +206,9 @@ export function PerfilView({
                             ))}
                         </ul>
 
+                        {/* key: ao trocar de perfil, as listas começam do zero */}
+                        <Seguidores key={perfil.id} userId={perfil.id} dono={dono} ajuste={ajusteSeguidores} />
+
                         <SponsorBanners sponsors={perfil.sponsors} gerenciarHref={dono ? "/configuracoes/patrocinadores" : undefined} />
 
                         {perfil.bio && (
@@ -209,7 +216,18 @@ export function PerfilView({
                         )}
                         {aviso}
                         {/* Lado a lado quando cabem; em tela estreita o segundo desce em vez de vazar do cartão */}
-                        {acoes && <div className="mt-5 flex flex-wrap gap-2 max-sm:[&>*]:grow">{acoes}</div>}
+                        {/* Perfil de outra pessoa: Seguir (o mesmo botão dos vídeos; some no próprio perfil) */}
+                        {(acoes || !dono) && (
+                            <div className="mt-5 flex flex-wrap gap-2 max-sm:[&>*]:grow">
+                                {acoes}
+                                {!dono && (
+                                    <SubscribeButton
+                                        userId={perfil.id}
+                                        onMudou={(seguindo) => setAjusteSeguidores((n) => n + (seguindo ? 1 : -1))}
+                                    />
+                                )}
+                            </div>
+                        )}
                     </div>
                 </div>
             </section>

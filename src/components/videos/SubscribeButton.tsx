@@ -18,6 +18,8 @@ type Props = {
   /** Mostra "N seguidores" ao lado. */
   showCount?: boolean;
   className?: string;
+  /** Avisa quem está em volta (ex.: total de seguidores do perfil) quando seguir ou deixar de seguir. */
+  onMudou?: (seguindo: boolean) => void;
 };
 
 export function formatInscritos(n: number): string {
@@ -27,7 +29,7 @@ export function formatInscritos(n: number): string {
 }
 
 /** Seguir o criador. Some no próprio canal. */
-export function SubscribeButton({ userId, variant = "default", showCount = false, className }: Props) {
+export function SubscribeButton({ userId, variant = "default", showCount = false, className, onMudou }: Props) {
   const { isSignedIn } = useAuth();
   const router = useRouter();
   const { backendUserId } = useUserSync();
@@ -62,11 +64,12 @@ export function SubscribeButton({ userId, variant = "default", showCount = false
     try {
       if (antes) await api.delete(`/api/users/${userId}/follow`);
       else await api.post(`/api/users/${userId}/follow`);
-      if (!antes) toast("Agora você segue este canal.");
+      if (!antes) toast("Agora você segue este perfil.");
+      onMudou?.(!antes);
     } catch {
       setInscrito(antes);
       setTotal((t) => (t == null ? t : t + (antes ? 1 : -1)));
-      toast.error("Não foi possível atualizar a inscrição.");
+      toast.error("Não foi possível atualizar. Tente de novo.");
     } finally {
       setOcupado(false);
     }
