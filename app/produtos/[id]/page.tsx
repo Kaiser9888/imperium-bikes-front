@@ -632,6 +632,7 @@ function ProdutoPage() {
                 id={p.seller.id}
                 nome={p.seller.name || "Vendedor"}
                 avatarUrl={p.seller.avatarUrl}
+                selos={p.seller}
                 acao={
                   <>
                     <Button type="button" variant="outline" className="w-full" onClick={falarComVendedor} loading={abrindoChat}>

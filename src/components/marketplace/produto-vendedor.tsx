@@ -6,19 +6,22 @@ import { User } from "lucide-react"
 
 import { Rating } from "@/components/ui/rating"
 import api from "@/lib/api"
+import { Selos, type SelosDaConta } from "@/components/perfil/Selos"
 import { cn } from "@/lib/utils"
 
 type Props = {
     id: string
     nome: string
     avatarUrl?: string | null
+    /** Selos do vendedor (vendedor verificado, loja verificada). */
+    selos?: SelosDaConta
     /** Botão no rodapé do cartão (ex.: Falar com vendedor). */
     acao?: React.ReactNode
     className?: string
 }
 
 /** Cartão do vendedor com nota e anúncios ativos reais. */
-export function ProdutoVendedor({ id, nome, avatarUrl, acao, className }: Props) {
+export function ProdutoVendedor({ id, nome, avatarUrl, selos, acao, className }: Props) {
     const [nota, setNota] = useState<{ average: number; count: number } | null>(null)
     const [ativos, setAtivos] = useState<number | null>(null)
     // Foto antiga do disco do Render some (404): cai nas iniciais em vez de um buraco
@@ -46,7 +49,10 @@ export function ProdutoVendedor({ id, nome, avatarUrl, acao, className }: Props)
                             {iniciais || <User className="size-5" />}
                         </div>
                     )}
-                    <p className="type-label truncate text-foreground">{nome}</p>
+                    <div className="min-w-0">
+                        <p className="type-label truncate text-foreground">{nome}</p>
+                        {selos && <Selos selos={selos} pequeno className="mt-1" />}
+                    </div>
                 </div>
                 <Link href={`/perfil/${id}`} className="type-label shrink-0 text-primary hover:underline">
                     Ver perfil

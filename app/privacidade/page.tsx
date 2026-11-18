@@ -59,6 +59,11 @@ export default function PrivacidadePage() {
                         <strong>Perfil público (opcional):</strong> bio, cidade, estado e patrocinadores que você mesmo preencher.
                     </li>
                     <li>
+                        <strong>Selos de verificado (opcional):</strong> para o selo de criador ou de loja, o link do seu perfil em outra rede,
+                        o número de seguidores informado e, para loja, o CNPJ, que consultamos na base pública da Receita Federal. O selo de
+                        vendedor usa dados que já temos (vendas entregues, avaliações e se a Stripe confirmou sua identidade).
+                    </li>
+                    <li>
                         <strong>Compras e vendas:</strong> produtos anunciados, pedidos, CEP e dados de entrega usados para calcular e
                         enviar o frete, e o histórico de disputas. Numa compra com envio, o nome, endereço, telefone e CPF de quem recebe
                         são mostrados só ao vendedor daquele pedido, para ele gerar a etiqueta da transportadora (o telefone e o CPF
@@ -128,6 +133,7 @@ export default function PrivacidadePage() {
                     <li><strong>Google Analytics</strong> — estatísticas de uso do site, como páginas vistas, origem da visita e tipo de aparelho (quando você aceita).</li>
                     <li><strong>Render</strong> — hospedagem do servidor.</li>
                     <li><strong>Neon</strong> — banco de dados.</li>
+                    <li><strong>BrasilAPI</strong> — consulta pública do CNPJ na Receita Federal, só quando você pede o selo de loja.</li>
                     <li><strong>Resend</strong> — envio de e-mails do app (avisos de conta e de pedidos).</li>
                     <li><strong>Sentry</strong> — registro de erros técnicos do site e do servidor, para corrigirmos falhas (sem cookies).</li>
                 </ul>

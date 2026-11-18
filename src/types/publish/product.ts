@@ -136,6 +136,9 @@ export interface ProductResponse {
         id: string
         name: string
         avatarUrl: string
+        vendedorVerificado?: boolean
+        lojaVerificada?: boolean
+        lojaNome?: string | null
     }
 
     category: string

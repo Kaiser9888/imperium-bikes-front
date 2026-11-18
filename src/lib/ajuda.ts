@@ -64,8 +64,9 @@ export const topicos: Topico[] = [
                 link: { href: "/perfil", label: "Editar perfil" },
             },
             {
-                pergunta: "O que significa o selo Verificado?",
-                resposta: "Que a pessoa confirmou o e-mail e o telefone. Não é uma garantia sobre ela ou sobre os produtos dela: continue comprando sempre pelo app.",
+                pergunta: "O que significam os selos de verificado?",
+                resposta: "Vendedor verificado: identidade confirmada pela Stripe, 3 vendas entregues pelo Imperium, boa avaliação e nenhuma denúncia procedente recente (é automático e sai sozinho se deixar de cumprir). Criador verificado: 10 mil seguidores ou mais em outra rede. Loja verificada: empresa com CNPJ ativo. Os dois últimos você pede em Configurações, provando com um código na bio que o perfil é seu. Selo não é garantia: continue pagando sempre pelo app.",
+                link: { href: "/configuracoes/selos", label: "Ver meus selos" },
             },
             {
                 pergunta: "Como excluo minha conta?",

@@ -12,6 +12,7 @@ import { BikesRoubadasAdmin } from "@/components/admin/bikes-roubadas-admin"
 import { CaixaAdmin } from "@/components/admin/caixa-admin"
 import { DisputasAdmin } from "@/components/admin/disputas-admin"
 import { PendenciasAdmin } from "@/components/admin/pendencias-admin"
+import { SelosAdmin } from "@/components/admin/selos-admin"
 import { DenunciasAdmin } from "@/components/admin/denuncias-admin"
 import { SuporteAdmin } from "@/components/admin/suporte-admin"
 import { UsuariosAdmin } from "@/components/admin/usuarios-admin"
@@ -24,6 +25,7 @@ const ABAS = [
     { id: "pendencias", label: "Pendências" },
     { id: "disputas", label: "Disputas" },
     { id: "caixa", label: "Caixa" },
+    { id: "selos", label: "Selos" },
     { id: "banners", label: "Banners" },
     { id: "anuncios", label: "Anúncios" },
     { id: "denuncias", label: "Denúncias" },
@@ -86,6 +88,7 @@ export default function AdminPage() {
                     {aba === "pendencias" && <PendenciasAdmin onAbrir={setAba} />}
                     {aba === "disputas" && <DisputasAdmin />}
                     {aba === "caixa" && <CaixaAdmin />}
+                    {aba === "selos" && <SelosAdmin />}
                     {aba === "banners" && <BannersAdmin />}
                     {aba === "anuncios" && <AnunciosAdmin />}
                     {aba === "denuncias" && <DenunciasAdmin />}

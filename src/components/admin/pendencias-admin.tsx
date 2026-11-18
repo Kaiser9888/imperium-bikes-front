@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useCallback, useEffect, useState } from "react"
-import { CheckCircle2, CircleAlert, HandCoins, Landmark, Loader2, type LucideIcon, Megaphone, Flag, LifeBuoy, Printer, Receipt, Snowflake, ShieldAlert, Scale, Tag, Timer, Truck } from "lucide-react"
+import { BadgeCheck, CheckCircle2, CircleAlert, HandCoins, Landmark, Loader2, type LucideIcon, Megaphone, Flag, LifeBuoy, Printer, Receipt, Snowflake, ShieldAlert, Scale, Tag, Timer, Truck } from "lucide-react"
 
 import api from "@/lib/api"
 import { formatarPreco } from "@/lib/format"
@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils"
 import { usuarioAdminService } from "@/services/adminService"
 import { mensagemDaApi } from "@/services/tournamentService"
 
-type Contagens = { campanhas: number; denuncias: number; chamados: number; contasCongeladas: number; bikesRoubadas: number; disputas: number; anunciosEmAnalise: number; retiradasParadas: number; enviosAtrasados: number; etiquetas: number; repassesTravados: number; pagosSemRegistro: number; dinheiroARecuperar: number; dividas: number }
+type Contagens = { campanhas: number; denuncias: number; chamados: number; contasCongeladas: number; bikesRoubadas: number; disputas: number; anunciosEmAnalise: number; retiradasParadas: number; enviosAtrasados: number; etiquetas: number; repassesTravados: number; pagosSemRegistro: number; dinheiroARecuperar: number; dividas: number; verificacoes: number }
 type Devedor = { userId: string; nome: string | null; email: string | null; valor: number }
 type ContaCongelada = { userId: string; fullName: string | null; email: string | null; congeladaEm: string }
 type AnuncioEmAnalise = { productId: string; title: string; price: number; vendedor: string | null; contaCriadaEm: string | null; createdAt: string; motivo?: string | null }
@@ -20,7 +20,7 @@ type ItemSemId = Omit<RetiradaParada, "orderId" | "productTitle"> & { orderId: s
 type Etiquetas = { saldoMelhorEnvio: number | null; automaticaLigada: boolean; itens: RetiradaParada[] }
 
 /** Abas do painel que cada fila abre. */
-export type AbaPendencia = "disputas" | "anuncios" | "denuncias" | "suporte" | "bikes-roubadas"
+export type AbaPendencia = "disputas" | "anuncios" | "denuncias" | "suporte" | "bikes-roubadas" | "selos"
 
 const FILAS: { chave: keyof Contagens; aba?: AbaPendencia; titulo: string; texto: string; icon: LucideIcon; urgente?: boolean }[] = [
     { chave: "disputas", aba: "disputas", titulo: "Disputas de pedido", texto: "Dinheiro retido esperando decisão", icon: Scale, urgente: true },
@@ -33,6 +33,7 @@ const FILAS: { chave: keyof Contagens; aba?: AbaPendencia; titulo: string; texto
     { chave: "pagosSemRegistro", titulo: "Pagos sem registro", texto: "O Stripe cobrou e o site não registrou", icon: CircleAlert, urgente: true },
     { chave: "dinheiroARecuperar", titulo: "Dinheiro a recuperar", texto: "Devolvido depois do repasse: reverter no Stripe", icon: HandCoins, urgente: true },
     { chave: "dividas", titulo: "Vendedores com dívida", texto: "Tarifa de reembolso a descontar; perdoe se não foi culpa dele", icon: Receipt },
+    { chave: "verificacoes", aba: "selos", titulo: "Pedidos de selo", texto: "Criador e loja: conferir o código na bio", icon: BadgeCheck },
     { chave: "bikesRoubadas", aba: "bikes-roubadas", titulo: "Alertas de bike roubada", texto: "Conferir o boletim de ocorrência", icon: ShieldAlert },
     { chave: "campanhas", aba: "anuncios", titulo: "Anúncios em vídeo", texto: "Campanhas pagas esperando aprovação", icon: Megaphone },
     { chave: "denuncias", aba: "denuncias", titulo: "Denúncias", texto: "Conteúdo denunciado para analisar", icon: Flag },

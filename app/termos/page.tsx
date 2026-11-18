@@ -54,8 +54,11 @@ export default function TermosPage() {
                     <li>Use dados verdadeiros. A conta é pessoal; não empreste nem venda.</li>
                     <li>Você é responsável pelo que acontece na sua conta. Se perceber uso indevido, avise o suporte.</li>
                     <li>
-                        O selo &quot;Verificado&quot; indica apenas que o e-mail e o telefone foram confirmados; não é garantia sobre a
-                        pessoa nem sobre os produtos dela.
+                        Selos: &quot;Vendedor verificado&quot; é automático (identidade confirmada pela Stripe, 3 vendas entregues pelo
+                        app, boa avaliação, conta com 30 dias e sem denúncia procedente recente) e sai sozinho se a conta deixar de cumprir.
+                        &quot;Criador verificado&quot; (10 mil seguidores ou mais em outra rede) e &quot;Loja verificada&quot; (CNPJ ativo) são
+                        pedidos pela pessoa, que prova a posse do perfil com um código na bio, e aprovados pela equipe, que pode remover o
+                        selo se as condições mudarem. Selo não se compra e não é garantia sobre a pessoa nem sobre os produtos dela.
                     </li>
                     <li>
                         Você pode excluir a conta quando quiser em <Link href="/configuracoes#excluir-conta">Configurações</Link>.

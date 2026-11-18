@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { useSyncExternalStore } from "react"
 import { useClerk, useUser } from "@clerk/nextjs"
-import { ChevronRight, Megaphone, Monitor, Moon, Sun, Truck, UserRound, type LucideIcon } from "lucide-react"
+import { BadgeCheck, ChevronRight, Megaphone, Monitor, Moon, Sun, Truck, UserRound, type LucideIcon } from "lucide-react"
 import { useTheme } from "next-themes"
 
 import { AppShell } from "@/components/layout/app-shell"
@@ -25,6 +25,7 @@ const ATALHOS: { href: string; label: string; icon: LucideIcon }[] = [
     { href: "/perfil", label: "Editar perfil", icon: UserRound },
     ...(ETIQUETA_AUTOMATICA ? [{ href: "/configuracoes/endereco-envio", label: "Endereço de envio", icon: Truck }] : []),
     { href: "/configuracoes/patrocinadores", label: "Patrocinadores", icon: Megaphone },
+    { href: "/configuracoes/selos", label: "Selos de verificado", icon: BadgeCheck },
 ]
 
 const semAssinatura = () => () => {}

@@ -31,6 +31,10 @@ type Extras = {
     congelada?: boolean
     capaUrl?: string | null
     sponsors: Sponsor[]
+    vendedorVerificado?: boolean
+    criadorVerificado?: boolean
+    lojaVerificada?: boolean
+    lojaNome?: string | null
 }
 type Carregado = { status: "ok"; perfil: Perfil; extras: Extras; produtos: ProdutoItem[] }
 type Estado = { status: "loading" } | { status: "error" } | Carregado
@@ -94,6 +98,10 @@ export default function PerfilPage() {
                     congelada: Boolean(data.congelada),
                     capaUrl: data.capaUrl ?? null,
                     sponsors: data.sponsors ?? [],
+                    vendedorVerificado: Boolean(data.vendedorVerificado),
+                    criadorVerificado: Boolean(data.criadorVerificado),
+                    lojaVerificada: Boolean(data.lojaVerificada),
+                    lojaNome: data.lojaNome ?? null,
                 },
                 perfil: {
                     fullName: data.fullName ?? "",

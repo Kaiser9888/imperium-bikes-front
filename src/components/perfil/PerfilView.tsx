@@ -6,6 +6,7 @@ import { CalendarDays, Clapperboard, MapPin, Medal, ShieldCheck, Star, Trophy, t
 
 import { ProdutoGrid } from "@/components/perfil/ProdutoGrid"
 import { Seguidores } from "@/components/perfil/Seguidores"
+import { Selos, type SelosDaConta } from "@/components/perfil/Selos"
 import { SubscribeButton } from "@/components/videos/SubscribeButton"
 import { SponsorBanners, sponsorImageUrl, type Sponsor } from "@/components/perfil/SponsorBanners"
 import { DenunciarButton } from "@/components/ui/denunciar-button"
@@ -40,15 +41,15 @@ export type PerfilResumo = {
     /** Capa do perfil enviada pelo usuário (/api/files/...); sem ela, a capa padrão. */
     capaUrl?: string | null
     sponsors: Sponsor[]
-}
+} & SelosDaConta
 
 type Atividade =
     | { status: "loading" }
     | { status: "ok"; participacoes: Participacao[]; videos: VideoItem[] }
 
-// NOVATO não ganha selo: é o nível de todo mundo que acabou de entrar
+// NOVATO não ganha selo: é o nível de todo mundo que acabou de entrar. "Verificado" (só e-mail e
+// telefone) saiu: confundia com os selos de verdade (componente Selos).
 const NIVEIS: Record<string, string> = {
-    VERIFICADO: "Verificado",
     PREMIUM: "Premium",
 }
 
@@ -175,6 +176,7 @@ export function PerfilView({
                             </p>
                         )}
                         {perfil.username && <p className="type-body-small text-muted-foreground">@{perfil.username}</p>}
+                        <Selos selos={perfil} className="mt-2" />
 
                         <ul className="type-body-small mt-3 flex flex-wrap gap-x-4 gap-y-1.5 text-muted-foreground">
                             {local && (

@@ -49,6 +49,10 @@ export default function PerfilPublicoPage() {
                     congelada: Boolean(data.congelada),
                     capaUrl: data.capaUrl ?? null,
                     sponsors: data.sponsors ?? [],
+                    vendedorVerificado: Boolean(data.vendedorVerificado),
+                    criadorVerificado: Boolean(data.criadorVerificado),
+                    lojaVerificada: Boolean(data.lojaVerificada),
+                    lojaNome: data.lojaNome ?? null,
                 },
             })
         } catch (cause) {
