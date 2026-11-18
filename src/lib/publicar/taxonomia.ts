@@ -5,6 +5,7 @@
 // /modalidades/[slug] e da lista fechada do backend (ProductTaxonomy).
 
 import { esportes, modalidades } from "@/lib/esportes"
+import { PERGUNTAS } from "@/lib/publicar/perguntas"
 
 export const SPORT_CICLISMO = "ciclismo"
 
@@ -105,6 +106,10 @@ export function identificar(categoria: string, rascunho: Rascunho): Identificaca
   }
 
   const modality = texto(rascunho.modality)
+  // Nutrição, roupas e serviços não têm modalidade: aparecem na categoria deles
+  if (PERGUNTAS[categoria]?.pedeModalidade === false) {
+    return { sport: SPORT_CICLISMO, modality: modality || undefined, productType }
+  }
   return OPCOES_MODALIDADE.some((item) => item.value === modality)
     ? { sport: SPORT_CICLISMO, modality, productType }
     : null

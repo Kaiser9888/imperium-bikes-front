@@ -5,19 +5,16 @@ import { Button } from "@/components/ui/button"
 import { useEffect, useMemo, useRef, useState, useCallback, useSyncExternalStore } from "react"
 import Link from "next/link"
 import { TopoFocado } from "@/components/layout/topo-focado"
+import { categoriasLoja } from "@/lib/categorias-loja"
 import { useUser } from "@clerk/nextjs"
 import {
   ArrowRight,
   BadgeCheck,
-  Bike,
   Check,
   ChevronRight,
   CirclePause,
-  Cog,
-  Droplets,
   Eye,
   MapPin,
-  Mountain,
   MoreVertical,
   Package,
   Pencil,
@@ -25,11 +22,9 @@ import {
   Radio,
   Receipt,
   Search,
-  Shirt,
   Store,
   Trash2,
   Wallet,
-  Wrench,
   X,
   Loader2,
   type LucideIcon,
@@ -43,7 +38,6 @@ import {
 } from "@/services/publish/seller-products.service"
 import { clearDraft } from "@/lib/publicar/categorias"
 import { ETIQUETA_AUTOMATICA } from "@/lib/etiqueta"
-import { ESPORTES_ABERTOS } from "@/lib/esportes"
 import api from "@/lib/api"
 import { useRecebimentos } from "@/hooks/useRecebimentos"
 
@@ -54,18 +48,8 @@ import { useRecebimentos } from "@/hooks/useRecebimentos"
   marca #A33C36 (igual ao logo) · rosado suave #F3DDD3
 */
 
-/*
-  Tipos de anúncio. Os hrefs continuam apontando para as rotas atuais.
-  Dica: renomeie /publicar/bikes para /publicar/equipamentos quando puder.
-*/
-const tiposDeAnuncio = [
-  { slug: "bikes", label: "Bikes", desc: "Bike completa, quadro ou e-bike", icon: Bike },
-  { slug: "pecas", label: "Peças e acessórios", desc: "Componentes, capacete, luvas, ciclocomputador", icon: Cog },
-  { slug: "servicos", label: "Oficina e serviços", desc: "Manutenção, treino, aulas e aluguel", icon: Wrench },
-  { slug: "produtos", label: "Roupas e calçados", desc: "Vestuário, tênis, mochilas e itens gerais", icon: Shirt },
-  { slug: "consumiveis", label: "Nutrição e hidratação", desc: "Suplementos, géis e isotônicos", icon: Droplets },
-  ...(ESPORTES_ABERTOS ? [{ slug: "esportes", label: "Outros esportes", desc: "Montanha, corrida, água, quadra e mais", icon: Mountain }] : []),
-]
+// Tipos de anúncio: os mesmos nomes da loja e das etapas do publicar
+const tiposDeAnuncio = categoriasLoja.map((c) => ({ slug: c.slug, label: c.nome, desc: c.descricao, icon: c.icone }))
 
 /*
   Rascunhos do fluxo /publicar (sessionStorage, uma chave por categoria; ver
@@ -482,7 +466,7 @@ export default function CentralVendedorPage() {
         <section id="publicar" aria-labelledby="titulo-publicar" className="mt-8 scroll-mt-20">
           <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
             <h2 id="titulo-publicar" className="type-h3">O que você vai vender?</h2>
-            <p className="text-xs text-muted-foreground">Escolha a categoria. Em {ETAPAS.length} passos o anúncio fica no ar.</p>
+            <p className="text-xs text-muted-foreground">Escolha a categoria. Em {ETAPAS.length + 1} passos o anúncio fica no ar.</p>
           </div>
           <ul className="mt-3 grid grid-cols-2 gap-2.5 md:grid-cols-3">
             {tiposDeAnuncio.map(({ slug, label, desc, icon: Icon }) => (

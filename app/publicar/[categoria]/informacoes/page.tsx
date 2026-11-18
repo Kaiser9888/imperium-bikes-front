@@ -17,6 +17,7 @@ import {
   OPCOES_MODALIDADE,
   modalidadeSugerida,
 } from '@/lib/publicar/taxonomia'
+import { PERGUNTAS } from '@/lib/publicar/perguntas'
 
 import { BackButton } from "@/components/ui/back-button"
 
@@ -40,6 +41,15 @@ const PLACEHOLDER_TITULO: Record<string, string> = {
   servicos: 'Ex.: Revisão completa com troca de cabos',
   consumiveis: 'Ex.: Gel de carboidrato 30 g, caixa com 10',
   pecas: 'Ex.: Cassete Shimano Deore 12v 10-51',
+  produtos: 'Ex.: Capacete Fox Proframe tamanho M',
+}
+
+// Exemplos de marca e modelo de cada categoria (não mostrar peça de bike num gel)
+const EXEMPLO_MARCA_MODELO: Record<string, [string, string]> = {
+  bikes: ['Ex.: Caloi, Specialized, Trek', 'Ex.: Stumpjumper Comp'],
+  pecas: ['Ex.: Shimano, SRAM, RockShox', 'Ex.: Deore M6100'],
+  produtos: ['Ex.: Fox, POC, Oakley', 'Ex.: Proframe RS'],
+  consumiveis: ['Ex.: Maurten, Integralmedica', 'Ex.: Gel 100, sabor morango'],
 }
 
 export default function InformacoesPage() {
@@ -63,6 +73,9 @@ export default function InformacoesPage() {
   // Onde o anúncio aparece: esporte (em /publicar/esportes) ou modalidade de ciclismo
   const porEsporte = categoria === CATEGORIA_ESPORTES
   const opcoesDestino = porEsporte ? OPCOES_ESPORTE : OPCOES_MODALIDADE
+  // Modalidade de bike só onde faz sentido (bikes e peças); nutrição, roupas e serviços não perguntam
+  const pedeDestino = porEsporte || (PERGUNTAS[categoria]?.pedeModalidade ?? true)
+  const [exemploMarca, exemploModelo] = EXEMPLO_MARCA_MODELO[categoria] ?? ['Ex.: Marca do produto', 'Ex.: Modelo']
   const [destino, setDestino] = useState('')
   // Bikes: a etapa 1 já diz a modalidade; aqui ela só aparece, com opção de trocar
   const [sugerida, setSugerida] = useState('')
@@ -101,7 +114,7 @@ export default function InformacoesPage() {
     titulo.trim().length >= 10 &&
     descricao.trim().length >= 10 &&
     (semCondicao || Boolean(condicao)) &&
-    opcoesDestino.some(item => item.value === destino) &&
+    (!pedeDestino || opcoesDestino.some(item => item.value === destino)) &&
     Number.isInteger(quantidadeNumerica) &&
     quantidadeNumerica >= 1 &&
     quantidadeNumerica <= 999999
@@ -117,7 +130,7 @@ export default function InformacoesPage() {
       marca: servico ? '' : marca.trim(),
       modelo: servico ? '' : modelo.trim(),
       numeroSerie: pedeNumeroSerie ? numeroSerie.trim() : '',
-      ...(porEsporte ? { sport: destino } : { modality: destino }),
+      ...(porEsporte ? { sport: destino } : { modality: pedeDestino ? destino : '' }),
     })
 
     router.push(nextStep(categoria, 'informacoes'))
@@ -190,7 +203,7 @@ export default function InformacoesPage() {
             <small>{descricao.length}/1000</small>
           </label>
 
-          {sugerida && destino === sugerida && !trocandoDestino ? (
+          {!pedeDestino ? null : sugerida && destino === sugerida && !trocandoDestino ? (
             <div className="price-summary">
               <span>
                 Modalidade: <b>{opcoesDestino.find(item => item.value === destino)?.label}</b>
@@ -245,7 +258,7 @@ export default function InformacoesPage() {
               value={marca}
               onChange={e => setMarca(e.target.value)}
               maxLength={100}
-              placeholder="Ex.: Shimano, Nike, Specialized"
+              placeholder={exemploMarca}
             />
           </label>
 
@@ -256,7 +269,7 @@ export default function InformacoesPage() {
               value={modelo}
               onChange={e => setModelo(e.target.value)}
               maxLength={100}
-              placeholder="Ex.: Deore M6100"
+              placeholder={exemploModelo}
             />
           </label>
           </>

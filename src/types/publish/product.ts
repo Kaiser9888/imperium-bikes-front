@@ -1,3 +1,5 @@
+import type { ItemFicha } from '@/lib/publicar/perguntas'
+
 export type ProductCondition =
   | 'NEW'
   | 'LIKE_NEW'
@@ -143,6 +145,8 @@ export interface ProductResponse {
     sport?: string | null
     modality?: string | null
     productType?: string | null
+    /** Ficha técnica da primeira etapa do publicar (ver lib/publicar/perguntas). */
+    ficha?: ItemFicha[] | null
     createdAt: string
 }
 

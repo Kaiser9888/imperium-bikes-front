@@ -7,7 +7,8 @@ import { useParams, useRouter } from 'next/navigation'
 import { useAuth } from '@clerk/nextjs'
 
 import { nomeDaCategoria } from '@/lib/publicar/categorias'
-import { identificar, OPCOES_MODALIDADE } from '@/lib/publicar/taxonomia'
+import { identificar, OPCOES_MODALIDADE, tipoDoProduto } from '@/lib/publicar/taxonomia'
+import { fichaParaEnviar } from '@/lib/publicar/perguntas'
 import {
   clearDraft,
   getDraft,
@@ -80,7 +81,7 @@ function montarResumo(categoria: string, draft: PublishDraft): Resumo {
   const condicao = servico || categoria === 'consumiveis'
     ? null
     : draft.condicao === 'novo' ? 'Novo' : draft.condicao === 'usado' ? 'Usado' : null
-  const detalhes = [condicao, modalidade, draft.marca, draft.modelo].filter(Boolean).join(' · ')
+  const detalhes = [condicao, modalidade ?? tipoDoProduto(categoria, draft as Record<string, unknown>), draft.marca, draft.modelo].filter(Boolean).join(' · ')
 
   const pagador = draft.frete?.pagador
   const limite = draft.frete?.limite_frete_centavos
@@ -412,6 +413,9 @@ async function handlePublicar() {
 
           productType:
           identificacao.productType,
+
+          // Respostas da etapa 1 (aro, tamanho, formato...): viram a ficha técnica do anúncio
+          ficha: fichaParaEnviar(categoria, draftFinal as Record<string, unknown>),
 
           brand:
             draftFinal.marca || undefined,

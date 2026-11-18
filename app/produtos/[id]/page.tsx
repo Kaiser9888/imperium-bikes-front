@@ -36,6 +36,7 @@ import { StatusBadge } from "@/components/ui/status-badge"
 import { addToCart } from "@/lib/cart"
 import { esportes, modalidades } from "@/lib/esportes"
 import { isFavoriteProduct, toggleFavorite } from "@/lib/favorites"
+import { lerFicha } from "@/lib/publicar/perguntas"
 import { iniciarConversa } from "@/lib/stream"
 import { protecaoCentavos } from "@/lib/taxas"
 import { cn } from "@/lib/utils"
@@ -224,14 +225,17 @@ function ProdutoPage() {
   const somenteRetirada = !servico && Boolean(p.somenteRetirada)
 
   // Ficha técnica só com o que o vendedor preencheu
+  const ficha = lerFicha(p.categorySlug, p.ficha)
   const specs = ([
     ["Condição", condicao],
+    ...ficha.map(({ rotulo, valor }) => [rotulo, valor]),
     ["Marca", p.brand],
     ["Modelo", p.model],
     ["Ano", p.year ? String(p.year) : undefined],
     // Bike sem número de série: o comprador vê que não foi informado (perde um pouco de confiança, não é proibido)
     ["Nº de série", p.numeroSerieFinal ?? (p.categorySlug === "bikes" ? "Não informado" : undefined)],
-    ["Tipo", p.productType],
+    // Anúncio com ficha já mostra o tipo nela; o "Tipo" solto é dos anúncios antigos
+    ["Tipo", ficha.length ? undefined : p.productType],
     ["Estoque", !servico && p.stock > 1 ? `${p.stock} unidades` : undefined],
     ["Peso", p.weightKg ? `${p.weightKg.toLocaleString("pt-BR")} kg` : undefined],
   ] as [string, string | undefined | null][]).filter((s): s is [string, string] => Boolean(s[1]))
@@ -509,7 +513,7 @@ function ProdutoPage() {
               <p className="type-caption mt-5 flex items-start gap-2 text-muted-foreground">
                 <ShieldCheck className="size-4 shrink-0 text-success" aria-hidden="true" />
                 <span>
-                  Se a bike não chegar ou não for como anunciada, você recebe seu dinheiro de volta.{" "}
+                  Se o produto não chegar ou não for como anunciado, você recebe seu dinheiro de volta.{" "}
                   <Link href="/protecao" className="underline underline-offset-2 hover:text-foreground">Como funciona</Link>
                 </span>
               </p>

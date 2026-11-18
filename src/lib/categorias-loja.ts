@@ -28,10 +28,10 @@ const categoria = (slug: string, curto: string, nome: string, descricao: string,
 
 export const categoriasLoja: CategoriaLoja[] = [
     categoria("bikes", "Bikes", "Bikes", "Completas, quadros e e-bikes", Bike),
-    categoria("pecas", "Peças", "Peças e acessórios", "Componentes, capacetes, luvas", Cog),
-    categoria("produtos", "Roupas", "Roupas e calçados", "Vestuário, sapatilhas, mochilas", Shirt),
+    categoria("pecas", "Peças", "Peças", "Transmissão, freios, rodas, suspensão", Cog),
+    categoria("produtos", "Equipamentos", "Equipamentos e roupas", "Capacetes, roupas, sapatilhas, eletrônicos", Shirt),
     categoria("consumiveis", "Nutrição", "Nutrição e hidratação", "Suplementos, géis, isotônicos", Droplets),
-    categoria("servicos", "Serviços", "Oficina e serviços", "Manutenção, aulas, aluguel", Wrench),
+    categoria("servicos", "Serviços", "Oficina e serviços", "Oficina, treino, aulas e aluguel", Wrench),
     ...(ESPORTES_ABERTOS ? [categoria("esportes", "Outros esportes", "Outros esportes", "Montanha, corrida, água e quadra", Mountain)] : []),
 ]
 
