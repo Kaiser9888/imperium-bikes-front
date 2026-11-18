@@ -14,6 +14,7 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { AnuncioDaCompra } from "@/components/marketplace/anuncio-da-compra"
 import api from "@/lib/api"
 import { formatarPreco } from "@/lib/format"
 import { mensagemDaApi } from "@/services/tournamentService"
@@ -91,7 +92,9 @@ export function DisputasAdmin() {
                                 {d.retiradaEmMaos ? "retirada em mãos" : "envio"} · pedido de {new Date(d.createdAt).toLocaleDateString("pt-BR")}
                             </p>
                             {d.motivo && <p className="mt-2 rounded-lg bg-surface-muted px-3 py-2 text-sm">“{d.motivo}”</p>}
-                            <div className="mt-3 flex gap-5">
+                            <div className="mt-3 flex flex-wrap items-center gap-5">
+                                {/* O que foi comprado, não o anúncio de agora */}
+                                <AnuncioDaCompra orderId={d.orderId} />
                                 <button type="button" onClick={() => setDecidindo({ disputa: d, reembolsar: true })} className="line-btn line-btn--sm line-btn--danger">
                                     Reembolsar comprador
                                 </button>

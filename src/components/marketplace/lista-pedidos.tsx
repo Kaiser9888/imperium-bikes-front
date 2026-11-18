@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation"
 import { useAuth, useUser } from "@clerk/nextjs"
 import { ChevronRight, MessageCircle, Package, Star } from "lucide-react"
 
+import { AnuncioDaCompra } from "@/components/marketplace/anuncio-da-compra"
 import { EnvioDoComprador, EnvioDoVendedor, type Envio } from "@/components/marketplace/envio-pedido"
 import {
     AlertDialog,
@@ -412,6 +413,8 @@ export function ListaPedidos({ lado }: { lado: "compras" | "vendas" }) {
                                     Reembolsar comprador
                                 </Button>
                             )}
+                            {/* O anúncio como estava na compra: o que vale se der problema */}
+                            <AnuncioDaCompra orderId={pedido.id} />
                         </div>
                     </article>
                 ))}
