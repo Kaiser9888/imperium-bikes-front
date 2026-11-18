@@ -97,7 +97,7 @@ export const topicos: Topico[] = [
             },
             {
                 pergunta: "O produto não chegou ou veio diferente. O que faço?",
-                resposta: "Em Pedidos, abra uma disputa explicando o problema antes do fim do prazo. O vendedor pode reembolsar direto; se não houver acordo, a equipe decide.",
+                resposta: "Em Pedidos, abra uma disputa explicando o problema antes do fim do prazo. O vendedor pode reembolsar direto; se não houver acordo, a equipe decide. Em \"Anúncio comprado\" fica a cópia do anúncio como estava na hora da compra: é ela que vale, mesmo que o vendedor mude o anúncio depois.",
                 link: { href: "/pedidos", label: "Abrir Pedidos" },
             },
             {
@@ -129,6 +129,10 @@ export const topicos: Topico[] = [
                 pergunta: "Como anuncio um produto?",
                 resposta: "Abra Meus anúncios (no menu), escolha a categoria e siga as etapas: informações, fotos, frete e preço. O anúncio entra no ar na hora.",
                 link: { href: "/vendedor", label: "Meus anúncios" },
+            },
+            {
+                pergunta: "Por que meu anúncio está em análise?",
+                resposta: "Alguns anúncios passam pela equipe antes de ir ao ar: os acima de R$ 3.000 de conta nova ou sem nenhuma venda concluída, e os que têm telefone, Pix, WhatsApp, e-mail ou link no texto, ou uma foto igual à de um anúncio de outra conta. Nada é recusado automaticamente: uma pessoa olha e aprova ou recusa, e você é avisado. Para ir ao ar na hora, tire os contatos do texto e use fotos suas; a conversa com o comprador é pelo chat do Imperium.",
             },
             {
                 pergunta: "Como embalo e envio uma bike?",

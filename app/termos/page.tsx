@@ -90,6 +90,10 @@ export default function TermosPage() {
                         disputa (7 dias mais o prazo do frete, contados do envio). Se houver problema, o comprador abre a disputa pela página
                         do pedido.
                     </li>
+                    <li>
+                        Na compra, uma cópia do anúncio como estava (título, descrição, fotos, ficha técnica e preço) fica guardada no
+                        pedido. Numa disputa, vale o que foi anunciado nessa cópia, mesmo que o anúncio seja editado ou removido depois.
+                    </li>
                     <li id="envio" className="scroll-mt-24">
                         {ETIQUETA_AUTOMATICA ? (
                             <>
@@ -302,6 +306,12 @@ export default function TermosPage() {
                     Produtos, vídeos, eventos e posts entram no ar na hora. Qualquer pessoa pode denunciar o que violar estes Termos, e a
                     equipe analisa as denúncias e pode remover o conteúdo, avisando quem publicou e o motivo. Anúncios pagos são a
                     exceção: passam por revisão antes de serem exibidos.
+                </p>
+                <p>
+                    Um anúncio de produto também vai para análise antes de ir ao ar quando: (a) custa mais de R$ 3.000 e a conta tem menos
+                    de 30 dias ou nenhuma venda concluída; ou (b) a checagem automática encontra telefone, Pix, WhatsApp, e-mail ou link
+                    no título ou na descrição, ou uma foto igual à de um anúncio de outra conta. Isso vale também ao editar o texto ou
+                    adicionar fotos. A checagem não recusa nada sozinha: uma pessoa da equipe aprova ou recusa.
                 </p>
             </Secao>
 

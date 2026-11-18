@@ -145,6 +145,8 @@ export interface ProductResponse {
     sport?: string | null
     modality?: string | null
     productType?: string | null
+    /** Vendas concluídas deste anúncio (vem só na página do anúncio). */
+    vendidos?: number | null
     /** Ficha técnica da primeira etapa do publicar (ver lib/publicar/perguntas). */
     ficha?: ItemFicha[] | null
     createdAt: string

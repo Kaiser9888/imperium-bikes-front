@@ -394,9 +394,16 @@ function ProdutoPage() {
                 </Button>
               </div>
 
-              {(condicao || p.hasSecurePayment || freteGratis > 0 || p.numeroSerieFinal) && (
+              {(condicao || p.hasSecurePayment || freteGratis > 0 || p.numeroSerieFinal || !!p.vendidos) && (
                 <div className="mt-4 flex flex-wrap gap-2">
                   {condicao && <StatusBadge tone="neutral">{condicao}</StatusBadge>}
+                  {/* Só vendas que chegaram ao comprador (reembolsada ou em andamento não conta) */}
+                  {!!p.vendidos && (
+                    <span className="type-caption self-center tabular-nums text-muted-foreground">
+                      {p.vendidos}{" "}
+                      {servico ? (p.vendidos === 1 ? "contratação" : "contratações") : p.vendidos === 1 ? "vendido" : "vendidos"}
+                    </span>
+                  )}
                   {p.numeroSerieFinal && (
                     <StatusBadge tone="success" title="Número conferido no cadastro de bikes roubadas na hora de anunciar">
                       <BadgeCheck className="size-3.5" aria-hidden="true" />

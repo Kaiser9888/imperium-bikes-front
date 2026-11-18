@@ -9,6 +9,7 @@ import { Loader2, ShieldAlert } from "lucide-react"
 import { AnunciosAdmin } from "@/components/admin/anuncios-admin"
 import { BannersAdmin } from "@/components/admin/banners-admin"
 import { BikesRoubadasAdmin } from "@/components/admin/bikes-roubadas-admin"
+import { CaixaAdmin } from "@/components/admin/caixa-admin"
 import { DisputasAdmin } from "@/components/admin/disputas-admin"
 import { PendenciasAdmin } from "@/components/admin/pendencias-admin"
 import { DenunciasAdmin } from "@/components/admin/denuncias-admin"
@@ -22,6 +23,7 @@ const ABAS = [
     // Pendências primeiro: o que espera decisão, com atalho para cada fila
     { id: "pendencias", label: "Pendências" },
     { id: "disputas", label: "Disputas" },
+    { id: "caixa", label: "Caixa" },
     { id: "banners", label: "Banners" },
     { id: "anuncios", label: "Anúncios" },
     { id: "denuncias", label: "Denúncias" },
@@ -83,6 +85,7 @@ export default function AdminPage() {
                 <div className="mt-6">
                     {aba === "pendencias" && <PendenciasAdmin onAbrir={setAba} />}
                     {aba === "disputas" && <DisputasAdmin />}
+                    {aba === "caixa" && <CaixaAdmin />}
                     {aba === "banners" && <BannersAdmin />}
                     {aba === "anuncios" && <AnunciosAdmin />}
                     {aba === "denuncias" && <DenunciasAdmin />}

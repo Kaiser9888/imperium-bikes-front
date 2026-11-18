@@ -62,7 +62,8 @@ export default function PrivacidadePage() {
                         <strong>Compras e vendas:</strong> produtos anunciados, pedidos, CEP e dados de entrega usados para calcular e
                         enviar o frete, e o histórico de disputas. Numa compra com envio, o nome, endereço, telefone e CPF de quem recebe
                         são mostrados só ao vendedor daquele pedido, para ele gerar a etiqueta da transportadora (o telefone e o CPF
-                        deixam de aparecer para ele quando o pedido é enviado).
+                        deixam de aparecer para ele quando o pedido é enviado). Na compra, guardamos no pedido uma cópia do anúncio como
+                        estava (título, descrição, fotos, ficha técnica e preço), que serve de prova se houver problema.
                     </li>
                     <li>
                         <strong>Pagamentos:</strong> o pagamento é feito na página do Stripe. Os dados do cartão (ou do Pix, quando
@@ -99,11 +100,13 @@ export default function PrivacidadePage() {
                     </li>
                     <li>
                         <strong>Prevenir fraude, spam e abuso (limite de requisições, conferência de exibições de anúncios, moderação de
-                        denúncias)</strong> — legítimo interesse e proteção do crédito (art. 7º, IX e X).
+                        denúncias e checagem automática dos anúncios de produto: contato para negociar fora do app no texto e foto igual à
+                        de um anúncio de outra conta, comparada por uma &quot;impressão digital&quot; da imagem)</strong> — legítimo interesse e proteção do crédito (art. 7º, IX e X).
                     </li>
                     <li>
-                        <strong>Avisos dentro do app (notificações de pedidos, mensagens, seguidores, respostas do suporte)</strong> —
-                        execução do contrato.
+                        <strong>Avisos dentro do app (notificações de pedidos, mensagens, seguidores, respostas do suporte) e por e-mail
+                        (confirmação de compra ao comprador e de venda ao vendedor, com número do pedido, produto e valores, sem endereço
+                        nem código de retirada; avisos de conta e de pedidos)</strong> — execução do contrato.
                     </li>
                     <li>
                         <strong>Estatísticas de uso do site</strong> — consentimento (art. 7º, I), que você pode recusar ou retirar a
@@ -129,7 +132,8 @@ export default function PrivacidadePage() {
                     <li><strong>Sentry</strong> — registro de erros técnicos do site e do servidor, para corrigirmos falhas (sem cookies).</li>
                 </ul>
                 <p>
-                    Entre usuários: o seu nome, foto e perfil público aparecem para os outros. Numa compra, o vendedor recebe os dados
+                    Entre usuários: o seu nome, foto e perfil público aparecem para os outros, assim como quem você segue e quem segue
+                    você. Numa compra, o vendedor recebe os dados
                     necessários para entregar o pedido. O organizador de um evento vê a lista de inscritos. Ao se inscrever num evento,
                     seu nome, foto, categoria, número de peito e resultado (tempo, pontos ou colocação) aparecem na página pública do
                     evento e podem entrar na imagem do pódio e no certificado de participação. Ajudantes do placar convidados pelo
@@ -191,7 +195,10 @@ export default function PrivacidadePage() {
                     <li>excluir sua conta e os dados tratados com base no consentimento;</li>
                     <li>saber com quem compartilhamos seus dados;</li>
                     <li>retirar o consentimento e se opor a tratamentos que considere irregulares;</li>
-                    <li>pedir revisão de decisões tomadas só por meios automáticos.</li>
+                    <li>
+                        pedir revisão de decisões tomadas só por meios automáticos. A checagem automática de anúncios nunca recusa nada
+                        sozinha: ela só manda o anúncio para análise, e uma pessoa da equipe decide.
+                    </li>
                 </ul>
                 <p>
                     Você mesmo edita o perfil e <Link href="/configuracoes#excluir-conta">exclui a conta em Configurações</Link>. Para os
