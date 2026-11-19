@@ -161,7 +161,10 @@ export function PerfilView({
 
                     <div className="mt-4 min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
-                            <h1 className="type-h1 min-w-0 truncate text-foreground">{perfil.nome}</h1>
+                            <span className="flex min-w-0 items-center gap-1.5">
+                                <h1 className="type-h1 min-w-0 truncate text-foreground">{perfil.nome}</h1>
+                                <Selos selos={perfil} />
+                            </span>
                             {nivel && <StatusBadge tone="info">{nivel}</StatusBadge>}
                             {perfil.contaProtegida && !perfil.congelada && (
                                 <StatusBadge tone="success">
@@ -176,7 +179,6 @@ export function PerfilView({
                             </p>
                         )}
                         {perfil.username && <p className="type-body-small text-muted-foreground">@{perfil.username}</p>}
-                        <Selos selos={perfil} className="mt-2" />
 
                         <ul className="type-body-small mt-3 flex flex-wrap gap-x-4 gap-y-1.5 text-muted-foreground">
                             {local && (

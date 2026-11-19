@@ -50,8 +50,10 @@ export function ProdutoVendedor({ id, nome, avatarUrl, selos, acao, className }:
                         </div>
                     )}
                     <div className="min-w-0">
-                        <p className="type-label truncate text-foreground">{nome}</p>
-                        {selos && <Selos selos={selos} pequeno className="mt-1" />}
+                        <p className="flex min-w-0 items-center gap-1">
+                            <span className="type-label truncate text-foreground">{nome}</span>
+                            {selos && <Selos selos={selos} pequeno />}
+                        </p>
                     </div>
                 </div>
                 <Link href={`/perfil/${id}`} className="type-label shrink-0 text-primary hover:underline">
