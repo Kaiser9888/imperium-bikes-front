@@ -10,7 +10,7 @@ export default async function PedidosPage({ searchParams }: { searchParams: Prom
 
     return (
         <main className="mx-auto w-full max-w-3xl px-4 pb-16 pt-4 sm:px-6">
-            <PageHeading title="Meus pedidos" back={{ href: "/", label: "Início" }} />
+            <PageHeading title="Minhas compras" back={{ href: "/", label: "Início" }} />
             <ListaPedidos lado="compras" />
         </main>
     )

@@ -17,7 +17,7 @@ type Consulta = { status: string; type?: string; referenceId?: string }
 const TEXTOS: Record<Exclude<Status, "LOADING">, { titulo: string; descricao: string }> = {
   PAGO: { titulo: "Pagamento confirmado", descricao: "Recebemos seu pagamento." },
   PENDING: { titulo: "Pagamento em confirmação", descricao: "Ainda não recebemos a confirmação. Atualize esta página em alguns instantes." },
-  FAILED: { titulo: "Não foi possível confirmar", descricao: "Não conseguimos confirmar este pagamento agora. Se o valor foi cobrado, a compra aparece em Pedidos em alguns minutos; se não aparecer, fale com o suporte." },
+  FAILED: { titulo: "Não foi possível confirmar", descricao: "Não conseguimos confirmar este pagamento agora. Se o valor foi cobrado, a compra aparece em Minhas compras em alguns minutos; se não aparecer, fale com o suporte." },
 }
 
 function SuccessContent() {
@@ -46,10 +46,10 @@ function SuccessContent() {
         }
         // Compra: o pedido (e o código de retirada, se for em mãos) fica em Pedidos
         if (result.type === "PRODUCT_PURCHASE" || !params.get("session_id")) {
-          setVoltar({ href: "/pedidos", label: "Ver meu pedido" })
+          setVoltar({ href: "/pedidos", label: "Ver minhas compras" })
         }
         if (result.type === "CART_PURCHASE") {
-          setVoltar({ href: "/pedidos", label: "Ver meus pedidos" })
+          setVoltar({ href: "/pedidos", label: "Ver minhas compras" })
         }
         if (result.type?.startsWith("PRODUCT_HIGHLIGHT")) {
           setVoltar({ href: "/vendedor", label: "Ver meus anúncios" })

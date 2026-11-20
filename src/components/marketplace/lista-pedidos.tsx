@@ -203,7 +203,7 @@ export function ListaPedidos({ lado }: { lado: "compras" | "vendas" }) {
                         <span className="type-label block text-foreground">
                             {vendasAbertas === 1 ? "Você tem 1 venda esperando" : `Você tem ${vendasAbertas} vendas esperando`}
                         </span>
-                        <span className="type-caption block text-muted-foreground">Código e envio ficam em Minhas vendas, dentro de Meus anúncios.</span>
+                        <span className="type-caption block text-muted-foreground">Toque aqui para digitar o código ou enviar.</span>
                     </span>
                     <ChevronRight className="size-5 shrink-0 text-muted-foreground" aria-hidden="true" />
                 </Link>
@@ -216,7 +216,7 @@ export function ListaPedidos({ lado }: { lado: "compras" | "vendas" }) {
             )}
 
             <div className="mt-6 flex flex-col gap-3">
-                {isLoaded && !isSignedIn && <EmptyState icon={Package} title="Entre para ver seus pedidos" />}
+                {isLoaded && !isSignedIn && <EmptyState icon={Package} title="Entre para ver suas compras" />}
                 {falhou && <ErrorState onRetry={carregar} />}
                 {isSignedIn && !falhou && !pedidos && <Loader className="py-16" />}
                 {lista?.length === 0 && <EmptyState icon={Package} title={lado === "compras" ?"Você ainda não comprou nada" : "Você ainda não vendeu nada"} />}

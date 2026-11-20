@@ -22,6 +22,7 @@ import {
     Trophy,
     Bell,
     Package,
+    Receipt,
     User,
     Wallet,
     type LucideIcon,
@@ -48,7 +49,7 @@ const menuSections: MenuSection[] = [
         items: [
             { icon: MessageCircle, label: "Mensagens", href: "/chat", conta: true },
             { icon: Bell, label: "Notificações", href: "/notificacoes", conta: true },
-            { icon: Package, label: "Meus pedidos", href: "/pedidos", conta: true },
+            { icon: Package, label: "Minhas compras", href: "/pedidos", conta: true },
         ],
     },
     {
@@ -65,6 +66,7 @@ const menuSections: MenuSection[] = [
         title: "Vender",
         items: [
             { icon: Store, label: "Meus anúncios", href: "/vendedor" },
+            { icon: Receipt, label: "Minhas vendas", href: "/vendedor/vendas", conta: true },
             { icon: Wallet, label: "Carteira", href: "/carteira", conta: true },
             ...(ANUNCIOS_ABERTOS ? [{ icon: Megaphone, label: "Anunciar nos vídeos", href: "/anunciar", conta: true }] : []),
         ],

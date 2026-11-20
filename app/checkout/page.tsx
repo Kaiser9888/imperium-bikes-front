@@ -415,6 +415,10 @@ function CheckoutContent() {
             {indisponiveis.length === 1
               ? `"${indisponiveis[0].title}" já foi vendido ou saiu do ar`
               : `${indisponiveis.length} itens já foram vendidos ou saíram do ar`} e não estão nesta compra.
+            {/* Quem volta do Stripe com "voltar" cai aqui com o próprio item já vendido */}
+            {comprando.length === 0 && (
+              <> Comprou agora? <Link href="/pedidos" className="font-semibold underline">Ver minhas compras</Link></>
+            )}
           </p>
         )}
 

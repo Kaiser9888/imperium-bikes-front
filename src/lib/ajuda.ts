@@ -93,13 +93,13 @@ export const topicos: Topico[] = [
             },
             {
                 pergunta: "Me arrependi da compra. E agora?",
-                resposta: "Você tem 7 dias a partir do recebimento para desistir, com devolução de tudo que pagou, inclusive o frete. Abra a disputa em Pedidos.",
+                resposta: "Você tem 7 dias a partir do recebimento para desistir, com devolução de tudo que pagou, inclusive o frete. Abra a disputa em Minhas compras.",
                 link: { href: "/reembolso#arrependimento", label: "Ver Política de Reembolso" },
             },
             {
                 pergunta: "O produto não chegou ou veio diferente. O que faço?",
-                resposta: "Em Pedidos, abra uma disputa explicando o problema antes do fim do prazo. O vendedor pode reembolsar direto; se não houver acordo, a equipe decide. Em \"Anúncio comprado\" fica a cópia do anúncio como estava na hora da compra: é ela que vale, mesmo que o vendedor mude o anúncio depois.",
-                link: { href: "/pedidos", label: "Abrir Pedidos" },
+                resposta: "Em Minhas compras, abra uma disputa explicando o problema antes do fim do prazo. O vendedor pode reembolsar direto; se não houver acordo, a equipe decide. Em \"Anúncio comprado\" fica a cópia do anúncio como estava na hora da compra: é ela que vale, mesmo que o vendedor mude o anúncio depois.",
+                link: { href: "/pedidos", label: "Abrir Minhas compras" },
             },
             {
                 pergunta: "Posso pagar por fora do app?",
@@ -112,8 +112,8 @@ export const topicos: Topico[] = [
             },
             {
                 pergunta: "Como funciona a retirada em mãos?",
-                resposta: "Você paga pelo app e recebe um código de 6 números em Pedidos. No encontro, confira o produto e só então passe o código ao vendedor: é ele que libera o pagamento. Sem o código, o dinheiro não sai, e se algo der errado você abre uma disputa. Combine em local público e movimentado e não leve dinheiro.",
-                link: { href: "/pedidos", label: "Abrir Pedidos" },
+                resposta: "Você paga pelo app e recebe um código de 6 números em Minhas compras. No encontro, confira o produto e só então passe o código ao vendedor: é ele que libera o pagamento. Sem o código, o dinheiro não sai, e se algo der errado você abre uma disputa. Combine em local público e movimentado e não leve dinheiro.",
+                link: { href: "/pedidos", label: "Abrir Minhas compras" },
             },
             {
                 pergunta: "Posso combinar o envio com o vendedor?",
@@ -154,8 +154,8 @@ export const topicos: Topico[] = [
             {
                 pergunta: "Vendi com envio. Como despacho?",
                 resposta: ETIQUETA_AUTOMATICA
-                    ? "O site compra a etiqueta com o frete que o comprador pagou. Em Minhas vendas, dentro de Meus anúncios, toque em Imprimir etiqueta, cole na caixa com o peso e as medidas do anúncio e poste em até 3 dias úteis no local indicado (sem pagar nada). O rastreio entra sozinho. Antes da primeira venda, cadastre seu endereço de envio em Configurações."
-                    : "Em Minhas vendas, dentro de Meus anúncios, aparecem o endereço de quem recebe e o serviço de frete escolhido. Compre a etiqueta no Melhor Envio nesse mesmo serviço (assim o valor bate com o frete pago, que você recebe junto com a venda), use a caixa com o peso e as medidas do anúncio, poste em até 3 dias úteis e informe o código de rastreio no pedido. O prazo de liberação só começa depois disso.",
+                    ? "O site compra a etiqueta com o frete que o comprador pagou. Em Minhas vendas (no menu), toque em Imprimir etiqueta, cole na caixa com o peso e as medidas do anúncio e poste em até 3 dias úteis no local indicado (sem pagar nada). O rastreio entra sozinho. Antes da primeira venda, cadastre seu endereço de envio em Configurações."
+                    : "Em Minhas vendas (no menu), aparecem o endereço de quem recebe e o serviço de frete escolhido. Compre a etiqueta no Melhor Envio nesse mesmo serviço (assim o valor bate com o frete pago, que você recebe junto com a venda), use a caixa com o peso e as medidas do anúncio, poste em até 3 dias úteis e informe o código de rastreio no pedido. O prazo de liberação só começa depois disso.",
                 link: { href: "/vendedor/vendas", label: "Abrir Minhas vendas" },
             },
             {

@@ -64,7 +64,7 @@ export default function ReembolsoPage() {
             <Secao id="como" titulo="4. Como pedir">
                 <ul>
                     <li>
-                        Abra <Link href="/pedidos">Pedidos</Link>, escolha a compra e use a opção de disputa, explicando o problema.
+                        Abra <Link href="/pedidos">Minhas compras</Link>, escolha a compra e use a opção de disputa, explicando o problema.
                     </li>
                     <li>O vendedor pode aceitar o reembolso direto. Se ele não responder ou não concordar, a equipe analisa.</li>
                     <li>O reembolso devolve tudo o que você pagou por aquele item: produto, frete pelo app e Proteção Imperium.</li>
@@ -117,7 +117,7 @@ export default function ReembolsoPage() {
                 <p>
                     O reembolso é feito pelo Stripe na mesma forma de pagamento da compra. No cartão de crédito, costuma aparecer em 5 a
                     10 dias úteis, podendo cair na fatura seguinte, conforme o banco emissor. No Pix, o valor volta para a conta que fez o
-                    pagamento. A situação do reembolso aparece em Meus pedidos.
+                    pagamento. A situação do reembolso aparece em Minhas compras.
                 </p>
             </Secao>
         </Documento>
