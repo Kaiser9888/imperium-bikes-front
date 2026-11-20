@@ -7,8 +7,8 @@ import { useParams } from "next/navigation";
 import { useAuth } from "@clerk/nextjs";
 import { Radio, Trophy } from "lucide-react";
 import { toast } from "sonner";
-import { fetchRelated, fetchVideo, playbackIdFrom, likeVideo, dislikeVideo } from "@/lib/videos/api";
-import { formatViews, timeAgo } from "@/lib/videos/format";
+import { fetchRelated, fetchUserVideos, fetchVideo, playbackIdFrom, likeVideo, dislikeVideo } from "@/lib/videos/api";
+import { timeAgo, visualizacoes } from "@/lib/videos/format";
 import { PESO, registrarInteresse } from "@/lib/videos/gosto";
 import type { VideoItem } from "@/lib/videos/types";
 import { VideoPlayer } from "@/components/videos/VideoPlayer";
@@ -46,15 +46,6 @@ function reactionOf(video: VideoItem | null): Reaction {
 
 const dataCompleta = (iso: string) => new Date(iso).toLocaleDateString("pt-BR", { day: "numeric", month: "long", year: "numeric" });
 
-function Dado({ rotulo, valor }: { rotulo: string; valor: React.ReactNode }) {
-    return (
-        <div className="min-w-0 px-3 first:pl-0">
-            <dt className="truncate text-[0.625rem] font-bold uppercase tracking-[0.2em] text-muted-foreground">{rotulo}</dt>
-            <dd className="mt-1 truncate text-base font-bold tabular-nums text-foreground sm:text-lg">{valor}</dd>
-        </div>
-    );
-}
-
 export default function WatchPage() {
     const { id } = useParams<{ id: string }>();
     const { getToken, isLoaded, isSignedIn } = useAuth();
@@ -69,6 +60,7 @@ export default function WatchPage() {
     useEffect(() => {
         if (!isLoaded) return;
         let cancelled = false;
+        const relacionados = fetchRelated(id);
         (async () => {
             const token = await getToken().catch(() => null);
             const data = await fetchVideo(id, token);
@@ -77,8 +69,13 @@ export default function WatchPage() {
             setReaction(reactionOf(data));
             // Aprende o gosto: assistir pesa nas hashtags deste vídeo
             if (data) registrarInteresse(data.hashtags ?? [], PESO.assistiu);
+            // Sem relacionados: mostra os outros vídeos do mesmo criador
+            let lista = await relacionados;
+            if (lista.length === 0 && data?.userId) {
+                lista = (await fetchUserVideos(data.userId).catch(() => null))?.content.filter((v) => v.id !== id) ?? [];
+            }
+            if (!cancelled) setRelated(lista);
         })();
-        fetchRelated(id).then((r) => !cancelled && setRelated(r));
         return () => {
             cancelled = true;
         };
@@ -165,9 +162,10 @@ export default function WatchPage() {
         dislikesCount={reaction.dislikesCount}
         onToggleLike={() => void toggle("like")}
         onToggleDislike={() => void toggle("dislike")}
-      />
+      >
+          <DenunciarButton tipo="VIDEO" id={video.id} className="shrink-0 px-2" />
+      </VideoActions>
     );
-    const denunciar = <DenunciarButton tipo="VIDEO" id={video.id} />;
 
     return (
       <div className="mx-auto max-w-7xl px-0 sm:px-6 lg:px-8 lg:py-8">
@@ -206,21 +204,12 @@ export default function WatchPage() {
                   </div>
 
                   <div className="px-4 sm:px-0">
-                      {/* Hashtags no alto, em vermelho, e o título */}
-                      {(video.hashtags?.length ?? 0) > 0 && (
-                        <p className="mt-4 flex flex-wrap gap-x-3 gap-y-1">
-                            {video.hashtags!.slice(0, 3).map((tag) => (
-                              <Link
-                                key={tag}
-                                href={`/videos/hashtag/${encodeURIComponent(tag.toLowerCase())}`}
-                                className="text-xs font-semibold text-primary hover:underline"
-                              >
-                                  #{tag}
-                              </Link>
-                            ))}
-                        </p>
-                      )}
-                      <h1 className={`type-h2 break-words text-foreground ${(video.hashtags?.length ?? 0) > 0 ? "mt-1" : "mt-4"}`}>{video.title}</h1>
+                      {/* Hashtags ficam só na descrição */}
+                      <h1 className="type-h2 mt-4 break-words text-foreground">{video.title}</h1>
+                      <p className="type-caption mt-1 text-muted-foreground">
+                          {video.isLiveNow ? "Ao vivo" : visualizacoes(video.viewCount)} ·{" "}
+                          <time dateTime={video.createdAt} title={dataCompleta(video.createdAt)}>{timeAgo(video.createdAt)}</time>
+                      </p>
                       {video.tournamentId && (
                         <Link
                           href={`/torneios/${video.tournamentId}`}
@@ -232,7 +221,7 @@ export default function WatchPage() {
                       )}
 
                       {/* Canal + ações */}
-                      <div className="mt-4 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                      <div className="mt-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                           <div className="flex min-w-0 items-center gap-3">
                               <Link href={video.userId ? `/perfil/${video.userId}` : "#"} className="shrink-0" aria-label={`Canal de ${video.userName}`}>
                                   <VideoAvatar name={video.userName} url={video.userAvatarUrl} className="size-11" />
@@ -250,7 +239,6 @@ export default function WatchPage() {
                           </div>
                           {actions}
                       </div>
-                      <div className="mt-1 flex justify-end">{denunciar}</div>
 
                       {liveWaiting && (
                         <p className="type-body-small mt-4 rounded-xl border border-border bg-surface px-4 py-3 text-muted-foreground">
@@ -262,19 +250,9 @@ export default function WatchPage() {
                         </p>
                       )}
 
-                      {/* Ficha do vídeo: os números em linha, como placar de prova */}
-                      <section aria-label="Sobre o vídeo" className="mt-5">
-                          <dl className="grid grid-cols-3 divide-x divide-border border-y border-border py-3">
-                              <Dado rotulo="Visualizações" valor={formatViews(video.viewCount)} />
-                              <Dado
-                                rotulo="Publicado"
-                                valor={<time dateTime={video.createdAt} title={dataCompleta(video.createdAt)}>{timeAgo(video.createdAt)}</time>}
-                              />
-                              <Dado rotulo="Duração" valor={video.isLiveNow ? "Ao vivo" : video.formattedDuration || "—"} />
-                          </dl>
-
-                          {temDescricao && (
-                            <div className="mt-4">
+                      {temDescricao && (
+                        <section aria-label="Sobre o vídeo" className="mt-4 rounded-xl bg-surface p-3">
+                            <div>
                                 <div className={showMore ? "" : "line-clamp-3"}>
                                     <VideoDescription description={video.description || " "} hashtags={video.hashtags} />
                                 </div>
@@ -287,15 +265,14 @@ export default function WatchPage() {
                                     {showMore ? "Mostrar menos" : "Ler mais"}
                                 </button>
                             </div>
-                          )}
-                      </section>
+                        </section>
+                      )}
 
                       {/* Comentários */}
-                      <section aria-labelledby="comentarios-title" className="mt-10">
-                          <h2 id="comentarios-title" className="mb-6 flex items-center gap-3 text-xs font-bold uppercase tracking-[0.3em] text-foreground">
-                              <span aria-hidden="true" className="h-4 w-1 bg-primary" />
+                      <section aria-labelledby="comentarios-title" className="mt-8">
+                          <h2 id="comentarios-title" className="type-h3 mb-4 flex items-center gap-2 text-foreground">
                               Comentários
-                              <span className="font-semibold tracking-normal text-muted-foreground tabular-nums">
+                              <span className="type-body-small text-muted-foreground tabular-nums">
                                   {totalComentarios ?? video.commentsCount}
                               </span>
                           </h2>

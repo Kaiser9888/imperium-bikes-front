@@ -8,15 +8,12 @@ interface VideoSidebarProps {
 }
 
 export function VideoSidebar({ videos }: VideoSidebarProps) {
+    // Seção vazia no fim da página parece site abandonado: some
+    if (videos.length === 0) return null;
     return (
         <aside aria-label="Vídeos relacionados" className="lg:sticky lg:top-24">
-            <h2 className="flex items-center gap-3 text-xs font-bold uppercase tracking-[0.3em] text-foreground">
-                <span aria-hidden="true" className="h-4 w-1 bg-primary" />
-                Assista também
-            </h2>
-            {videos.length === 0 ? (
-                <p className="mt-4 text-sm text-muted-foreground">Nenhum vídeo encontrado.</p>
-            ) : (
+            <h2 className="type-h3 text-foreground">Assista também</h2>
+            {(
                 <ul className="mt-4 space-y-3">
                     {videos.map((v) => (
                         <li key={v.id}>

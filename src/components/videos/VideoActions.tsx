@@ -3,6 +3,7 @@
 import { CopyLinkButton } from "./CopyLinkButton"
 import { SaveButton } from "./SaveButton"
 
+import type { ReactNode } from "react";
 import { ThumbsUp, ThumbsDown } from "lucide-react";
 import { formatViews } from "@/lib/videos/format";
 
@@ -14,6 +15,8 @@ interface VideoActionsProps {
   dislikesCount: number;
   onToggleLike: () => void;
   onToggleDislike: () => void;
+  /** Ações extras no fim da mesma linha (ex.: Denunciar) */
+  children?: ReactNode;
 }
 
 export function VideoActions({
@@ -24,9 +27,11 @@ export function VideoActions({
                                dislikesCount,
                                onToggleLike,
                                onToggleDislike,
+                               children,
                              }: VideoActionsProps) {
   return (
-    <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
+    // Uma linha só: no celular rola para o lado em vez de quebrar
+    <div className="-mx-4 flex items-center gap-2 overflow-x-auto px-4 [scrollbar-width:none] sm:mx-0 sm:px-0 [&>*]:shrink-0">
       <div className="flex items-center rounded-full bg-muted/50 border border-border overflow-hidden">
         <button
           type="button"
@@ -69,6 +74,7 @@ export function VideoActions({
 
       <CopyLinkButton path={`/videos/watch/${videoId}`} />
       <SaveButton videoId={videoId} />
+      {children}
     </div>
   );
 }
