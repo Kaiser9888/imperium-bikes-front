@@ -10,15 +10,16 @@ export type SelosDaConta = {
     vendedorVerificado?: boolean | null
     criadorVerificado?: boolean | null
     lojaVerificada?: boolean | null
+    imperador?: boolean | null
     lojaNome?: string | null
 }
 
-type Chave = "vendedor" | "loja" | "criador"
+type Chave = "vendedor" | "criador" | "imperador"
 
 type TipoDeSelo = {
     chave: Chave
     rotulo: string
-    /** Pontas da medalha: cada selo tem um formato próprio (não depende só da cor). */
+    /** Pontas da medalha: cada selo tem um formato próprio (não depende só da cor). 0 = coroa de louros. */
     pontas: number
     cores: [string, string]
     explica: string
@@ -27,37 +28,65 @@ type TipoDeSelo = {
 
 /** Ordem = do mais fácil ao mais raro. Todos aparecem no "O que os selos significam", conquistados ou não. */
 const TIPOS: TipoDeSelo[] = [
+    // Vendedor e loja são o mesmo selo azul: quem vende com segurança pelo site
     {
         chave: "vendedor",
         rotulo: "Vendedor verificado",
-        pontas: 12,
-        cores: ["#34d399", "#047857"],
-        explica:
-            "Identidade confirmada pela Stripe, pelo menos 3 vendas entregues pelo Imperium, boa avaliação e nenhuma denúncia procedente recente. O site confere todo dia: se deixar de cumprir, o selo sai sozinho.",
-        comoConquistar: "Confirme a identidade na Stripe e entregue 3 vendas pelo site com boa avaliação.",
-    },
-    {
-        chave: "loja",
-        rotulo: "Loja verificada",
         pontas: 8,
         cores: ["#60a5fa", "#1d4ed8"],
-        explica: "Empresa com CNPJ ativo na Receita Federal. A equipe do Imperium conferiu que esta conta é mesmo da empresa.",
-        comoConquistar: "Envie o CNPJ da sua loja ativa para a equipe conferir.",
+        explica:
+            "Identidade confirmada pela Stripe, pelo menos 3 vendas entregues pelo Imperium, boa avaliação e nenhuma denúncia procedente recente. O site confere todo dia: se deixar de cumprir, o selo sai sozinho.",
+        comoConquistar: "Confirme a identidade na Stripe e entregue 3 vendas pelo site com boa avaliação. Loja com CNPJ ativo também ganha.",
     },
     {
         chave: "criador",
         rotulo: "Criador verificado",
         pontas: 16,
-        cores: ["#fbbf24", "#dc2626"],
+        cores: ["#c084fc", "#6d28d9"],
         explica:
-            "Perfil com mais de 10 mil seguidores em outra rede (Instagram, TikTok, YouTube...). A equipe do Imperium conferiu que o perfil é mesmo desta pessoa.",
+            "Influenciador ou atleta com mais de 10 mil seguidores em outra rede (Instagram, TikTok, YouTube...). A equipe do Imperium conferiu que o perfil é mesmo desta pessoa.",
         comoConquistar: "Tenha mais de 10 mil seguidores em outra rede e prove que o perfil é seu.",
+    },
+    {
+        chave: "imperador",
+        rotulo: "Imperador",
+        pontas: 0,
+        cores: ["#fde68a", "#b45309"],
+        explica: "O selo mais raro do site. Não se pede nem se compra: a equipe do Imperium escolheu esta pessoa a dedo.",
+        comoConquistar: "Não se pede: a equipe escolhe a dedo quem marca a comunidade.",
     },
 ]
 
-function tem(s: SelosDaConta, c: Chave) {
-    return c === "vendedor" ? !!s.vendedorVerificado : c === "loja" ? !!s.lojaVerificada : !!s.criadorVerificado
+/** Com loja verificada, o selo azul aparece como loja (nome oficial da empresa). */
+function ehLoja(s: SelosDaConta) {
+    return !!s.lojaVerificada
 }
+
+function tem(s: SelosDaConta, c: Chave) {
+    return { vendedor: s.vendedorVerificado || s.lojaVerificada, criador: s.criadorVerificado, imperador: s.imperador }[c] === true
+}
+
+/** Coroa de louros: dois ramos de folhas subindo em arco, abertos no alto, como a dos imperadores romanos. */
+function folhasDeLouro() {
+    const folhas: { x: number; y: number; a: number }[] = []
+    const R = 8.7
+    for (const lado of [-1, 1]) {
+        // φ: ângulo a partir do pé da coroa; cada ponto leva um par de folhas (uma para fora, outra para dentro)
+        for (const graus of [32, 58, 84, 110, 136]) {
+            const f = (graus * Math.PI) / 180
+            const cx = 12 + lado * R * Math.sin(f)
+            const cy = 12 + R * Math.cos(f)
+            const subindo = (Math.atan2(-Math.sin(f), lado * Math.cos(f)) * 180) / Math.PI
+            const nx = lado * Math.sin(f)
+            const ny = Math.cos(f)
+            for (const lad of [1, -1]) {
+                folhas.push({ x: cx + nx * lad * 1.05, y: cy + ny * lad * 1.05, a: subindo + lado * lad * 32 })
+            }
+        }
+    }
+    return folhas
+}
+const LOURO = folhasDeLouro()
 
 /** Estrela de pontas suaves (as pontas ficam arredondadas pelo traço com junção redonda). */
 function estrela(pontas: number) {
@@ -86,9 +115,22 @@ export function SimboloSelo({ tipo, className, apagado }: { tipo: TipoDeSelo; cl
                     <stop offset="0.55" stopColor="#fff" stopOpacity="0" />
                 </linearGradient>
             </defs>
-            <polygon points={estrela(tipo.pontas)} fill={`url(#g${id})`} stroke={`url(#g${id})`} strokeWidth="1.6" strokeLinejoin="round" />
-            <circle cx="12" cy="12" r="7.6" fill={`url(#b${id})`} />
-            <path d="M8.2 12.3l2.5 2.5 5.1-5.3" fill="none" stroke="#fff" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" />
+            {tipo.pontas === 0 ? (
+                <>
+                    {LOURO.map((f, i) => (
+                        <ellipse key={i} cx={f.x} cy={f.y} rx="1.85" ry="0.8" transform={`rotate(${f.a} ${f.x} ${f.y})`} fill={`url(#g${id})`} />
+                    ))}
+                    <circle cx="12" cy="12" r="5.6" fill={`url(#g${id})`} />
+                    <circle cx="12" cy="12" r="5.6" fill={`url(#b${id})`} />
+                    <path d="M9.4 12.1l1.8 1.8 3.5-3.7" fill="none" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                </>
+            ) : (
+                <>
+                    <polygon points={estrela(tipo.pontas)} fill={`url(#g${id})`} stroke={`url(#g${id})`} strokeWidth="1.6" strokeLinejoin="round" />
+                    <circle cx="12" cy="12" r="7.6" fill={`url(#b${id})`} />
+                    <path d="M8.2 12.3l2.5 2.5 5.1-5.3" fill="none" stroke="#fff" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" />
+                </>
+            )}
         </svg>
     )
 }
@@ -102,7 +144,11 @@ export function Selos({ selos, pequeno, className }: { selos: SelosDaConta; pequ
     const lista = TIPOS.filter((t) => tem(selos, t.chave))
     if (lista.length === 0) return null
 
-    const nome = (t: TipoDeSelo) => (t.chave === "loja" && selos.lojaNome ? `Loja verificada · ${selos.lojaNome}` : t.rotulo)
+    // Loja aparece com o nome oficial da empresa; o explica da loja troca o do vendedor
+    const loja = ehLoja(selos)
+    const nome = (t: TipoDeSelo) => (t.chave === "vendedor" && loja ? `Loja verificada${selos.lojaNome ? ` · ${selos.lojaNome}` : ""}` : t.rotulo)
+    const explica = (t: TipoDeSelo) =>
+        t.chave === "vendedor" && loja ? "Empresa com CNPJ ativo na Receita Federal. A equipe do Imperium conferiu que esta conta é mesmo da empresa." : t.explica
 
     return (
         <>
@@ -126,7 +172,7 @@ export function Selos({ selos, pequeno, className }: { selos: SelosDaConta; pequ
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>Selos do Imperium</DialogTitle>
-                        <DialogDescription>Ninguém compra selo: cada um é conquistado e conferido pelo Imperium.</DialogDescription>
+                        <DialogDescription>Ninguém compra selo: cada um é conquistado ou dado pela equipe do Imperium.</DialogDescription>
                     </DialogHeader>
                     <ul className="flex flex-col gap-4">
                         {TIPOS.map((t) => {
@@ -140,7 +186,7 @@ export function Selos({ selos, pequeno, className }: { selos: SelosDaConta; pequ
                                             {!ganhou && <span className="type-caption ml-2 text-muted-foreground">ainda não</span>}
                                         </span>
                                         <span className="type-body-small text-muted-foreground">
-                                            {ganhou ? t.explica : t.comoConquistar}
+                                            {ganhou ? explica(t) : t.comoConquistar}
                                         </span>
                                     </span>
                                 </li>

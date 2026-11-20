@@ -15,7 +15,7 @@ type Item = {
     id: string
     userId: string
     nome: string | null
-    tipo: "CRIADOR" | "LOJA"
+    tipo: "CRIADOR" | "LOJA" | "IMPERADOR"
     status: "PENDENTE" | "APROVADA"
     link: string
     seguidores: number | null
@@ -27,6 +27,8 @@ type Item = {
 }
 
 type Acao = { item: Item; tipo: "recusar" | "remover" }
+
+const ROTULO = { CRIADOR: "Criador", LOJA: "Loja", IMPERADOR: "Imperador" } as const
 
 const cnpjFormatado = (c: string) => c.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, "$1.$2.$3/$4-$5")
 
@@ -173,14 +175,14 @@ export function SelosAdmin() {
  */
 export function DarSelo({ userId, nome }: { userId: string; nome: string }) {
     const [aberto, setAberto] = useState(false)
-    const [tipo, setTipo] = useState<"CRIADOR" | "LOJA">("CRIADOR")
+    const [tipo, setTipo] = useState<"CRIADOR" | "LOJA" | "IMPERADOR">("CRIADOR")
     const [link, setLink] = useState("")
     const [cnpj, setCnpj] = useState("")
     const [enviando, setEnviando] = useState(false)
     const [erro, setErro] = useState<string | null>(null)
     const [feito, setFeito] = useState<string | null>(null)
 
-    const valido = tipo === "CRIADOR" ? link.trim().length > 4 : cnpj.replace(/\D/g, "").length === 14
+    const valido = tipo === "IMPERADOR" || (tipo === "CRIADOR" ? link.trim().length > 4 : cnpj.replace(/\D/g, "").length === 14)
 
     function abrir() {
         setTipo("CRIADOR")
@@ -197,7 +199,7 @@ export function DarSelo({ userId, nome }: { userId: string; nome: string }) {
         setErro(null)
         try {
             await api.post("/api/admin/pendencias/verificacoes/dar", { link: link.trim() || null, cnpj: cnpj || null }, { params: { userId, tipo } })
-            setFeito(tipo === "CRIADOR" ? "Selo de criador dado" : "Selo de loja dado")
+            setFeito(ROTULO[tipo] + ": selo dado")
             setAberto(false)
         } catch (cause) {
             setErro(mensagemDaApi(cause, "Não foi possível dar o selo."))
@@ -226,7 +228,7 @@ export function DarSelo({ userId, nome }: { userId: string; nome: string }) {
                     </DialogHeader>
                     <form onSubmit={dar} className="flex flex-col gap-4">
                         <div className="flex gap-2" role="radiogroup" aria-label="Tipo de selo">
-                            {(["CRIADOR", "LOJA"] as const).map((t) => (
+                            {(["CRIADOR", "LOJA", "IMPERADOR"] as const).map((t) => (
                                 <button
                                     key={t}
                                     type="button"
@@ -235,7 +237,7 @@ export function DarSelo({ userId, nome }: { userId: string; nome: string }) {
                                     onClick={() => setTipo(t)}
                                     className={`line-btn line-btn--sm ${tipo === t ? "" : "line-btn--muted"}`}
                                 >
-                                    {t === "CRIADOR" ? "Criador" : "Loja"}
+                                    {ROTULO[t]}
                                 </button>
                             ))}
                         </div>
@@ -246,10 +248,13 @@ export function DarSelo({ userId, nome }: { userId: string; nome: string }) {
                                 <p className="text-xs text-muted-foreground">O site confere na Receita se está ativo e usa o nome oficial no selo.</p>
                             </div>
                         )}
-                        <div className="flex flex-col gap-2">
+                        {tipo === "IMPERADOR" && (
+                            <p className="text-xs text-muted-foreground">O selo mais raro: coroa de louros dourada. Dê só a quem a equipe escolheu a dedo.</p>
+                        )}
+                        {tipo !== "IMPERADOR" && <div className="flex flex-col gap-2">
                             <Label htmlFor="dar-link">{tipo === "CRIADOR" ? "Link do perfil na outra rede" : "Instagram ou site da loja (opcional)"}</Label>
                             <Input id="dar-link" inputMode="url" maxLength={300} value={link} onChange={(e) => setLink(e.target.value)} placeholder="instagram.com/perfil" />
-                        </div>
+                        </div>}
                         {erro && <p role="alert" className="text-sm text-destructive">{erro}</p>}
                         <DialogFooter>
                             <Button type="button" variant="outline" onClick={() => setAberto(false)} disabled={enviando}>
@@ -270,7 +275,7 @@ function Resumo({ item }: { item: Item }) {
     return (
         <div className="min-w-0">
             <p className="text-sm font-semibold">
-                {item.tipo === "CRIADOR" ? "Criador" : "Loja"} · {item.nome || "Sem nome"}
+                {ROTULO[item.tipo]} · {item.nome || "Sem nome"}
             </p>
             <a href={item.link} target="_blank" rel="noreferrer" className="mt-1 inline-flex max-w-full items-center gap-1 truncate text-xs text-primary hover:underline">
                 <ExternalLink className="size-3 shrink-0" aria-hidden="true" />

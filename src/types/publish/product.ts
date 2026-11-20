@@ -138,6 +138,7 @@ export interface ProductResponse {
         avatarUrl: string
         vendedorVerificado?: boolean
         lojaVerificada?: boolean
+        imperador?: boolean
         lojaNome?: string | null
     }
 

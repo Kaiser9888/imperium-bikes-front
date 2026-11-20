@@ -34,6 +34,7 @@ type Extras = {
     vendedorVerificado?: boolean
     criadorVerificado?: boolean
     lojaVerificada?: boolean
+    imperador?: boolean
     lojaNome?: string | null
 }
 type Carregado = { status: "ok"; perfil: Perfil; extras: Extras; produtos: ProdutoItem[] }
@@ -101,6 +102,7 @@ export default function PerfilPage() {
                     vendedorVerificado: Boolean(data.vendedorVerificado),
                     criadorVerificado: Boolean(data.criadorVerificado),
                     lojaVerificada: Boolean(data.lojaVerificada),
+                    imperador: Boolean(data.imperador),
                     lojaNome: data.lojaNome ?? null,
                 },
                 perfil: {

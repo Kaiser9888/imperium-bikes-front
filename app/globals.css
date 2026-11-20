@@ -921,88 +921,61 @@ mux-player.mux-player-cover {
     transition-delay: 300ms;
 }
 
-/* Salvar (Uiverse.io, vinodjangid07): o ícone cresce e cobre o texto no hover. */
+/* Salvar: pílula simples como "Copiar link"; salvo fica na cor da marca com o ícone preenchido. */
 .bookmark-btn {
-    --bookmark-from: var(--primary);
-    --bookmark-to: oklch(0.72 0.18 50);
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 6.5rem;
+    gap: 0.4rem;
     height: 2.5rem;
-    padding: 0 0.3rem;
+    padding: 0 1rem;
     border-radius: 9999px;
-    border: 1px solid rgb(255 255 255 / 0.35);
-    background-color: oklch(0.16 0.02 20);
-    color: #fff;
+    border: 1px solid var(--border);
+    background-color: var(--secondary);
+    color: var(--foreground);
+    font-size: 0.8125rem;
+    font-weight: 600;
     cursor: pointer;
-    overflow: hidden;
-    transition: transform 0.3s;
+    transition: background-color 200ms, border-color 200ms, color 200ms, transform 150ms;
+}
+.bookmark-btn:hover {
+    border-color: color-mix(in oklch, var(--primary) 50%, transparent);
 }
 .bookmark-btn:focus-visible {
     outline: 2px solid var(--primary);
     outline-offset: 3px;
 }
-.bookmark-btn__icon {
-    display: flex;
-    flex-shrink: 0;
-    align-items: center;
-    justify-content: center;
-    width: 1.875rem;
-    height: 1.875rem;
-    border-radius: 9999px;
-    background: linear-gradient(to bottom, var(--bookmark-to), var(--bookmark-from));
-    overflow: hidden;
-    z-index: 2;
-    transition: width 0.3s;
-}
-.bookmark-btn__icon svg {
-    width: 0.875rem;
-    height: 0.875rem;
-}
-.bookmark-btn__text {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex: 1;
-    height: 100%;
-    font-size: 0.8125rem;
-    font-weight: 600;
-    z-index: 1;
-    transition: transform 0.3s, width 0.3s, font-size 0.3s;
-}
-.bookmark-btn:hover .bookmark-btn__icon,
-.bookmark-btn:focus-visible .bookmark-btn__icon {
-    width: 100%;
-}
-.bookmark-btn:hover .bookmark-btn__text,
-.bookmark-btn:focus-visible .bookmark-btn__text {
-    transform: translate(10px);
-    width: 0;
-    flex: 0;
-    font-size: 0;
-}
 .bookmark-btn:active {
     transform: scale(0.95);
+}
+.bookmark-btn__icon {
+    display: flex;
+}
+.bookmark-btn__icon svg {
+    width: 1rem;
+    height: 1rem;
+}
+.bookmark-btn[aria-pressed='true'] {
+    border-color: var(--primary);
+    background-color: color-mix(in oklch, var(--primary) 15%, transparent);
+    color: var(--primary);
 }
 .bookmark-btn[aria-pressed='true'] .bookmark-btn__icon svg {
     fill: currentColor;
 }
-/* Só o ícone: usado na barra lateral do Memento. */
+/* Só o ícone: cards e barra lateral do Memento, sobre o vídeo. */
 .bookmark-btn--icon {
     width: 2.75rem;
     height: 2.75rem;
     padding: 0;
+    border-color: rgb(255 255 255 / 0.25);
     background-color: rgb(0 0 0 / 0.4);
+    color: #fff;
     backdrop-filter: blur(12px);
 }
-.bookmark-btn--icon .bookmark-btn__icon {
-    width: 2rem;
-    height: 2rem;
-}
-.bookmark-btn--icon:hover .bookmark-btn__icon {
-    width: 2.25rem;
-    height: 2.25rem;
+.bookmark-btn--icon .bookmark-btn__icon svg {
+    width: 1.25rem;
+    height: 1.25rem;
 }
 
 /* Ponto pulsante de "ao vivo" */

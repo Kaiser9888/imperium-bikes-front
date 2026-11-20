@@ -52,6 +52,7 @@ export default function PerfilPublicoPage() {
                     vendedorVerificado: Boolean(data.vendedorVerificado),
                     criadorVerificado: Boolean(data.criadorVerificado),
                     lojaVerificada: Boolean(data.lojaVerificada),
+                    imperador: Boolean(data.imperador),
                     lojaNome: data.lojaNome ?? null,
                 },
             })
