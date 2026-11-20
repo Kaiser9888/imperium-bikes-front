@@ -1,3 +1,4 @@
+import type { ReactNode } from "react"
 import Link from "next/link"
 import { Plus } from "lucide-react"
 
@@ -26,11 +27,13 @@ export function SponsorBanners({ sponsors, gerenciarHref }: { sponsors: Sponsor[
             </Link>
         )
     }
+    // O primeiro é o patrocinador principal: banner largo; os outros viram logos numa faixa abaixo
+    const [principal, ...outros] = sponsors
     return (
-        <section aria-labelledby="patrocinadores-title" className="mt-4">
+        <section aria-labelledby="patrocinadores-title" className="mt-5">
             <div className="flex items-center gap-3">
-                <h2 id="patrocinadores-title" className="type-caption uppercase tracking-wider text-muted-foreground">
-                    Patrocínio
+                <h2 id="patrocinadores-title" className="type-label text-foreground">
+                    Patrocinado por
                 </h2>
                 {gerenciarHref && (
                     <Link href={gerenciarHref} className="type-caption ml-auto text-primary hover:underline">
@@ -39,30 +42,42 @@ export function SponsorBanners({ sponsors, gerenciarHref }: { sponsors: Sponsor[
                 )}
             </div>
 
-            <ul className="mt-2 flex flex-wrap gap-2">
-                {sponsors.map((sponsor, index) => {
-                    const banner = (
-                        // eslint-disable-next-line @next/next/no-img-element -- imagem enviada pelo usuário, domínio variável
-                        <img
-                            src={sponsorImageUrl(sponsor.imageUrl)}
-                            alt={sponsor.name || "Patrocinador"}
-                            loading="lazy"
-                            className="h-12 w-28 rounded-lg border border-border bg-background object-contain p-1.5 transition-colors hover:border-primary/40 sm:w-32"
-                        />
-                    )
-                    return (
-                        <li key={`${sponsor.imageUrl}-${index}`}>
-                            {sponsor.linkUrl ? (
-                                <a href={sponsor.linkUrl} target="_blank" rel="noopener noreferrer sponsored" title={sponsor.name ?? undefined}>
-                                    {banner}
-                                </a>
-                            ) : (
-                                banner
-                            )}
+            <SponsorLink sponsor={principal} className="mt-2 block max-w-xs">
+                {/* eslint-disable-next-line @next/next/no-img-element -- imagem enviada pelo usuário, domínio variável */}
+                <img
+                    src={sponsorImageUrl(principal.imageUrl)}
+                    alt={principal.name || "Patrocinador"}
+                    loading="lazy"
+                    className="h-20 w-full rounded-lg bg-background object-cover ring-1 ring-border transition-shadow hover:ring-primary/50"
+                />
+            </SponsorLink>
+
+            {outros.length > 0 && (
+                <ul className="-mx-1 mt-2 flex gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none]">
+                    {outros.map((sponsor, index) => (
+                        <li key={`${sponsor.imageUrl}-${index}`} className="shrink-0">
+                            <SponsorLink sponsor={sponsor} className="block">
+                                {/* eslint-disable-next-line @next/next/no-img-element -- imagem enviada pelo usuário, domínio variável */}
+                                <img
+                                    src={sponsorImageUrl(sponsor.imageUrl)}
+                                    alt={sponsor.name || "Patrocinador"}
+                                    loading="lazy"
+                                    className="h-14 w-32 rounded-lg bg-background object-contain p-1.5 ring-1 ring-border transition-shadow hover:ring-primary/50"
+                                />
+                            </SponsorLink>
                         </li>
-                    )
-                })}
-            </ul>
+                    ))}
+                </ul>
+            )}
         </section>
+    )
+}
+
+function SponsorLink({ sponsor, className, children }: { sponsor: Sponsor; className?: string; children: ReactNode }) {
+    if (!sponsor.linkUrl) return <div className={className}>{children}</div>
+    return (
+        <a href={sponsor.linkUrl} target="_blank" rel="noopener noreferrer sponsored" title={sponsor.name ?? undefined} className={className}>
+            {children}
+        </a>
     )
 }

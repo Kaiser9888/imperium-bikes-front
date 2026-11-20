@@ -213,8 +213,6 @@ export function PerfilView({
                         {/* key: ao trocar de perfil, as listas começam do zero */}
                         <Seguidores key={perfil.id} userId={perfil.id} dono={dono} ajuste={ajusteSeguidores} />
 
-                        <SponsorBanners sponsors={perfil.sponsors} gerenciarHref={dono ? "/configuracoes/patrocinadores" : undefined} />
-
                         {perfil.bio && (
                             <p className="type-body mt-4 max-w-prose whitespace-pre-line text-pretty text-foreground">{perfil.bio}</p>
                         )}
@@ -232,6 +230,8 @@ export function PerfilView({
                                 )}
                             </div>
                         )}
+                        {/* Depois dos botões: Seguir fica junto do nome e dos números */}
+                        <SponsorBanners sponsors={perfil.sponsors} gerenciarHref={dono ? "/configuracoes/patrocinadores" : undefined} />
                     </div>
                 </div>
             </section>
