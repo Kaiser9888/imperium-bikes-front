@@ -175,8 +175,9 @@ export default function TermosPage() {
                     <li>
                         <strong>Vendas:</strong> vender não tem taxa: o vendedor recebe 100% do preço anunciado, mais o frete pago pelo
                         comprador, quando o valor é liberado. O comprador paga a <Link href="/protecao">Proteção Imperium</Link>, mostrada
-                        na página do produto e no pagamento: a tarifa do cartão (3,99% + R$ 0,39 sobre tudo o que ele paga) mais 3% do
-                        preço para o Imperium, no máximo R$ 60 por item. No reembolso, a Proteção é devolvida junto. O preço mínimo de um
+                        na página do produto e no pagamento: 3,99% + R$ 0,39 sobre tudo o que ele paga, mais 3% do preço do produto (no
+                        máximo R$ 60 por item). Ela cobre o processamento do pagamento e o serviço do Imperium (pagamento retido até a
+                        entrega, disputa e suporte), e o valor é o mesmo no cartão e no Pix. No reembolso, a Proteção é devolvida junto. O preço mínimo de um
                         anúncio é R$ 20,00.
                     </li>
                     <li>

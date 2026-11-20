@@ -39,8 +39,8 @@ export default function ProtecaoPage() {
 
             <Secao id="custa" titulo="2. Quanto custa">
                 <p>
-                    A tarifa do cartão (3,99% + R$ 0,39 sobre o que você paga) mais 3% do preço para o Imperium, no máximo R$ 60 por
-                    item. O valor aparece na página do produto e no pagamento, antes de você pagar.
+                    3,99% + R$ 0,39 sobre o que você paga, mais 3% do preço do produto (no máximo R$ 60 por item). Cobre o
+                    processamento do pagamento e o serviço do Imperium, e é o mesmo no cartão e no Pix. O valor aparece na página do produto e no pagamento, antes de você pagar.
                 </p>
                 <ul>
                     {EXEMPLOS.map((reais) => {
