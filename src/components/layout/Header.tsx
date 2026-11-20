@@ -109,7 +109,7 @@ export function Header({ busca = true }: { busca?: boolean }) {
                     </Guest>
 
                     <Authed>
-                        <div className="flex size-10 items-center justify-center max-[379px]:size-9">
+                        <div className="hidden size-10 items-center justify-center lg:flex">
                             <UserButton appearance={{ elements: { avatarBox: "size-8" } }} />
                         </div>
                     </Authed>

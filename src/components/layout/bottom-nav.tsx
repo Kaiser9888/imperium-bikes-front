@@ -1,10 +1,9 @@
 "use client"
 
 import Link from "next/link"
-import { House, Search, TvMinimalPlay, User, type LucideIcon } from "lucide-react"
+import { House, Search, Trophy, TvMinimalPlay, User, type LucideIcon } from "lucide-react"
 import { usePathname } from "next/navigation"
 
-import { TrophyIcon } from "@/components/ui/trophy-icon"
 import { isRouteActive } from "@/lib/navigation"
 import { cn } from "@/lib/utils"
 
@@ -28,7 +27,6 @@ function NavLink({ href, label, icon: Icon }: { href: string; label: string; ico
 
 /** `escuro`: força o tema escuro (feed do Memento, que é preto nos dois temas). */
 export function BottomNav({ escuro = false }: { escuro?: boolean }) {
-    const eventosAtivo = isRouteActive(usePathname(), "/torneios")
     return (
         <nav
             aria-label="Navegação inferior"
@@ -42,12 +40,7 @@ export function BottomNav({ escuro = false }: { escuro?: boolean }) {
                     <NavLink href="/buscar" label="Busca" icon={Search} />
                 </li>
                 <li>
-                    <Link href="/torneios" aria-label="Eventos" aria-current={eventosAtivo ? "page" : undefined} className={itemClasses}>
-                        {/* Troféu dourado sobre tinta escura, com o aro vermelho da marca; aro mais grosso na seção ativa */}
-                        <span className={cn("flex size-11 items-center justify-center rounded-full bg-[oklch(0.17_0.02_20)] shadow-sm ring-accent", eventosAtivo ? "ring-[3px]" : "ring-2")}>
-                            <TrophyIcon className="size-7" />
-                        </span>
-                    </Link>
+                    <NavLink href="/torneios" label="Eventos" icon={Trophy} />
                 </li>
                 <li>
                     <NavLink href="/videos" label="Vídeos" icon={TvMinimalPlay} />

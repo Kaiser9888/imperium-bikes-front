@@ -50,7 +50,7 @@ export function Logo({ compact = false, className }: LogoProps) {
         >
             <OrcaMark priority className={compact ? "h-7" : "h-7 sm:h-8"} />
             {!compact && (
-                <span className="brand-name text-lg leading-none sm:text-xl">Imperium Bikes</span>
+                <span className="brand-name text-2xl leading-none sm:text-3xl">Imperium Bikes</span>
             )}
         </Link>
     )
