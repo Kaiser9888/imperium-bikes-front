@@ -31,7 +31,7 @@ export function VideoActions({
                              }: VideoActionsProps) {
   return (
     // Uma linha só: no celular rola para o lado em vez de quebrar
-    <div className="-mx-4 flex items-center gap-2 overflow-x-auto px-4 [scrollbar-width:none] sm:mx-0 sm:px-0 [&>*]:shrink-0">
+    <div className="-mx-4 flex items-center gap-1.5 overflow-x-auto px-4 [scrollbar-width:none] sm:mx-0 sm:px-0 [&>*]:shrink-0">
       <div className="flex items-center rounded-full bg-muted/50 border border-border overflow-hidden">
         <button
           type="button"
@@ -39,7 +39,7 @@ export function VideoActions({
           aria-pressed={liked}
           aria-label={`Curtir, ${likesCount} curtidas`}
           className={`
-                        flex items-center gap-2 px-4 py-2.5 text-sm font-medium
+                        flex items-center gap-2 px-3 py-2.5 text-sm font-medium sm:px-4
                         transition-all duration-200 hover:bg-muted/80
                         ${liked ? "text-accent" : "text-muted-foreground"}
                     `}
@@ -59,7 +59,7 @@ export function VideoActions({
           aria-pressed={disliked}
           aria-label="Não curtir"
           className={`
-                        flex items-center gap-2 px-4 py-2.5 text-sm font-medium
+                        flex items-center gap-2 px-3 py-2.5 text-sm font-medium sm:px-4
                         transition-all duration-200 hover:bg-muted/80
                         ${disliked ? "text-accent" : "text-muted-foreground"}
                     `}

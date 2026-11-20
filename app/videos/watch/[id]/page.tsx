@@ -162,9 +162,7 @@ export default function WatchPage() {
         dislikesCount={reaction.dislikesCount}
         onToggleLike={() => void toggle("like")}
         onToggleDislike={() => void toggle("dislike")}
-      >
-          <DenunciarButton tipo="VIDEO" id={video.id} className="shrink-0 px-2" />
-      </VideoActions>
+      />
     );
 
     return (
@@ -206,10 +204,14 @@ export default function WatchPage() {
                   <div className="px-4 sm:px-0">
                       {/* Hashtags ficam só na descrição */}
                       <h1 className="type-h2 mt-4 break-words text-foreground">{video.title}</h1>
-                      <p className="type-caption mt-1 text-muted-foreground">
-                          {video.isLiveNow ? "Ao vivo" : visualizacoes(video.viewCount)} ·{" "}
-                          <time dateTime={video.createdAt} title={dataCompleta(video.createdAt)}>{timeAgo(video.createdAt)}</time>
-                      </p>
+                      {/* Denunciar discreto na linha dos números: na fileira de botões ficava cortado */}
+                      <div className="flex items-center justify-between gap-3">
+                          <p className="type-caption text-muted-foreground">
+                              {video.isLiveNow ? "Ao vivo" : visualizacoes(video.viewCount)} ·{" "}
+                              <time dateTime={video.createdAt} title={dataCompleta(video.createdAt)}>{timeAgo(video.createdAt)}</time>
+                          </p>
+                          <DenunciarButton tipo="VIDEO" id={video.id} className="shrink-0" />
+                      </div>
                       {video.tournamentId && (
                         <Link
                           href={`/torneios/${video.tournamentId}`}
