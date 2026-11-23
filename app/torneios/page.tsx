@@ -69,10 +69,19 @@ export default function TorneiosPage() {
                         {new Date().getFullYear()}
                     </span>
                     <Image src="/sigillum/lorica.jpg" alt="" width={430} height={600} aria-hidden="true" className="pointer-events-none absolute -top-6 right-[22%] -z-10 hidden h-[130%] w-auto select-none opacity-[0.05] invert mix-blend-screen sm:block" />
-                    <p className="type-caption font-semibold uppercase tracking-[0.2em] text-white/60">Calendário</p>
-                    <div className="mt-2 flex flex-wrap items-end justify-between gap-x-8 gap-y-5">
+                    <div className="lg:grid lg:grid-cols-[1fr_26rem] lg:items-center lg:gap-10">
                         <div>
-                            <h1 className="type-display">Eventos</h1>
+                            {/* Criar evento na mesma linha do rótulo: o painel fica mais baixo e a lista aparece antes */}
+                            <div className="flex items-center justify-between gap-4">
+                                <p className="type-caption font-semibold uppercase tracking-[0.2em] text-white/60">Calendário</p>
+                                <Link href="/torneios/criar" className="underline-btn inline-block">
+                                    <span className="flex items-center gap-2 py-1.5">
+                                        <Plus className="size-5" aria-hidden="true" />
+                                        Criar evento
+                                    </span>
+                                </Link>
+                            </div>
+                            <h1 className="type-display mt-1">Eventos</h1>
                             <p className="type-body-small mt-2 max-w-sm text-white/75">
                                 {carregando
                                     ? "Buscando o que vem por aí…"
@@ -81,18 +90,18 @@ export default function TorneiosPage() {
                                         : "Nenhuma inscrição aberta no momento. Que tal organizar o próximo?"}
                             </p>
                         </div>
-                        <Link href="/torneios/criar" className="underline-btn inline-block">
-                            <span className="flex items-center gap-2 py-1.5">
-                                <Plus className="size-5" aria-hidden="true" />
-                                Criar evento
-                            </span>
-                        </Link>
+
+                        {/* O mapa faz parte do painel: some só enquanto carrega ou se deu erro */}
+                        {!carregando && !erro && (
+                            <MapaBrasil
+                                contagem={porEstado}
+                                selecionado={uf}
+                                onSelecionar={setUf}
+                                className="mt-5 border-t border-white/10 pt-4 lg:mt-0 lg:border-l lg:border-t-0 lg:pl-10 lg:pt-0"
+                            />
+                        )}
                     </div>
                 </section>
-
-                {!carregando && torneios.length > 0 && (
-                    <MapaBrasil contagem={porEstado} selecionado={uf} onSelecionar={setUf} />
-                )}
 
                 {/* Filtros + busca: só com eventos para filtrar */}
                 <div className={cn("mt-8 flex flex-col gap-5 md:flex-row md:items-center md:justify-between", !carregando && torneios.length === 0 && "hidden")}>
