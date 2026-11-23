@@ -14,7 +14,9 @@ const securityHeaders = [
   // plugins (<object>/<embed>) e troca do <base>, sem restringir os scripts de Clerk, Stripe e Mux.
   {
     key: 'Content-Security-Policy',
-    value: "frame-ancestors 'self'; object-src 'none'; base-uri 'self'; upgrade-insecure-requests",
+    // upgrade-insecure-requests só em produção: no teste local (http pelo IP da rede, no celular)
+    // ele forçaria https e o site abriria sem CSS.
+    value: "frame-ancestors 'self'; object-src 'none'; base-uri 'self'" + (process.env.NODE_ENV === "production" ? "; upgrade-insecure-requests" : ""),
   },
 ]
 
