@@ -3,6 +3,7 @@ import { ptBR } from '@clerk/localizations'
 import type { Metadata, Viewport } from 'next'
 import { Bebas_Neue, Geist } from 'next/font/google'
 import { ThemeProvider } from 'next-themes'
+import { AberturaApp, SCRIPT_ABERTURA } from '@/components/abertura/abertura-app'
 import { AppShellProvider } from '@/components/layout/app-shell'
 import { AvisoCookies } from '@/components/layout/aviso-cookies'
 import { Toaster } from '@/components/ui/sonner'
@@ -75,6 +76,8 @@ export default function RootLayout({
       {/* A variável da fonte fica no <html> para os tokens do :root conseguirem lê-la */}
       <html lang="pt-BR" className={`${geistSans.variable} ${bebasNeue.variable}`} suppressHydrationWarning>
         <body className="antialiased">
+          {/* Abertura do app instalado: decide antes de pintar, para não piscar a página */}
+          <script dangerouslySetInnerHTML={{ __html: SCRIPT_ABERTURA }} />
           {/* Tema claro/escuro: a escolha fica em Configurações e é guardada no navegador */}
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
             <UserSyncProvider>
@@ -86,6 +89,7 @@ export default function RootLayout({
           </ThemeProvider>
           {/* Estatísticas só carregam com consentimento */}
           <AvisoCookies />
+          <AberturaApp />
         </body>
       </html>
     </ClerkProvider>

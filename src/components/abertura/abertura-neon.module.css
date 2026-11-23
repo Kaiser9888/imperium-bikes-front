@@ -1,0 +1,145 @@
+/* Abertura com cara de TV de tubo dos anos 80; contorno no amarelo dos prints
+   de referência, suavizado. Cores fixas: não seguem o tema.
+   A orca mantém as cores do logo (preta com manchas brancas). */
+.raiz {
+    /* amarelo dos prints de referência, mais suave */
+    --contorno: #f3dc8a;
+    position: fixed;
+    inset: 0;
+    z-index: 2147483000;
+    overflow: hidden;
+    background: #000;
+    cursor: pointer;
+    touch-action: none;
+}
+
+/* Saindo: a TV "desliga" como as de tubo — a imagem se espreme numa linha
+   branca, a linha encolhe até um ponto e some; então aparece o app */
+.saindo {
+    opacity: 0;
+    transition: opacity 160ms ease 440ms;
+}
+.saindo .tela {
+    animation: desliga 300ms cubic-bezier(.6, 0, .9, .4) forwards;
+}
+@keyframes desliga {
+    0% { transform: none; filter: none; }
+    100% { transform: scale(1, 0.004); filter: brightness(4); }
+}
+.saindo::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 2px;
+    margin-top: -1px;
+    background: #fff;
+    box-shadow: 0 0 6px rgb(255 255 255 / .6);
+    animation: linha 600ms ease-in forwards;
+}
+@keyframes linha {
+    0%, 35% { opacity: 0; transform: scaleX(1); }
+    45% { opacity: 1; transform: scaleX(1); }
+    80% { opacity: 1; transform: scaleX(.008); }
+    100% { opacity: 0; transform: scaleX(0); }
+}
+
+/* Tocou na tela: tudo some rápido */
+.pulando {
+    opacity: 0;
+    transition: opacity 180ms ease;
+}
+
+/* A tela "liga": uma linha clara que abre na vertical, como TV de tubo */
+.tela {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding-bottom: 6vh;
+    animation: liga 420ms cubic-bezier(.2, .8, .2, 1) both;
+}
+@keyframes liga {
+    0% { transform: scale(0.7, 0.004); filter: brightness(6); }
+    45% { transform: scale(1, 0.004); filter: brightness(4); }
+    100% { transform: none; filter: none; }
+}
+
+/* ---------- Orca ---------- */
+.palco {
+    --w: min(58vw, 260px);
+    position: relative;
+}
+
+/* Arco curto e suave, separado em três camadas para não ter trancos:
+   - avanço: desliza para a direita e freia devagar;
+   - subida: sobe desacelerando até o ponto de parada (como na gravidade);
+   - giro: o nariz começa um pouco para cima e nivela junto com a subida. */
+.avanco,
+.subida,
+.giro {
+    animation-duration: 1150ms;
+    animation-delay: 300ms;
+    animation-fill-mode: both;
+    will-change: transform;
+}
+.avanco {
+    position: relative;
+    animation-name: avanco;
+    animation-timing-function: cubic-bezier(.33, .55, .4, 1);
+}
+.subida {
+    animation-name: subida;
+    animation-timing-function: cubic-bezier(.4, .8, .5, 1);
+}
+.giro {
+    animation-name: giro;
+    animation-timing-function: cubic-bezier(.45, 0, .35, 1);
+}
+@keyframes avanco {
+    from { transform: translateX(-16vw); opacity: 0; }
+    35% { opacity: 1; }
+    to { transform: none; opacity: 1; }
+}
+@keyframes subida { from { transform: translateY(16vh); } to { transform: none; } }
+@keyframes giro { from { transform: rotate(-26deg); } to { transform: none; } }
+
+/* Cores do logo com contorno amarelo suave e um brilho bem leve */
+.corpo {
+    width: var(--w);
+    aspect-ratio: 447 / 317;
+    background: url("/logo1-dark.png") center / contain no-repeat;
+    filter:
+        drop-shadow(1.5px 0 0 var(--contorno))
+        drop-shadow(-1.5px 0 0 var(--contorno))
+        drop-shadow(0 1.5px 0 var(--contorno))
+        drop-shadow(0 -1.5px 0 var(--contorno))
+        drop-shadow(0 0 5px rgb(243 220 138 / .25));
+    /* Parada: um flutuar quase imperceptível, para não parecer congelada */
+    animation: flutua 1.6s ease-in-out 1450ms infinite alternate;
+}
+@keyframes flutua { to { transform: translateY(-3px); } }
+
+/* ---------- TV de tubo: linhas, vinheta e leve tremor de brilho ---------- */
+.crt {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+        repeating-linear-gradient(to bottom, rgb(0 0 0 / .32) 0 1px, transparent 1px 3px),
+        radial-gradient(ellipse at center, transparent 55%, rgb(0 0 0 / .75) 100%);
+    animation: tremor 120ms steps(2) infinite;
+}
+@keyframes tremor {
+    0% { opacity: 1; }
+    50% { opacity: .92; }
+}
+
+/* Quem desligou animações vê tudo parado */
+@media (prefers-reduced-motion: reduce) {
+    .tela, .avanco, .subida, .giro, .corpo, .crt { animation: none !important; }
+    .saindo::after { display: none; }
+}
