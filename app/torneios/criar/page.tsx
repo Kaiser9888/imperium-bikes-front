@@ -16,6 +16,7 @@ import { mensagemDaApi, tournamentService } from "@/services/tournamentService"
 import { liquidoInscricaoCentavos, TAXA_PLATAFORMA_EVENTO_PERCENTUAL } from "@/lib/taxas"
 import { useRecebimentos } from "@/hooks/useRecebimentos"
 import { AtivarRecebimentos } from "@/components/carteira/AtivarRecebimentos"
+import { NOMES_UF } from "@/components/torneios/mapa-brasil-dados"
 
 const PASSOS = ["O evento", "Local e vagas", "Inscrição"] as const
 
@@ -364,7 +365,10 @@ export default function CriarTorneioPage() {
                             </div>
                             <div>
                                 <label htmlFor="uf" className={rotulo}>UF</label>
-                                <input id="uf" type="text" value={form.estado} onChange={(e) => update("estado", e.target.value)} maxLength={2} placeholder="SP" data-plain className={`${campo} uppercase`} />
+                                <select id="uf" value={form.estado} onChange={(e) => update("estado", e.target.value)} data-plain className={campo}>
+                                    <option value="" disabled>UF</option>
+                                    {Object.keys(NOMES_UF).map((sigla) => <option key={sigla} value={sigla}>{sigla}</option>)}
+                                </select>
                             </div>
                         </div>
 

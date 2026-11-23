@@ -8,6 +8,7 @@ import { ArrowRight, Plus, Search } from "lucide-react"
 
 import { AppShell } from "@/components/layout/app-shell"
 import { CapaEvento } from "@/components/torneios/CapaEvento"
+import { MapaBrasil } from "@/components/torneios/MapaBrasil"
 import { formatarPreco, partesDaData, textoDaPremiacao } from "@/lib/format"
 import { cn } from "@/lib/utils"
 import { tournamentService, type Tournament, type TournamentStatus } from "@/services/tournamentService"
@@ -24,6 +25,7 @@ const FILTROS: { id: Filtro; label: string }[] = [
 export default function TorneiosPage() {
     const [filtro, setFiltro] = useState<Filtro>("todos")
     const [busca, setBusca] = useState("")
+    const [uf, setUf] = useState<string | null>(null)
     const [torneios, setTorneios] = useState<Tournament[]>([])
     const [carregando, setCarregando] = useState(true)
     const [erro, setErro] = useState<string | null>(null)
@@ -44,12 +46,19 @@ export default function TorneiosPage() {
         return c
     }, [torneios])
 
+    const porEstado = useMemo(() => {
+        const c: Record<string, number> = {}
+        for (const t of torneios) if (t.estado) c[t.estado] = (c[t.estado] ?? 0) + 1
+        return c
+    }, [torneios])
+
     const visiveis = useMemo(() => {
         const termo = busca.trim().toLowerCase()
         return torneios.filter((t) =>
             (filtro === "todos" || t.status === filtro) &&
+            (!uf || t.estado === uf) &&
             (!termo || t.nome.toLowerCase().includes(termo) || t.local.toLowerCase().includes(termo)))
-    }, [torneios, filtro, busca])
+    }, [torneios, filtro, busca, uf])
 
     return (
         <AppShell>
@@ -80,6 +89,10 @@ export default function TorneiosPage() {
                         </Link>
                     </div>
                 </section>
+
+                {!carregando && torneios.length > 0 && (
+                    <MapaBrasil contagem={porEstado} selecionado={uf} onSelecionar={setUf} />
+                )}
 
                 {/* Filtros + busca: só com eventos para filtrar */}
                 <div className={cn("mt-8 flex flex-col gap-5 md:flex-row md:items-center md:justify-between", !carregando && torneios.length === 0 && "hidden")}>
@@ -139,7 +152,7 @@ export default function TorneiosPage() {
                         </p>
                         {torneios.length > 0 && (
                             <div className="mt-6">
-                                <button type="button" onClick={() => { setFiltro("todos"); setBusca("") }} className="line-btn line-btn--sm">
+                                <button type="button" onClick={() => { setFiltro("todos"); setBusca(""); setUf(null) }} className="line-btn line-btn--sm">
                                     Limpar filtros
                                 </button>
                             </div>

@@ -13,6 +13,8 @@ export interface Tournament {
     dataInicio: string
     dataFim: string
     local: string
+    /** Sigla do estado (UF), em maiúsculas; vazio se não informado. */
+    estado: string
     participantes: number
     maxParticipantes: number
     valorInscricao: number
@@ -49,6 +51,7 @@ function normalize(item: Raw): Tournament {
         dataInicio: String(item.startDate ?? ""),
         dataFim: String(item.endDate ?? ""),
         local: [item.location, item.city, item.state].filter(Boolean).join(", "),
+        estado: String(item.state ?? "").trim().toUpperCase(),
         participantes: Number(item.participantsCount ?? 0),
         maxParticipantes: Number(item.maxParticipants ?? 0),
         valorInscricao: Number(item.registrationFee ?? 0),

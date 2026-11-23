@@ -1077,3 +1077,17 @@ mux-player.mux-player-cover {
         text-underline-offset: 2px;
     }
 }
+
+/* Mapa de eventos: a luz do estado pulsa como um ponto de radar */
+.mapa-pulso {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: mapa-pulso 2.2s ease-out infinite;
+}
+@keyframes mapa-pulso {
+    from { transform: scale(1); opacity: .7; }
+    to { transform: scale(3.2); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .mapa-pulso { animation: none; opacity: 0; }
+}
