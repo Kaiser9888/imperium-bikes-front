@@ -9,23 +9,29 @@ const ATRIBUTO = "data-abertura"
 
 /**
  * Roda antes da página pintar: só no app instalado (PWA) e uma vez por abertura
- * (sessionStorage zera quando o app é fechado). Marca o <html>, e o CSS cobre a tela
- * de preto até a animação montar, para o conteúdo não piscar entre o splash e a orca.
+ * (sessionStorage zera quando o app é fechado). Marca o <html> (o CSS então mostra a
+ * orca, que já vem no HTML) e guarda a hora em que a abertura começou.
  */
-export const SCRIPT_ABERTURA = `try{var a=matchMedia("(display-mode: standalone)").matches||navigator.standalone===true;if(a&&!sessionStorage.getItem("abertura-vista")){sessionStorage.setItem("abertura-vista","1");document.documentElement.setAttribute("${ATRIBUTO}","")}}catch(e){}`
+export const SCRIPT_ABERTURA = `try{var a=matchMedia("(display-mode: standalone)").matches||navigator.standalone===true;if(a&&!sessionStorage.getItem("abertura-vista")){sessionStorage.setItem("abertura-vista","1");window.__aberturaInicio=performance.now();document.documentElement.setAttribute("${ATRIBUTO}","")}}catch(e){}`
 
-/** Toca a abertura quando o script marcou o <html>; depois some e não volta até reabrir o app. */
+/**
+ * A abertura É a tela de carregamento: vem pronta no HTML do servidor e toca só com
+ * CSS enquanto o app carrega. Quando o React assume (app pronto), ela sai — esperando
+ * a orca terminar o arco, se o carregamento foi mais rápido que isso.
+ */
 export function AberturaApp() {
-    // Lê a marca só no navegador (no servidor é sempre false), sem divergir na hidratação
+    // No servidor é sempre true (a marcação vai no HTML, escondida pelo CSS sem a marca);
+    // no navegador, sem a marca (site comum ou já vista) ela sai logo após hidratar
     const marcado = useSyncExternalStore(
         nada,
         () => document.documentElement.hasAttribute(ATRIBUTO),
-        () => false,
+        () => true,
     )
     const [acabou, setAcabou] = useState(false)
     if (!marcado || acabou) return null
     return (
         <AberturaNeon
+            noCarregamento
             onFim={() => {
                 setAcabou(true)
                 document.documentElement.removeAttribute(ATRIBUTO)

@@ -1091,15 +1091,3 @@ mux-player.mux-player-cover {
 @media (prefers-reduced-motion: reduce) {
     .mapa-pulso { animation: none; opacity: 0; }
 }
-
-/* Abertura do app instalado: tela preta desde o primeiro quadro até a orca montar
-   (o script no layout marca o <html>). Some sozinha em 4 s se algo falhar. */
-html[data-abertura] body::after {
-    content: "";
-    position: fixed;
-    inset: 0;
-    z-index: 2147482999;
-    background: #000;
-    animation: abertura-solta 0s linear 4s forwards;
-}
-@keyframes abertura-solta { to { visibility: hidden; } }

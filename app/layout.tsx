@@ -76,8 +76,10 @@ export default function RootLayout({
       {/* A variável da fonte fica no <html> para os tokens do :root conseguirem lê-la */}
       <html lang="pt-BR" className={`${geistSans.variable} ${bebasNeue.variable}`} suppressHydrationWarning>
         <body className="antialiased">
-          {/* Abertura do app instalado: decide antes de pintar, para não piscar a página */}
+          {/* Abertura do app instalado: decide antes de pintar; a orca já vem no HTML e
+              toca enquanto o app carrega (é a tela de carregamento) */}
           <script dangerouslySetInnerHTML={{ __html: SCRIPT_ABERTURA }} />
+          <AberturaApp />
           {/* Tema claro/escuro: a escolha fica em Configurações e é guardada no navegador */}
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
             <UserSyncProvider>
@@ -89,7 +91,6 @@ export default function RootLayout({
           </ThemeProvider>
           {/* Estatísticas só carregam com consentimento */}
           <AvisoCookies />
-          <AberturaApp />
         </body>
       </html>
     </ClerkProvider>
