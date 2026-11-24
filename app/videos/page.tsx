@@ -60,7 +60,7 @@ export default function VideosPage() {
     <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
       {/* Destaque */}
       {!featuredLoaded ? (
-        <div className="mb-8 aspect-[16/10] w-full animate-pulse rounded-2xl bg-secondary sm:aspect-[21/9]" />
+        <div className="mb-8 aspect-square w-full animate-pulse rounded-2xl bg-secondary sm:aspect-[21/9]" />
       ) : featured ? (
         <FeaturedHero video={featured} />
       ) : null}
@@ -132,7 +132,8 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
 function FeaturedHero({ video }: { video: VideoItem }) {
   return (
     <section aria-label="Vídeo em destaque" className="relative mb-8 overflow-hidden rounded-2xl bg-black">
-      <div className="relative aspect-[4/5] w-full sm:aspect-[21/9]">
+      {/* Celular: quadrado (4/5 ocupava a tela toda e escondia o resto da página) */}
+      <div className="relative aspect-square w-full sm:aspect-[21/9]">
         {video.thumbnailUrl ? (
           <img src={video.thumbnailUrl} alt="" className="absolute inset-0 size-full object-cover opacity-80" />
         ) : (

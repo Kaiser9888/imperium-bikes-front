@@ -93,14 +93,14 @@ function Chip({ tag, ativo, onClick, destaque }: { tag: Tag; ativo: boolean; onC
       onClick={onClick}
       role="tab"
       aria-selected={ativo}
-      className={`inline-flex shrink-0 cursor-pointer items-center gap-1 rounded-md border px-3 py-1 text-base tracking-wide transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+      // Mesma letra e altura do botão Categorias e das abas de cima (antes era maior e de outra fonte)
+      className={`type-label inline-flex h-[2.125rem] shrink-0 cursor-pointer items-center gap-1 rounded-md border px-3 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
         ativo
           ? "border-primary bg-primary/10 text-primary"
           : destaque
             ? "border-primary/30 text-foreground hover:border-primary/60"
             : "border-border text-muted-foreground hover:border-primary/40 hover:text-foreground"
       }`}
-      style={{ fontFamily: "var(--font-caesar)" }}
     >
       {tag.label}
     </button>
