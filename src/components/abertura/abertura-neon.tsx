@@ -16,14 +16,7 @@ const DURACAO_PULO = 200
  * do logo, contorno amarelo suave) chega num arco e assenta no centro; então a TV
  * "desliga" (linha branca que vira ponto) e aparece o app. Cerca de 2,1 s; tocar pula.
  */
-export function AberturaNeon({
-    onFim,
-    noCarregamento = false,
-}: {
-    onFim?: () => void
-    /** Tela de carregamento do app: já está tocando desde o HTML; conta o tempo desde lá */
-    noCarregamento?: boolean
-}) {
+export function AberturaNeon({ onFim }: { onFim?: () => void }) {
     const [fase, setFase] = useState<"" | "saindo" | "pulando">("")
     const acabou = useRef(false)
 
@@ -36,19 +29,14 @@ export function AberturaNeon({
 
     useEffect(() => {
         const calmo = window.matchMedia("(prefers-reduced-motion: reduce)").matches
-        // No carregamento a orca começou antes do React: desconta o tempo que já passou
-        // (se o app demorou mais que o arco, sai na hora; a orca ficou flutuando esperando)
-        const inicio = (window as { __aberturaInicio?: number }).__aberturaInicio
-        const passou = noCarregamento && inicio != null ? performance.now() - inicio : 0
-        const espera = Math.max(0, (calmo ? 800 : INICIO_SAIDA) - passou)
-        const t = window.setTimeout(() => sair("saindo", DURACAO_SAIDA), espera)
+        const t = window.setTimeout(() => sair("saindo", DURACAO_SAIDA), calmo ? 800 : INICIO_SAIDA)
         return () => window.clearTimeout(t)
         // eslint-disable-next-line react-hooks/exhaustive-deps -- roda uma vez por montagem
     }, [])
 
     return (
         <div
-            className={`${s.raiz} ${noCarregamento ? s.carregamento : ""} ${fase ? s[fase] : ""}`}
+            className={`${s.raiz} ${fase ? s[fase] : ""}`}
             onClick={() => sair("pulando", DURACAO_PULO)}
             role="presentation"
             aria-hidden="true"

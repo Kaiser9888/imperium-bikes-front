@@ -16,8 +16,8 @@ export default function manifest(): MetadataRoute.Manifest {
     scope: '/',
     display: 'standalone',
     orientation: 'portrait',
-    // Preto: o splash do sistema emenda direto na abertura (orca), sem piscar bege
-    background_color: '#000000',
+    // Creme do logo: é a cor da tela de abertura enquanto o app carrega
+    background_color: '#f7f4ef',
     theme_color: '#0e131b',
     categories: ['shopping', 'sports', 'social'],
     icons: [

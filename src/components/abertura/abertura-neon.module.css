@@ -13,18 +13,6 @@
     touch-action: none;
 }
 
-/* Tela de carregamento do app: vem no HTML de toda página, mas só aparece quando o
-   script do layout marcou o <html> (app instalado, primeira abertura). Se o app
-   nunca terminar de carregar, some sozinha depois de 15 s. */
-.carregamento {
-    display: none;
-}
-:global(html[data-abertura]) .carregamento {
-    display: block;
-    animation: solta 0s linear 15s forwards;
-}
-@keyframes solta { to { visibility: hidden; pointer-events: none; } }
-
 /* Saindo: a TV "desliga" como as de tubo — a imagem se espreme numa linha
    branca, a linha encolhe até um ponto e some; então aparece o app */
 .saindo {
