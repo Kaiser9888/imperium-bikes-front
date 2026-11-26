@@ -16,9 +16,10 @@ export default function manifest(): MetadataRoute.Manifest {
     scope: '/',
     display: 'standalone',
     orientation: 'portrait',
-    // Creme do logo: é a cor da tela de abertura enquanto o app carrega
+    // Creme do logo no fundo e na barra de cima: a tela de abertura fica de uma cor só
+    // (com theme_color escuro a barra do sistema ficava preta em cima do creme)
     background_color: '#f7f4ef',
-    theme_color: '#0e131b',
+    theme_color: '#f7f4ef',
     categories: ['shopping', 'sports', 'social'],
     icons: [
       { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },

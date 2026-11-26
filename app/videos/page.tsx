@@ -56,26 +56,28 @@ export default function VideosPage() {
     [videos, soDestaque, featured],
   );
 
+  // Destaque e Memento só na vitrine; escolheu categoria, vai direto aos vídeos
+  const vitrine = category === DEFAULT_CATEGORY;
+
   return (
-    <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
-      {/* Destaque */}
-      {!featuredLoaded ? (
-        <div className="mb-8 aspect-square w-full animate-pulse rounded-2xl bg-secondary sm:aspect-[21/9]" />
-      ) : featured ? (
-        <FeaturedHero video={featured} />
-      ) : null}
-
-      <LiveStrip lives={lives} />
-
-      {mementos.length > 0 && <MementoRail mementos={mementos} />}
-
-      {/* Filtros */}
-      <div className="mb-6 flex items-end justify-between gap-4">
-        <SectionTitle>Vídeos</SectionTitle>
-      </div>
-      <div className="mb-6">
+    <div className="mx-auto max-w-7xl px-4 py-3 sm:px-6 sm:py-5 lg:px-8">
+      {/* Categorias no topo: filtrar é a primeira coisa que se faz aqui */}
+      <div className="mb-4 sm:mb-6">
         <CategoryFilter value={category} onChange={setCategory} />
       </div>
+
+      {vitrine &&
+        (!featuredLoaded ? (
+          <div className="mb-6 aspect-video w-full animate-pulse rounded-2xl bg-secondary sm:aspect-[3/1]" />
+        ) : featured ? (
+          <FeaturedHero video={featured} />
+        ) : null)}
+
+      {lives.length > 0 && <LiveStrip lives={lives} />}
+
+      {vitrine && mementos.length > 0 && <MementoRail mementos={mementos} />}
+
+      {vitrine && <SectionTitle>Vídeos</SectionTitle>}
 
       {/* Grade */}
       {loading ? (
@@ -84,17 +86,12 @@ export default function VideosPage() {
         <ErrorState onRetry={reload} />
       ) : visible.length === 0 && soDestaque && videos.length > 0 ? (
         // Só existe o vídeo do destaque: aviso discreto em vez de repetir o mesmo vídeo
-        <p className="rounded-xl border border-dashed border-border px-4 py-5 text-sm text-muted-foreground">
-          Os próximos vídeos publicados aparecem aqui.
-        </p>
+        <p className="text-sm text-muted-foreground">Os próximos vídeos aparecem aqui.</p>
       ) : visible.length === 0 ? (
-        <EmptyState
-          title="Nenhum vídeo encontrado"
-          description="Tente outra categoria ou publique o primeiro vídeo."
-        />
+        <EmptyState title="Nenhum vídeo aqui" description="Tente outra categoria." />
       ) : (
         <>
-          <ul className="grid grid-cols-1 gap-x-5 gap-y-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <ul className="grid grid-cols-1 gap-x-5 gap-y-6 sm:grid-cols-2 sm:gap-y-8 lg:grid-cols-3 xl:grid-cols-4">
             {visible.map((video, i) => (
               <li key={video.id}>
                 <VideoCard video={video} priority={i < 4} />
@@ -127,7 +124,7 @@ export default function VideosPage() {
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
-    <h2 className="flex items-center gap-3 text-xs font-bold uppercase tracking-[0.3em] text-foreground">
+    <h2 className="mb-4 flex items-center gap-3 text-xs font-bold uppercase tracking-[0.3em] text-foreground">
       <span aria-hidden="true" className="h-4 w-1 bg-primary" />
       {children}
     </h2>
@@ -186,30 +183,31 @@ function useZoomSemFaixas(src: string | undefined) {
 function FeaturedHero({ video }: { video: VideoItem }) {
   const zoom = useZoomSemFaixas(video.thumbnailUrl);
   return (
-    <section aria-label="Vídeo em destaque" className="relative mb-8 overflow-hidden rounded-2xl bg-black">
-      {/* Celular: quadrado (4/5 ocupava a tela toda e escondia o resto da página) */}
-      <div className="relative aspect-square w-full sm:aspect-[21/9]">
+    <section aria-label="Vídeo em destaque" className="relative mb-6 overflow-hidden rounded-2xl bg-black sm:mb-8">
+      {/* Celular: 16:9 (o quadrado tomava meia tela); computador: faixa baixa */}
+      <div className="relative aspect-video w-full sm:aspect-[3/1]">
         {video.thumbnailUrl ? (
-          // No celular o quadrado já corta as laterais; o zoom só vale do sm para cima
+          // Zoom esconde as faixas pretas de vídeo antigo (4:3) em todas as telas
           <img
             src={video.thumbnailUrl}
             alt=""
             style={{ "--zoom": zoom } as React.CSSProperties}
-            className="absolute inset-0 size-full object-cover opacity-80 sm:[transform:scale(var(--zoom))]"
+            className="absolute inset-0 size-full object-cover opacity-80 [transform:scale(var(--zoom))]"
           />
         ) : (
           <div className="absolute inset-0 bg-gradient-to-br from-primary/40 to-black" />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent sm:bg-gradient-to-r sm:from-black sm:via-black/60" />
 
-        <div className="absolute inset-x-0 bottom-0 flex flex-col gap-4 p-5 sm:inset-y-0 sm:right-auto sm:max-w-xl sm:justify-center sm:p-10">
-          <span className="inline-flex w-fit items-center gap-2 border-l-2 border-primary pl-2 text-[0.6875rem] font-bold uppercase tracking-[0.3em] text-white/80">
+        <div className="absolute inset-x-0 bottom-0 flex flex-col gap-2.5 p-4 sm:inset-y-0 sm:right-auto sm:max-w-xl sm:justify-center sm:gap-4 sm:p-10">
+          <span className="hidden w-fit items-center gap-2 border-l-2 border-primary pl-2 text-[0.6875rem] font-bold uppercase tracking-[0.3em] text-white/80 sm:inline-flex">
             Em destaque
           </span>
-          <h1 className="line-clamp-3 text-2xl font-extrabold leading-tight tracking-tight text-white sm:text-4xl">
+          <h1 className="line-clamp-2 text-lg font-extrabold leading-tight tracking-tight text-white sm:text-3xl">
             {video.title}
           </h1>
-          <div className="flex items-center gap-2 text-sm text-white/75">
+          {/* Celular: sem a linha de canal/visualizações, o título e o Assistir bastam */}
+          <div className="hidden items-center gap-2 text-sm text-white/75 sm:flex">
             <VideoAvatar name={video.userName} url={video.userAvatarUrl} className="size-7 border-white/30" />
             <span className="truncate font-medium text-white">{video.userName}</span>
             <span aria-hidden="true">·</span>
@@ -217,9 +215,9 @@ function FeaturedHero({ video }: { video: VideoItem }) {
             <span aria-hidden="true">·</span>
             <time dateTime={video.createdAt}>{timeAgo(video.createdAt)}</time>
           </div>
-          <div className="mt-1 flex flex-wrap items-center gap-4">
-            <GlitchButton text="Assistir" href={`/videos/watch/${video.id}`} icon={<Play aria-hidden="true" className="fill-current" />} />
-            <SaveButton videoId={video.id} />
+          <div className="flex flex-wrap items-center gap-3">
+            <GlitchButton text="Assistir" size="sm" href={`/videos/watch/${video.id}`} icon={<Play aria-hidden="true" className="fill-current" />} />
+            <SaveButton videoId={video.id} iconOnly />
           </div>
         </div>
       </div>
@@ -229,7 +227,7 @@ function FeaturedHero({ video }: { video: VideoItem }) {
 
 function LiveStrip({ lives }: { lives: VideoItem[] }) {
   return (
-    <section aria-labelledby="live-title" className="mb-10">
+    <section aria-labelledby="live-title" className="mb-8">
       <div className="mb-4 flex items-center justify-between gap-4">
         <h2 id="live-title" className="flex items-center gap-3 text-xs font-bold uppercase tracking-[0.3em] text-foreground">
           <span className="live-dot" aria-hidden="true" />
@@ -246,15 +244,10 @@ function LiveStrip({ lives }: { lives: VideoItem[] }) {
         </div>
       </div>
 
-      {lives.length === 0 ? (
-        <div className="flex items-center gap-3 rounded-xl border border-dashed border-border px-4 py-5 text-sm text-muted-foreground">
-          <Radio className="size-5 shrink-0 text-primary" aria-hidden="true" />
-          Nenhuma transmissão agora. As lives de pedal, eventos e oficinas aparecem aqui.
-        </div>
-      ) : (
-        <ul className="-mx-4 flex snap-x gap-4 overflow-x-auto px-4 pb-2 scrollbar-none sm:mx-0 sm:px-0">
+      {/* Só aparece com live no ar; "Fazer live" também fica em Meus vídeos */}
+      <ul className="-mx-4 flex snap-x gap-4 overflow-x-auto px-4 pb-2 scrollbar-none sm:mx-0 sm:px-0">
           {lives.map((live) => (
-            <li key={live.id} className="w-72 shrink-0 snap-start">
+            <li key={live.id} className="w-64 shrink-0 snap-start">
               <Link href={`/videos/watch/${live.id}`} className="group block">
                 <div className="relative aspect-video overflow-hidden rounded-xl bg-secondary ring-2 ring-primary">
                   {live.thumbnailUrl && (
@@ -270,15 +263,14 @@ function LiveStrip({ lives }: { lives: VideoItem[] }) {
               </Link>
             </li>
           ))}
-        </ul>
-      )}
+      </ul>
     </section>
   );
 }
 
 function MementoRail({ mementos }: { mementos: VideoItem[] }) {
   return (
-    <section aria-labelledby="memento-title" className="mb-10">
+    <section aria-labelledby="memento-title" className="mb-8">
       <div className="mb-4 flex items-center justify-between gap-4">
         <h2 id="memento-title" className="flex items-center gap-3 text-xs font-bold uppercase tracking-[0.3em] text-foreground">
           <span aria-hidden="true" className="h-4 w-1 bg-primary" />
@@ -294,7 +286,7 @@ function MementoRail({ mementos }: { mementos: VideoItem[] }) {
       </div>
       <ul className="-mx-4 flex snap-x gap-3 overflow-x-auto px-4 pb-2 scrollbar-none sm:mx-0 sm:px-0">
         {mementos.map((m) => (
-          <li key={m.id} className="w-36 shrink-0 snap-start sm:w-44">
+          <li key={m.id} className="w-28 shrink-0 snap-start sm:w-40">
             <Link
               href={`/videos/memento?video=${m.id}`}
               className="group relative block aspect-[9/16] overflow-hidden rounded-xl bg-black ring-1 ring-border transition hover:ring-primary"

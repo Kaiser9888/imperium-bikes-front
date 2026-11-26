@@ -51,11 +51,8 @@ export function VideoCard({ video, priority = false }: VideoCardProps) {
                     )}
                 </div>
 
-                <div className="mt-3 min-w-0">
-                    {video.hashtags?.[0] && (
-                        <p className="truncate text-[0.6875rem] font-semibold text-primary">#{video.hashtags[0]}</p>
-                    )}
-                    <h3 className="mt-0.5 line-clamp-2 text-sm font-semibold leading-snug text-foreground transition-colors group-hover:text-primary">
+                <div className="mt-2.5 min-w-0">
+                    <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-foreground transition-colors group-hover:text-primary">
                         {video.title}
                     </h3>
                     <p className="mt-1.5 flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">

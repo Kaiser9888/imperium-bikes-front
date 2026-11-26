@@ -47,8 +47,10 @@ export default function VideosLayout({ children }: { children: React.ReactNode }
   return (
     <AppShell>
       <nav aria-label="Vídeos" className="border-b border-border">
-        {/* Celular: as 4 abas dividem a largura (antes "Meus vídeos" ficava cortada na borda) */}
-        <div className="mx-auto grid max-w-7xl grid-cols-4 items-center gap-1.5 px-4 py-2.5 sm:flex sm:gap-2 sm:px-6 lg:px-8">
+        {/* Abas sublinhadas e finas (os botões com borda ocupavam uma faixa grande no celular) */}
+        <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 sm:px-6 lg:px-8">
+          {/* Só as abas rolam; o + fica sempre visível na direita */}
+          <div className="flex min-w-0 flex-1 items-center gap-4 overflow-x-auto scrollbar-none sm:gap-7">
           {ABAS.map(({ href, label }) => {
             // "Para você" só na própria /videos; as outras valem para as rotas filhas
             const ativa = href === "/videos" ? pathname === href : pathname.startsWith(href);
@@ -59,10 +61,10 @@ export default function VideosLayout({ children }: { children: React.ReactNode }
                 href={href}
                 aria-current={ativa ? "page" : undefined}
                 className={cn(
-                  "type-label inline-flex h-9 min-w-0 shrink-0 items-center justify-center gap-1 whitespace-nowrap rounded-xl border px-1 transition-colors sm:gap-1.5 sm:px-3.5",
+                  "type-label -mb-px inline-flex h-11 shrink-0 items-center gap-1.5 whitespace-nowrap border-b-2 transition-colors",
                   ativa
-                    ? "border-primary bg-primary/12 text-primary"
-                    : "border-border text-muted-foreground hover:border-primary/40 hover:text-foreground",
+                    ? "border-primary font-semibold text-foreground"
+                    : "border-transparent text-muted-foreground hover:text-foreground",
                 )}
               >
                 {label}
@@ -75,13 +77,15 @@ export default function VideosLayout({ children }: { children: React.ReactNode }
               </Link>
             );
           })}
+          </div>
           <Link
             href="/videos/upload"
-            // No celular publicar fica em "Meus vídeos" e no Memento (aqui não cabia, ficava fora da tela)
-            className="type-label ml-auto hidden h-9 shrink-0 sm:inline-flex items-center gap-1.5 rounded-xl bg-primary px-3.5 text-primary-foreground transition-opacity hover:opacity-90"
+            aria-label="Publicar vídeo"
+            // Celular: só o "+" redondo, cabe ao lado das abas
+            className="type-label inline-flex size-8 shrink-0 items-center justify-center gap-1.5 rounded-full bg-primary text-primary-foreground transition-opacity hover:opacity-90 sm:h-8 sm:w-auto sm:px-3.5"
           >
             <Plus className="size-4" aria-hidden="true" />
-            Publicar
+            <span className="hidden sm:inline">Publicar</span>
           </Link>
         </div>
       </nav>
