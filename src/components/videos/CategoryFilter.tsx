@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Sparkles } from "lucide-react";
 
-import { ESPORTES_ABERTOS } from "@/lib/esportes";
+import { fetchPopularHashtags } from "@/lib/videos/api";
 import { aoMudarGosto, interesses, PESO, registrarInteresse } from "@/lib/videos/gosto";
 
 interface CategoryFilterProps {
@@ -13,92 +13,58 @@ interface CategoryFilterProps {
 
 type Tag = { id: string; label: string };
 
-/** Sempre visíveis: ordenações e o essencial da bike (outros esportes só com ESPORTES_ABERTOS). */
-const FIXAS: Tag[] = [
-  { id: "recomendados", label: "Recomendados" },
+/** Valor padrão da página ("Para você"): não vira chip, é o que fica quando nada está marcado. */
+export const PADRAO = "recomendados";
+
+/** Ordenações: as únicas fixas. Todas as outras categorias são hashtags reais dos vídeos. */
+const ORDENS: Tag[] = [
   { id: "recentes", label: "Recentes" },
   { id: "vistos", label: "Mais vistos" },
 ];
-const ESSENCIAIS: Tag[] = [
-  { id: "mtb", label: "MTB" },
-  { id: "downhill", label: "Downhill" },
-  { id: "speed", label: "Speed" },
-  { id: "bmx", label: "BMX" },
-  { id: "urban", label: "Urbana" },
-  ...(ESPORTES_ABERTOS
-    ? [
-        { id: "corrida", label: "Corrida" },
-        { id: "natacao", label: "Natação" },
-        { id: "futebol", label: "Futebol" },
-        { id: "musculacao", label: "Musculação" },
-        { id: "lutas", label: "Lutas" },
-      ]
-    : []),
-];
 
-/** Catálogo para o "Para você": nomes bonitos para as hashtags conhecidas. */
-const CATALOGO: Tag[] = [
-  { id: "gravel", label: "Gravel" },
-  { id: "eletrica", label: "Elétrica" },
-  { id: "urban", label: "Urban" },
-  { id: "trilha", label: "Trilha" },
-  { id: "manutencao", label: "Manutenção" },
-  { id: "review", label: "Review" },
-  { id: "campeonato", label: "Campeonato" },
-  { id: "dicas", label: "Dicas" },
-  { id: "upgrade", label: "Upgrade" },
-  { id: "custom", label: "Custom" },
-  { id: "freestyle", label: "Freestyle" },
-  { id: "novidade", label: "Novidade" },
-  { id: "evento", label: "Evento" },
-  { id: "historia", label: "História" },
-  { id: "entrevista", label: "Entrevista" },
-  { id: "curiosidade", label: "Curiosidade" },
-  { id: "tecnica", label: "Técnica" },
-  { id: "treino", label: "Treino" },
-  { id: "equipamento", label: "Equipamento" },
-  { id: "acessorio", label: "Acessório" },
-  { id: "comunidade", label: "Comunidade" },
-  { id: "viagem", label: "Viagem" },
-  { id: "aventura", label: "Aventura" },
-  { id: "alimentacao", label: "Alimentação" },
-  { id: "saude", label: "Saúde" },
-  { id: "seguranca", label: "Segurança" },
-  { id: "sustentabilidade", label: "Sustentabilidade" },
-  { id: "tecnologia", label: "Tecnologia" },
-  { id: "inovacao", label: "Inovação" },
-];
-
-/** Sem histórico ainda: uma vitrine para começar a descobrir. */
-const DESCOBERTA = ["trilha", "manutencao", "review", "dicas", "campeonato", "treino", "equipamento", "gravel"];
-
-const QUANTOS_PARA_VOCE = 8;
-const FIXOS_IDS = new Set([...FIXAS, ...ESSENCIAIS].map((t) => t.id));
+/** Só nomes bonitos (acento, sigla) para hashtags comuns; não decide o que aparece. */
+const NOMES: Record<string, string> = {
+  mtb: "MTB",
+  bmx: "BMX",
+  urban: "Urbana",
+  eletrica: "Elétrica",
+  manutencao: "Manutenção",
+  historia: "História",
+  tecnica: "Técnica",
+  acessorio: "Acessório",
+  alimentacao: "Alimentação",
+  saude: "Saúde",
+  seguranca: "Segurança",
+  inovacao: "Inovação",
+  natacao: "Natação",
+  musculacao: "Musculação",
+};
 const rotulo = (id: string) =>
-  CATALOGO.find((t) => t.id === id)?.label ?? id.charAt(0).toUpperCase() + id.slice(1);
+  ORDENS.find((o) => o.id === id)?.label ?? NOMES[id] ?? id.charAt(0).toUpperCase() + id.slice(1);
 
-function paraVoce(): { tags: Tag[]; personalizado: boolean } {
-  const gosto = interesses().filter((id) => !FIXOS_IDS.has(id));
-  const personalizado = gosto.length > 0;
-  // Completa com a vitrine quando o gosto ainda tem poucas tags
-  const ids = [...new Set([...gosto, ...DESCOBERTA])].filter((id) => !FIXOS_IDS.has(id)).slice(0, QUANTOS_PARA_VOCE);
-  return { tags: ids.map((id) => ({ id, label: rotulo(id) })), personalizado };
+/**
+ * Para você = hashtags que existem nos vídeos E que a pessoa já assistiu/curtiu/tocou,
+ * na ordem do gosto. O resto segue pela quantidade de vídeos de cada uma.
+ */
+export function montarCategorias(reais: string[], gosto: string[]): { paraVoce: string[]; outras: string[] } {
+  const existe = new Set(reais);
+  const paraVoce = gosto.filter((t) => existe.has(t)).slice(0, 8);
+  const ja = new Set(paraVoce);
+  return { paraVoce, outras: reais.filter((t) => !ja.has(t)) };
 }
 
-function Chip({ tag, ativo, onClick, destaque }: { tag: Tag; ativo: boolean; onClick: () => void; destaque?: boolean }) {
+function Chip({ tag, ativo, onClick }: { tag: Tag; ativo: boolean; onClick: () => void }) {
   return (
     <button
       type="button"
       onClick={onClick}
       role="tab"
       aria-selected={ativo}
-      // Mesma letra e altura do botão Categorias e das abas de cima (antes era maior e de outra fonte)
-      className={`type-label inline-flex h-[2.125rem] shrink-0 cursor-pointer items-center gap-1 rounded-md border px-3 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+      // Ativo em branco/preto: o vermelho fica só para ação (Assistir, Publicar, Ao vivo)
+      className={`type-label inline-flex h-[2.125rem] shrink-0 cursor-pointer items-center rounded-full border px-3.5 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
         ativo
-          ? "border-primary bg-primary/10 text-primary"
-          : destaque
-            ? "border-primary/30 text-foreground hover:border-primary/60"
-            : "border-border text-muted-foreground hover:border-primary/40 hover:text-foreground"
+          ? "border-foreground bg-foreground text-background"
+          : "border-border text-muted-foreground hover:border-foreground/40 hover:text-foreground"
       }`}
     >
       {tag.label}
@@ -107,16 +73,19 @@ function Chip({ tag, ativo, onClick, destaque }: { tag: Tag; ativo: boolean; onC
 }
 
 export function CategoryFilter({ value, onChange }: CategoryFilterProps) {
-  // Começa com a vitrine (igual no servidor) e troca pelo gosto salvo no aparelho
-  const [sugestoes, setSugestoes] = useState<{ tags: Tag[]; personalizado: boolean }>({
-    tags: DESCOBERTA.slice(0, QUANTOS_PARA_VOCE).map((id) => ({ id, label: rotulo(id) })),
-    personalizado: false,
-  });
+  const [reais, setReais] = useState<string[]>([]);
+  const [gosto, setGosto] = useState<string[]>([]);
 
   useEffect(() => {
-    const atualizar = () => setSugestoes(paraVoce());
+    let cancelado = false;
+    fetchPopularHashtags().then((lista) => !cancelado && setReais(lista.map((h) => h.tag)));
+    const atualizar = () => setGosto(interesses());
     atualizar();
-    return aoMudarGosto(atualizar);
+    const parar = aoMudarGosto(atualizar);
+    return () => {
+      cancelado = true;
+      parar();
+    };
   }, []);
 
   const trilho = useRef<HTMLDivElement>(null);
@@ -124,7 +93,9 @@ export function CategoryFilter({ value, onChange }: CategoryFilterProps) {
 
   function escolher(id: string) {
     if (arraste.current.moveu) return; // foi arraste, não clique
-    if (!["recomendados", "recentes", "vistos"].includes(id)) registrarInteresse([id], PESO.filtro);
+    // Tocar de novo na ativa desmarca e volta ao "Para você"
+    if (id === value) return onChange(PADRAO);
+    if (!ORDENS.some((o) => o.id === id)) registrarInteresse([id], PESO.filtro);
     onChange(id);
   }
 
@@ -146,16 +117,17 @@ export function CategoryFilter({ value, onChange }: CategoryFilterProps) {
     setTimeout(() => (arraste.current.moveu = false), 0);
   }
 
-  // Categoria ativa que não está em nenhum chip (ex.: veio de uma hashtag)
-  const visiveis = new Set([...FIXAS, ...ESSENCIAIS, ...sugestoes.tags, ...CATALOGO].map((t) => t.id));
-  const extra = visiveis.has(value) ? null : { id: value, label: rotulo(value) };
-
+  const { paraVoce, outras } = montarCategorias(reais, gosto);
+  const todas = new Set([...ORDENS.map((o) => o.id), ...reais, PADRAO]);
+  // Categoria ativa que não está na fileira (ex.: veio de uma hashtag sem vídeo público)
+  const extra = todas.has(value) ? null : value;
+  const chip = (id: string) => (
+    <Chip key={id} tag={{ id, label: rotulo(id) }} ativo={value === id} onClick={() => escolher(id)} />
+  );
   const divisor = <span aria-hidden="true" className="mx-1 h-5 w-px shrink-0 bg-border" />;
-  const resto = CATALOGO.filter((t) => !FIXOS_IDS.has(t.id) && !sugestoes.tags.some((s) => s.id === t.id));
 
   return (
     <nav aria-label="Filtros de vídeos">
-      {/* Uma fileira só, arrastando para o lado (antes: linha fixa + gaveta de filtro) */}
       <div
         ref={trilho}
         onPointerDown={onPointerDown}
@@ -166,26 +138,17 @@ export function CategoryFilter({ value, onChange }: CategoryFilterProps) {
         role="tablist"
         aria-label="Filtrar por categoria"
       >
-        {FIXAS.map((tag) => (
-          <Chip key={tag.id} tag={tag} ativo={value === tag.id} onClick={() => escolher(tag.id)} />
-        ))}
-        {extra && <Chip tag={extra} ativo onClick={() => escolher(extra.id)} />}
-        {divisor}
-        <span className="type-caption inline-flex shrink-0 items-center gap-1 font-semibold uppercase tracking-wider text-primary">
-          <Sparkles className="size-3.5" aria-hidden="true" />
-          {sugestoes.personalizado ? "Para você" : "Descubra"}
-        </span>
-        {sugestoes.tags.map((tag) => (
-          <Chip key={tag.id} tag={tag} ativo={value === tag.id} onClick={() => escolher(tag.id)} destaque />
-        ))}
-        {divisor}
-        {ESSENCIAIS.map((tag) => (
-          <Chip key={tag.id} tag={tag} ativo={value === tag.id} onClick={() => escolher(tag.id)} />
-        ))}
-        {divisor}
-        {resto.map((tag) => (
-          <Chip key={tag.id} tag={tag} ativo={value === tag.id} onClick={() => escolher(tag.id)} />
-        ))}
+        {ORDENS.map((o) => chip(o.id))}
+        {extra && chip(extra)}
+        {paraVoce.length > 0 && (
+          <>
+            {divisor}
+            <Sparkles className="size-4 shrink-0 text-primary" aria-label="Para você" />
+            {paraVoce.map(chip)}
+          </>
+        )}
+        {outras.length > 0 && divisor}
+        {outras.map(chip)}
       </div>
     </nav>
   );

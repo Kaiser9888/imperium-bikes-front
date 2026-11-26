@@ -41,11 +41,14 @@ export function AppShell({
     children,
     footer,
     busca = true,
+    someAoRolar = false,
 }: {
     children: React.ReactNode
     footer?: React.ReactNode
-    /** false: topo sem a barra de busca (perfil) */
-    busca?: boolean
+    /** false: topo sem a barra de busca (perfil); "compacta": só a lupa no celular (vídeos) */
+    busca?: boolean | "compacta"
+    /** Cabeçalho some ao rolar para baixo (vídeos) */
+    someAoRolar?: boolean
 }) {
     return (
         <div className="min-h-screen bg-background">
@@ -63,7 +66,7 @@ export function AppShell({
             >
                 Pular para o conteúdo
             </a>
-            <Header busca={busca} />
+            <Header busca={busca} someAoRolar={someAoRolar} />
             {children}
             {/* Beta discreto no fim da página; ideias de quem usa de verdade valem ouro. ponytail: tirar o "beta" quando sair do beta */}
             <p className="px-4 pb-3 pt-8 text-center text-[0.6875rem] text-muted-foreground/80">

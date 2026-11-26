@@ -7,21 +7,22 @@ import { useVideoFeed } from "@/hooks/useVideoFeed";
 import { fetchLiveVideos, fetchVideoPage } from "@/lib/videos/api";
 import type { FeedOrder, VideoItem } from "@/lib/videos/types";
 import { timeAgo, visualizacoes } from "@/lib/videos/format";
-import { CategoryFilter } from "@/components/videos/CategoryFilter";
+import { CategoryFilter, PADRAO } from "@/components/videos/CategoryFilter";
+import { aoMudarGosto, interesses, ordenarPorGosto } from "@/lib/videos/gosto";
 import { VideoCard } from "@/components/videos/VideoCard";
 import { VideoAvatar } from "@/components/videos/VideoAvatar";
 import { VideoGridSkeleton } from "@/components/videos/VideoGridSkeleton";
-import { GlitchButton } from "@/components/videos/GlitchButton";
 import { SaveButton } from "@/components/videos/SaveButton";
 import { ErrorState, EmptyState } from "@/components/videos/FeedStates";
 import { ArrowRight, Loader2, Play, Radio } from "lucide-react";
 
-const DEFAULT_CATEGORY = "recomendados";
+const DEFAULT_CATEGORY = PADRAO;
+const MIN_PARA_DESTAQUE = 6;
 
 /** Categoria → consulta no servidor (antes filtrava só os 12 vídeos já carregados). */
 function feedFor(category: string): { order: FeedOrder; query: string } {
   if (category === "vistos") return { order: "views", query: "" };
-  if (category === "recomendados" || category === "recentes") return { order: "recent", query: "" };
+  if (category === DEFAULT_CATEGORY || category === "recentes") return { order: "recent", query: "" };
   return { order: "recent", query: category };
 }
 
@@ -29,7 +30,6 @@ export default function VideosPage() {
   const [category, setCategory] = useState(DEFAULT_CATEGORY);
   const { videos, loading, loadingMore, hasMore, error, loadMore, reload } = useVideoFeed(feedFor(category));
   const [featured, setFeatured] = useState<VideoItem | null>(null);
-  const [featuredLoaded, setFeaturedLoaded] = useState(false);
   const [lives, setLives] = useState<VideoItem[]>([]);
   const [mementos, setMementos] = useState<VideoItem[]>([]);
 
@@ -42,22 +42,28 @@ export default function VideosPage() {
     // Destaque: o vídeo mais visto de verdade, não o mais visto entre os 12 carregados
     fetchVideoPage(0, false, { order: "views" })
       .then((page) => !cancelled && setFeatured(page.content[0] ?? null))
-      .catch(() => {})
-      .finally(() => !cancelled && setFeaturedLoaded(true));
+      .catch(() => {});
     return () => {
       cancelled = true;
     };
   }, []);
 
-  // O destaque já aparece no topo: nunca repete na grade de "Recomendados"
-  const soDestaque = category === DEFAULT_CATEGORY && featured !== null;
-  const visible = useMemo(
-    () => (soDestaque ? videos.filter((v) => v.id !== featured!.id) : videos),
-    [videos, soDestaque, featured],
-  );
+  // Gosto do aparelho (hashtags assistidas/curtidas): ordena o "Para você" de verdade
+  const [gosto, setGosto] = useState<string[]>([]);
+  useEffect(() => {
+    const atualizar = () => setGosto(interesses());
+    atualizar();
+    return aoMudarGosto(atualizar);
+  }, []);
 
   // Destaque e Memento só na vitrine; escolheu categoria, vai direto aos vídeos
   const vitrine = category === DEFAULT_CATEGORY;
+  // Com poucos vídeos o destaque deixava a lista vazia: só aparece quando sobra conteúdo embaixo
+  const comDestaque = vitrine && featured !== null && !loading && videos.length >= MIN_PARA_DESTAQUE;
+  const visible = useMemo(() => {
+    const lista = comDestaque ? videos.filter((v) => v.id !== featured!.id) : videos;
+    return vitrine ? ordenarPorGosto(lista, gosto) : lista;
+  }, [videos, comDestaque, featured, vitrine, gosto]);
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-3 sm:px-6 sm:py-5 lg:px-8">
@@ -66,27 +72,20 @@ export default function VideosPage() {
         <CategoryFilter value={category} onChange={setCategory} />
       </div>
 
-      {vitrine &&
-        (!featuredLoaded ? (
-          <div className="mb-6 aspect-video w-full animate-pulse rounded-2xl bg-secondary sm:aspect-[3/1]" />
-        ) : featured ? (
-          <FeaturedHero video={featured} />
-        ) : null)}
+      {comDestaque && <FeaturedHero video={featured!} />}
 
       {lives.length > 0 && <LiveStrip lives={lives} />}
 
-      {vitrine && mementos.length > 0 && <MementoRail mementos={mementos} />}
+      {/* Uma fileira com 1 ou 2 itens parecia vazia */}
+      {vitrine && mementos.length >= 3 && <MementoRail mementos={mementos} />}
 
-      {vitrine && <SectionTitle>Vídeos</SectionTitle>}
+      {vitrine && (comDestaque || lives.length > 0 || mementos.length >= 3) && <SectionTitle>Vídeos</SectionTitle>}
 
       {/* Grade */}
       {loading ? (
         <VideoGridSkeleton />
       ) : error ? (
         <ErrorState onRetry={reload} />
-      ) : visible.length === 0 && soDestaque && videos.length > 0 ? (
-        // Só existe o vídeo do destaque: aviso discreto em vez de repetir o mesmo vídeo
-        <p className="text-sm text-muted-foreground">Os próximos vídeos aparecem aqui.</p>
       ) : visible.length === 0 ? (
         <EmptyState title="Nenhum vídeo aqui" description="Tente outra categoria." />
       ) : (
@@ -124,8 +123,7 @@ export default function VideosPage() {
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
-    <h2 className="mb-4 flex items-center gap-3 text-xs font-bold uppercase tracking-[0.3em] text-foreground">
-      <span aria-hidden="true" className="h-4 w-1 bg-primary" />
+    <h2 className="mb-3 text-base font-bold text-foreground">
       {children}
     </h2>
   );
@@ -200,7 +198,7 @@ function FeaturedHero({ video }: { video: VideoItem }) {
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent sm:bg-gradient-to-r sm:from-black sm:via-black/60" />
 
         <div className="absolute inset-x-0 bottom-0 flex flex-col gap-2.5 p-4 sm:inset-y-0 sm:right-auto sm:max-w-xl sm:justify-center sm:gap-4 sm:p-10">
-          <span className="hidden w-fit items-center gap-2 border-l-2 border-primary pl-2 text-[0.6875rem] font-bold uppercase tracking-[0.3em] text-white/80 sm:inline-flex">
+          <span className="hidden w-fit text-sm font-medium text-white/70 sm:inline">
             Em destaque
           </span>
           <h1 className="line-clamp-2 text-lg font-extrabold leading-tight tracking-tight text-white sm:text-3xl">
@@ -216,7 +214,13 @@ function FeaturedHero({ video }: { video: VideoItem }) {
             <time dateTime={video.createdAt}>{timeAgo(video.createdAt)}</time>
           </div>
           <div className="flex flex-wrap items-center gap-3">
-            <GlitchButton text="Assistir" size="sm" href={`/videos/watch/${video.id}`} icon={<Play aria-hidden="true" className="fill-current" />} />
+            <Link
+              href={`/videos/watch/${video.id}`}
+              className="inline-flex h-10 items-center gap-2 rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
+            >
+              <Play aria-hidden="true" className="size-4 fill-current" />
+              Assistir
+            </Link>
             <SaveButton videoId={video.id} iconOnly />
           </div>
         </div>
@@ -228,15 +232,15 @@ function FeaturedHero({ video }: { video: VideoItem }) {
 function LiveStrip({ lives }: { lives: VideoItem[] }) {
   return (
     <section aria-labelledby="live-title" className="mb-8">
-      <div className="mb-4 flex items-center justify-between gap-4">
-        <h2 id="live-title" className="flex items-center gap-3 text-xs font-bold uppercase tracking-[0.3em] text-foreground">
+      <div className="mb-3 flex items-center justify-between gap-4">
+        <h2 id="live-title" className="flex items-center gap-2 text-base font-bold text-foreground">
           <span className="live-dot" aria-hidden="true" />
           Ao vivo
         </h2>
         <div className="flex items-center gap-4">
           <Link
             href="/videos/live"
-            className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-widest text-muted-foreground hover:text-primary"
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground"
           >
             <Radio className="size-3.5" aria-hidden="true" />
             Fazer live
@@ -271,14 +275,13 @@ function LiveStrip({ lives }: { lives: VideoItem[] }) {
 function MementoRail({ mementos }: { mementos: VideoItem[] }) {
   return (
     <section aria-labelledby="memento-title" className="mb-8">
-      <div className="mb-4 flex items-center justify-between gap-4">
-        <h2 id="memento-title" className="flex items-center gap-3 text-xs font-bold uppercase tracking-[0.3em] text-foreground">
-          <span aria-hidden="true" className="h-4 w-1 bg-primary" />
+      <div className="mb-3 flex items-center justify-between gap-4">
+        <h2 id="memento-title" className="text-base font-bold text-foreground">
           Memento
         </h2>
         <Link
           href="/videos/memento"
-          className="inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-widest text-muted-foreground hover:text-primary"
+          className="inline-flex items-center gap-1 text-sm font-medium text-muted-foreground hover:text-foreground"
         >
           Ver todos
           <ArrowRight className="size-3.5" aria-hidden="true" />
@@ -289,7 +292,7 @@ function MementoRail({ mementos }: { mementos: VideoItem[] }) {
           <li key={m.id} className="w-28 shrink-0 snap-start sm:w-40">
             <Link
               href={`/videos/memento?video=${m.id}`}
-              className="group relative block aspect-[9/16] overflow-hidden rounded-xl bg-black ring-1 ring-border transition hover:ring-primary"
+              className="group relative block aspect-[9/16] overflow-hidden rounded-xl bg-black ring-1 ring-border transition hover:ring-foreground/40"
             >
               {m.thumbnailUrl && (
                 <img

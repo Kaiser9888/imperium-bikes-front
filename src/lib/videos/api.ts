@@ -147,6 +147,16 @@ export async function fetchVideosByHashtag(tag: string, page: number): Promise<V
     );
 }
 
+/** Hashtags que existem nos vídeos públicos, da mais usada para a menos. Falha silenciosa: sem categorias extras. */
+export async function fetchPopularHashtags(limit = 30): Promise<{ tag: string; count: number }[]> {
+    try {
+        const data = await getJson<{ tag: string; count: number }[]>(`/api/videos/hashtags?limit=${limit}`);
+        return Array.isArray(data) ? data.filter((h) => typeof h?.tag === "string" && h.count > 0) : [];
+    } catch {
+        return [];
+    }
+}
+
 /** Lives no ar agora. Falha silenciosa: a faixa "Ao vivo" só mostra "nenhuma live". */
 export async function fetchLiveVideos(): Promise<VideoItem[]> {
     try {

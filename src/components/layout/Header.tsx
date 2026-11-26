@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Bell, Menu, ShoppingCart, Trophy, TvMinimalPlay, User } from "lucide-react"
 import { UserButton } from "@clerk/nextjs"
 import Link from "next/link"
@@ -39,7 +39,36 @@ const SECOES = [
     { href: "/videos", label: "Vídeos", icon: TvMinimalPlay },
 ]
 
-export function Header({ busca = true }: { busca?: boolean }) {
+/** Some ao rolar para baixo e volta ao rolar para cima (mais tela para o conteúdo). */
+function useSomeAoRolar(ativo: boolean): boolean {
+    const [escondido, setEscondido] = useState(false)
+    const ultimo = useRef(0)
+    useEffect(() => {
+        if (!ativo) return
+        const aoRolar = () => {
+            const y = window.scrollY
+            // Margem de 8px para não piscar com tremida do dedo; perto do topo sempre aparece
+            if (y < 80) setEscondido(false)
+            else if (y > ultimo.current + 8) setEscondido(true)
+            else if (y < ultimo.current - 8) setEscondido(false)
+            else return
+            ultimo.current = y
+        }
+        window.addEventListener("scroll", aoRolar, { passive: true })
+        return () => window.removeEventListener("scroll", aoRolar)
+    }, [ativo])
+    return ativo && escondido
+}
+
+export function Header({
+    busca = true,
+    someAoRolar = false,
+}: {
+    /** "compacta": sem a barra no celular (a área de vídeos põe a lupa nas abas); do md para cima continua */
+    busca?: boolean | "compacta"
+    someAoRolar?: boolean
+}) {
+    const escondido = useSomeAoRolar(someAoRolar)
     const { openMenu } = useAppShell()
     const pathname = usePathname()
     const [cartCount, setCartCount] = useState(0)
@@ -60,7 +89,9 @@ export function Header({ busca = true }: { busca?: boolean }) {
         cartCount > 0 ? `Carrinho, ${cartCount} ${cartCount === 1 ? "item" : "itens"}` : "Carrinho vazio"
 
     return (
-        <header className="sticky top-0 z-40 border-b border-border bg-background/95 pt-[env(safe-area-inset-top)] backdrop-blur-md">
+        <header
+            className={`sticky top-0 z-40 border-b border-border bg-background/95 pt-[env(safe-area-inset-top)] backdrop-blur-md transition-transform duration-300 ${escondido ? "-translate-y-full" : ""}`}
+        >
             <div className="mx-auto flex w-full max-w-7xl flex-wrap items-center gap-x-2 gap-y-2 px-4 sm:gap-x-4 py-2.5 sm:px-6 md:flex-nowrap md:py-3 lg:px-8">
                 <Logo className="order-1" />
 
@@ -128,7 +159,11 @@ export function Header({ busca = true }: { busca?: boolean }) {
                     </Button>
                 </div>
 
-                {busca && <SearchBar className="order-3 w-full md:order-2 md:mx-auto md:max-w-xl md:flex-1" />}
+                {busca && (
+                    <SearchBar
+                        className={`order-3 w-full md:order-2 md:mx-auto md:max-w-xl md:flex-1 ${busca === "compacta" ? "max-md:hidden" : ""}`}
+                    />
+                )}
             </div>
         </header>
     )

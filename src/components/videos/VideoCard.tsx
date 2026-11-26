@@ -58,8 +58,9 @@ export function VideoCard({ video, priority = false }: VideoCardProps) {
                     <p className="mt-1.5 flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
                         <VideoAvatar name={video.userName} url={video.userAvatarUrl} className="size-5" />
                         <span className="truncate">{video.userName}</span>
-                        <span aria-hidden="true">·</span>
-                        <span className="shrink-0">{visualizacoes(video.viewCount)}</span>
+                        {/* Celular: visualizações só na página do vídeo (a linha ficava apertada) */}
+                        <span aria-hidden="true" className="max-sm:hidden">·</span>
+                        <span className="shrink-0 max-sm:hidden">{visualizacoes(video.viewCount)}</span>
                         <span aria-hidden="true">·</span>
                         <time dateTime={video.createdAt} className="shrink-0">{timeAgo(video.createdAt)}</time>
                     </p>

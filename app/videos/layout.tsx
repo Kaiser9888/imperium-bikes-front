@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@clerk/nextjs";
-import { Plus } from "lucide-react";
+import { Plus, Search } from "lucide-react";
 
 import api from "@/lib/api";
 
@@ -45,12 +45,15 @@ export default function VideosLayout({ children }: { children: React.ReactNode }
   }
 
   return (
-    <AppShell>
+    // Vídeos: lupa no lugar da barra de busca e cabeçalho que some ao rolar (sobra tela para os vídeos).
+    // Na própria busca a barra fica, porque é nela que se digita.
+    <AppShell busca={pathname.startsWith("/videos/buscar") ? true : "compacta"} someAoRolar>
       <nav aria-label="Vídeos" className="border-b border-border">
         {/* Abas sublinhadas e finas (os botões com borda ocupavam uma faixa grande no celular) */}
         <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 sm:px-6 lg:px-8">
           {/* Só as abas rolam; o + fica sempre visível na direita */}
-          <div className="flex min-w-0 flex-1 items-center gap-4 overflow-x-auto scrollbar-none sm:gap-7">
+          {/* Esfumado na ponta direita (celular): mostra que as abas continuam arrastando */}
+          <div className="flex min-w-0 flex-1 items-center gap-4 overflow-x-auto pr-6 scrollbar-none [mask-image:linear-gradient(to_right,black_80%,transparent)] sm:gap-7 sm:pr-0 sm:[mask-image:none]">
           {ABAS.map(({ href, label }) => {
             // "Para você" só na própria /videos; as outras valem para as rotas filhas
             const ativa = href === "/videos" ? pathname === href : pathname.startsWith(href);
@@ -78,6 +81,14 @@ export default function VideosLayout({ children }: { children: React.ReactNode }
             );
           })}
           </div>
+          {/* Celular: a busca vira lupa aqui (no cabeçalho os ícones não cabiam numa linha) */}
+          <Link
+            href="/videos/buscar"
+            aria-label="Buscar vídeos"
+            className="inline-flex size-8 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:text-foreground md:hidden"
+          >
+            <Search className="size-5" aria-hidden="true" />
+          </Link>
           <Link
             href="/videos/upload"
             aria-label="Publicar vídeo"

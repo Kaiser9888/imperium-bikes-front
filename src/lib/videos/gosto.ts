@@ -1,3 +1,5 @@
+import type { VideoItem } from "./types"
+
 /**
  * Gosto do usuário nos vídeos, só neste aparelho (localStorage): cada categoria tocada,
  * vídeo assistido ou curtido soma pontos para as hashtags dele. Os filtros "Para você"
@@ -65,4 +67,15 @@ export function aoMudarGosto(callback: () => void): () => void {
     window.removeEventListener(CHAVE, handler)
     window.removeEventListener("storage", handler)
   }
+}
+
+/** Vídeos com hashtags que a pessoa mais consome sobem; empate mantém a ordem do servidor (recentes). */
+export function ordenarPorGosto(videos: VideoItem[], gosto: string[]): VideoItem[] {
+  if (gosto.length === 0) return videos
+  const peso = new Map(gosto.map((t, i) => [t, gosto.length - i]))
+  const nota = (v: VideoItem) => (v.hashtags ?? []).reduce((s, t) => s + (peso.get(t.toLowerCase()) ?? 0), 0)
+  return videos
+    .map((v, i) => ({ v, i, n: nota(v) }))
+    .sort((a, b) => b.n - a.n || a.i - b.i)
+    .map((x) => x.v)
 }
