@@ -93,7 +93,7 @@ export default function VideosLayout({ children }: { children: React.ReactNode }
             href="/videos/upload"
             aria-label="Publicar vídeo"
             // Celular: só o "+" redondo, cabe ao lado das abas
-            className="type-label inline-flex size-8 shrink-0 items-center justify-center gap-1.5 rounded-full bg-primary text-primary-foreground transition-opacity hover:opacity-90 sm:h-8 sm:w-auto sm:px-3.5"
+            className="type-label inline-flex size-8 shrink-0 items-center justify-center gap-1.5 rounded-full bg-brand text-white transition-opacity hover:opacity-90 sm:h-8 sm:w-auto sm:px-3.5"
           >
             <Plus className="size-4" aria-hidden="true" />
             <span className="hidden sm:inline">Publicar</span>

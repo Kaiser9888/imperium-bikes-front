@@ -402,7 +402,7 @@ export function UploadForm({ mode, torneioId }: { mode: UploadMode; torneioId?: 
                 <Button type="button" onClick={reset} variant="outline" size="lg">
                   Descartar
                 </Button>
-                <Button type="button" onClick={handleUpload} disabled={!canPublish || mementoLongo} size="lg" className="flex-1">
+                <Button type="button" onClick={handleUpload} disabled={!canPublish || mementoLongo} size="lg" className="flex-1 bg-brand text-white hover:bg-brand/90">
                   {isMemento ? "Publicar Memento" : "Publicar vídeo"}
                   <ArrowRight className="size-4" aria-hidden="true" />
                 </Button>

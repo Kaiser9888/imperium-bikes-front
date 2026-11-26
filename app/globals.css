@@ -802,8 +802,9 @@ mux-player.mux-player-cover {
     padding: 0 1.25rem;
     border: 0;
     border-radius: 9999px;
-    background: var(--primary);
-    color: var(--primary-foreground);
+    /* Vermelho de propósito: publicar no Memento e iniciar live são as ações da área de vídeos */
+    background: var(--brand);
+    color: #fff;
     font-size: 0.875rem;
     font-weight: 600;
     line-height: 1;

@@ -40,12 +40,12 @@ export function VideoCard({ video, priority = false }: VideoCardProps) {
                     {/* Faixa vermelha que corre embaixo no hover: assinatura visual dos cards */}
                     <span
                         aria-hidden="true"
-                        className="absolute inset-x-0 bottom-0 h-0.5 origin-left scale-x-0 bg-primary transition-transform duration-500 group-hover:scale-x-100"
+                        className="absolute inset-x-0 bottom-0 h-0.5 origin-left scale-x-0 bg-brand transition-transform duration-500 group-hover:scale-x-100"
                     />
 
                     {/* Duração como cronômetro de prova: canto reto e filete vermelho */}
                     {video.formattedDuration && (
-                        <span className="absolute bottom-2 left-2 border-l-2 border-primary bg-black/80 px-1.5 py-0.5 text-[0.6875rem] font-semibold tabular-nums tracking-wider text-white">
+                        <span className="absolute bottom-2 left-2 border-l-2 border-brand bg-black/80 px-1.5 py-0.5 text-[0.6875rem] font-semibold tabular-nums tracking-wider text-white">
                             {video.formattedDuration}
                         </span>
                     )}
