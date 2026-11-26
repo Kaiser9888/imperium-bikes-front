@@ -12,7 +12,7 @@
 @theme inline {
     --font-sans: var(--font-geist-sans), 'Geist Fallback', system-ui, sans-serif;
     --font-mono: var(--font-geist-sans), 'Geist Fallback', system-ui, sans-serif;
-    --font-brand: var(--font-bebas-neue), Impact, sans-serif;
+    --font-brand: var(--font-cinzel), 'Trajan Pro', Georgia, serif;
 
     --color-background: var(--background);
     --color-foreground: var(--foreground);
@@ -643,11 +643,11 @@ mux-player.mux-player-cover {
 }
 
 @layer components {
-    /* Nome da marca: sempre vermelho, na fonte Caesar Dressing */
+    /* Nome da marca: sempre vermelho, em Cinzel (letreiro romano) */
     .brand-name {
         font-family: var(--font-brand);
-        font-weight: 400;
-        letter-spacing: 0.04em;
+        font-weight: 700;
+        letter-spacing: 0.02em;
         color: var(--primary);
     }
 

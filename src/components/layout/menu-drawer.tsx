@@ -122,7 +122,7 @@ export function MenuDrawer({ open, onOpenChange }: MenuDrawerProps) {
                 <div className="flex items-center gap-2.5 px-6 pb-5 pt-6">
                     <OrcaMark className="h-8" />
                     {/* text-primary: o text-foreground do SheetTitle apagava o vermelho da marca */}
-                    <SheetTitle className="brand-name text-xl font-normal text-primary">Imperium Bikes</SheetTitle>
+                    <SheetTitle className="brand-name text-lg text-primary">Imperium Bikes</SheetTitle>
                     <SheetDescription className="sr-only">Menu principal</SheetDescription>
                 </div>
 

@@ -1,7 +1,7 @@
 import { ClerkProvider } from '@clerk/nextjs'
 import { ptBR } from '@clerk/localizations'
 import type { Metadata, Viewport } from 'next'
-import { Bebas_Neue, Geist } from 'next/font/google'
+import { Cinzel, Geist } from 'next/font/google'
 import { ThemeProvider } from 'next-themes'
 import { AppShellProvider } from '@/components/layout/app-shell'
 import { AvisoCookies } from '@/components/layout/aviso-cookies'
@@ -17,9 +17,10 @@ const geistSans = Geist({
 })
 
 // Fonte do nome da marca (classe .brand-name no globals.css)
-const bebasNeue = Bebas_Neue({
-  variable: '--font-bebas-neue',
-  weight: '400',
+// Cinzel: letra de inscrição romana (a Bebas Neue vermelha lembrava a Netflix)
+const cinzel = Cinzel({
+  variable: '--font-cinzel',
+  weight: '700',
   subsets: ['latin'],
 })
 
@@ -73,7 +74,7 @@ export default function RootLayout({
   return (
     <ClerkProvider localization={ptBR} signInUrl="/sign-in" signUpUrl="/sign-up">
       {/* A variável da fonte fica no <html> para os tokens do :root conseguirem lê-la */}
-      <html lang="pt-BR" className={`${geistSans.variable} ${bebasNeue.variable}`} suppressHydrationWarning>
+      <html lang="pt-BR" className={`${geistSans.variable} ${cinzel.variable}`} suppressHydrationWarning>
         <body className="antialiased">
           {/* Tema claro/escuro: a escolha fica em Configurações e é guardada no navegador */}
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
