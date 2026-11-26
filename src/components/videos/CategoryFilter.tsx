@@ -1,9 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { SlidersHorizontal, Sparkles } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Sparkles } from "lucide-react";
 
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { ESPORTES_ABERTOS } from "@/lib/esportes";
 import { aoMudarGosto, interesses, PESO, registrarInteresse } from "@/lib/videos/gosto";
 
@@ -107,20 +106,6 @@ function Chip({ tag, ativo, onClick, destaque }: { tag: Tag; ativo: boolean; onC
   );
 }
 
-function Grupo({ titulo, tags, value, onEscolher }: { titulo: string; tags: Tag[]; value: string; onEscolher: (id: string) => void }) {
-  if (tags.length === 0) return null;
-  return (
-    <section className="mt-5">
-      <h3 className="type-caption mb-2.5 font-semibold uppercase tracking-wider text-muted-foreground">{titulo}</h3>
-      <div className="flex flex-wrap gap-2">
-        {tags.map((tag) => (
-          <Chip key={tag.id} tag={tag} ativo={value === tag.id} onClick={() => onEscolher(tag.id)} />
-        ))}
-      </div>
-    </section>
-  );
-}
-
 export function CategoryFilter({ value, onChange }: CategoryFilterProps) {
   // Começa com a vitrine (igual no servidor) e troca pelo gosto salvo no aparelho
   const [sugestoes, setSugestoes] = useState<{ tags: Tag[]; personalizado: boolean }>({
@@ -134,79 +119,73 @@ export function CategoryFilter({ value, onChange }: CategoryFilterProps) {
     return aoMudarGosto(atualizar);
   }, []);
 
-  const [gavetaAberta, setGavetaAberta] = useState(false);
+  const trilho = useRef<HTMLDivElement>(null);
+  const arraste = useRef({ x: 0, scroll: 0, moveu: false, ativo: false });
 
   function escolher(id: string) {
+    if (arraste.current.moveu) return; // foi arraste, não clique
     if (!["recomendados", "recentes", "vistos"].includes(id)) registrarInteresse([id], PESO.filtro);
     onChange(id);
-    setGavetaAberta(false);
   }
 
-  // Categoria ativa que não está em nenhum grupo visível (ex.: veio de uma hashtag)
-  const visiveis = new Set([...FIXAS, ...ESSENCIAIS, ...sugestoes.tags].map((t) => t.id));
+  // Mouse: arrastar a fileira para o lado (no toque o navegador já faz sozinho)
+  function onPointerDown(e: React.PointerEvent) {
+    if (e.pointerType !== "mouse" || !trilho.current) return;
+    arraste.current = { x: e.clientX, scroll: trilho.current.scrollLeft, moveu: false, ativo: true };
+  }
+  function onPointerMove(e: React.PointerEvent) {
+    const a = arraste.current;
+    if (!a.ativo || !trilho.current) return;
+    const dx = e.clientX - a.x;
+    if (Math.abs(dx) > 5) a.moveu = true;
+    trilho.current.scrollLeft = a.scroll - dx;
+  }
+  function onPointerUp() {
+    arraste.current.ativo = false;
+    // O click chega logo depois do pointerup: ignora esse e libera em seguida
+    setTimeout(() => (arraste.current.moveu = false), 0);
+  }
+
+  // Categoria ativa que não está em nenhum chip (ex.: veio de uma hashtag)
+  const visiveis = new Set([...FIXAS, ...ESSENCIAIS, ...sugestoes.tags, ...CATALOGO].map((t) => t.id));
   const extra = visiveis.has(value) ? null : { id: value, label: rotulo(value) };
 
   const divisor = <span aria-hidden="true" className="mx-1 h-5 w-px shrink-0 bg-border" />;
-  const resto = CATALOGO.filter((t) => !sugestoes.tags.some((s) => s.id === t.id));
+  const resto = CATALOGO.filter((t) => !FIXOS_IDS.has(t.id) && !sugestoes.tags.some((s) => s.id === t.id));
 
   return (
     <nav aria-label="Filtros de vídeos">
-      {/* Celular: linha curta + gaveta com todas (a fileira inteira ocupava a tela) */}
-      <Sheet open={gavetaAberta} onOpenChange={setGavetaAberta}>
-        <SheetContent side="bottom" className="max-h-[80dvh] overflow-y-auto rounded-t-3xl px-4 pb-8 pt-6">
-          <SheetHeader className="px-0">
-            <SheetTitle>Categorias</SheetTitle>
-          </SheetHeader>
-          <Grupo titulo={sugestoes.personalizado ? "Para você" : "Descubra"} tags={sugestoes.tags} value={value} onEscolher={escolher} />
-          <Grupo titulo={ESPORTES_ABERTOS ? "Bike e outros esportes" : "Modalidades"} tags={ESSENCIAIS} value={value} onEscolher={escolher} />
-          <Grupo titulo="Mais categorias" tags={resto} value={value} onEscolher={escolher} />
-        </SheetContent>
-      </Sheet>
-
-      <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none sm:hidden" role="tablist" aria-label="Filtrar por categoria">
-        <button
-          type="button"
-          onClick={() => setGavetaAberta(true)}
-          className="type-label inline-flex h-[2.125rem] shrink-0 cursor-pointer items-center gap-1.5 rounded-md border border-border px-3 text-foreground"
-        >
-          <SlidersHorizontal className="size-4" aria-hidden="true" />
-          Categorias
-        </button>
+      {/* Uma fileira só, arrastando para o lado (antes: linha fixa + gaveta de filtro) */}
+      <div
+        ref={trilho}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerLeave={onPointerUp}
+        className="flex cursor-grab select-none items-center gap-2 overflow-x-auto pb-1 scrollbar-none active:cursor-grabbing"
+        role="tablist"
+        aria-label="Filtrar por categoria"
+      >
         {FIXAS.map((tag) => (
           <Chip key={tag.id} tag={tag} ativo={value === tag.id} onClick={() => escolher(tag.id)} />
         ))}
         {extra && <Chip tag={extra} ativo onClick={() => escolher(extra.id)} />}
-        {sugestoes.tags.slice(0, 3).map((tag) => (
-          <Chip key={tag.id} tag={tag} ativo={value === tag.id} onClick={() => escolher(tag.id)} destaque />
-        ))}
-      </div>
-
-      {/* Computador: quebra de linha em vez de cortar o último botão na borda; o resto fica em "Mais categorias" */}
-      <div className="hidden flex-wrap items-center gap-2 sm:flex" role="tablist" aria-label="Filtrar por categoria">
-        {FIXAS.map((tag) => (
-          <Chip key={tag.id} tag={tag} ativo={value === tag.id} onClick={() => escolher(tag.id)} />
-        ))}
-        {extra && <Chip tag={extra} ativo onClick={() => escolher(extra.id)} />}
-        {divisor}
-        {ESSENCIAIS.map((tag) => (
-          <Chip key={tag.id} tag={tag} ativo={value === tag.id} onClick={() => escolher(tag.id)} />
-        ))}
         {divisor}
         <span className="type-caption inline-flex shrink-0 items-center gap-1 font-semibold uppercase tracking-wider text-primary">
           <Sparkles className="size-3.5" aria-hidden="true" />
           {sugestoes.personalizado ? "Para você" : "Descubra"}
         </span>
-        {sugestoes.tags.slice(0, 4).map((tag) => (
+        {sugestoes.tags.map((tag) => (
           <Chip key={tag.id} tag={tag} ativo={value === tag.id} onClick={() => escolher(tag.id)} destaque />
         ))}
-        <button
-          type="button"
-          onClick={() => setGavetaAberta(true)}
-          className="type-label inline-flex h-[2.125rem] shrink-0 cursor-pointer items-center gap-1.5 rounded-md border border-border px-3 text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
-        >
-          <SlidersHorizontal className="size-4" aria-hidden="true" />
-          Mais categorias
-        </button>
+        {divisor}
+        {ESSENCIAIS.map((tag) => (
+          <Chip key={tag.id} tag={tag} ativo={value === tag.id} onClick={() => escolher(tag.id)} />
+        ))}
+        {divisor}
+        {resto.map((tag) => (
+          <Chip key={tag.id} tag={tag} ativo={value === tag.id} onClick={() => escolher(tag.id)} />
+        ))}
       </div>
     </nav>
   );

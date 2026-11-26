@@ -1091,3 +1091,11 @@ mux-player.mux-player-cover {
 @media (prefers-reduced-motion: reduce) {
     .mapa-pulso { animation: none; opacity: 0; }
 }
+
+/* Fileiras que se arrastam para o lado sem mostrar a barra de rolagem */
+@utility scrollbar-none {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
