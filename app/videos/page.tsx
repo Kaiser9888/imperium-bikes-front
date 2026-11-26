@@ -49,12 +49,12 @@ export default function VideosPage() {
     };
   }, []);
 
-  // O destaque já aparece no topo: não repete na grade de "Recomendados"
-  // (com um vídeo só, a grade ficaria vazia e diria "Nenhum vídeo encontrado" logo abaixo dele)
-  const visible = useMemo(() => {
-    const semDestaque = category === DEFAULT_CATEGORY && featured ? videos.filter((v) => v.id !== featured.id) : videos;
-    return semDestaque.length > 0 ? semDestaque : videos;
-  }, [videos, category, featured]);
+  // O destaque já aparece no topo: nunca repete na grade de "Recomendados"
+  const soDestaque = category === DEFAULT_CATEGORY && featured !== null;
+  const visible = useMemo(
+    () => (soDestaque ? videos.filter((v) => v.id !== featured!.id) : videos),
+    [videos, soDestaque, featured],
+  );
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
@@ -82,6 +82,11 @@ export default function VideosPage() {
         <VideoGridSkeleton />
       ) : error ? (
         <ErrorState onRetry={reload} />
+      ) : visible.length === 0 && soDestaque && videos.length > 0 ? (
+        // Só existe o vídeo do destaque: aviso discreto em vez de repetir o mesmo vídeo
+        <p className="rounded-xl border border-dashed border-border px-4 py-5 text-sm text-muted-foreground">
+          Os próximos vídeos publicados aparecem aqui.
+        </p>
       ) : visible.length === 0 ? (
         <EmptyState
           title="Nenhum vídeo encontrado"
@@ -129,13 +134,69 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
   );
 }
 
+/**
+ * Vídeos antigos (4:3) costumam vir com faixas pretas gravadas dentro do arquivo 16:9.
+ * Lê a miniatura num canvas pequeno, mede as colunas pretas das laterais e devolve o zoom
+ * que as esconde (1 = sem faixas). A Mux libera CORS nas miniaturas.
+ */
+function useZoomSemFaixas(src: string | undefined) {
+  // Guarda de qual imagem é a medida: trocou o vídeo, volta a 1 sem setState no efeito
+  const [medida, setMedida] = useState<{ src: string; zoom: number } | null>(null);
+  useEffect(() => {
+    if (!src) return;
+    let cancelado = false;
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      try {
+        const L = 64, A = 36;
+        const canvas = document.createElement("canvas");
+        canvas.width = L;
+        canvas.height = A;
+        const ctx = canvas.getContext("2d", { willReadFrequently: true });
+        if (!ctx) return;
+        ctx.drawImage(img, 0, 0, L, A);
+        const { data } = ctx.getImageData(0, 0, L, A);
+        const escura = (x: number) => {
+          let max = 0;
+          for (let y = 0; y < A; y++) {
+            const i = (y * L + x) * 4;
+            max = Math.max(max, data[i], data[i + 1], data[i + 2]);
+          }
+          return max < 28;
+        };
+        let esq = 0;
+        while (esq < L / 3 && escura(esq)) esq++;
+        let dir = 0;
+        while (dir < L / 3 && escura(L - 1 - dir)) dir++;
+        const faixa = Math.min(esq, dir); // só faixas dos dois lados (imagem escura de um lado não conta)
+        if (!cancelado) setMedida({ src, zoom: faixa >= 2 ? Math.min(1.5, L / (L - 2 * (faixa + 1))) : 1 }); // +1: borda borrada da faixa
+      } catch {
+        // imagem sem CORS: fica sem zoom
+      }
+    };
+    img.src = src;
+    return () => {
+      cancelado = true;
+    };
+  }, [src]);
+  return medida && medida.src === src ? medida.zoom : 1;
+}
+
 function FeaturedHero({ video }: { video: VideoItem }) {
+  const zoom = useZoomSemFaixas(video.thumbnailUrl);
   return (
     <section aria-label="Vídeo em destaque" className="relative mb-8 overflow-hidden rounded-2xl bg-black">
       {/* Celular: quadrado (4/5 ocupava a tela toda e escondia o resto da página) */}
       <div className="relative aspect-square w-full sm:aspect-[21/9]">
         {video.thumbnailUrl ? (
-          <img src={video.thumbnailUrl} alt="" className="absolute inset-0 size-full object-cover opacity-80" />
+          // No celular o quadrado já corta as laterais; o zoom só vale do sm para cima
+          <img
+            src={video.thumbnailUrl}
+            alt=""
+            style={{ "--zoom": zoom } as React.CSSProperties}
+            className="absolute inset-0 size-full object-cover opacity-80 sm:[transform:scale(var(--zoom))]"
+          />
         ) : (
           <div className="absolute inset-0 bg-gradient-to-br from-primary/40 to-black" />
         )}

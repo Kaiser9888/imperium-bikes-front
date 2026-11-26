@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { SlidersHorizontal, Sparkles } from "lucide-react";
 
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { ESPORTES_ABERTOS } from "@/lib/esportes";
 import { aoMudarGosto, interesses, PESO, registrarInteresse } from "@/lib/videos/gosto";
 
@@ -152,26 +152,26 @@ export function CategoryFilter({ value, onChange }: CategoryFilterProps) {
   return (
     <nav aria-label="Filtros de vídeos">
       {/* Celular: linha curta + gaveta com todas (a fileira inteira ocupava a tela) */}
+      <Sheet open={gavetaAberta} onOpenChange={setGavetaAberta}>
+        <SheetContent side="bottom" className="max-h-[80dvh] overflow-y-auto rounded-t-3xl px-4 pb-8 pt-6">
+          <SheetHeader className="px-0">
+            <SheetTitle>Categorias</SheetTitle>
+          </SheetHeader>
+          <Grupo titulo={sugestoes.personalizado ? "Para você" : "Descubra"} tags={sugestoes.tags} value={value} onEscolher={escolher} />
+          <Grupo titulo={ESPORTES_ABERTOS ? "Bike e outros esportes" : "Modalidades"} tags={ESSENCIAIS} value={value} onEscolher={escolher} />
+          <Grupo titulo="Mais categorias" tags={resto} value={value} onEscolher={escolher} />
+        </SheetContent>
+      </Sheet>
+
       <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none sm:hidden" role="tablist" aria-label="Filtrar por categoria">
-        <Sheet open={gavetaAberta} onOpenChange={setGavetaAberta}>
-          <SheetTrigger asChild>
-            <button
-              type="button"
-              className="type-label inline-flex h-[2.125rem] shrink-0 cursor-pointer items-center gap-1.5 rounded-md border border-border px-3 text-foreground"
-            >
-              <SlidersHorizontal className="size-4" aria-hidden="true" />
-              Categorias
-            </button>
-          </SheetTrigger>
-          <SheetContent side="bottom" className="max-h-[80dvh] overflow-y-auto rounded-t-3xl px-4 pb-8 pt-6">
-            <SheetHeader className="px-0">
-              <SheetTitle>Categorias</SheetTitle>
-            </SheetHeader>
-            <Grupo titulo={sugestoes.personalizado ? "Para você" : "Descubra"} tags={sugestoes.tags} value={value} onEscolher={escolher} />
-            <Grupo titulo={ESPORTES_ABERTOS ? "Bike e outros esportes" : "Modalidades"} tags={ESSENCIAIS} value={value} onEscolher={escolher} />
-            <Grupo titulo="Mais categorias" tags={resto} value={value} onEscolher={escolher} />
-          </SheetContent>
-        </Sheet>
+        <button
+          type="button"
+          onClick={() => setGavetaAberta(true)}
+          className="type-label inline-flex h-[2.125rem] shrink-0 cursor-pointer items-center gap-1.5 rounded-md border border-border px-3 text-foreground"
+        >
+          <SlidersHorizontal className="size-4" aria-hidden="true" />
+          Categorias
+        </button>
         {FIXAS.map((tag) => (
           <Chip key={tag.id} tag={tag} ativo={value === tag.id} onClick={() => escolher(tag.id)} />
         ))}
@@ -181,8 +181,8 @@ export function CategoryFilter({ value, onChange }: CategoryFilterProps) {
         ))}
       </div>
 
-      {/* Computador: tudo numa fileira */}
-      <div className="hidden items-center gap-2 overflow-x-auto pb-1 scrollbar-none sm:flex" role="tablist" aria-label="Filtrar por categoria">
+      {/* Computador: quebra de linha em vez de cortar o último botão na borda; o resto fica em "Mais categorias" */}
+      <div className="hidden flex-wrap items-center gap-2 sm:flex" role="tablist" aria-label="Filtrar por categoria">
         {FIXAS.map((tag) => (
           <Chip key={tag.id} tag={tag} ativo={value === tag.id} onClick={() => escolher(tag.id)} />
         ))}
@@ -196,9 +196,17 @@ export function CategoryFilter({ value, onChange }: CategoryFilterProps) {
           <Sparkles className="size-3.5" aria-hidden="true" />
           {sugestoes.personalizado ? "Para você" : "Descubra"}
         </span>
-        {sugestoes.tags.map((tag) => (
+        {sugestoes.tags.slice(0, 4).map((tag) => (
           <Chip key={tag.id} tag={tag} ativo={value === tag.id} onClick={() => escolher(tag.id)} destaque />
         ))}
+        <button
+          type="button"
+          onClick={() => setGavetaAberta(true)}
+          className="type-label inline-flex h-[2.125rem] shrink-0 cursor-pointer items-center gap-1.5 rounded-md border border-border px-3 text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
+        >
+          <SlidersHorizontal className="size-4" aria-hidden="true" />
+          Mais categorias
+        </button>
       </div>
     </nav>
   );
