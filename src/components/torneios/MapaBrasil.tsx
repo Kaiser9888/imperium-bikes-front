@@ -122,9 +122,9 @@ export function MapaBrasil({ contagem, selecionado, onSelecionar, className }: P
                                 className={cn(
                                     "cursor-pointer stroke-[1.4] transition-colors duration-300 [vector-effect:non-scaling-stroke]",
                                     ativo
-                                        ? "fill-primary/35 stroke-white"
+                                        ? "fill-brand/35 stroke-white"
                                         : tem
-                                            ? "fill-primary/15 stroke-primary hover:fill-primary/25"
+                                            ? "fill-brand/15 stroke-brand hover:fill-brand/25"
                                             : "fill-white/[0.04] stroke-white/25 hover:fill-white/[0.08]",
                                 )}
                             >
@@ -137,7 +137,7 @@ export function MapaBrasil({ contagem, selecionado, onSelecionar, className }: P
                     {comEvento.map((uf) => {
                         const [x, y] = ESTADOS_MAPA[uf].c
                         return (
-                            <g key={uf} className="pointer-events-none fill-primary">
+                            <g key={uf} className="pointer-events-none fill-brand">
                                 <circle cx={x} cy={y} r={38 / escala} filter="url(#mapa-luz)" />
                                 <circle cx={x} cy={y} r={15 / escala} className="mapa-pulso" />
                                 <circle cx={x} cy={y} r={14 / escala} />
@@ -173,10 +173,10 @@ export function MapaBrasil({ contagem, selecionado, onSelecionar, className }: P
                                 aria-label={`${NOMES_UF[uf]}: ${eventos(contagem[uf])}`}
                                 className={cn(
                                     "inline-flex items-center gap-1.5 rounded border px-2 py-1 text-xs tabular-nums transition-colors",
-                                    selecionado === uf ? "border-white bg-primary text-primary-foreground" : "border-primary/60 text-white/90 hover:border-primary",
+                                    selecionado === uf ? "border-white bg-brand text-white" : "border-brand/60 text-white/90 hover:border-brand",
                                 )}
                             >
-                                <span className={cn("size-1.5 rounded-full", selecionado === uf ? "bg-white" : "bg-primary shadow-[0_0_6px_var(--primary)]")} aria-hidden="true" />
+                                <span className={cn("size-1.5 rounded-full", selecionado === uf ? "bg-white" : "bg-brand shadow-[0_0_6px_var(--brand)]")} aria-hidden="true" />
                                 {uf} <span className="opacity-70">{contagem[uf]}</span>
                             </button>
                         ))}

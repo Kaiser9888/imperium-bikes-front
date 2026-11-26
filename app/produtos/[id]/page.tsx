@@ -390,7 +390,7 @@ function ProdutoPage() {
                   aria-pressed={favorite}
                   aria-label={favorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}
                 >
-                  <Heart className={cn("size-5", favorite ? "fill-primary text-primary" : "text-muted-foreground")} />
+                  <Heart className={cn("size-5", favorite ? "fill-brand text-brand" : "text-muted-foreground")} />
                 </Button>
               </div>
 

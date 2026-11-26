@@ -63,7 +63,7 @@ export function Podio({
                 <h2 id="podio-titulo" className="type-h2 flex items-center gap-3">
                     Pódio
                     {aoVivo && (
-                        <span className="inline-flex items-center gap-1.5 rounded bg-primary px-2 py-0.5 text-[0.6875rem] font-bold uppercase tracking-widest text-primary-foreground">
+                        <span className="inline-flex items-center gap-1.5 rounded bg-brand px-2 py-0.5 text-[0.6875rem] font-bold uppercase tracking-widest text-white">
                             <span className="size-1.5 animate-pulse rounded-full bg-white" aria-hidden="true" />
                             Ao vivo
                         </span>

@@ -548,7 +548,7 @@ function CommentItem({ comment, compact, isCreator, isOwner, isDeleting, liked, 
                         onClick={onLike}
                         aria-pressed={liked}
                         aria-label={liked ? `Descurtir, ${likesCount} curtidas` : `Curtir, ${likesCount} curtidas`}
-                        className={cn(acao, liked && "text-primary hover:text-primary")}
+                        className={cn(acao, liked && "text-brand hover:text-brand")}
                     >
                         <Heart className={cn("size-4 transition-transform", liked && "scale-110 fill-current")} aria-hidden="true" />
                         {likesCount > 0 && <span className="tabular-nums">{likesCount}</span>}

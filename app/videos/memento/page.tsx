@@ -584,7 +584,7 @@ function MementoFeedView() {
                             <Heart
                                 // key: remonta e repete o "pulo" a cada curtida
                                 key={isLiked ? "curtido" : "normal"}
-                                className={`size-7 ${isLiked ? "memento-pulo fill-primary text-primary" : "text-white"}`}
+                                className={`size-7 ${isLiked ? "memento-pulo fill-brand text-brand" : "text-white"}`}
                                 aria-hidden="true"
                             />
                         </AcaoPainel>

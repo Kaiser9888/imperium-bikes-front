@@ -37,7 +37,7 @@ export function AuthLayout({ title, description, image, kicker, headline, highli
                     className={`pt-[3vh] text-white sm:pt-[12vh] lg:order-2 lg:max-w-md ${headlineAt === "top" ? "lg:self-start lg:pt-4" : "lg:self-end lg:pt-0 lg:pb-6"}`}
                 >
                     <p className="flex items-center gap-2 text-[0.6875rem] font-bold uppercase tracking-[0.3em] text-white/80">
-                        <span aria-hidden="true" className="h-3.5 w-1 bg-primary" />
+                        <span aria-hidden="true" className="h-3.5 w-1 bg-brand" />
                         {kicker}
                     </p>
                     <p className="mt-3 text-2xl font-extrabold leading-[1.1] tracking-tight text-balance sm:text-4xl lg:text-5xl">
@@ -57,7 +57,7 @@ export function AuthLayout({ title, description, image, kicker, headline, highli
                     )}
                 </section>
 
-                <main className="w-full rounded-2xl border border-foreground/80 bg-background p-6 shadow-[6px_6px_0_var(--primary)] sm:mx-auto sm:max-w-md sm:p-8 lg:mx-0 lg:order-1">
+                <main className="w-full rounded-2xl border border-foreground/80 bg-background p-6 shadow-[6px_6px_0_var(--brand)] sm:mx-auto sm:max-w-md sm:p-8 lg:mx-0 lg:order-1">
                     <Logo className="w-fit" />
                     <h1 className="type-h1 mt-6 text-foreground">{title}</h1>
                     <p className="type-body-small mt-2 text-muted-foreground">{description}</p>

@@ -1,4 +1,5 @@
-import { Check } from "lucide-react";
+import Link from "next/link";
+import { Film, Radio, Smartphone } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
@@ -10,62 +11,46 @@ interface UploadSelectorProps {
 }
 
 const OPTIONS = [
-    {
-        id: "long" as const,
-        label: "Vídeo",
-        hint: "Horizontal. Trilhas, tutoriais, reviews e provas, com título e hashtags.",
-        // Moldura desenhada na proporção do formato
-        frame: "aspect-video w-20",
-    },
-    {
-        id: "memento" as const,
-        label: "Memento",
-        hint: "Vertical e curto, até 3 min. Um momento rápido para o feed.",
-        frame: "aspect-[9/16] w-10",
-    },
+    { id: "long" as const, label: "Vídeo", hint: "Horizontal, com título e hashtags.", icon: Film },
+    { id: "memento" as const, label: "Memento", hint: "Vertical e curto, até 3 min.", icon: Smartphone },
 ];
 
-/** Escolha do formato: vídeo horizontal ou Memento vertical. */
+const item =
+    "type-label inline-flex h-10 flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
+
+/** Formato da publicação: Vídeo, Memento ou Live (a live tem tela própria, então é um link). */
 export function UploadSelector({ value, onChange }: UploadSelectorProps) {
+    const atual = OPTIONS.find((o) => o.id === value)!;
     return (
-        <fieldset className="grid gap-3 sm:grid-cols-2">
-            <legend className="sr-only">Formato da publicação</legend>
-            {OPTIONS.map((opt) => {
-                const active = value === opt.id;
-                return (
-                    <label
-                        key={opt.id}
-                        className={cn(
-                            "relative flex cursor-pointer items-center gap-4 rounded-2xl border bg-surface p-4 transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring",
-                            active ? "border-primary bg-primary/5" : "border-border hover:border-primary/40",
-                        )}
-                    >
-                        <input
-                            type="radio"
-                            name="upload-mode"
-                            value={opt.id}
-                            checked={active}
-                            onChange={() => onChange(opt.id)}
-                            className="sr-only"
-                        />
-                        <span className="grid h-16 w-24 shrink-0 place-items-center rounded-xl bg-surface-muted">
-                            <span
-                                aria-hidden="true"
-                                className={cn("rounded-[3px] border-2", opt.frame, active ? "border-primary bg-primary/15" : "border-muted-foreground/50")}
+        <div>
+            <fieldset className="flex gap-1 rounded-xl bg-surface-muted p-1">
+                <legend className="sr-only">Formato da publicação</legend>
+                {OPTIONS.map(({ id, label, icon: Icone }) => {
+                    const ativo = value === id;
+                    return (
+                        <label
+                            key={id}
+                            className={cn(item, ativo ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}
+                        >
+                            <input
+                                type="radio"
+                                name="upload-mode"
+                                value={id}
+                                checked={ativo}
+                                onChange={() => onChange(id)}
+                                className="sr-only"
                             />
-                        </span>
-                        <span className="min-w-0">
-                            <span className={cn("block text-base font-semibold", active ? "text-primary" : "text-foreground")}>{opt.label}</span>
-                            <span className="type-caption mt-0.5 block text-muted-foreground">{opt.hint}</span>
-                        </span>
-                        {active && (
-                            <span className="absolute right-3 top-3 grid size-5 place-items-center rounded-full bg-primary text-primary-foreground">
-                                <Check className="size-3.5" aria-hidden="true" />
-                            </span>
-                        )}
-                    </label>
-                );
-            })}
-        </fieldset>
+                            <Icone className="size-4" aria-hidden="true" />
+                            {label}
+                        </label>
+                    );
+                })}
+                <Link href="/videos/live" className={cn(item, "text-muted-foreground hover:text-foreground")}>
+                    <Radio className="size-4" aria-hidden="true" />
+                    Live
+                </Link>
+            </fieldset>
+            <p className="type-caption mt-2 text-muted-foreground">{atual.hint}</p>
+        </div>
     );
 }

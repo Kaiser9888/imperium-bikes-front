@@ -60,7 +60,7 @@ function Chip({ tag, ativo, onClick }: { tag: Tag; ativo: boolean; onClick: () =
       onClick={onClick}
       role="tab"
       aria-selected={ativo}
-      // Ativo em branco/preto: o vermelho fica só para ação (Assistir, Publicar, Ao vivo)
+      // Ativo em branco/preto: vermelho só para marca, ao vivo e avisos
       className={`type-label inline-flex h-[2.125rem] shrink-0 cursor-pointer items-center rounded-full border px-3.5 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
         ativo
           ? "border-foreground bg-foreground text-background"

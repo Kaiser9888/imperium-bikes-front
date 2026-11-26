@@ -53,7 +53,7 @@ function AoVivo({ live }: { live: VideoItem }) {
                         live
                     />
                 )}
-                <span className="pointer-events-none absolute left-3 top-3 inline-flex items-center gap-1.5 rounded bg-primary px-2 py-0.5 text-[0.6875rem] font-bold uppercase tracking-widest text-primary-foreground">
+                <span className="pointer-events-none absolute left-3 top-3 inline-flex items-center gap-1.5 rounded bg-brand px-2 py-0.5 text-[0.6875rem] font-bold uppercase tracking-widest text-white">
                     <span className="size-1.5 animate-pulse rounded-full bg-white" aria-hidden="true" />
                     Ao vivo
                 </span>
@@ -720,7 +720,7 @@ export default function TorneioDetalhesPage() {
                                         abaAtual === a.id ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"
                                     }`}
                                 >
-                                    {a.id === "ranking" && andamento && comResultado && <span className="size-1.5 animate-pulse rounded-full bg-primary" aria-hidden="true" />}
+                                    {a.id === "ranking" && andamento && comResultado && <span className="size-1.5 animate-pulse rounded-full bg-brand" aria-hidden="true" />}
                                     {a.rotulo}
                                     {a.contagem !== undefined && a.contagem > 0 && (
                                         <span className="grid h-5 min-w-5 place-items-center rounded-full bg-surface-muted px-1.5 text-xs tabular-nums text-muted-foreground">{a.contagem}</span>

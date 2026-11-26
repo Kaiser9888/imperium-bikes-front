@@ -23,6 +23,7 @@
     --color-input: var(--input);
     --color-ring: var(--ring);
 
+    --color-brand: var(--brand);
     --color-primary: var(--primary);
     --color-primary-hover: var(--primary-hover);
     --color-primary-foreground: var(--primary-foreground);
@@ -109,10 +110,14 @@
     --border: oklch(0.915 0.008 245);
     --input: oklch(0.87 0.01 245);
 
-    /* Primária: vermelho da marca (links, foco, seleção) */
-    --primary: oklch(0.56 0.22 27);
-    --primary-hover: oklch(0.5 0.21 27);
+    /* Primária: tinta neutra (botões, seleção, foco). O vermelho em tudo cansava;
+       ele ficou só em --brand (nome, ao vivo) e --accent (selos de aviso) */
+    --primary: oklch(0.21 0.03 255);
+    --primary-hover: oklch(0.32 0.03 255);
     --primary-foreground: oklch(1 0 0);
+
+    /* Vermelho da marca: nome Imperium Bikes, AO VIVO, gráficos */
+    --brand: oklch(0.56 0.22 27);
 
     /* Destaque: vermelho da marca */
     --accent: oklch(0.56 0.22 27);
@@ -142,7 +147,7 @@
     --popover: var(--surface);
     --popover-foreground: var(--foreground);
 
-    --chart-1: var(--primary);
+    --chart-1: var(--brand);
     --chart-2: var(--accent);
     --chart-3: var(--success);
     --chart-4: var(--info);
@@ -171,11 +176,13 @@
     --border: oklch(1 0 0 / 12%);
     --input: oklch(1 0 0 / 18%);
 
-    /* Contraste AA (4,5:1): vermelho mais claro para links sobre o fundo escuro e texto
-       escuro dentro dos botões vermelhos (branco sobre este vermelho ficava em 3,6:1) */
-    --primary: oklch(0.65 0.21 27);
-    --primary-hover: oklch(0.7 0.19 27);
+    /* Escuro: botões quase brancos com texto escuro */
+    --primary: oklch(0.95 0.006 240);
+    --primary-hover: oklch(0.86 0.008 240);
     --primary-foreground: oklch(0.18 0.02 255);
+
+    /* Vermelho mais claro para contraste AA sobre o fundo escuro */
+    --brand: oklch(0.65 0.21 27);
 
     --accent: oklch(0.65 0.21 27);
     --accent-hover: oklch(0.7 0.19 27);
@@ -648,7 +655,7 @@ mux-player.mux-player-cover {
         font-family: var(--font-brand);
         font-weight: 700;
         letter-spacing: 0.02em;
-        color: var(--primary);
+        color: var(--brand);
     }
 
     /* Botão Voltar (Uiverse.io, Jedi-hongbin): a seta escorrega para a esquerda no hover */
@@ -946,7 +953,7 @@ mux-player.mux-player-cover {
     width: 0.5rem;
     height: 0.5rem;
     border-radius: 9999px;
-    background: var(--primary);
+    background: var(--brand);
 }
 .live-dot::after {
     content: '';

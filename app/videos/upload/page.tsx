@@ -20,17 +20,16 @@ function Upload() {
     const torneioId = useSearchParams().get("torneio");
 
     return (
-      <div className="mx-auto max-w-5xl px-4 pb-16 pt-6 sm:px-6 lg:px-8 lg:pt-10">
-          <BackButton href="/videos/meus-videos" label="Central de Vídeos" className="-ml-2.5" />
-          <p className="type-caption mt-3 font-semibold uppercase tracking-[0.16em] text-primary">Publicar</p>
-          <h1 className="type-h1 mt-1 text-foreground">Compartilhe seu pedal</h1>
-          <p className="type-body-small mt-1 text-muted-foreground">Escolha o formato, envie o arquivo e conte o que rolou.</p>
+      // Mais estreita e sem textos de apresentação: o formulário é o conteúdo
+      <div className="mx-auto max-w-3xl px-4 pb-16 pt-4 sm:px-6 lg:pt-8">
+          <BackButton href="/videos/meus-videos" label="Meus vídeos" className="-ml-2.5" />
+          <h1 className="type-h2 mt-2 text-foreground">Publicar</h1>
 
-          <div className="mt-8">
+          <div className="mt-5">
               <UploadSelector value={mode} onChange={setMode} />
           </div>
 
-          <div className="mt-8">
+          <div className="mt-6">
               <UploadForm key={mode} mode={mode} torneioId={torneioId} />
           </div>
       </div>

@@ -10,7 +10,6 @@ import {
   Clock,
   Film,
   Hash,
-  Lightbulb,
   Loader2,
   RotateCcw,
   UploadCloud,
@@ -18,6 +17,7 @@ import {
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { fetchPopularHashtags } from "@/lib/videos/api";
 import { formatBytes, formatDuration } from "@/lib/videos/format";
 import { uploadVideo } from "@/lib/videos/upload";
 import { cn } from "@/lib/utils";
@@ -30,8 +30,8 @@ const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
 const MAX_MEMENTO_SECONDS = 180;
 const MAX_TAGS = 8;
 
-/** Sugestões de um toque: as categorias da página de vídeos. */
-const SUGESTOES = ["MTB", "Downhill", "Speed", "BMX", "Trilha", "Gravel", "Manutenção", "Review", "Dicas", "Campeonato", "Treino", "Corrida"];
+/** Sugestões de um toque enquanto as hashtags reais não chegam (ou se o servidor falhar). */
+const SUGESTOES_PADRAO = ["MTB", "Downhill", "Speed", "BMX", "Trilha", "Gravel", "Manutenção", "Review", "Dicas", "Campeonato", "Treino", "Corrida"];
 
 type Status = "idle" | "uploading" | "processing" | "done";
 
@@ -45,6 +45,15 @@ export function UploadForm({ mode, torneioId }: { mode: UploadMode; torneioId?: 
   const { getToken } = useAuth();
   const isMemento = mode === "memento";
   const [evento, setEvento] = useState<EventoEscolhido | null>(null);
+  // Sugestões = hashtags que já existem nos vídeos (as mesmas das categorias)
+  const [sugestoes, setSugestoes] = useState<string[]>(SUGESTOES_PADRAO);
+  useEffect(() => {
+    let ativo = true;
+    fetchPopularHashtags(12).then((lista) => ativo && lista.length >= 3 && setSugestoes(lista.map((h) => h.tag)));
+    return () => {
+      ativo = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (!torneioId) return;
@@ -113,7 +122,6 @@ export function UploadForm({ mode, torneioId }: { mode: UploadMode; torneioId?: 
   const canPublish = !!file && tituloOk && !busy;
   const mementoLongo = isMemento && meta != null && meta.duration > MAX_MEMENTO_SECONDS;
   const orientacaoErrada = meta != null && (isMemento ? !meta.vertical : meta.vertical);
-  const etapa = !file ? 1 : !tituloOk ? 2 : 3;
 
   const reset = () => {
     if (previewUrl) URL.revokeObjectURL(previewUrl);
@@ -171,8 +179,6 @@ export function UploadForm({ mode, torneioId }: { mode: UploadMode; torneioId?: 
 
   return (
     <div className="flex flex-col gap-6">
-      <Etapas atual={etapa} />
-
       {error && (
         <p role="alert" className="flex items-center gap-2 rounded-xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
           <AlertTriangle className="size-4 shrink-0" aria-hidden="true" />
@@ -199,26 +205,22 @@ export function UploadForm({ mode, torneioId }: { mode: UploadMode; torneioId?: 
           onClick={() => fileInputRef.current?.click()}
           onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && fileInputRef.current?.click()}
           className={cn(
-            "group flex min-h-80 cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed px-6 py-12 text-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-            isDragging ? "border-primary bg-primary/5" : "border-border bg-surface hover:border-primary/50 hover:bg-surface-muted/40",
+            "group flex min-h-56 cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed px-6 py-12 text-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+            isDragging ? "border-foreground/60 bg-surface-muted" : "border-border bg-surface hover:border-foreground/30 hover:bg-surface-muted/40",
           )}
         >
           <span
             className={cn(
-              "grid size-16 place-items-center rounded-full transition-transform",
-              isDragging ? "scale-110 bg-primary text-primary-foreground" : "bg-primary/10 text-primary group-hover:scale-105",
+              "grid size-12 place-items-center rounded-full bg-surface-muted text-foreground transition-transform",
+              isDragging ? "scale-110" : "group-hover:scale-105",
             )}
           >
-            <UploadCloud className="size-7" aria-hidden="true" />
+            <UploadCloud className="size-6" aria-hidden="true" />
           </span>
-          <p className="type-h3 mt-5 text-foreground">{isDragging ? "Solte para enviar" : isMemento ? "Escolha seu Memento" : "Escolha seu vídeo"}</p>
-          <p className="type-body-small mt-1 text-muted-foreground">Arraste o arquivo até aqui ou clique para procurar.</p>
-          <span className="type-label mt-6 inline-flex h-10 items-center rounded-full bg-foreground px-5 text-background">Selecionar arquivo</span>
-          <ul className="type-caption mt-6 flex flex-wrap justify-center gap-2 text-muted-foreground">
-            <li className="rounded-full bg-surface-muted px-3 py-1">MP4 · MOV · WebM</li>
-            <li className="rounded-full bg-surface-muted px-3 py-1">Até {MAX_SIZE_MB} MB</li>
-            <li className="rounded-full bg-surface-muted px-3 py-1">{isMemento ? "Vertical · até 3 min" : "Horizontal · 16:9"}</li>
-          </ul>
+          <p className="type-h3 mt-4 text-foreground">{isDragging ? "Solte para enviar" : isMemento ? "Escolha seu Memento" : "Escolha seu vídeo"}</p>
+          <p className="type-caption mt-1 text-muted-foreground">
+            Arraste ou toque para escolher · MP4, MOV ou WebM até {MAX_SIZE_MB} MB
+          </p>
           <input
             ref={fileInputRef}
             type="file"
@@ -238,7 +240,7 @@ export function UploadForm({ mode, torneioId }: { mode: UploadMode; torneioId?: 
               <video src={previewUrl} controls className="size-full object-contain" />
             </div>
             <div className="flex items-center gap-3 rounded-xl border border-border bg-surface p-3">
-              <Film className="size-5 shrink-0 text-primary" aria-hidden="true" />
+              <Film className="size-5 shrink-0 text-muted-foreground" aria-hidden="true" />
               <div className="min-w-0 flex-1">
                 <p className="type-label truncate text-foreground">{file.name}</p>
                 <p className="type-caption text-muted-foreground">
@@ -372,15 +374,15 @@ export function UploadForm({ mode, torneioId }: { mode: UploadMode; torneioId?: 
                 />
               </div>
               <div className="mt-2 flex flex-wrap gap-1.5">
-                {SUGESTOES.filter((s) => !tags.some((t) => t.toLowerCase() === limparTag(s).toLowerCase())).slice(0, 8).map((s) => (
+                {sugestoes.filter((s) => !tags.some((t) => t.toLowerCase() === limparTag(s).toLowerCase())).slice(0, 8).map((s) => (
                   <button
                     key={s}
                     type="button"
                     disabled={busy || tags.length >= MAX_TAGS}
                     onClick={() => adicionarTag(s)}
-                    className="type-caption cursor-pointer rounded-full border border-border px-2.5 py-1 text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground disabled:opacity-40"
+                    className="type-caption cursor-pointer rounded-full border border-border px-2.5 py-1 text-muted-foreground transition-colors hover:border-foreground/30 hover:text-foreground disabled:opacity-40"
                   >
-                    + {s}
+                    #{limparTag(s)}
                   </button>
                 ))}
               </div>
@@ -393,15 +395,6 @@ export function UploadForm({ mode, torneioId }: { mode: UploadMode; torneioId?: 
               disabled={busy}
               ajuda="Gravou num evento? Marque e o vídeo aparece na página dele."
             />
-
-            <div className="flex gap-3 rounded-xl bg-surface-muted/60 p-4">
-              <Lightbulb className="size-5 shrink-0 text-warning" aria-hidden="true" />
-              <ul className="type-caption flex flex-col gap-1 text-muted-foreground">
-                <li>Um título claro (lugar, trilha, peça) aparece melhor na busca.</li>
-                <li>Use de 3 a 5 hashtags: elas levam seu vídeo para quem curte o assunto.</li>
-                <li>A capa é gerada automaticamente a partir do vídeo.</li>
-              </ul>
-            </div>
 
             {/* Envio */}
             {status === "idle" ? (
@@ -453,33 +446,5 @@ function Aviso({ children }: { children: React.ReactNode }) {
       <AlertTriangle className="size-4 shrink-0 text-warning" aria-hidden="true" />
       {children}
     </p>
-  );
-}
-
-/** Indicador das etapas: arquivo, detalhes, publicar. */
-function Etapas({ atual }: { atual: number }) {
-  const etapas = ["Arquivo", "Detalhes", "Publicar"];
-  return (
-    <ol className="flex items-center gap-2" aria-label="Etapas">
-      {etapas.map((nome, i) => {
-        const n = i + 1;
-        const feita = n < atual;
-        const ativa = n === atual;
-        return (
-          <li key={nome} className="flex flex-1 items-center gap-2" aria-current={ativa ? "step" : undefined}>
-            <span
-              className={cn(
-                "type-caption grid size-6 shrink-0 place-items-center rounded-full font-semibold",
-                feita ? "bg-success text-success-foreground" : ativa ? "bg-primary text-primary-foreground" : "bg-surface-muted text-muted-foreground",
-              )}
-            >
-              {feita ? <CheckCircle2 className="size-3.5" aria-hidden="true" /> : n}
-            </span>
-            <span className={cn("type-label hidden sm:inline", ativa ? "text-foreground" : "text-muted-foreground")}>{nome}</span>
-            {n < etapas.length && <span aria-hidden="true" className={cn("h-px flex-1", feita ? "bg-success" : "bg-border")} />}
-          </li>
-        );
-      })}
-    </ol>
   );
 }

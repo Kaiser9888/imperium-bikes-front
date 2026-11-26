@@ -253,11 +253,11 @@ function LiveStrip({ lives }: { lives: VideoItem[] }) {
           {lives.map((live) => (
             <li key={live.id} className="w-64 shrink-0 snap-start">
               <Link href={`/videos/watch/${live.id}`} className="group block">
-                <div className="relative aspect-video overflow-hidden rounded-xl bg-secondary ring-2 ring-primary">
+                <div className="relative aspect-video overflow-hidden rounded-xl bg-secondary ring-2 ring-brand">
                   {live.thumbnailUrl && (
                     <img src={live.thumbnailUrl} alt="" loading="lazy" className="size-full object-cover" />
                   )}
-                  <span className="absolute left-2 top-2 inline-flex items-center gap-1.5 rounded bg-primary px-2 py-0.5 text-[0.625rem] font-bold uppercase tracking-widest text-primary-foreground">
+                  <span className="absolute left-2 top-2 inline-flex items-center gap-1.5 rounded bg-brand px-2 py-0.5 text-[0.625rem] font-bold uppercase tracking-widest text-white">
                     <span className="size-1.5 rounded-full bg-white" aria-hidden="true" />
                     Ao vivo
                   </span>

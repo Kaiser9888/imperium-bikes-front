@@ -194,7 +194,7 @@ export default function WatchPage() {
                           />
                       )}
                       {video.isLiveNow && (
-                        <span className="pointer-events-none absolute left-3 top-3 inline-flex items-center gap-1.5 rounded bg-primary px-2 py-0.5 text-[0.6875rem] font-bold uppercase tracking-widest text-primary-foreground">
+                        <span className="pointer-events-none absolute left-3 top-3 inline-flex items-center gap-1.5 rounded bg-brand px-2 py-0.5 text-[0.6875rem] font-bold uppercase tracking-widest text-white">
                             <span className="size-1.5 rounded-full bg-white" aria-hidden="true" />
                             Ao vivo
                         </span>
