@@ -68,7 +68,7 @@ export default function TorneiosPage() {
                     <span aria-hidden="true" className="pointer-events-none absolute -bottom-8 -right-3 -z-10 select-none text-[7rem] font-black leading-none tracking-tighter text-white/[0.04] sm:-bottom-14 sm:text-[12rem]">
                         {new Date().getFullYear()}
                     </span>
-                    <Image src="/sigillum/lorica.jpg" alt="" width={430} height={600} aria-hidden="true" className="pointer-events-none absolute -top-6 right-[22%] -z-10 hidden h-[130%] w-auto select-none opacity-[0.05] invert mix-blend-screen sm:block" />
+                    <Image src="/sigillum/lorica.jpg" alt="" width={430} height={600} aria-hidden="true" className="pointer-events-none absolute -right-14 -top-4 -z-10 h-80 w-auto select-none opacity-[0.05] invert mix-blend-screen sm:-top-6 sm:right-[22%] sm:h-[130%]" />
                     <div className="lg:grid lg:grid-cols-[1fr_26rem] lg:items-center lg:gap-10">
                         <div>
                             {/* Criar evento na mesma linha do rótulo: o painel fica mais baixo e a lista aparece antes */}
